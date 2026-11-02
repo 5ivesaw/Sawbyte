@@ -1,0 +1,13 @@
+[package]
+name = "sawbyte"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+sawbyte-core = { path = "../sawbyte-core" }
+sawbyte-protocol = { path = "../sawbyte-protocol" }
+
+[lints]
+workspace = true

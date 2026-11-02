@@ -1,0 +1,77 @@
+name: Build and verify
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-14]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install pinned toolchain
+        run: rustup toolchain install 1.90.0 --profile minimal --component rustfmt --component clippy
+      - name: Format review
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cargo fmt --all
+          git diff --exit-code > formatting.patch
+      - name: Upload formatting patch on failure
+        if: failure() && runner.os == 'Linux'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: formatting-patch
+          path: formatting.patch
+          if-no-files-found: ignore
+      - name: Static analysis
+        run: cargo clippy --workspace --all-targets --locked --offline -- -D warnings
+      - name: Tests
+        run: cargo test --workspace --locked --offline
+      - name: Build release
+        run: cargo build --workspace --release --locked --offline
+      - name: Smoke test
+        shell: bash
+        run: |
+          ./target/release/sawbyte --version
+          ./target/release/sawbyte capabilities
+          ./target/release/sawbyte demo
+          ./target/release/sawbyte demo --direct
+      - name: Package preview
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp target/release/sawbyte.exe dist/
+          else
+            cp target/release/sawbyte dist/
+          fi
+          cp README.md LICENSE docs/COVERAGE.md dist/
+          python - <<'PY'
+          import hashlib, pathlib
+          root = pathlib.Path('dist')
+          files = sorted(p for p in root.iterdir() if p.is_file())
+          (root / 'SHA256SUMS').write_text(''.join(
+              f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in files
+          ))
+          PY
+      - name: Upload preview binary
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sawbyte-${{ matrix.os }}-${{ runner.arch }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
