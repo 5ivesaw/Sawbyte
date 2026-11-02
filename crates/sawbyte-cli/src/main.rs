@@ -1,4 +1,6 @@
-use sawbyte_core::{Action, Backend, Button, Capability, Direct, Humanised, InputFrame, InputPolicy, Scheduler};
+use sawbyte_core::{
+    Action, Backend, Button, Capability, Direct, Humanised, InputFrame, InputPolicy, Scheduler,
+};
 use std::io::{self, Write};
 use std::time::Duration;
 
@@ -23,20 +25,47 @@ struct TraceBackend;
 
 impl Backend for TraceBackend {
     type Error = io::Error;
-    fn supports(&self, _: Capability) -> bool { true }
-    fn apply(&mut self, tick: u64, frame: InputFrame) -> Result<(), Self::Error> {
-        writeln!(io::stdout().lock(), "tick={tick:02} forward={} yaw={:.3} pitch={:.3}",
-            frame.buttons.pressed(Button::Forward), frame.yaw_delta, frame.pitch_delta)
+    fn supports(&self, _: Capability) -> bool {
+        true
     }
-    fn release_all(&mut self) -> Result<(), Self::Error> { Ok(()) }
+    fn apply(&mut self, tick: u64, frame: InputFrame) -> Result<(), Self::Error> {
+        writeln!(
+            io::stdout().lock(),
+            "tick={tick:02} forward={} yaw={:.3} pitch={:.3}",
+            frame.buttons.pressed(Button::Forward),
+            frame.yaw_delta,
+            frame.pitch_delta
+        )
+    }
+    fn release_all(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
 }
 
 fn demo(policy: impl InputPolicy) -> Result<(), Box<dyn std::error::Error>> {
     let mut scheduler = Scheduler::new(TraceBackend, policy, 64);
     scheduler.submit(&[
-        (0, Action::Button { button: Button::Forward, down: true }),
-        (0, Action::Look { yaw: 90.0, pitch: 0.0 }),
-        (4, Action::Button { button: Button::Forward, down: false }),
+        (
+            0,
+            Action::Button {
+                button: Button::Forward,
+                down: true,
+            },
+        ),
+        (
+            0,
+            Action::Look {
+                yaw: 90.0,
+                pitch: 0.0,
+            },
+        ),
+        (
+            4,
+            Action::Button {
+                button: Button::Forward,
+                down: false,
+            },
+        ),
     ])?;
     for tick in 0..10 {
         scheduler.advance(tick)?;

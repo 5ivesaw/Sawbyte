@@ -44,9 +44,15 @@ pub enum Capability {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Action {
-    Button { button: Button, down: bool },
+    Button {
+        button: Button,
+        down: bool,
+    },
     /// Relative degrees; adapters must preserve the selected version's input semantics.
-    Look { yaw: f64, pitch: f64 },
+    Look {
+        yaw: f64,
+        pitch: f64,
+    },
 }
 
 impl Action {
@@ -96,14 +102,17 @@ pub struct Humanised {
 
 impl Default for Humanised {
     fn default() -> Self {
-        Self { max_degrees_per_tick: 12.0 }
+        Self {
+            max_degrees_per_tick: 12.0,
+        }
     }
 }
 
 impl Humanised {
     pub fn new(max_degrees_per_tick: f64) -> Option<Self> {
-        (max_degrees_per_tick.is_finite() && max_degrees_per_tick > 0.0)
-            .then_some(Self { max_degrees_per_tick })
+        (max_degrees_per_tick.is_finite() && max_degrees_per_tick > 0.0).then_some(Self {
+            max_degrees_per_tick,
+        })
     }
 }
 
@@ -136,7 +145,10 @@ pub enum Error {
     OutOfOrder,
     Halted,
     InvalidPolicy,
-    Backend { cause: String, release_error: Option<String> },
+    Backend {
+        cause: String,
+        release_error: Option<String>,
+    },
 }
 
 impl fmt::Display for Error {
@@ -221,7 +233,10 @@ impl<B: Backend, P: InputPolicy> Scheduler<B, P> {
             }
             Err(error) => {
                 self.halted = true;
-                Err(Error::Backend { cause: error.to_string(), release_error: None })
+                Err(Error::Backend {
+                    cause: error.to_string(),
+                    release_error: None,
+                })
             }
         }
     }
@@ -235,7 +250,10 @@ impl<B: Backend, P: InputPolicy> Scheduler<B, P> {
         }
         // Skipping an input tick can erase a press/release pair. Require sequential
         // ticks once running; the host must choose explicit catch-up or cancellation.
-        if self.last_tick.is_some_and(|last| last.checked_add(1) != Some(tick)) {
+        if self
+            .last_tick
+            .is_some_and(|last| last.checked_add(1) != Some(tick))
+        {
             return Err(Error::OutOfOrder);
         }
         if self.last_tick.is_none() && self.queue.front().is_some_and(|(at, _)| *at < tick) {
@@ -252,7 +270,8 @@ impl<B: Backend, P: InputPolicy> Scheduler<B, P> {
         }
         let step = self.policy.camera_step(self.remaining);
         let valid_axis = |value: f64, target: f64| {
-            value.is_finite() && value.abs() <= target.abs()
+            value.is_finite()
+                && value.abs() <= target.abs()
                 && (value == 0.0 || value.signum() == target.signum())
         };
         if !valid_axis(step.0, self.remaining.0) || !valid_axis(step.1, self.remaining.1) {
@@ -268,12 +287,19 @@ impl<B: Backend, P: InputPolicy> Scheduler<B, P> {
         }
         self.remaining.0 -= step.0;
         self.remaining.1 -= step.1;
-        let frame = InputFrame { buttons: self.buttons, yaw_delta: step.0, pitch_delta: step.1 };
+        let frame = InputFrame {
+            buttons: self.buttons,
+            yaw_delta: step.0,
+            pitch_delta: step.1,
+        };
         if let Err(error) = self.backend.apply(tick, frame) {
             self.clear();
             self.halted = true;
             let release_error = self.backend.release_all().err().map(|e| e.to_string());
-            return Err(Error::Backend { cause: error.to_string(), release_error });
+            return Err(Error::Backend {
+                cause: error.to_string(),
+                release_error,
+            });
         }
         Ok(frame)
     }

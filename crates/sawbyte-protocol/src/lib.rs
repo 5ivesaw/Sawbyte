@@ -82,7 +82,8 @@ struct DeadlineStream {
 
 impl DeadlineStream {
     fn remaining(&self) -> io::Result<Duration> {
-        self.deadline.checked_duration_since(Instant::now())
+        self.deadline
+            .checked_duration_since(Instant::now())
             .filter(|duration| !duration.is_zero())
             .ok_or_else(|| io::Error::new(io::ErrorKind::TimedOut, "status deadline exceeded"))
     }
@@ -121,12 +122,18 @@ pub fn query_status(
     protocol: i32,
     timeout: Duration,
 ) -> io::Result<Status> {
-    if timeout.is_zero() || hostname.is_empty() || hostname.encode_utf16().count() > 255
+    if timeout.is_zero()
+        || hostname.is_empty()
+        || hostname.encode_utf16().count() > 255
         || hostname.chars().any(char::is_control)
     {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid timeout or hostname"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "invalid timeout or hostname",
+        ));
     }
-    let deadline = Instant::now().checked_add(timeout)
+    let deadline = Instant::now()
+        .checked_add(timeout)
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "timeout too large"))?;
     let stream = TcpStream::connect_timeout(&endpoint, timeout)?;
     stream.set_nodelay(true)?;
@@ -149,7 +156,10 @@ pub fn query_status(
     if read_frame(&mut stream)? != ping {
         return Err(invalid("pong does not match ping"));
     }
-    Ok(Status { document, round_trip: started.elapsed() })
+    Ok(Status {
+        document,
+        round_trip: started.elapsed(),
+    })
 }
 
 #[cfg(test)]
@@ -195,8 +205,12 @@ mod tests {
         let endpoint = listener.local_addr().unwrap();
         let handle = thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
-            stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
-            stream.set_write_timeout(Some(Duration::from_secs(5))).unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
+            stream
+                .set_write_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
             let handshake = read_frame(&mut stream).unwrap();
             let mut bytes = handshake.as_slice();
             assert_eq!(read_varint(&mut bytes).unwrap(), 0);
@@ -214,7 +228,9 @@ mod tests {
             let mut ping = read_frame(&mut stream).unwrap();
             assert_eq!(ping.len(), 9);
             assert_eq!(ping[0], 1);
-            if bad_pong { ping[8] ^= 1; }
+            if bad_pong {
+                ping[8] ^= 1;
+            }
             write_frame(&mut stream, &ping).unwrap();
         });
         (endpoint, handle)
@@ -243,8 +259,12 @@ mod tests {
             let (_stream, _) = listener.accept().unwrap();
             thread::sleep(Duration::from_millis(300));
         });
-        let error = query_status(endpoint, "example.test", -1, Duration::from_millis(50)).unwrap_err();
-        assert!(matches!(error.kind(), io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock));
+        let error =
+            query_status(endpoint, "example.test", -1, Duration::from_millis(50)).unwrap_err();
+        assert!(matches!(
+            error.kind(),
+            io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock
+        ));
         server.join().unwrap();
     }
 }
