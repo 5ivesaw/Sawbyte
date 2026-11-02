@@ -1,6 +1,7 @@
 [workspace]
 members = ["crates/sawbyte-core", "crates/sawbyte-protocol", "crates/sawbyte-cli"]
 resolver = "2"
+exclude = ["native"]
 
 [workspace.package]
 version = "0.1.0"

@@ -4,6 +4,8 @@
 use std::collections::VecDeque;
 use std::fmt;
 
+pub mod tape;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Button {
@@ -22,6 +24,14 @@ pub enum Button {
 pub struct Buttons(u16);
 
 impl Buttons {
+    pub fn bits(self) -> u16 {
+        self.0
+    }
+
+    pub fn from_bits(bits: u16) -> Option<Self> {
+        (bits & !0x01ff == 0).then_some(Self(bits))
+    }
+
     pub fn pressed(self, button: Button) -> bool {
         self.0 & (1 << button as u8) != 0
     }

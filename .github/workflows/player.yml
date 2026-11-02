@@ -1,0 +1,64 @@
+name: Real player milestone
+on:
+  push:
+    branches: [feat/real-player, main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: player-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/target
+          key: native-linux-20261030-${{ hashFiles('native/Cargo.toml') }}-${{ github.sha }}
+          restore-keys: native-linux-20261030-${{ hashFiles('native/Cargo.toml') }}-
+      - name: Install backend toolchain
+        run: rustup toolchain install nightly-2026-10-30 --profile minimal --component rustfmt --component clippy
+      - name: Resolve backend lockfile in CI
+        working-directory: native
+        run: |
+          if [ -f Cargo.lock ]; then cargo fetch --locked; else cargo generate-lockfile; fi
+          cargo fmt --all
+      - name: Review generated source changes
+        if: always()
+        run: git diff > native-formatting.patch
+      - name: Upload generated lock and format patch
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: native-generated
+          path: |
+            native/Cargo.lock
+            native-formatting.patch
+      - name: Build and check adapter
+        working-directory: native
+        run: |
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo build --release --locked
+          ./target/release/sawbyte-play --help
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        if: always()
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/target
+          key: native-linux-20261030-${{ hashFiles('native/Cargo.toml') }}-${{ github.sha }}
+      - name: Upload player
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: sawbyte-play-linux-x64
+          path: native/target/release/sawbyte-play
+          if-no-files-found: error

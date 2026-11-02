@@ -6,3 +6,11 @@
 !.env.example
 /profiles/
 /credentials/
+/native/target/
+/native/credentials/
+/bridge/.gradle/
+/bridge/build/
+/bridge/run/
+/run/
+*.sbif
+*.csv

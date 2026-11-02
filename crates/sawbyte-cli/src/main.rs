@@ -11,6 +11,7 @@ Usage:
   sawbyte --version
   sawbyte capabilities
   sawbyte demo [--direct]
+  sawbyte tape <output.sbif> [--direct]
   sawbyte status <IP:PORT> [virtual-host] [protocol-number]
 
 demo         Print a scheduled input trace; does not connect to Minecraft.
@@ -89,6 +90,16 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         ),
         Some("demo") if args.len() == 1 => demo(Humanised::default())?,
         Some("demo") if args.len() == 2 && args[1] == "--direct" => demo(Direct)?,
+        Some("tape") if args.len() == 2 || (args.len() == 3 && args[2] == "--direct") => {
+            let frames = if args.len() == 3 {
+                sawbyte_core::tape::movement_fixture(Direct)
+            } else {
+                sawbyte_core::tape::movement_fixture(Humanised::default())
+            };
+            let mut file = std::fs::File::create(&args[1])?;
+            sawbyte_core::tape::write(&mut file, &frames)?;
+            println!("Wrote {} input frames to {}", frames.len(), args[1]);
+        }
         Some("status") if (2..=4).contains(&args.len()) => {
             let endpoint: std::net::SocketAddr = args[1].parse()?;
             let hostname = args.get(2).cloned().unwrap_or_else(|| endpoint.ip().to_string());
