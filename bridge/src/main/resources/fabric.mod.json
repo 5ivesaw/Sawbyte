@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "sawbyte_bridge",
+  "version": "${version}",
+  "name": "Sawbyte Input Bridge",
+  "description": "Replay Sawbyte input fixtures in the normal Minecraft client and record movement traces.",
+  "authors": ["5ivesaw"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {"client": ["dev.fivesaw.sawbyte.SawbyteBridge"]},
+  "depends": {"fabricloader": ">=0.20.1", "minecraft": "26.3", "java": ">=25", "fabric-api": "*"}
+}
