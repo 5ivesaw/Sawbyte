@@ -11,8 +11,10 @@ fn invalid() -> io::Error {
 }
 
 fn valid(frame: &InputFrame) -> bool {
-    frame.yaw_delta.is_finite() && frame.pitch_delta.is_finite()
-        && frame.yaw_delta.abs() <= 360.0 && frame.pitch_delta.abs() <= 180.0
+    frame.yaw_delta.is_finite()
+        && frame.pitch_delta.is_finite()
+        && frame.yaw_delta.abs() <= 360.0
+        && frame.pitch_delta.abs() <= 180.0
 }
 
 pub fn write(writer: &mut impl Write, frames: &[InputFrame]) -> io::Result<()> {
@@ -35,7 +37,9 @@ pub fn read(reader: &mut impl Read) -> io::Result<Vec<InputFrame>> {
     let mut count = [0; 4];
     reader.read_exact(&mut count)?;
     let count = u32::from_le_bytes(count) as usize;
-    if &magic != MAGIC || count == 0 || count > MAX_FRAMES { return Err(invalid()); }
+    if &magic != MAGIC || count == 0 || count > MAX_FRAMES {
+        return Err(invalid());
+    }
     let mut frames = Vec::with_capacity(count);
     for _ in 0..count {
         let mut bits = [0; 2];
@@ -49,33 +53,77 @@ pub fn read(reader: &mut impl Read) -> io::Result<Vec<InputFrame>> {
             yaw_delta: f64::from_le_bytes(yaw),
             pitch_delta: f64::from_le_bytes(pitch),
         };
-        if !valid(&frame) { return Err(invalid()); }
+        if !valid(&frame) {
+            return Err(invalid());
+        }
         frames.push(frame);
     }
     let mut trailing = [0];
-    if reader.read(&mut trailing)? != 0 { return Err(invalid()); }
+    if reader.read(&mut trailing)? != 0 {
+        return Err(invalid());
+    }
     Ok(frames)
 }
 
 struct Capture;
 impl Backend for Capture {
     type Error = &'static str;
-    fn supports(&self, _: Capability) -> bool { true }
-    fn apply(&mut self, _: u64, _: InputFrame) -> Result<(), Self::Error> { Ok(()) }
-    fn release_all(&mut self) -> Result<(), Self::Error> { Ok(()) }
+    fn supports(&self, _: Capability) -> bool {
+        true
+    }
+    fn apply(&mut self, _: u64, _: InputFrame) -> Result<(), Self::Error> {
+        Ok(())
+    }
+    fn release_all(&mut self) -> Result<(), Self::Error> {
+        Ok(())
+    }
 }
 
 /// Stationary, walk, turn, jump, release, settle. Both backends consume identical frames.
 pub fn movement_fixture(policy: impl InputPolicy) -> Vec<InputFrame> {
     let mut scheduler = Scheduler::new(Capture, policy, 8);
-    scheduler.submit(&[
-        (20, Action::Button { button: Button::Forward, down: true }),
-        (60, Action::Look { yaw: 90.0, pitch: 0.0 }),
-        (80, Action::Button { button: Button::Jump, down: true }),
-        (81, Action::Button { button: Button::Jump, down: false }),
-        (100, Action::Button { button: Button::Forward, down: false }),
-    ]).expect("fixed valid fixture");
-    (0..160).map(|tick| scheduler.advance(tick).expect("capture cannot fail")).collect()
+    scheduler
+        .submit(&[
+            (
+                20,
+                Action::Button {
+                    button: Button::Forward,
+                    down: true,
+                },
+            ),
+            (
+                60,
+                Action::Look {
+                    yaw: 90.0,
+                    pitch: 0.0,
+                },
+            ),
+            (
+                80,
+                Action::Button {
+                    button: Button::Jump,
+                    down: true,
+                },
+            ),
+            (
+                81,
+                Action::Button {
+                    button: Button::Jump,
+                    down: false,
+                },
+            ),
+            (
+                100,
+                Action::Button {
+                    button: Button::Forward,
+                    down: false,
+                },
+            ),
+        ])
+        .expect("fixed valid fixture");
+    (0..160)
+        .map(|tick| scheduler.advance(tick).expect("capture cannot fail"))
+        .collect()
 }
 
 #[cfg(test)]
