@@ -23,7 +23,15 @@ Sawbyte is being built as a **standalone native client and automation framework*
 - A real TCP Minecraft Java server-status handshake and ping, with bounded packets, UTF-8 validation, and a total request deadline.
 - Linux x86-64, Windows x86-64 and macOS ARM64 build/test jobs, with downloadable binaries and SHA-256 checksums.
 
-No Minecraft authentication, gameplay simulation, GUI automation, launcher instances, Python SDK, or graphical-client bridge is implemented yet. No version has passed gameplay parity testing. The trace demo is not a game simulation.
+An independent native player and an optional normal-client input bridge are under development on `feat/real-player`. The bridge builds; native gameplay must still pass the real-server comparison before it is considered usable. No version has passed gameplay parity testing. The trace demo is not a game simulation.
+
+## Standalone player milestone
+
+The separate `native/` Rust workspace implements the first 26.3 connection, authentication, chunk storage and ordinary-ground movement prototype. It uses low-level networking and cryptography libraries; it does not depend on Azalea or another gameplay engine. `bridge/` is an optional Fabric integration that plays the same input recording in the normal client for comparison.
+
+The **Real player milestone** workflow builds the native player for Linux x86-64, Windows x86-64 and macOS ARM64, builds the bridge, then runs a controlled Linux server/client comparison. A successful build alone does not establish gameplay compatibility. See [the test scope and usage](docs/PLAYER.md).
+
+Launcher UI, instance management, general scripting/API access, inventory and screen automation, complete physics and multi-version support remain unfinished. No memory reduction or superiority claim has been measured.
 
 ## Download and try
 
@@ -42,7 +50,7 @@ The status probe takes an IP address and port; the optional virtual host support
 
 ## Development
 
-All compilation, tests, formatting and packaging run in GitHub Actions. The local workflow is source editing and review. Rust is pinned in `rust-toolchain.toml`; all three crates currently have **zero external dependencies**. This is a measured starting point, not a permanent ban on useful libraries. There is no JSON serialization in the scheduler.
+All compilation, tests, formatting and packaging run in GitHub Actions. The local workflow is source editing and review. Rust is pinned in `rust-toolchain.toml`; the three foundation crates have **zero external dependencies**. The separate native player uses standard protocol, HTTP and cryptography libraries. There is no JSON serialization in the scheduler.
 
 | Crate | Responsibility |
 |---|---|

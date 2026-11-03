@@ -8,9 +8,10 @@ The product requirement is full player programmability. This ledger describes im
 | Camera policy | Bounded motion and direct mode | Total motion and custom-policy validation tests |
 | Network status / ping | Implemented | Loopback TCP fixture with handshake and pong verification |
 | Packet bounds / deadline | Implemented for status | Invalid frame, VarInt, stalled-peer tests |
-| Native login / accounts | Missing | Auth, encryption, configuration state |
-| Native player movement | Missing | World cache, version rules, reference-client comparison |
-| Full-client bridge | Missing | Loader/version choice and observable input contract |
+| Native login / accounts | Experimental code, not validated live | 26.3 login, encryption and Microsoft device flow; registered application and account required for online validation |
+| Native player movement | Experimental, comparison pending | Bounded chunk palettes and ordinary full-cube motion; no general gameplay support |
+| Full-client bridge | Builds; replay validation pending | Optional Fabric 26.3 bridge, shared tick input recording, cancellation on screen/death/disconnect |
+| Native platform builds | CI matrix configured | Linux x86-64, Windows x86-64, macOS ARM64; real-client comparison currently Linux only |
 | Inventory and screens | Missing | Screen model, revision-aware selectors and clicks |
 | Text input / books / signs / dialogs | Missing | Version-specific input adapters |
 | Crafting / trading / building / combat | Missing | Complete low-level inputs before helpers |
@@ -23,3 +24,5 @@ The product requirement is full player programmability. This ledger describes im
 | Memory / performance claims | Unmeasured | Real gameplay workload and competitor baselines |
 
 No supported gameplay version is claimed by this preview. The scheduler's button states are tick snapshots: the final write to a button in one tick wins. Sub-tick click edges, text and GUI operations need a separate ordered-event contract; they must not be collapsed into these snapshots.
+
+The native prototype is intentionally restricted to a controlled flat-world movement fixture. See [PLAYER.md](PLAYER.md) for its unsupported mechanics and evidence requirements. It is not ready for arbitrary multiplayer servers.
