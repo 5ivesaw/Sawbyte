@@ -23,8 +23,7 @@
 
 **Current status: experimental prototype. The full product is unfinished.** General programmability means users can compose behaviours the authors never anticipated; it is not a catalogue of hardcoded workflows. See [the governing requirements](docs/VISION.md).
 
-## What is Sawbyte? (Plain-English Overview)
-
+## What is Sawbyte? 
 Normally, playing Minecraft requires launching the official graphical game—which consumes gigabytes of RAM, renders 3D graphics, and expects a human sitting at a keyboard and mouse. Existing bot libraries either spin up heavy headless Java instances or cut corners on client physics and network timing, causing servers to reject or flag them immediately.
 
 **Sawbyte** is an independent, zero-graphics Minecraft Java client and universal automation engine written in Rust:
