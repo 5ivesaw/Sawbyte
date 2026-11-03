@@ -31,7 +31,7 @@ pub fn built_in_version_profiles() -> Vec<VersionAdapterProfile> {
             minecraft_version: "26.2".into(),
             protocol_version: 776,
             native_verified_parity: false,
-            bridge_supported: true,
+            bridge_supported: false,
         },
     ]
 }
@@ -371,22 +371,39 @@ impl PersistentLauncher {
         self.save()
     }
 
+    pub fn validate_username(username: &str) -> Result<(), String> {
+        if username.is_empty()
+            || username.len() > 16
+            || !username
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'_')
+        {
+            return Err("invalid username (must be 1..=16 ASCII alphanumeric or '_')".into());
+        }
+        Ok(())
+    }
+
     pub fn add_account(
         &mut self,
         username: &str,
         uuid_hex: &str,
         token_file: Option<&str>,
     ) -> Result<(), String> {
-        if username.is_empty() || username.len() > 16 {
-            return Err("invalid username".into());
+        Self::validate_username(username)?;
+        if uuid_hex.len() != 32 || !uuid_hex.bytes().all(|b| b.is_ascii_hexdigit()) {
+            return Err("invalid uuid_hex (must be 32 ASCII hexadecimal characters)".into());
         }
+        let existing_lock = self
+            .accounts
+            .get(username)
+            .and_then(|a| a.locked_by_instance.clone());
         self.accounts.insert(
             username.to_owned(),
             AccountRecord {
                 username: username.to_owned(),
                 uuid_hex: uuid_hex.to_owned(),
                 token_file: token_file.map(str::to_owned),
-                locked_by_instance: None,
+                locked_by_instance: existing_lock,
             },
         );
         self.save()
@@ -397,7 +414,17 @@ impl PersistentLauncher {
         username: &str,
         instance_name: &str,
     ) -> Result<(), String> {
+        Self::validate_username(username)?;
         let lock_file = self.root_dir.join("locks").join(format!("{username}.lock"));
+        if lock_file.exists() {
+            let existing_holder = fs::read_to_string(&lock_file).unwrap_or_default();
+            if !existing_holder.trim().is_empty() && existing_holder.trim() != instance_name {
+                return Err(format!(
+                    "account '{username}' is already locked on disk by instance '{}'",
+                    existing_holder.trim()
+                ));
+            }
+        }
         let acc = self
             .accounts
             .get_mut(username)
@@ -415,6 +442,7 @@ impl PersistentLauncher {
     }
 
     pub fn release_account_lock(&mut self, username: &str) -> Result<(), String> {
+        Self::validate_username(username)?;
         let lock_file = self.root_dir.join("locks").join(format!("{username}.lock"));
         let _ = fs::remove_file(&lock_file);
         if let Some(acc) = self.accounts.get_mut(username) {
@@ -465,6 +493,28 @@ impl PersistentLauncher {
         blocks_profile_path: &Path,
         extra_args: &[String],
     ) -> Result<(Child, PathBuf), String> {
+        let inst = self
+            .instances
+            .get(instance_name)
+            .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
+        if inst.mode != RuntimeMode::NativeStandalone {
+            return Err(format!(
+                "instance '{instance_name}' mode is '{:?}'; native process spawn only supports NativeStandalone",
+                inst.mode
+            ));
+        }
+        if inst.version_profile != "sawbyte-26.3" {
+            return Err(format!(
+                "instance '{instance_name}' version profile '{}' is not supported for native live execution (only 'sawbyte-26.3' is currently supported)",
+                inst.version_profile
+            ));
+        }
+        if !self.accounts.contains_key(account_name) {
+            return Err(format!("account '{account_name}' not found"));
+        }
+        let server = server_override.unwrap_or(&inst.server).to_owned();
+        let rpc_bind = inst.rpc_bind.clone();
+
         let bin = Self::locate_sawbyte_play_binary()?;
         self.acquire_account_lock(account_name, instance_name)?;
         let dir = self.instance_dir(instance_name);
@@ -473,12 +523,6 @@ impl PersistentLauncher {
         let log_file = fs::File::create(&log_path).map_err(|e| e.to_string())?;
         let err_file = log_file.try_clone().map_err(|e| e.to_string())?;
 
-        let inst = self
-            .instances
-            .get(instance_name)
-            .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
-        let server = server_override.unwrap_or(&inst.server).to_owned();
-        let rpc_bind = inst.rpc_bind.clone();
         let acc = self
             .accounts
             .get(account_name)
@@ -516,6 +560,38 @@ impl PersistentLauncher {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn launcher_rejects_invalid_usernames_and_unsafe_paths() {
+        let temp_root =
+            std::env::temp_dir().join(format!("sawbyte-launcher-path-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp_root);
+        let mut l = PersistentLauncher::load_from(temp_root.clone()).unwrap();
+
+        assert!(l
+            .add_account("../traversal", "00000000000030008000000000000001", None)
+            .is_err());
+        assert!(l
+            .add_account("user with space", "00000000000030008000000000000001", None)
+            .is_err());
+        assert!(l.add_account("valid_user", "not-hex-uuid", None).is_err());
+        assert!(l
+            .add_account("valid_user", "00000000000030008000000000000001", None)
+            .is_ok());
+
+        assert!(l
+            .acquire_account_lock("../traversal", "default-native")
+            .is_err());
+
+        let profiles = built_in_version_profiles();
+        let p26_2 = profiles
+            .iter()
+            .find(|p| p.profile_id == "sawbyte-26.2")
+            .unwrap();
+        assert!(!p26_2.bridge_supported);
+
+        let _ = fs::remove_dir_all(&temp_root);
+    }
 
     #[test]
     fn launcher_persists_instances_settings_snapshots_and_locks_across_reloads() {

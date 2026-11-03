@@ -1491,28 +1491,56 @@ impl Session {
                     "id": id,
                     "result": {
                         "tools": [
-                            { "name": "task_and_navigation", "description": "Run live 3D A* pathfinding on the server's loaded chunk sections." },
-                            { "name": "player_interact", "description": "Execute live raycast block mining, placement, and entity combat." },
-                            { "name": "player_input", "description": "Submit live humanised/smooth/direct movement and camera inputs." },
-                            { "name": "gui_screen_automation", "description": "Inspect live server screens, click slots/items/widgets, and run multi-screen workflows." },
-                            { "name": "world_inspector_and_profiler", "description": "Render live 2D ASCII map from server chunks and inspect live player vitals." },
-                            { "name": "gym_step_and_observe", "description": "Zero-bloat RL / neural network observation and action step on the live server." },
-                            { "name": "code_execute", "description": "Execute multi-line SawbyteScript directly on the live server session." }
+                            { "name": "task_and_navigation", "description": "Run live 3D A* pathfinding on the server's loaded chunk sections.", "inputSchema": { "type": "object", "properties": { "script": { "type": "string" }, "command": { "type": "string" } } } },
+                            { "name": "player_interact", "description": "Execute live raycast block mining, placement, and entity combat.", "inputSchema": { "type": "object", "properties": { "script": { "type": "string" }, "command": { "type": "string" } } } },
+                            { "name": "player_input", "description": "Submit live humanised/smooth/direct movement and camera inputs.", "inputSchema": { "type": "object", "properties": { "script": { "type": "string" }, "command": { "type": "string" } } } },
+                            { "name": "gui_screen_automation", "description": "Inspect live server screens, click slots/items/widgets, and run multi-screen workflows.", "inputSchema": { "type": "object", "properties": { "script": { "type": "string" }, "command": { "type": "string" } } } },
+                            { "name": "world_inspector_and_profiler", "description": "Render live 2D ASCII map from server chunks and inspect live player vitals.", "inputSchema": { "type": "object", "properties": { "script": { "type": "string" }, "command": { "type": "string" } } } },
+                            { "name": "gym_step_and_observe", "description": "Zero-bloat RL / neural network observation and action step on the live server.", "inputSchema": { "type": "object", "properties": { "script": { "type": "string" }, "command": { "type": "string" } } } },
+                            { "name": "code_execute", "description": "Execute multi-line SawbyteScript directly on the live server session.", "inputSchema": { "type": "object", "properties": { "script": { "type": "string" }, "command": { "type": "string" } } } }
                         ]
                     }
                 })
                 .to_string(),
                 "tools/call" => {
                     let tool = val["params"]["name"].as_str().unwrap_or("code_execute");
-                    let script = val["params"]["script"]
+                    let valid_tools = [
+                        "task_and_navigation",
+                        "player_interact",
+                        "player_input",
+                        "gui_screen_automation",
+                        "world_inspector_and_profiler",
+                        "gym_step_and_observe",
+                        "code_execute",
+                    ];
+                    if !valid_tools.contains(&tool) {
+                        return serde_json::json!({
+                            "jsonrpc": "2.0",
+                            "id": id,
+                            "result": {
+                                "isError": true,
+                                "content": [{ "type": "text", "text": format!("unknown tool '{tool}'") }]
+                            }
+                        })
+                        .to_string();
+                    }
+                    let script = val["params"]["arguments"]["script"]
                         .as_str()
+                        .or_else(|| val["params"]["arguments"]["command"].as_str())
+                        .or_else(|| val["params"]["script"].as_str())
                         .or_else(|| val["params"]["command"].as_str())
-                        .unwrap_or(match tool {
-                            "world_inspector_and_profiler" => "inspect.map\ninspect.status",
-                            "gym_step_and_observe" => "gym.observe",
-                            "gui_screen_automation" => "gui.inspect",
-                            _ => "inspect.status",
-                        });
+                        .unwrap_or_default();
+                    if script.trim().is_empty() {
+                        return serde_json::json!({
+                            "jsonrpc": "2.0",
+                            "id": id,
+                            "result": {
+                                "isError": true,
+                                "content": [{ "type": "text", "text": format!("missing required 'script' or 'command' argument for tool '{tool}'") }]
+                            }
+                        })
+                        .to_string();
+                    }
                     match self.execute_live_script(script) {
                         Ok(lines) => serde_json::json!({
                             "jsonrpc": "2.0",
@@ -1669,7 +1697,12 @@ fn run_live(args: &[String]) -> Result<()> {
                         }
                         if let Ok(resp) = reply_rx.recv_timeout(Duration::from_secs(5)) {
                             if !resp.is_empty() {
-                                let _ = writeln!(writer, "{resp}");
+                                let framed = if line.trim_start().starts_with('{') {
+                                    resp.replace('\n', " ")
+                                } else {
+                                    resp.replace('\r', "").replace('\n', "\\n")
+                                };
+                                let _ = writeln!(writer, "{framed}");
                                 let _ = writer.flush();
                             }
                         }

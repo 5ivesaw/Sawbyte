@@ -120,7 +120,10 @@ class SawbyteLiveTcpClient:
         reply = self._reader.readline()
         if not reply:
             raise RuntimeError("sawbyte-play live TCP socket closed")
-        return reply.rstrip("\r\n")
+        text = reply.rstrip("\r\n").replace("\\n", "\n")
+        if text.startswith("error: "):
+            raise RuntimeError(text)
+        return text
 
 
 class SawbyteMcpClient:

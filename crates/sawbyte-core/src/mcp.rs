@@ -64,10 +64,13 @@ impl LiveSessionTransport for TcpLiveSessionTransport {
             writeln!(stream, "{trimmed}").map_err(|e| e.to_string())?;
             stream.flush().map_err(|e| e.to_string())?;
             let mut reply = String::new();
-            reader
+            let n = reader
                 .read_line(&mut reply)
                 .map_err(|e| format!("live session read error: {e}"))?;
-            let clean = reply.trim_end().to_owned();
+            if n == 0 {
+                return Err("live session closed connection (EOF)".into());
+            }
+            let clean = reply.trim_end().replace("\\n", "\n");
             if clean.starts_with("error: ") {
                 return Err(clean);
             }
@@ -375,15 +378,15 @@ impl SawbyteControlBridge {
             "ping" => format!("{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{}}}}"),
             "tools/list" => format!(
                 "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"tools\":[\
-                {{\"name\":\"launcher_control\",\"description\":\"Persistently create, list, backup, rollback, configure, and launch real `sawbyte-play live` headless client instances on disk.\"}},\
-                {{\"name\":\"client_menu_and_settings\",\"description\":\"Navigate client menus and persist `options.txt` settings and keybinds on disk.\"}},\
-                {{\"name\":\"player_input\",\"description\":\"Forward live humanised/smooth/direct movement, camera, and hotbar inputs to a running `sawbyte-play live` session.\"}},\
-                {{\"name\":\"player_interact\",\"description\":\"Forward live raycast block mining, block placement, and entity combat to `sawbyte-play live`.\"}},\
-                {{\"name\":\"gui_screen_automation\",\"description\":\"Inspect live server containers, click slots/items/widgets with state_id verification, and run live multi-screen workflows on `sawbyte-play live`.\"}},\
-                {{\"name\":\"task_and_navigation\",\"description\":\"Run live 3D A* pathfinding across the server's loaded chunk sections on `sawbyte-play live`.\"}},\
-                {{\"name\":\"world_inspector_and_profiler\",\"description\":\"Render the live 2D ASCII map from server chunks and query live player status.\"}},\
-                {{\"name\":\"gym_step_and_observe\",\"description\":\"Step and observe the live `sawbyte-play` session for PyTorch/Gymnasium reinforcement learning.\"}},\
-                {{\"name\":\"code_execute\",\"description\":\"Execute multi-line SawbyteScript across the persistent disk launcher and live `sawbyte-play` session.\"}}\
+                {{\"name\":\"launcher_control\",\"description\":\"Persistently create, list, backup, rollback, configure, and launch real `sawbyte-play live` headless client instances on disk.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}},\
+                {{\"name\":\"client_menu_and_settings\",\"description\":\"Navigate client menus and persist `options.txt` settings and keybinds on disk.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}},\
+                {{\"name\":\"player_input\",\"description\":\"Forward live humanised/smooth/direct movement, camera, and hotbar inputs to a running `sawbyte-play live` session.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}},\
+                {{\"name\":\"player_interact\",\"description\":\"Forward live raycast block mining, block placement, and entity combat to `sawbyte-play live`.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}},\
+                {{\"name\":\"gui_screen_automation\",\"description\":\"Inspect live server containers, click slots/items/widgets with state_id verification, and run live multi-screen workflows on `sawbyte-play live`.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}},\
+                {{\"name\":\"task_and_navigation\",\"description\":\"Run live 3D A* pathfinding across the server's loaded chunk sections on `sawbyte-play live`.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}},\
+                {{\"name\":\"world_inspector_and_profiler\",\"description\":\"Render the live 2D ASCII map from server chunks and query live player status.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}},\
+                {{\"name\":\"gym_step_and_observe\",\"description\":\"Step and observe the live `sawbyte-play` session for PyTorch/Gymnasium reinforcement learning.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}},\
+                {{\"name\":\"code_execute\",\"description\":\"Execute multi-line SawbyteScript across the persistent disk launcher and live `sawbyte-play` session.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}\
                 ]}}}}"
             ),
             "resources/list" => format!(
@@ -395,51 +398,71 @@ impl SawbyteControlBridge {
             ),
             "resources/read" => {
                 let uri = extract_json_string(req, "uri").unwrap_or_default();
-                let text = match uri.as_str() {
-                    "sawbyte://client/options" => self.client.export_options_txt(),
-                    "sawbyte://world/map2d" => self
-                        .forward_live_command("inspect.map")
-                        .unwrap_or_else(|e| e),
-                    _ => format!(
+                let text_opt = match uri.as_str() {
+                    "sawbyte://client/options" => Some(self.client.export_options_txt()),
+                    "sawbyte://world/map2d" => Some(
+                        self.forward_live_command("inspect.map")
+                            .unwrap_or_else(|e| e),
+                    ),
+                    "sawbyte://launcher/state" => Some(format!(
                         "root_dir={} instances={} accounts={} active_instance={} live_endpoint={}",
                         self.launcher.root_dir.display(),
                         self.launcher.instances.len(),
                         self.launcher.accounts.len(),
                         self.active_instance,
                         self.resolve_live_endpoint()
-                    ),
+                    )),
+                    _ => None,
                 };
-                format!(
-                    "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"contents\":[{{\"uri\":\"{}\",\"mimeType\":\"text/plain\",\"text\":\"{}\"}}]}}}}",
-                    escape_json(&uri),
-                    escape_json(&text)
-                )
+                match text_opt {
+                    Some(text) => format!(
+                        "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"contents\":[{{\"uri\":\"{}\",\"mimeType\":\"text/plain\",\"text\":\"{}\"}}]}}}}",
+                        escape_json(&uri),
+                        escape_json(&text)
+                    ),
+                    None => format!(
+                        "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"error\":{{\"code\":-32602,\"message\":\"Unknown resource URI: {}\"}}}}",
+                        escape_json(&uri)
+                    ),
+                }
             }
             "prompts/list" => format!(
                 "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"prompts\":[\
                 {{\"name\":\"automate_anything\",\"description\":\"System prompt for live headless Rust Minecraft automation and RL control via Sawbyte MCP.\"}}\
                 ]}}}}"
             ),
+            "prompts/get" => format!(
+                "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"description\":\"Sawbyte automation prompt\",\"messages\":[{{\"role\":\"user\",\"content\":{{\"type\":\"text\",\"text\":\"Use tools/list and tools/call to inspect state and schedule validated actions.\"}}}}]}}}}"
+            ),
             "tools/call" => {
                 let tool_name = extract_json_string(req, "name").unwrap_or_default();
+                let is_valid_tool = matches!(
+                    tool_name.as_str(),
+                    "launcher_control"
+                        | "client_menu_and_settings"
+                        | "player_input"
+                        | "player_interact"
+                        | "gui_screen_automation"
+                        | "task_and_navigation"
+                        | "world_inspector_and_profiler"
+                        | "gym_step_and_observe"
+                        | "code_execute"
+                );
+                if !is_valid_tool {
+                    return format!(
+                        "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"isError\":true,\"content\":[{{\"type\":\"text\",\"text\":\"unknown tool '{}'\"}}]}}}}",
+                        escape_json(&tool_name)
+                    );
+                }
                 let script_or_cmd = extract_json_string(req, "script")
                     .or_else(|| extract_json_string(req, "command"))
                     .unwrap_or_default();
-                let default_cmd = match tool_name.as_str() {
-                    "launcher_control" => "launcher.backup default-native",
-                    "client_menu_and_settings" => "menu.goto options\nsettings.set fov 90",
-                    "world_inspector_and_profiler" => "inspect.map\ninspect.status",
-                    "gym_step_and_observe" => "gym.observe",
-                    "gui_screen_automation" => "gui.inspect",
-                    "task_and_navigation" => "task.navigate 3 -60 2",
-                    _ => "inspect.status",
-                };
-                let cmd = if script_or_cmd.is_empty() {
-                    default_cmd
-                } else {
-                    &script_or_cmd
-                };
-                match self.execute_script(cmd) {
+                if script_or_cmd.trim().is_empty() {
+                    return format!(
+                        "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"isError\":true,\"content\":[{{\"type\":\"text\",\"text\":\"missing required 'script' or 'command' argument for tool '{tool_name}'\"}}]}}}}"
+                    );
+                }
+                match self.execute_script(&script_or_cmd) {
                     Ok(lines) => format!(
                         "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"isError\":false,\"content\":[{{\"type\":\"text\",\"text\":\"{}\"}}]}}}}",
                         escape_json(&lines.join("\n"))
@@ -467,8 +490,8 @@ pub fn benchmark_transports(iterations: usize) -> (u128, usize, u128, usize) {
     for _ in 0..runs {
         let mut buf = Vec::with_capacity(3000);
         crate::tape::write(&mut buf, &frames).unwrap();
-        let decoded = crate::tape::read(&mut buf.as_slice()).unwrap();
-        bin_bytes = buf.len() + decoded.len();
+        let _decoded = crate::tape::read(&mut buf.as_slice()).unwrap();
+        bin_bytes = buf.len();
     }
     let bin_ns = t0.elapsed().as_nanos();
 
@@ -512,17 +535,21 @@ fn escape_json(input: &str) -> String {
 }
 
 fn extract_json_id(json: &str) -> Option<String> {
-    let needle = "\"id\":";
-    let start = json.find(needle)? + needle.len();
-    let rest = json[start..].trim_start();
-    let end = rest.find([',', '}'])?;
+    let needle = "\"id\"";
+    let key_pos = json.find(needle)?;
+    let after_key = &json[key_pos + needle.len()..];
+    let colon_pos = after_key.find(':')?;
+    let rest = after_key[colon_pos + 1..].trim_start();
+    let end = rest.find([',', '}', ' '])?;
     Some(rest[..end].trim().to_owned())
 }
 
 fn extract_json_string(json: &str, key: &str) -> Option<String> {
-    let needle = format!("\"{key}\":");
-    let start = json.find(&needle)? + needle.len();
-    let rest = json[start..].trim_start();
+    let needle = format!("\"{key}\"");
+    let key_pos = json.find(&needle)?;
+    let after_key = &json[key_pos + needle.len()..];
+    let colon_pos = after_key.find(':')?;
+    let rest = after_key[colon_pos + 1..].trim_start();
     if !rest.starts_with('"') {
         return None;
     }
@@ -537,6 +564,18 @@ fn extract_json_string(json: &str, key: &str) -> Option<String> {
                         'n' => out.push('\n'),
                         'r' => out.push('\r'),
                         't' => out.push('\t'),
+                        'u' => {
+                            let hex: String = chars.by_ref().take(4).collect();
+                            if hex.len() == 4 {
+                                if let Ok(code) = u32::from_str_radix(&hex, 16) {
+                                    if let Some(ch) = char::from_u32(code) {
+                                        out.push(ch);
+                                        continue;
+                                    }
+                                }
+                            }
+                            out.push_str(&format!("\\u{hex}"));
+                        }
                         other => out.push(other),
                     }
                 }
