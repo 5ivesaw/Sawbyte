@@ -90,6 +90,32 @@ impl Player {
         }
     }
 
+    pub fn eye_position(&self) -> [f64; 3] {
+        [self.pos[0], self.pos[1] + self.eye_height(), self.pos[2]]
+    }
+
+    pub fn compute_break_ticks(
+        &self,
+        block_hardness: f32,
+        tool_speed: f32,
+        can_harvest: bool,
+        in_water: bool,
+    ) -> Option<u32> {
+        let progress = crate::raycast::break_progress_per_tick(
+            self,
+            block_hardness,
+            can_harvest,
+            tool_speed,
+            0,
+            in_water,
+        );
+        if progress <= 0.0 {
+            return None;
+        }
+        let ticks = (1.0 / progress).ceil() as u32;
+        Some(ticks.clamp(1, 72000))
+    }
+
     pub fn box_height(&self) -> f64 {
         if self.gliding || self.is_swimming_pose() {
             0.6
