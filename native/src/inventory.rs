@@ -869,8 +869,10 @@ mod tests {
 
     #[test]
     fn container_set_content_preserves_authoritative_server_state_id_and_cursor() {
-        let mut table = PlayerStateTable::default();
-        table.open_screen = Some(ScreenState::container(2, 1, 1, "Chest"));
+        let mut table = PlayerStateTable {
+            open_screen: Some(ScreenState::container(2, 1, 1, "Chest")),
+            ..Default::default()
+        };
         let mut packets = PacketTable::default();
         packets.item_names.insert(1, "minecraft:stone".into());
         packets.item_names.insert(4, "minecraft:cobblestone".into());
