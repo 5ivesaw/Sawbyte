@@ -170,8 +170,8 @@ impl Player {
             self.velocity[0] += (side * cos - fwd * sin) as f64;
             self.velocity[2] += (fwd * cos + side * sin) as f64;
             let moved = Self::sweep_box(self.pos, self.box_height(), self.velocity, world)?;
-            for axis in 0..3 {
-                self.pos[axis] += moved[axis];
+            for (axis, delta) in moved.iter().enumerate() {
+                self.pos[axis] += *delta;
             }
             self.velocity[0] *= 0.91;
             self.velocity[1] *= 0.6;
@@ -334,8 +334,8 @@ impl Player {
             }
         }
 
-        for axis in 0..3 {
-            self.pos[axis] += moved[axis];
+        for (axis, delta) in moved.iter().enumerate() {
+            self.pos[axis] += *delta;
         }
         self.ground = wanted[1] < 0. && moved[1] != wanted[1];
         self.horizontal_collision = moved[0] != wanted[0] || moved[2] != wanted[2];
