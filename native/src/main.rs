@@ -596,7 +596,11 @@ impl Session {
         self.player.step(frame, &self.world)?;
 
         // Drain and transmit all discrete sub-tick events scheduled for this tick
-        for ev in self.event_queue.drain_tick(self.live_tick) {
+        for ev in self
+            .event_queue
+            .drain_tick(self.live_tick)
+            .unwrap_or_default()
+        {
             if let SubTickEvent::SelectHotbar { slot } = &ev {
                 self.state_table.selected_hotbar = *slot;
             }

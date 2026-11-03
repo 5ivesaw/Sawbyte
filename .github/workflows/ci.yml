@@ -54,8 +54,10 @@ jobs:
           ./target/release/sawbyte demo
           ./target/release/sawbyte demo --direct
           ./target/release/sawbyte launcher list
-          ./target/release/sawbyte workflow shop-demo
-          ./target/release/sawbyte inspect
+          ./target/release/sawbyte launcher create smoke-bot sawbyte-26.3 native
+          ./target/release/sawbyte launcher set-setting smoke-bot fov 90
+          ./target/release/sawbyte launcher backup smoke-bot
+          ./target/release/sawbyte launcher rollback smoke-bot 1
           ./target/release/sawbyte benchmark
           SAWBYTE_BIN=./target/release/sawbyte python sdks/python/tests/test_sdk.py
       - name: Package preview
