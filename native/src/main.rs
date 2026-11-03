@@ -48,7 +48,7 @@ fn connect(server: &str, account: &auth::Account) -> Result<(wire::Rx, wire::Tx)
         let packet = rx.packet()?;
         let mut r = Reader(&packet);
         match r.var()? {
-            0 => return Err(bad("server rejected login")),
+            0 => return Err(bad(&format!("server rejected login: {:?}", r.string()?))),
             1 => account.encryption(&mut r, &mut rx, &mut tx)?,
             2 => {
                 tx.packet(3, &[])?;
@@ -102,7 +102,7 @@ impl Session {
                     out.push(0);
                     tx.packet(1, &out)?;
                 }
-                2 => return Err(bad("server disconnected during configuration")),
+                2 => return Err(bad(&format!("configuration disconnect: {}", r.nbt()?))),
                 3 => {
                     tx.packet(3, &[])?;
                     self.playing = true;
@@ -160,7 +160,7 @@ impl Session {
                 out.push(0);
                 tx.packet(21, &out)?;
             }
-            32 => return Err(bad("server disconnected the player")),
+            32 => return Err(bad(&format!("play disconnect: {}", r.nbt()?))),
             38 => {
                 let z = r.i32()?;
                 let x = r.i32()?;
@@ -195,6 +195,9 @@ impl Session {
             62 => tx.packet(45, r.take(4)?)?,
             69 => return Err(bad("player died; stopping")),
             73 => {
+                if self.index > 0 {
+                    return Err(bad("server corrected position during replay; comparison aborted"));
+                }
                 let teleport = r.var()?;
                 let pos = [r.f64()?, r.f64()?, r.f64()?];
                 let velocity = [r.f64()?, r.f64()?, r.f64()?];
@@ -233,6 +236,8 @@ impl Session {
                     };
                 let mut ack = Vec::new();
                 var(teleport, &mut ack);
+                // Since 26.3 the acknowledgement includes the accepted position and view.
+                ack.extend(self.position_payload());
                 tx.packet(0, &ack)?;
                 self.positioned = true;
                 self.send_position(tx)?;
@@ -259,13 +264,17 @@ impl Session {
         }
         Ok(())
     }
-    fn send_position(&self, tx: &mut wire::Tx) -> Result<()> {
-        let mut out = Vec::with_capacity(33);
+    fn position_payload(&self) -> Vec<u8> {
+        let mut out = Vec::with_capacity(32);
         for value in self.player.pos {
             out.extend(value.to_be_bytes());
         }
         out.extend(self.player.yaw.to_be_bytes());
         out.extend(self.player.pitch.to_be_bytes());
+        out
+    }
+    fn send_position(&self, tx: &mut wire::Tx) -> Result<()> {
+        let mut out = self.position_payload();
         out.push(u8::from(self.player.ground) | (u8::from(self.player.horizontal_collision) << 1));
         tx.packet(31, &out)
     }

@@ -170,7 +170,14 @@ mod tests {
         let mut world = World::new(&json!({"minecraft":"26.3","air":[0],"solid":[1]})).unwrap();
         world.min_y = -16;
         world.height = 16;
-        world.chunks.insert((-1, -1), vec![Palette { bits: 0, ids: vec![1], words: vec![] }]);
+        world.chunks.insert(
+            (-1, -1),
+            vec![Palette {
+                bits: 0,
+                ids: vec![1],
+                words: vec![],
+            }],
+        );
         assert!(world.solid(-1, -1, -1).unwrap());
         assert!(world.solid(0, -1, 0).is_err());
         assert!(world.solid(-1, -17, -1).is_err());

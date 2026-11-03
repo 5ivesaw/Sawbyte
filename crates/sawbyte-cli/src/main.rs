@@ -15,6 +15,7 @@ Usage:
   sawbyte status <IP:PORT> [virtual-host] [protocol-number]
 
 demo         Print a scheduled input trace; does not connect to Minecraft.
+tape         Write the movement fixture shared by native/reference player tests.
 status       Query a Java server's status and ping, with a 5-second deadline.
              IPv6 example: [::1]:25565. DNS/SRV resolution is not yet implemented.
              Protocol defaults to -1 (discovery). Some servers require an explicit value.
@@ -83,9 +84,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         Some("capabilities") if args.len() == 1 => println!(
             "Implemented: typed input scheduler, bounded camera policy, cancellation, status/ping.\n\
              Trace backend: buttons and relative camera input (diagnostic only).\n\
-             Native gameplay backend: NOT IMPLEMENTED.\n\
-             Full Minecraft client bridge: NOT IMPLEMENTED.\n\
-             GUI, inventory, text, authentication, scripting transports: NOT IMPLEMENTED.\n\
+             Native gameplay: separate experimental sawbyte-play executable.\n\
+             Full Minecraft client bridge: experimental Fabric 26.3 replay integration.\n\
+             GUI, inventory, text and scripting transports: NOT IMPLEMENTED.\n\
+             Online authentication: experimental native code; not validated live.\n\
              No Minecraft version is certified for gameplay yet."
         ),
         Some("demo") if args.len() == 1 => demo(Humanised::default())?,
