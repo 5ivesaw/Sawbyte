@@ -58,6 +58,6 @@ All compilation, tests, formatting and packaging run in GitHub Actions. The loca
 | `sawbyte-protocol` | Bounded wire primitives and status connection |
 | `sawbyte` | CLI and trace demonstration |
 
-The protocol implementation is independently written, with no Minecraft jars, assets or decompiled code included. See [design decisions](docs/DECISIONS.md) for limits and next steps.
+The protocol implementation is independently written, with no Minecraft jars, assets or decompiled code included. See [design decisions](docs/DECISIONS.md) and the [technical handoff reference](docs/HANDOFF.md) for limits, architecture details and next steps.
 
 Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
