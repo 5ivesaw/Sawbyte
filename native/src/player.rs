@@ -128,7 +128,11 @@ impl Player {
         {
             self.sprinting = true;
         }
-        if !b.pressed(Button::Forward) || self.sneaking || self.horizontal_collision || self.food_level <= 6 {
+        if !b.pressed(Button::Forward)
+            || self.sneaking
+            || self.horizontal_collision
+            || self.food_level <= 6
+        {
             self.sprinting = false;
         }
 
@@ -157,8 +161,12 @@ impl Player {
                 self.velocity[1] -= 0.15;
             }
             let (sin, cos) = Self::yaw_trig(self.yaw);
-            let fwd = (i32::from(b.pressed(Button::Forward)) - i32::from(b.pressed(Button::Back))) as f32 * 0.05;
-            let side = (i32::from(b.pressed(Button::Left)) - i32::from(b.pressed(Button::Right))) as f32 * 0.05;
+            let fwd = (i32::from(b.pressed(Button::Forward)) - i32::from(b.pressed(Button::Back)))
+                as f32
+                * 0.05;
+            let side = (i32::from(b.pressed(Button::Left)) - i32::from(b.pressed(Button::Right)))
+                as f32
+                * 0.05;
             self.velocity[0] += (side * cos - fwd * sin) as f64;
             self.velocity[2] += (fwd * cos + side * sin) as f64;
             let moved = Self::sweep_box(self.pos, self.box_height(), self.velocity, world)?;
@@ -283,7 +291,11 @@ impl Player {
             }
             while wanted[2] != 0.0
                 && !Self::has_collision_below(
-                    [self.pos[0] + wanted[0], self.pos[1], self.pos[2] + wanted[2]],
+                    [
+                        self.pos[0] + wanted[0],
+                        self.pos[1],
+                        self.pos[2] + wanted[2],
+                    ],
                     h,
                     world,
                 )?
@@ -306,17 +318,9 @@ impl Player {
         // Step-up check (`step_height` = 0.6) when on ground and blocked horizontally
         let horiz_blocked = moved[0] != wanted[0] || moved[2] != wanted[2];
         if self.ground && horiz_blocked && self.attributes.step_height > 0.0 {
-            let up_move = Self::sweep_box(
-                self.pos,
-                h,
-                [0.0, self.attributes.step_height, 0.0],
-                world,
-            )?;
-            let lifted_pos = [
-                self.pos[0],
-                self.pos[1] + up_move[1],
-                self.pos[2],
-            ];
+            let up_move =
+                Self::sweep_box(self.pos, h, [0.0, self.attributes.step_height, 0.0], world)?;
+            let lifted_pos = [self.pos[0], self.pos[1] + up_move[1], self.pos[2]];
             let step_xz = Self::sweep_box(lifted_pos, h, [wanted[0], 0.0, wanted[2]], world)?;
             let stepped_pos = [
                 lifted_pos[0] + step_xz[0],
@@ -324,11 +328,7 @@ impl Player {
                 lifted_pos[2] + step_xz[2],
             ];
             let down_move = Self::sweep_box(stepped_pos, h, [0.0, -up_move[1], 0.0], world)?;
-            let candidate = [
-                step_xz[0],
-                up_move[1] + down_move[1],
-                step_xz[2],
-            ];
+            let candidate = [step_xz[0], up_move[1] + down_move[1], step_xz[2]];
             if candidate[0].hypot(candidate[2]) > moved[0].hypot(moved[2]) {
                 moved = candidate;
             }
@@ -430,10 +430,9 @@ mod tests {
 
     #[test]
     fn sprint_sneak_edge_clamp_and_slab_step_work() {
-        let mut world = World::new(
-            &json!({"minecraft":"26.3","air":[0],"solid":[1],"bottom_slabs":[2]}),
-        )
-        .unwrap();
+        let mut world =
+            World::new(&json!({"minecraft":"26.3","air":[0],"solid":[1],"bottom_slabs":[2]}))
+                .unwrap();
         world.min_y = -64;
         world.height = 32;
         for cx in -1..=1 {

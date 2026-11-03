@@ -251,7 +251,9 @@ impl SubTickEvent {
                             | ClickMode::PickupAll
                     )
             }
-            Self::RenameItem { name } => name.chars().count() <= 50 && !name.chars().any(char::is_control),
+            Self::RenameItem { name } => {
+                name.chars().count() <= 50 && !name.chars().any(char::is_control)
+            }
             Self::UpdateSign { lines, .. } => lines
                 .iter()
                 .all(|l| l.chars().count() <= 384 && !l.chars().any(char::is_control)),
@@ -371,10 +373,7 @@ mod tests {
         let mut q = DiscreteEventQueue::new(16);
         let seq = q.next_sequence();
         q.submit(&[
-            (
-                0,
-                SubTickEvent::SelectHotbar { slot: 2 },
-            ),
+            (0, SubTickEvent::SelectHotbar { slot: 2 }),
             (
                 0,
                 SubTickEvent::MouseClick {

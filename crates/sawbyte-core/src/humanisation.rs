@@ -141,7 +141,11 @@ impl GuiTimingPolicy {
     }
 
     /// Computes how many ticks to wait before clicking `target_coords` from the current virtual cursor.
-    pub fn move_to_and_delay_ticks(&mut self, target_coords: (f64, f64), screen_just_changed: bool) -> u32 {
+    pub fn move_to_and_delay_ticks(
+        &mut self,
+        target_coords: (f64, f64),
+        screen_just_changed: bool,
+    ) -> u32 {
         if !self.enabled {
             self.cursor_pos = target_coords;
             return 0;
@@ -236,8 +240,22 @@ mod tests {
     fn smooth_camera_converges_deterministically_and_satisfies_scheduler() {
         let mut s1 = Scheduler::new(DummyBackend, SmoothHumanisedCamera::seeded(42), 16);
         let mut s2 = Scheduler::new(DummyBackend, SmoothHumanisedCamera::seeded(42), 16);
-        s1.submit(&[(0, Action::Look { yaw: 120.0, pitch: -35.0 })]).unwrap();
-        s2.submit(&[(0, Action::Look { yaw: 120.0, pitch: -35.0 })]).unwrap();
+        s1.submit(&[(
+            0,
+            Action::Look {
+                yaw: 120.0,
+                pitch: -35.0,
+            },
+        )])
+        .unwrap();
+        s2.submit(&[(
+            0,
+            Action::Look {
+                yaw: 120.0,
+                pitch: -35.0,
+            },
+        )])
+        .unwrap();
 
         let mut total_yaw = 0.0;
         let mut total_pitch = 0.0;
@@ -256,8 +274,10 @@ mod tests {
     fn gui_and_typing_policies_respect_direct_off_switch() {
         let mut human_gui = GuiTimingPolicy::humanised(7);
         let mut direct_gui = GuiTimingPolicy::direct();
-        let d_human = human_gui.move_to_and_delay_ticks(GuiTimingPolicy::slot_coordinates(26), true);
-        let d_direct = direct_gui.move_to_and_delay_ticks(GuiTimingPolicy::slot_coordinates(26), true);
+        let d_human =
+            human_gui.move_to_and_delay_ticks(GuiTimingPolicy::slot_coordinates(26), true);
+        let d_direct =
+            direct_gui.move_to_and_delay_ticks(GuiTimingPolicy::slot_coordinates(26), true);
         assert!(d_human >= 3);
         assert_eq!(d_direct, 0);
 

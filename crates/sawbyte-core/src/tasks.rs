@@ -105,9 +105,11 @@ pub fn find_path(
             let nx = cx + dx;
             let nz = cz + dz;
             // Flat step, step/jump up (+1 with overhead clearance), or step down (-1)
-            for (ny, step_cost, needs_jump_headroom) in
-                [(cy, 10u32, false), (cy + 1, 16u32, true), (cy - 1, 12u32, false)]
-            {
+            for (ny, step_cost, needs_jump_headroom) in [
+                (cy, 10u32, false),
+                (cy + 1, 16u32, true),
+                (cy - 1, 12u32, false),
+            ] {
                 if needs_jump_headroom && world.is_solid(cx, cy + 2, cz) {
                     continue;
                 }
@@ -319,9 +321,7 @@ impl ComposableTask {
             } => vec![
                 (
                     start_tick,
-                    SubTickEvent::SelectHotbar {
-                        slot: *hotbar_slot,
-                    },
+                    SubTickEvent::SelectHotbar { slot: *hotbar_slot },
                 ),
                 (
                     start_tick,
@@ -396,9 +396,7 @@ impl ComposableTask {
                 ),
                 (
                     start_tick + 3,
-                    SubTickEvent::SelectTrade {
-                        slot: *trade_index,
-                    },
+                    SubTickEvent::SelectTrade { slot: *trade_index },
                 ),
             ],
             Self::EquipHotbar { slot } => {
@@ -501,7 +499,7 @@ pub enum WorkflowStep {
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum WorkflowOutcome {
     Completed {
         emitted_events: Vec<SubTickEvent>,
@@ -535,10 +533,7 @@ pub trait WorkflowHost {
 }
 
 /// Executes a sequence of `WorkflowStep`s with strict revision checking and `RetryPolicy::Never` safety.
-pub fn execute_workflow(
-    steps: &[WorkflowStep],
-    host: &mut impl WorkflowHost,
-) -> WorkflowOutcome {
+pub fn execute_workflow(steps: &[WorkflowStep], host: &mut impl WorkflowHost) -> WorkflowOutcome {
     let mut emitted = Vec::new();
     let mut vars: HashMap<String, String> = HashMap::new();
     let mut last_irrevocable_click = false;

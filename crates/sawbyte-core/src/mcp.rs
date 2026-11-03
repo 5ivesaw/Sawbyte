@@ -2,8 +2,8 @@
 //! out-of-game client menu/settings controller, programmable script VM (`SawbyteScript`),
 //! 2D top-down world inspector, workflow recorder, resource profiler, and multi-agent swarm harness.
 
-use crate::events::{BlockFace, ClickMode, ClientMenuTarget, Hand, MouseButton, SubTickEvent};
-use crate::screen::{ItemSelector, ItemStack, ScreenState};
+use crate::events::{BlockFace, ClientMenuTarget, MouseButton, SubTickEvent};
+use crate::screen::{ItemStack, ScreenState};
 use crate::tasks::{
     compile_navigation_inputs, execute_workflow, find_path, shop_purchase_workflow, ComposableTask,
     VoxelQuery, WorkflowHost, WorkflowOutcome,
@@ -93,8 +93,16 @@ impl Default for LauncherState {
             accounts: BTreeMap::new(),
             version_profiles: built_in_version_profiles(),
         };
-        let _ = launcher.create_instance("default-native", "sawbyte-26.3", RuntimeMode::NativeStandalone);
-        let _ = launcher.create_instance("default-bridge", "sawbyte-26.3", RuntimeMode::FullClientBridge);
+        let _ = launcher.create_instance(
+            "default-native",
+            "sawbyte-26.3",
+            RuntimeMode::NativeStandalone,
+        );
+        let _ = launcher.create_instance(
+            "default-bridge",
+            "sawbyte-26.3",
+            RuntimeMode::FullClientBridge,
+        );
         let _ = launcher.add_offline_account("SawbyteNative", "00000000000030008000000000000001");
         launcher
     }
@@ -132,7 +140,10 @@ impl LauncherState {
                 version_profile: version_profile.to_owned(),
                 mode,
                 mods: if mode == RuntimeMode::FullClientBridge {
-                    vec!["fabric-api-0.165.0+26.3.jar".into(), "sawbyte-bridge-0.2.0.jar".into()]
+                    vec![
+                        "fabric-api-0.165.0+26.3.jar".into(),
+                        "sawbyte-bridge-0.2.0.jar".into(),
+                    ]
                 } else {
                     Vec::new()
                 },
@@ -196,7 +207,11 @@ impl LauncherState {
     }
 
     /// Prevents launching two competing sessions with the same account simultaneously.
-    pub fn acquire_account_session(&mut self, username: &str, instance: &str) -> Result<(), String> {
+    pub fn acquire_account_session(
+        &mut self,
+        username: &str,
+        instance: &str,
+    ) -> Result<(), String> {
         let acc = self
             .accounts
             .get_mut(username)
@@ -268,7 +283,10 @@ impl ClientController {
     pub fn navigate(&mut self, target: ClientMenuTarget) -> SubTickEvent {
         if let ClientMenuTarget::DirectConnect { ref address } = target {
             self.connected_server = Some(address.clone());
-        } else if matches!(target, ClientMenuTarget::DisconnectToTitle | ClientMenuTarget::MainMenu) {
+        } else if matches!(
+            target,
+            ClientMenuTarget::DisconnectToTitle | ClientMenuTarget::MainMenu
+        ) {
             self.connected_server = None;
         }
         self.active_menu = target.clone();
@@ -550,7 +568,9 @@ impl WorkflowHost for SawbyteEngineHost {
         self.active_screen.as_mut()
     }
     fn poll_screen_until_title(&mut self, title: &str, _timeout_ms: u64) -> bool {
-        self.active_screen.as_ref().is_some_and(|s| s.title == title)
+        self.active_screen
+            .as_ref()
+            .is_some_and(|s| s.title == title)
     }
     fn poll_event(&mut self, event_name: &str, _timeout_ms: u64) -> bool {
         event_name == "purchase_confirmed"
@@ -613,10 +633,9 @@ impl SawbyteEngineHost {
         let scheduler_queue_bytes = self.swarm.len() * 64 * std::mem::size_of::<(u64, Action)>();
         let world_chunk_cache_bytes =
             self.world.solid_blocks.len() * std::mem::size_of::<[i32; 3]>();
-        let screen_container_bytes = self
-            .active_screen
-            .as_ref()
-            .map_or(0, |s| s.slots.len() * std::mem::size_of::<Option<ItemStack>>());
+        let screen_container_bytes = self.active_screen.as_ref().map_or(0, |s| {
+            s.slots.len() * std::mem::size_of::<Option<ItemStack>>()
+        });
         let entity_table_bytes = self.world.entities.len() * 64;
         let launcher_profiles_bytes = self.launcher.instances.len() * 256;
         let total_tracked_bytes = scheduler_queue_bytes
@@ -747,7 +766,10 @@ impl SawbyteEngineHost {
                     for (_, ev) in events {
                         self.client.recorded_events.push(ev);
                     }
-                    outputs.push(format!("mined block at ({}, {}, {})", pos[0], pos[1], pos[2]));
+                    outputs.push(format!(
+                        "mined block at ({}, {}, {})",
+                        pos[0], pos[1], pos[2]
+                    ));
                 }
                 ["interact.place", x, y, z, slot] => {
                     let pos = [
@@ -783,13 +805,9 @@ impl SawbyteEngineHost {
                         self.world.player_pos[2].floor() as i32,
                     ];
                     let path = find_path(&self.world, start, goal, 1024)?;
-                    let _inputs =
-                        compile_navigation_inputs(0, self.world.player_yaw, &path, true);
-                    self.world.player_pos = [
-                        goal[0] as f64 + 0.5,
-                        goal[1] as f64,
-                        goal[2] as f64 + 0.5,
-                    ];
+                    let _inputs = compile_navigation_inputs(0, self.world.player_yaw, &path, true);
+                    self.world.player_pos =
+                        [goal[0] as f64 + 0.5, goal[1] as f64, goal[2] as f64 + 0.5];
                     outputs.push(format!(
                         "navigated {} waypoints to ({}, {}, {})",
                         path.len(),
@@ -821,7 +839,9 @@ impl SawbyteEngineHost {
                 }
                 ["chat.send", rest @ ..] if !rest.is_empty() => {
                     let msg = rest.join(" ");
-                    let ev = SubTickEvent::SendChat { message: msg.clone() };
+                    let ev = SubTickEvent::SendChat {
+                        message: msg.clone(),
+                    };
                     if !ev.valid() {
                         return Err("invalid chat message".into());
                     }
@@ -830,7 +850,9 @@ impl SawbyteEngineHost {
                 }
                 ["cmd.run", rest @ ..] if !rest.is_empty() => {
                     let cmd = rest.join(" ");
-                    let ev = SubTickEvent::SendCommand { command: cmd.clone() };
+                    let ev = SubTickEvent::SendCommand {
+                        command: cmd.clone(),
+                    };
                     if !ev.valid() {
                         return Err("invalid command".into());
                     }
@@ -1149,9 +1171,11 @@ mod tests {
         let mut host = SawbyteEngineHost::default();
 
         // 1. Test MCP initialize and tools/list
-        let init_resp = host.handle_mcp_json_rpc(r#"{"jsonrpc":"2.0","id":1,"method":"initialize"}"#);
+        let init_resp =
+            host.handle_mcp_json_rpc(r#"{"jsonrpc":"2.0","id":1,"method":"initialize"}"#);
         assert!(init_resp.contains("sawbyte-mcp"));
-        let tools_resp = host.handle_mcp_json_rpc(r#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#);
+        let tools_resp =
+            host.handle_mcp_json_rpc(r#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#);
         assert!(tools_resp.contains("launcher_control"));
         assert!(tools_resp.contains("client_menu_and_settings"));
         assert!(tools_resp.contains("code_execute"));
@@ -1162,7 +1186,10 @@ mod tests {
         assert!(call_resp.contains("\"isError\":false"));
         assert!(call_resp.contains("shop workflow completed"));
         assert!(call_resp.contains("spawned and stepped 16 agents"));
-        assert_eq!(host.client.settings.get("fov").map(String::as_str), Some("95"));
+        assert_eq!(
+            host.client.settings.get("fov").map(String::as_str),
+            Some("95")
+        );
         assert_eq!(host.swarm.len(), 16);
 
         // 3. Verify account lock prevents duplicate concurrent sessions

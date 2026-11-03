@@ -249,7 +249,10 @@ impl ScreenState {
         }
         let pick = occurrence.unwrap_or(0);
         matches.get(pick).copied().ok_or_else(|| {
-            SelectionError::NotFound(format!("occurrence {pick} out of bounds ({})", matches.len()))
+            SelectionError::NotFound(format!(
+                "occurrence {pick} out of bounds ({})",
+                matches.len()
+            ))
         })
     }
 
@@ -282,11 +285,8 @@ impl ScreenState {
 
     /// Compiles a button click on a named widget element (or slot-backed menu button).
     pub fn click_widget(&self, label: &str) -> Result<SubTickEvent, SelectionError> {
-        let matched: Vec<&WidgetElement> = self
-            .widgets
-            .iter()
-            .filter(|w| w.label == label)
-            .collect();
+        let matched: Vec<&WidgetElement> =
+            self.widgets.iter().filter(|w| w.label == label).collect();
         if matched.is_empty() {
             // Also check if a container item acts as a button with that display name
             let sel = ItemSelector {
@@ -324,7 +324,11 @@ impl ScreenState {
     }
 
     /// Updates a named text field (e.g. Anvil rename, Shop amount prompt, or Sign/Dialog input) and emits the appropriate event.
-    pub fn fill_field(&mut self, field_name: &str, text: &str) -> Result<SubTickEvent, SelectionError> {
+    pub fn fill_field(
+        &mut self,
+        field_name: &str,
+        text: &str,
+    ) -> Result<SubTickEvent, SelectionError> {
         let field = self
             .fields
             .iter_mut()
