@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::wire::{Reader, Result, bad};
+use sawbyte_core::tasks::VoxelQuery;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Debug)]
@@ -385,6 +386,111 @@ impl World {
             (x.floor() as i32).div_euclid(16),
             (z.floor() as i32).div_euclid(16),
         ))
+    }
+
+    /// Writes a compact, tensor-ready local voxel observation patch around `center` into `out`
+    /// (`0 = air`, `1 = solid`, `2 = water`, `3 = climbable`, `4 = lava/hazard`) without intermediate heap allocations.
+    pub fn extract_voxel_patch(
+        &self,
+        center: [i32; 3],
+        rx: i32,
+        ry: i32,
+        rz: i32,
+        out: &mut Vec<u8>,
+    ) {
+        out.clear();
+        let cap = ((2 * rx + 1) * (2 * ry + 1) * (2 * rz + 1)).max(0) as usize;
+        if out.capacity() < cap {
+            out.reserve(cap - out.capacity());
+        }
+        for dy in -ry..=ry {
+            for dz in -rz..=rz {
+                for dx in -rx..=rx {
+                    let x = center[0] + dx;
+                    let y = center[1] + dy;
+                    let z = center[2] + dz;
+                    let code = if self.is_lava(x, y, z) {
+                        4
+                    } else if self.is_climbable(x, y, z) {
+                        3
+                    } else if self.is_water(x, y, z) {
+                        2
+                    } else if self.solid(x, y, z).unwrap_or(true) {
+                        1
+                    } else {
+                        0
+                    };
+                    out.push(code);
+                }
+            }
+        }
+    }
+
+    /// Renders a top-down 2D ASCII view directly from the live server's loaded chunk sections.
+    pub fn render_live_ascii_map(
+        &self,
+        player_pos: [f64; 3],
+        yaw: f32,
+        hotbar: u8,
+        entities: &[(i32, [f64; 3])],
+        radius: i32,
+    ) -> String {
+        let px = player_pos[0].floor() as i32;
+        let py = player_pos[1].floor() as i32;
+        let pz = player_pos[2].floor() as i32;
+        let mut out = format!(
+            "Sawbyte Live 2D World Inspector (pos=({:.2}, {:.2}, {:.2}), yaw={:.1}°, hotbar={}, loaded_chunks={})\n",
+            player_pos[0],
+            player_pos[1],
+            player_pos[2],
+            yaw,
+            hotbar,
+            self.chunks.len()
+        );
+        for z in (pz - radius)..=(pz + radius) {
+            for x in (px - radius)..=(px + radius) {
+                if x == px && z == pz {
+                    out.push('@');
+                } else if entities
+                    .iter()
+                    .any(|(_, pos)| pos[0].floor() as i32 == x && pos[2].floor() as i32 == z)
+                {
+                    out.push('E');
+                } else if !self.loaded(x as f64, z as f64) {
+                    out.push('?');
+                } else if <Self as VoxelQuery>::is_solid(self, x, py + 1, z) {
+                    out.push('#');
+                } else if <Self as VoxelQuery>::is_solid(self, x, py, z) {
+                    out.push('^');
+                } else if self.is_water(x, py, z) {
+                    out.push('~');
+                } else if <Self as VoxelQuery>::is_solid(self, x, py - 1, z) {
+                    out.push('.');
+                } else {
+                    out.push(' ');
+                }
+            }
+            out.push('\n');
+        }
+        out.push_str(
+            "Legend: @=Player  E=Entity  #=Wall(2+)  ^=Step(1)  ~=Water  .=Ground  ?=Unloaded\n",
+        );
+        out
+    }
+}
+
+impl VoxelQuery for World {
+    fn is_solid(&self, x: i32, y: i32, z: i32) -> bool {
+        // Treat unloaded chunks or unknown block states as impassable so pathfinding never steps into void.
+        self.solid(x, y, z).unwrap_or(true)
+    }
+
+    fn is_climbable(&self, x: i32, y: i32, z: i32) -> bool {
+        World::is_climbable(self, x, y, z)
+    }
+
+    fn is_water(&self, x: i32, y: i32, z: i32) -> bool {
+        World::is_water(self, x, y, z)
     }
 }
 

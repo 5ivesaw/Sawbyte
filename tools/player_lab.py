@@ -82,6 +82,15 @@ class Server:
                         profile["top_slabs"].append(state["id"])
                     else:
                         profile["solid"].append(state["id"])
+        packets_file = self.directory / "generated/reports/packets.json"
+        if packets_file.exists():
+            packets_data = json.loads(packets_file.read_text())
+            profile["packets"] = packets_data.get("play", {})
+        registries_file = self.directory / "generated/reports/registries.json"
+        if registries_file.exists():
+            reg_data = json.loads(registries_file.read_text())
+            item_entries = reg_data.get("minecraft:item", {}).get("entries", {})
+            profile["items"] = {k: v["protocol_id"] for k, v in item_entries.items() if "protocol_id" in v}
         (REPORTS / "block-profile.json").write_text(json.dumps(profile, indent=2) + "\n")
         (self.directory / "eula.txt").write_text("eula=true\n")
         (self.directory / "server.properties").write_text("\n".join([
@@ -245,6 +254,18 @@ def main():
         reference = rows(REPORTS / "reference.csv")
         verify_motion(reference)
         compare(native, reference)
+        live_metrics = run_process([
+            str(args.native.resolve()), "live", "127.0.0.1:25565", "--offline",
+            "SawbyteLive", str(REPORTS / "block-profile.json"),
+            "--script", "task.navigate 3 -60 2\nplayer.select_hotbar 2\ngui.run_shop_workflow minecraft:stone 64\ninspect.map\ngym.observe",
+            "--ticks", "60",
+            "--trace", str(REPORTS / "live.csv"),
+        ], "native-live", 90)
+        (REPORTS / "native-live-resources.json").write_text(json.dumps(live_metrics, indent=2) + "\n")
+        with (REPORTS / "live.csv").open() as f:
+            live_rows = list(csv.DictReader(f))
+        if len(live_rows) != 60 or distance(live_rows[0], live_rows[-1]) < 1.5:
+            raise AssertionError("live interactive 3D A* navigation on 26.3 server did not move player")
     finally:
         server.close()
 

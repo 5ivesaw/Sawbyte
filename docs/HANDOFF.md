@@ -11,10 +11,13 @@ Read this document first if you are picking up development in a new session. It 
 1. **NO LOCAL BUILDS OR TOOLCHAINS**:
    - **Never** run `cargo`, `rustc`, `gradle`, Java compilers, local Minecraft servers, or resource-heavy test harnesses on the user's machine unless explicitly requested.
    - Local work is strictly editing/reviewing files and using lightweight `git` / `gh` commands to push and inspect GitHub Actions runs (`https://github.com/5ivesaw/Sawbyte`).
-2. **Main Product vs. Reference Bridge**:
-   - Sawbyte's primary product is the **standalone native Rust client** (`native/`, `sawbyte-play`) and shared automation framework (`crates/*`).
-   - It is **not** a renamed Azalea client (zero Azalea dependencies) and **not** primarily a Minecraft mod.
-   - The normal-client Fabric 26.3 mod (`bridge/`) is the optional full-client integration and parity-reference backend.
+2. **Main Product vs. Reference Bridge — Zero Fake Simulators**:
+   - Sawbyte's primary product is the **standalone headless Rust client** (`native/`, `sawbyte-play`) and shared automation/RL foundation (`crates/*`).
+   - **Never build fake in-memory "practice worlds" (`SimulatedWorldGrid`)** that pretend to run pathfinding, GUI workflows, or MCP tools in RAM. Every smart feature—3D A* pathfinding (`find_path` on `native::world::World`), eye raycasting, block mining/placement, container/GUI clicking, multi-screen workflows, MCP/JSON-RPC control, and PyTorch/Gymnasium RL stepping (`gym.observe` / `gym.step`)—operates directly on the live `sawbyte-play` network session (`sawbyte-play live`).
+   - Sawbyte is the **foundational base engine for scale, automation, and neural network training**: keep memory footprint (`~4.3 MiB` RSS), allocations (`extract_voxel_patch` pre-allocated buffer), and per-tick CPU time razor-thin.
+   - All smart features are **modular and un-hardcoded** via the `LiveModule` trait (`native/src/main.rs`) and `LiveSessionTransport` trait (`crates/sawbyte-core/src/mcp.rs`).
+   - All launcher state, instances, `options.txt`, token-free snapshots, and account locks are **persisted to disk** (`~/.sawbyte/launcher.db` and `~/.sawbyte/instances/<name>/`) via `PersistentLauncher` (`crates/sawbyte-core/src/launcher.rs`), and `sawbyte launcher launch` spawns real `sawbyte-play live` OS processes.
+   - The normal-client Fabric 26.3 mod (`bridge/`) is strictly an optional parity-reference and graphical integration backend.
 3. **Complete Programmability (Governing Requirement)**:
    - Every player operation in a supported version/backend must have an automation route with composable low-level primitives beneath helpers.
    - User examples (e.g., complex multi-screen shop GUIs, JSON workflows) illustrate expressiveness requirements; they never limit scope or force a poor technical format choice.

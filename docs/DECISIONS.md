@@ -28,8 +28,8 @@ Stage 0's exit criterion—reproducing and comparing a real 26.3 join/move/turn/
 
 Key protocol fact verified during Stage 0: in Minecraft 26.3 (protocol `777`), `ServerboundAcceptTeleportationPacket` (`packet 0`) carries `(id, x, y, z, yRot, xRot)` and sets `ServerGamePacketListenerImpl.receivedPositionThisTick = true`, which is only cleared by `ServerboundClientTickEndPacket` (`packet 13`). Sending an extra `ServerboundMovePlayerPosRot` (`packet 31`) in the same tick immediately triggers `multiplayer.disconnect.invalid_player_movement`.
 
-Next engineering priorities (Stage 1):
+Next engineering priorities (Stage 1 & Live Engine Architecture):
 
-1. Broaden native world-state and motion mechanics beyond ordinary full cubes (block updates in loaded chunks, sprinting, sneaking, stepping, stairs/slabs, fluids, attributes/effects, and target raycasting).
-2. Validate live online authentication and session lifecycle recovery/reconnection.
-3. Extend the ordered-event contract for discrete sub-tick actions, inventory transactions, and screens across both native and full-client backends, then benchmark candidate external API transports.
+1. **Zero In-Memory Practice Worlds**: All navigation (3D A* on `native::world::World`), raycasting, container/GUI state machines, and RL observation/step primitives (`gym.observe` / `gym.step`) run directly on the live `sawbyte-play live` network session (`native/src/main.rs`) rather than an in-memory simulator.
+2. **Modular Trait Boundaries**: Keep smart features replaceable via `LiveModule` (`native/src/main.rs`), `VoxelQuery` (`crates/sawbyte-core/src/tasks.rs`), `InputPolicy` (`crates/sawbyte-core/src/lib.rs`), and `LiveSessionTransport` (`crates/sawbyte-core/src/mcp.rs`).
+3. **Persistent Disk Launcher**: Persist all launcher state, `options.txt`, snapshots, and account locks on disk (`~/.sawbyte/launcher.db`) via `PersistentLauncher` (`crates/sawbyte-core/src/launcher.rs`) and spawn real `sawbyte-play live` child processes on launch.

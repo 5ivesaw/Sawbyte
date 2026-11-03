@@ -1,11 +1,14 @@
-use sawbyte_core::mcp::{benchmark_transports, RuntimeMode, SawbyteEngineHost};
+use sawbyte_core::mcp::{
+    PersistentLauncher, RuntimeMode, SawbyteControlBridge, benchmark_transports,
+};
 use sawbyte_core::{
     Action, Backend, Button, Capability, Direct, Humanised, InputFrame, InputPolicy, Scheduler,
 };
 use std::io::{self, BufRead, Write};
+use std::path::Path;
 use std::time::Duration;
 
-const HELP: &str = "Sawbyte 0.2.0 — standalone native automation platform & MCP server
+const HELP: &str = "Sawbyte 0.2.0 — standalone headless Rust client launcher & MCP control bridge
 
 Usage:
   sawbyte --help
@@ -14,22 +17,24 @@ Usage:
   sawbyte demo [--direct]
   sawbyte tape <output.sbif> [--direct]
   sawbyte status <IP:PORT> [virtual-host] [protocol-number]
-  sawbyte mcp [--stdio]
-  sawbyte launcher [list | create <name> <profile> <native|bridge> | backup <name> | rollback <name> <id>]
-  sawbyte workflow [shop-demo]
-  sawbyte inspect
-  sawbyte eval <script>
+  sawbyte mcp [--stdio] [--connect <ip:port>]
+  sawbyte launcher list
+  sawbyte launcher create <name> <profile> <native|bridge>
+  sawbyte launcher set-setting <name> <key> <value>
+  sawbyte launcher backup <name>
+  sawbyte launcher rollback <name> <id>
+  sawbyte launcher add-account <username> <uuid-hex> [token-file]
+  sawbyte launcher launch <instance> <server:port> <account> <blocks.json> [--wait]
+  sawbyte eval <script> [--connect <ip:port>]
   sawbyte benchmark
 
 demo         Print a scheduled input trace; does not connect to Minecraft.
 tape         Write the movement fixture shared by native/reference player tests.
 status       Query a Java server's status and ping, with a 5-second deadline.
-mcp          Start the Model Context Protocol (MCP) JSON-RPC 2.0 server over stdio.
-launcher     Manage isolated instances, accounts, backups, rollbacks, and version profiles.
-workflow     Execute and verify multi-screen GUI workflows (including shop purchase).
-inspect      Render the 2D world inspector, screen selector generator, and resource profiler.
-eval         Execute a programmable SawbyteScript controlling launcher, menus, settings, or gameplay.
-benchmark    Run local IPC/RPC transport and 1..64 multi-agent swarm scaling benchmarks.";
+mcp          Start the Model Context Protocol (MCP) JSON-RPC 2.0 bridge over stdio.
+launcher     Persistently manage instances, options.txt, snapshots, accounts, and launch sawbyte-play.
+eval         Execute SawbyteScript against persistent launcher state and a live sawbyte-play session.
+benchmark    Run local IPC/RPC framing throughput benchmarks.";
 
 struct TraceBackend;
 
@@ -84,8 +89,11 @@ fn demo(policy: impl InputPolicy) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn run_mcp_stdio() -> Result<(), Box<dyn std::error::Error>> {
-    let mut host = SawbyteEngineHost::default();
+fn run_mcp_stdio(connect_endpoint: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    let mut bridge = SawbyteControlBridge::default();
+    if let Some(ep) = connect_endpoint {
+        bridge.live_endpoint = Some(ep);
+    }
     let stdin = io::stdin();
     let mut stdout = io::stdout().lock();
     for line in stdin.lock().lines() {
@@ -93,7 +101,7 @@ fn run_mcp_stdio() -> Result<(), Box<dyn std::error::Error>> {
         if line.trim().is_empty() {
             continue;
         }
-        let response = host.handle_mcp_json_rpc(&line);
+        let response = bridge.handle_mcp_json_rpc(&line);
         if !response.is_empty() {
             writeln!(stdout, "{response}")?;
             stdout.flush()?;
@@ -109,13 +117,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         Some("--version") if args.len() == 1 => println!("sawbyte {}", env!("CARGO_PKG_VERSION")),
         Some("capabilities") if args.len() == 1 => println!(
             "Implemented: typed input scheduler, smooth & bounded humanised camera policies, discrete sub-tick events, status/ping.\n\
-             Native gameplay: separate experimental sawbyte-play executable (26.3 controlled parity verified: max error 3.41e-7 blocks, 4,380 KiB peak RSS).\n\
-             Full Minecraft client bridge: Fabric 26.3 replay & interactive menu/screen/handoff integration.\n\
-             GUI, inventory & workflows: revision-checked container state machine, selector engine, and shop workflow runner.\n\
-             Navigation & tasks: budgeted 3D A* pathfinder and composable task compilers (navigate, mine, place, craft, smelt, trade, equip, eat).\n\
-             Agent & MCP control: built-in JSON-RPC 2.0 MCP server (`sawbyte mcp`), launcher manager, client menu/settings controller, and SawbyteScript VM.\n\
-             Online authentication: experimental native code; not validated live.\n\
-             No Minecraft version is certified for gameplay yet beyond verified controlled fixtures."
+             Headless Rust client (`sawbyte-play`): live 20 TPS session (`sawbyte-play live`) + deterministic `.sbif` parity replay (`max_position_error_blocks = 3.41e-7`, `4,380 KiB` peak RSS on 26.3).\n\
+             Live smart modules on `sawbyte-play`: 3D A* pathfinding on live server chunks, eye raycasting, block mining/placement, container/GUI state machine & multi-screen shop workflow, and zero-bloat Gymnasium RL observation/step (`gym.observe` / `gym.step`).\n\
+             Persistent disk launcher (`sawbyte launcher`): stores instances, `options.txt`, token-free snapshots, and account locks in `~/.sawbyte/` and spawns real `sawbyte-play live` processes.\n\
+             Full Minecraft client bridge: optional secondary Fabric 26.3 parity-reference mod."
         ),
         Some("demo") if args.len() == 1 => demo(Humanised::default())?,
         Some("demo") if args.len() == 2 && args[1] == "--direct" => demo(Direct)?,
@@ -140,20 +145,43 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .map(|s| s.parse::<i32>())
                 .transpose()?
                 .unwrap_or(-1);
-            let result =
-                sawbyte_protocol::query_status(endpoint, &hostname, protocol, Duration::from_secs(5))?;
-            println!("Server document (escaped): {}", result.document.escape_debug());
+            let result = sawbyte_protocol::query_status(
+                endpoint,
+                &hostname,
+                protocol,
+                Duration::from_secs(5),
+            )?;
+            println!(
+                "Server document (escaped): {}",
+                result.document.escape_debug()
+            );
             println!("Ping: {:.2} ms", result.round_trip.as_secs_f64() * 1000.0);
         }
-        Some("mcp") if args.len() == 1 || (args.len() == 2 && args[1] == "--stdio") => {
-            run_mcp_stdio()?;
+        Some("mcp") => {
+            let mut endpoint = None;
+            let mut i = 1;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--stdio" => i += 1,
+                    "--connect" if i + 1 < args.len() => {
+                        endpoint = Some(args[i + 1].clone());
+                        i += 2;
+                    }
+                    _ => return Err("invalid mcp arguments; use sawbyte --help".into()),
+                }
+            }
+            run_mcp_stdio(endpoint)?;
         }
         Some("launcher") => {
-            let mut host = SawbyteEngineHost::default();
+            let mut launcher = PersistentLauncher::load_or_init()?;
             match args.get(1).map(String::as_str) {
                 None | Some("list") if args.len() <= 2 => {
-                    println!("Sawbyte Launcher — Version Profiles:");
-                    for vp in &host.launcher.version_profiles {
+                    println!(
+                        "Sawbyte Persistent Launcher (root={}):",
+                        launcher.root_dir.display()
+                    );
+                    println!("Version Profiles:");
+                    for vp in &launcher.version_profiles {
                         println!(
                             "  - {} (Minecraft {}, protocol {}, native_parity_verified={})",
                             vp.profile_id,
@@ -163,64 +191,96 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                         );
                     }
                     println!("Instances:");
-                    for inst in host.launcher.instances.values() {
+                    for inst in launcher.instances.values() {
                         println!(
-                            "  - {} [profile={}, mode={:?}, mods={}]",
+                            "  - {} [profile={}, mode={}, server={}, rpc_bind={}, snapshots={}, last_pid={:?}]",
                             inst.name,
                             inst.version_profile,
-                            inst.mode,
-                            inst.mods.len()
+                            inst.mode.as_str(),
+                            inst.server,
+                            inst.rpc_bind,
+                            inst.snapshot_count,
+                            inst.last_pid
+                        );
+                    }
+                    println!("Accounts:");
+                    for acc in launcher.accounts.values() {
+                        println!(
+                            "  - {} [uuid={}, locked_by={:?}]",
+                            acc.username, acc.uuid_hex, acc.locked_by_instance
                         );
                     }
                 }
                 Some("create") if args.len() == 5 => {
-                    let mode = match args[4].as_str() {
-                        "native" => RuntimeMode::NativeStandalone,
-                        "bridge" => RuntimeMode::FullClientBridge,
-                        _ => return Err("mode must be native or bridge".into()),
-                    };
-                    host.launcher.create_instance(&args[2], &args[3], mode)?;
-                    println!("Created instance '{}' ({})", args[2], args[3]);
+                    let mode = RuntimeMode::parse(&args[4])?;
+                    launcher.create_instance(&args[2], &args[3], mode)?;
+                    println!(
+                        "Created and persisted instance '{}' ({}) in {}",
+                        args[2],
+                        args[3],
+                        launcher.instance_dir(&args[2]).display()
+                    );
+                }
+                Some("set-setting") if args.len() == 5 => {
+                    launcher.set_setting(&args[2], &args[3], &args[4])?;
+                    println!(
+                        "Persisted setting {}={} for instance '{}'",
+                        args[3], args[4], args[2]
+                    );
                 }
                 Some("backup") if args.len() == 3 => {
-                    let id = host.launcher.backup_instance(&args[2])?;
-                    println!("Created token-free snapshot #{id} for '{}'", args[2]);
+                    let id = launcher.backup_instance(&args[2])?;
+                    println!(
+                        "Saved token-free disk snapshot #{id} for '{}' in {}",
+                        args[2],
+                        launcher.instance_dir(&args[2]).join("snapshots").display()
+                    );
                 }
                 Some("rollback") if args.len() == 4 => {
                     let id: u32 = args[3].parse()?;
-                    host.launcher.rollback_instance(&args[2], id)?;
-                    println!("Rolled back '{}' to snapshot #{id}", args[2]);
+                    launcher.rollback_instance(&args[2], id)?;
+                    println!("Rolled back '{}' on disk to snapshot #{id}", args[2]);
+                }
+                Some("add-account") if (4..=5).contains(&args.len()) => {
+                    let tok = args.get(4).map(String::as_str);
+                    launcher.add_account(&args[2], &args[3], tok)?;
+                    println!("Persisted account '{}' on disk", args[2]);
+                }
+                Some("launch") if args.len() >= 6 => {
+                    let instance = &args[2];
+                    let server = &args[3];
+                    let account = &args[4];
+                    let blocks_json = Path::new(&args[5]);
+                    let wait = args.get(6).is_some_and(|a| a == "--wait");
+                    let (mut child, log_path) = launcher.spawn_live_process(
+                        instance,
+                        Some(server),
+                        account,
+                        blocks_json,
+                        &[],
+                    )?;
+                    let pid = child.id();
+                    println!(
+                        "Spawned live sawbyte-play process (pid={pid}) for instance '{instance}' -> {server} (log={})",
+                        log_path.display()
+                    );
+                    if wait {
+                        let status = child.wait()?;
+                        launcher.release_account_lock(account)?;
+                        if !status.success() {
+                            return Err(format!("sawbyte-play exited with {status}").into());
+                        }
+                    }
                 }
                 _ => return Err("invalid launcher subcommand; use sawbyte --help".into()),
             }
         }
-        Some("workflow") if args.len() <= 2 => {
-            let sub = args.get(1).map(String::as_str).unwrap_or("shop-demo");
-            if sub != "shop-demo" {
-                return Err("unknown workflow subcommand; try `sawbyte workflow shop-demo`".into());
+        Some("eval") if args.len() == 2 || (args.len() == 4 && args[2] == "--connect") => {
+            let mut bridge = SawbyteControlBridge::default();
+            if args.len() == 4 {
+                bridge.live_endpoint = Some(args[3].clone());
             }
-            let mut host = SawbyteEngineHost::default();
-            let lines = host.execute_script("gui.run_shop_workflow minecraft:stone 64")?;
-            for l in lines {
-                println!("{l}");
-            }
-        }
-        Some("inspect") if args.len() == 1 => {
-            let host = SawbyteEngineHost::default();
-            print!("{}", host.world.render_ascii_map(5));
-            println!("Active Screen Selectors:");
-            for sel in host.generate_screen_selectors() {
-                println!("  {sel}");
-            }
-            let prof = host.profile_resources();
-            println!(
-                "Resource Profile: tracked_bytes={}, verified_26_3_native_peak_rss={} KiB",
-                prof.total_tracked_bytes, prof.verified_native_26_3_peak_rss_kib
-            );
-        }
-        Some("eval") if args.len() == 2 => {
-            let mut host = SawbyteEngineHost::default();
-            for line in host.execute_script(&args[1])? {
+            for line in bridge.execute_script(&args[1])? {
                 println!("{line}");
             }
         }
@@ -228,17 +288,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             let (bin_ns, bin_bytes, json_ns, json_bytes) = benchmark_transports(50);
             println!(
                 "Transport Benchmark (50x 160-tick batches):\n  Binary SBIF: {} ns total ({} bytes/batch)\n  JSON-RPC:    {} ns total ({} bytes/batch)",
-                bin_ns,
-                bin_bytes,
-                json_ns,
-                json_bytes
+                bin_ns, bin_bytes, json_ns, json_bytes
             );
-            let mut host = SawbyteEngineHost::default();
-            for count in [1, 4, 16, 64] {
-                for line in host.execute_script(&format!("swarm.spawn {count} shared"))? {
-                    println!("  Swarm({count}): {line}");
-                }
-            }
         }
         _ => return Err("invalid arguments; use sawbyte --help".into()),
     }

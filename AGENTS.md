@@ -1,14 +1,21 @@
-# Development workflow
+# Development workflow & core product vision
 
-- Product priorities: aggressive runtime stripping and optimisation; comprehensive programmable player and GUI operations; configurable humanisation enabled by default; and a shared automation framework for both the native headless runtime and normal graphical Minecraft.
-- Treat user examples as illustrations, not an exhaustive feature list. Proactively research related tools and design missing capabilities. Use PLAN.md for the architecture and revised priorities, and read docs/HANDOFF.md first for the complete technical state, verified 26.3 protocol/physics invariants, and remaining roadmap. Keep docs/HANDOFF.md updated as milestones are completed.
-- Complete programmability is a governing requirement: every player operation in a supported version/backend must have an automation route, with composable low-level primitives beneath helpers. Maintain comprehensive coverage and track missing support as unfinished work. Do not narrow scope to user examples or claim universal support before it is verified.
-- User-suggested technologies (including JSON) are examples, not mandates. Select languages, transports and formats using engineering evidence across efficiency, memory, latency, usability, compatibility and maintenance. Document assumptions and unmeasured claims.
-- The main product is Sawbyte's standalone native client, not a renamed Azalea client or a Minecraft mod. Keep the normal-client mod as an optional integration/reference backend. Use assets/sawbyte.png (the user's supplied icon) for app and repository branding. Work through substantive end-to-end milestones instead of stopping after small scaffolding changes.
-- Measure performance and behavioural parity; do not represent aspirational memory reductions, universal compatibility, or superiority over competitors as established facts.
-
-- Keep this project structured as a complete, GitHub-ready repository, including source, configuration, documentation, and GitHub Actions workflows.
-- Build, compile, package, and produce launchers, clients, binaries, installers, and release artifacts through GitHub Actions. Do not run these jobs on the user's machine unless the user explicitly requests an exception.
-- Put automated test and validation jobs in GitHub Actions too. Local work should focus on editing and reviewing repository files; do not install build toolchains or run resource-heavy jobs locally.
-- Make workflow outputs available as downloadable Actions artifacts, or GitHub Release assets when a release is requested.
-- Apply this approach to future components and related projects as well; it is the user's general development preference.
+- **Core Architecture — A True Headless Rust Client (Not a Simulator or Fabric Mod)**:
+  - Sawbyte is a completely stripped-down, zero-graphics headless Minecraft client written in Rust (`native/`, `sawbyte-play`)—like Mineflayer, but engineered to beat Mineflayer through 1:1 Vanilla Java network protocol parity, tick-accurate physics, and genuine humanised client-tick input simulation rather than sloppy physics or raw packet manipulation.
+  - **Never build fake in-memory "practice worlds" or simulated hosts** that pretend to run pathfinding, workflows, or MCP tools in RAM. Every feature (3D A* pathfinding, raycasting, mining/building, container/GUI clicking, multi-screen workflows, and real-time MCP/SDK control) must operate directly on the live `sawbyte-play` network session and its real server-synchronized world/inventory/screen state.
+  - Keep the normal-client Fabric mod (`bridge/`) strictly as a secondary, optional parity-reference and graphical integration backend. The standalone Rust headless client (`sawbyte-play`) must be 100% self-sufficient.
+- **Foundational Base Engine for Scale, Automation & Neural Network Training**:
+  - Sawbyte (`sawbyte-core` + `sawbyte-play`) is the universal foundational base engine for all future Minecraft automation, multi-bot swarms, and reinforcement learning / neural network training (`SawbyteEnv` / PyTorch / Gymnasium).
+  - **Zero Bloat, Maximum Throughput, Minimum Power**: Strip out every unnecessary allocation, rendering remnant, or busy-wait loop that does not directly serve physics parity, world/inventory state tracking, and network/agent I/O. Keep memory footprint (`~4.3 MiB` RSS) and per-tick CPU time razor-thin so dozens of live headless instances or high-speed RL training loops run effortlessly on low-power hardware.
+- **Modular, Editable "Smart" Features (Zero Hardcoding)**:
+  - Ship smart features (3D A* navigation, raycast interactions, revision-safe GUI selectors, multi-screen workflows, humanisation policies) built-in out of the box, but keep them 100% modular and un-hardcoded via traits and composable primitives so developers can strip out, edit, or replace any module via Rust or the Python/TypeScript SDKs, while non-coders and AI agents can control everything cleanly through the MCP / JSON-RPC API.
+- **Real, Persistent Disk Launcher**:
+  - `sawbyte launcher` must persist all instances, version profiles, snapshots, settings, and account locks on disk (`~/.sawbyte/launcher.json` or `$SAWBYTE_HOME/launcher.json` plus per-instance directories), and `sawbyte launcher launch <instance>` must actually spawn and supervise the live `sawbyte-play` process.
+- **Complete Programmability & Humanisation by Default**:
+  - Every player operation must have an automation route built on composable low-level tick inputs and ordered sub-tick discrete events. Humanisation is enabled by default with an explicit `Direct` off switch and custom policy hooks.
+- **Branding & Honesty**:
+  - Use `assets/sawbyte.png` for app and repository branding. Measure performance and behavioural parity; never represent unmeasured claims or in-memory stubs as live gameplay.
+- **GitHub Actions–Only Builds & Tests**:
+  - Keep this project structured as a complete, GitHub-ready repository.
+  - Build, compile, test, validate, package, and produce binaries and release artifacts exclusively through GitHub Actions (`https://github.com/5ivesaw/Sawbyte`). Never install toolchains or run compilers/heavy jobs locally on the user's machine unless explicitly requested.
+  - Read `docs/HANDOFF.md` first for the complete technical state, verified 26.3 protocol/physics invariants, and architecture reference.

@@ -6,6 +6,7 @@ use std::fmt;
 
 pub mod events;
 pub mod humanisation;
+pub mod launcher;
 pub mod mcp;
 pub mod screen;
 pub mod tape;

@@ -1,241 +1,83 @@
-//! Model Context Protocol (MCP) JSON-RPC 2.0 server, standalone launcher state machine,
-//! out-of-game client menu/settings controller, programmable script VM (`SawbyteScript`),
-//! 2D top-down world inspector, workflow recorder, resource profiler, and multi-agent swarm harness.
+//! Model Context Protocol (MCP) JSON-RPC 2.0 control bridge, persistent launcher controller,
+//! out-of-game client menu/settings controller, and TCP live-session forwarding to `sawbyte-play live`.
+//!
+//! No fake in-memory world simulators live here: launcher operations persist to disk via
+//! `PersistentLauncher`, and live gameplay/navigation/raycast/GUI/RL commands forward over TCP
+//! to a running `sawbyte-play live --listen <ip:port>` process (or a pluggable `LiveSessionTransport`).
 
-use crate::events::{BlockFace, ClientMenuTarget, MouseButton, SubTickEvent};
-use crate::screen::{ItemStack, ScreenState};
-use crate::tasks::{
-    compile_navigation_inputs, execute_workflow, find_path, shop_purchase_workflow, ComposableTask,
-    VoxelQuery, WorkflowHost, WorkflowOutcome,
+use crate::events::{ClientMenuTarget, MouseButton, SubTickEvent};
+pub use crate::launcher::{
+    AccountRecord, InstanceRecord, PersistentLauncher, RuntimeMode, VersionAdapterProfile,
+    built_in_version_profiles,
 };
-use crate::{Action, Backend, Button, Capability, Direct, Humanised, InputFrame, Scheduler};
-use std::collections::{BTreeMap, HashMap, HashSet};
-use std::time::Instant;
+use crate::Direct;
+use std::collections::BTreeMap;
+use std::io::{BufRead, BufReader, Write};
+use std::net::{TcpStream, ToSocketAddrs};
+use std::path::PathBuf;
+use std::time::{Duration, Instant};
 
-/// Supported Minecraft version adapter profiles in the launcher.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct VersionAdapterProfile {
-    pub profile_id: String,
-    pub minecraft_version: String,
-    pub protocol_version: i32,
-    pub native_verified_parity: bool,
-    pub bridge_supported: bool,
-    pub notes: String,
+/// Pluggable transport trait for forwarding live player/world/GUI/RL commands to `sawbyte-play live`.
+pub trait LiveSessionTransport: Send {
+    fn send_live_command(&mut self, command: &str) -> Result<String, String>;
 }
 
-pub fn built_in_version_profiles() -> Vec<VersionAdapterProfile> {
-    vec![
-        VersionAdapterProfile {
-            profile_id: "sawbyte-26.3".into(),
-            minecraft_version: "26.3".into(),
-            protocol_version: 777,
-            native_verified_parity: true,
-            bridge_supported: true,
-            notes: "Primary target; 160-tick flat-world parity verified in CI (max error 3.41e-7 blocks).".into(),
-        },
-        VersionAdapterProfile {
-            profile_id: "sawbyte-26.2".into(),
-            minecraft_version: "26.2".into(),
-            protocol_version: 776,
-            native_verified_parity: false,
-            bridge_supported: true,
-            notes: "Second version profile proving the version-adapter isolation boundary.".into(),
-        },
-    ]
+/// Default TCP transport that connects to a running `sawbyte-play live --listen <ip:port>` session.
+pub struct TcpLiveSessionTransport {
+    pub endpoint: String,
+    pub timeout: Duration,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RuntimeMode {
-    NativeStandalone,
-    FullClientBridge,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct InstanceSnapshot {
-    pub snapshot_id: u32,
-    pub version_profile: String,
-    pub mods: Vec<String>,
-    pub settings: BTreeMap<String, String>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct InstanceProfile {
-    pub name: String,
-    pub version_profile: String,
-    pub mode: RuntimeMode,
-    pub mods: Vec<String>,
-    pub server_favorites: Vec<String>,
-    pub auto_connect: Option<String>,
-    pub settings: BTreeMap<String, String>,
-    pub snapshots: Vec<InstanceSnapshot>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AccountEntry {
-    pub username: String,
-    pub uuid_hex: String,
-    pub online: bool,
-    pub token_redacted: bool,
-    pub active_instance_lock: Option<String>,
-}
-
-/// Complete standalone Launcher state machine controllable via CLI, SDKs, or MCP.
-pub struct LauncherState {
-    pub instances: BTreeMap<String, InstanceProfile>,
-    pub accounts: BTreeMap<String, AccountEntry>,
-    pub version_profiles: Vec<VersionAdapterProfile>,
-}
-
-impl Default for LauncherState {
-    fn default() -> Self {
-        let mut launcher = Self {
-            instances: BTreeMap::new(),
-            accounts: BTreeMap::new(),
-            version_profiles: built_in_version_profiles(),
-        };
-        let _ = launcher.create_instance(
-            "default-native",
-            "sawbyte-26.3",
-            RuntimeMode::NativeStandalone,
-        );
-        let _ = launcher.create_instance(
-            "default-bridge",
-            "sawbyte-26.3",
-            RuntimeMode::FullClientBridge,
-        );
-        let _ = launcher.add_offline_account("SawbyteNative", "00000000000030008000000000000001");
-        launcher
-    }
-}
-
-impl LauncherState {
-    pub fn create_instance(
-        &mut self,
-        name: &str,
-        version_profile: &str,
-        mode: RuntimeMode,
-    ) -> Result<(), String> {
-        if name.is_empty() || name.len() > 48 {
-            return Err("invalid instance name".into());
+impl TcpLiveSessionTransport {
+    pub fn new(endpoint: impl Into<String>) -> Self {
+        Self {
+            endpoint: endpoint.into(),
+            timeout: Duration::from_secs(5),
         }
-        if !self
-            .version_profiles
-            .iter()
-            .any(|v| v.profile_id == version_profile)
-        {
-            return Err(format!("unknown version profile '{version_profile}'"));
-        }
-        let mut settings = BTreeMap::new();
-        settings.insert("renderDistance".into(), "3".into());
-        settings.insert("simulationDistance".into(), "3".into());
-        settings.insert("fov".into(), "70".into());
-        settings.insert("maxFps".into(), "60".into());
-        settings.insert("autoJump".into(), "false".into());
-        settings.insert("pauseOnLostFocus".into(), "false".into());
-        settings.insert("policy".into(), "humanised".into());
-        self.instances.insert(
-            name.to_owned(),
-            InstanceProfile {
-                name: name.to_owned(),
-                version_profile: version_profile.to_owned(),
-                mode,
-                mods: if mode == RuntimeMode::FullClientBridge {
-                    vec![
-                        "fabric-api-0.165.0+26.3.jar".into(),
-                        "sawbyte-bridge-0.2.0.jar".into(),
-                    ]
-                } else {
-                    Vec::new()
-                },
-                server_favorites: vec!["127.0.0.1:25565".into()],
-                auto_connect: None,
-                settings,
-                snapshots: Vec::new(),
-            },
-        );
-        Ok(())
-    }
-
-    /// Creates a rollback snapshot of an instance configuration (explicitly excluding any auth tokens).
-    pub fn backup_instance(&mut self, name: &str) -> Result<u32, String> {
-        let inst = self
-            .instances
-            .get_mut(name)
-            .ok_or_else(|| format!("instance '{name}' not found"))?;
-        let id = inst.snapshots.len() as u32 + 1;
-        inst.snapshots.push(InstanceSnapshot {
-            snapshot_id: id,
-            version_profile: inst.version_profile.clone(),
-            mods: inst.mods.clone(),
-            settings: inst.settings.clone(),
-        });
-        Ok(id)
-    }
-
-    pub fn rollback_instance(&mut self, name: &str, snapshot_id: u32) -> Result<(), String> {
-        let inst = self
-            .instances
-            .get_mut(name)
-            .ok_or_else(|| format!("instance '{name}' not found"))?;
-        let snap = inst
-            .snapshots
-            .iter()
-            .find(|s| s.snapshot_id == snapshot_id)
-            .cloned()
-            .ok_or_else(|| format!("snapshot {snapshot_id} not found for '{name}'"))?;
-        inst.version_profile = snap.version_profile;
-        inst.mods = snap.mods;
-        inst.settings = snap.settings;
-        Ok(())
-    }
-
-    pub fn add_offline_account(&mut self, username: &str, uuid_hex: &str) -> Result<(), String> {
-        if username.is_empty() || username.len() > 16 {
-            return Err("invalid username".into());
-        }
-        self.accounts.insert(
-            username.to_owned(),
-            AccountEntry {
-                username: username.to_owned(),
-                uuid_hex: uuid_hex.to_owned(),
-                online: false,
-                token_redacted: true,
-                active_instance_lock: None,
-            },
-        );
-        Ok(())
-    }
-
-    /// Prevents launching two competing sessions with the same account simultaneously.
-    pub fn acquire_account_session(
-        &mut self,
-        username: &str,
-        instance: &str,
-    ) -> Result<(), String> {
-        let acc = self
-            .accounts
-            .get_mut(username)
-            .ok_or_else(|| format!("account '{username}' not found"))?;
-        if let Some(holder) = &acc.active_instance_lock {
-            return Err(format!(
-                "account '{username}' is already locked by active instance '{holder}'"
-            ));
-        }
-        acc.active_instance_lock = Some(instance.to_owned());
-        Ok(())
-    }
-
-    pub fn release_account_session(&mut self, username: &str) -> Result<(), String> {
-        let acc = self
-            .accounts
-            .get_mut(username)
-            .ok_or_else(|| format!("account '{username}' not found"))?;
-        acc.active_instance_lock = None;
-        Ok(())
     }
 }
 
-/// Out-of-game and in-game client menu, settings, and manual handoff state controller.
+impl LiveSessionTransport for TcpLiveSessionTransport {
+    fn send_live_command(&mut self, command: &str) -> Result<String, String> {
+        let addr = self
+            .endpoint
+            .to_socket_addrs()
+            .map_err(|e| format!("invalid live session address '{}': {e}", self.endpoint))?
+            .next()
+            .ok_or_else(|| format!("could not resolve live session address '{}'", self.endpoint))?;
+        let mut stream = TcpStream::connect_timeout(&addr, self.timeout).map_err(|e| {
+            format!(
+                "no live `sawbyte-play live --listen {}` session reachable ({e}); launch an instance first with `sawbyte launcher launch` or `sawbyte-play live`",
+                self.endpoint
+            )
+        })?;
+        let _ = stream.set_read_timeout(Some(self.timeout));
+        let _ = stream.set_write_timeout(Some(self.timeout));
+        let mut outputs = Vec::new();
+        let reader_stream = stream.try_clone().map_err(|e| e.to_string())?;
+        let mut reader = BufReader::new(reader_stream);
+        for line in command.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() || trimmed.starts_with('#') || trimmed.starts_with("//") {
+                continue;
+            }
+            writeln!(stream, "{trimmed}").map_err(|e| e.to_string())?;
+            stream.flush().map_err(|e| e.to_string())?;
+            let mut reply = String::new();
+            reader
+                .read_line(&mut reply)
+                .map_err(|e| format!("live session read error: {e}"))?;
+            let clean = reply.trim_end().to_owned();
+            if clean.starts_with("error: ") {
+                return Err(clean);
+            }
+            outputs.push(clean);
+        }
+        Ok(outputs.join("\n"))
+    }
+}
+
+/// Out-of-game and in-game client menu, settings, and manual handoff controller backed by disk `options.txt`.
 pub struct ClientController {
     pub active_menu: ClientMenuTarget,
     pub connected_server: Option<String>,
@@ -337,347 +179,72 @@ impl ClientController {
     }
 }
 
-/// Simple grid world for the built-in 2D ASCII/SVG inspector, pathfinder, and Gymnasium adapter.
-pub struct SimulatedWorldGrid {
-    pub player_pos: [f64; 3],
-    pub player_yaw: f32,
-    pub player_pitch: f32,
-    pub selected_hotbar: u8,
-    pub health: f32,
-    pub food: i32,
-    pub solid_blocks: HashSet<[i32; 3]>,
-    pub climbable_blocks: HashSet<[i32; 3]>,
-    pub water_blocks: HashSet<[i32; 3]>,
-    pub entities: BTreeMap<i32, (String, [f64; 3])>,
-}
-
-impl Default for SimulatedWorldGrid {
-    fn default() -> Self {
-        let mut solid_blocks = HashSet::new();
-        for x in -16..=16 {
-            for z in -16..=16 {
-                solid_blocks.insert([x, -61, z]);
-            }
-        }
-        // Add sample terrain features for inspection and pathfinding
-        solid_blocks.insert([2, -60, 2]);
-        solid_blocks.insert([3, -60, 2]);
-        solid_blocks.insert([-3, -60, 4]);
-        solid_blocks.insert([-3, -59, 4]);
-
-        let mut entities = BTreeMap::new();
-        entities.insert(101, ("minecraft:villager".into(), [4.5, -60.0, 4.5]));
-        entities.insert(102, ("minecraft:cow".into(), [-2.5, -60.0, 3.5]));
-
-        Self {
-            player_pos: [0.5, -60.0, 0.5],
-            player_yaw: 0.0,
-            player_pitch: 0.0,
-            selected_hotbar: 0,
-            health: 20.0,
-            food: 20,
-            solid_blocks,
-            climbable_blocks: HashSet::new(),
-            water_blocks: HashSet::new(),
-            entities,
-        }
-    }
-}
-
-impl VoxelQuery for SimulatedWorldGrid {
-    fn is_solid(&self, x: i32, y: i32, z: i32) -> bool {
-        self.solid_blocks.contains(&[x, y, z])
-    }
-    fn is_climbable(&self, x: i32, y: i32, z: i32) -> bool {
-        self.climbable_blocks.contains(&[x, y, z])
-    }
-    fn is_water(&self, x: i32, y: i32, z: i32) -> bool {
-        self.water_blocks.contains(&[x, y, z])
-    }
-}
-
-impl SimulatedWorldGrid {
-    /// Renders a top-down 2D ASCII map around the player's position.
-    pub fn render_ascii_map(&self, radius: i32) -> String {
-        let px = self.player_pos[0].floor() as i32;
-        let py = self.player_pos[1].floor() as i32;
-        let pz = self.player_pos[2].floor() as i32;
-        let mut out = format!(
-            "Sawbyte 2D Inspector (center=({px}, {py}, {pz}), yaw={:.1}°, hotbar={})\n",
-            self.player_yaw, self.selected_hotbar
-        );
-        for z in (pz - radius)..=(pz + radius) {
-            for x in (px - radius)..=(px + radius) {
-                if x == px && z == pz {
-                    out.push('@');
-                } else if self
-                    .entities
-                    .values()
-                    .any(|(_, pos)| pos[0].floor() as i32 == x && pos[2].floor() as i32 == z)
-                {
-                    out.push('E');
-                } else if self.is_solid(x, py + 1, z) {
-                    out.push('#'); // High wall blocking head
-                } else if self.is_solid(x, py, z) {
-                    out.push('^'); // 1-block step/jump obstacle
-                } else if self.is_water(x, py, z) {
-                    out.push('~');
-                } else if self.is_solid(x, py - 1, z) {
-                    out.push('.');
-                } else {
-                    out.push(' ');
-                }
-            }
-            out.push('\n');
-        }
-        out.push_str("Legend: @=Player  E=Entity  #=Wall(2+)  ^=Step(1)  ~=Water  .=Ground\n");
-        out
-    }
-}
-
-/// Per-subsystem memory & resource profiler report.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SubsystemProfileReport {
-    pub scheduler_queue_bytes: usize,
-    pub world_chunk_cache_bytes: usize,
-    pub screen_container_bytes: usize,
-    pub entity_table_bytes: usize,
-    pub launcher_profiles_bytes: usize,
-    pub total_tracked_bytes: usize,
-    pub verified_native_26_3_peak_rss_kib: usize,
-}
-
-struct MemoryCaptureBackend {
-    pub frames: Vec<InputFrame>,
-}
-impl Backend for MemoryCaptureBackend {
-    type Error = &'static str;
-    fn supports(&self, _: Capability) -> bool {
-        true
-    }
-    fn apply(&mut self, _: u64, frame: InputFrame) -> Result<(), Self::Error> {
-        self.frames.push(frame);
-        Ok(())
-    }
-    fn release_all(&mut self) -> Result<(), Self::Error> {
-        Ok(())
-    }
-}
-
-/// Multi-agent swarm session entry for 1..64 agent scaling & Gymnasium stepping.
-pub struct SwarmAgent {
-    pub agent_id: usize,
-    pub name: String,
-    pub isolated_world: bool,
-    pub pos: [f64; 3],
-    pub yaw: f32,
-    pub tick: u64,
-    scheduler: Scheduler<MemoryCaptureBackend, Humanised>,
-}
-
-impl SwarmAgent {
-    pub fn new(agent_id: usize, name: String, isolated_world: bool) -> Self {
-        Self {
-            agent_id,
-            name,
-            isolated_world,
-            pos: [0.5 + (agent_id as f64) * 1.5, -60.0, 0.5],
-            yaw: 0.0,
-            tick: 0,
-            scheduler: Scheduler::new(
-                MemoryCaptureBackend { frames: Vec::new() },
-                Humanised::default(),
-                64,
-            ),
-        }
-    }
-
-    pub fn step_agent(&mut self, forward: bool, jump: bool, yaw_delta: f64) -> InputFrame {
-        let mut batch = vec![
-            (
-                self.tick,
-                Action::Button {
-                    button: Button::Forward,
-                    down: forward,
-                },
-            ),
-            (
-                self.tick,
-                Action::Button {
-                    button: Button::Jump,
-                    down: jump,
-                },
-            ),
-        ];
-        if yaw_delta.abs() > 1e-6 {
-            batch.push((
-                self.tick,
-                Action::Look {
-                    yaw: yaw_delta,
-                    pitch: 0.0,
-                },
-            ));
-        }
-        let _ = self.scheduler.submit(&batch);
-        let frame = self.scheduler.advance(self.tick).unwrap_or_default();
-        self.tick += 1;
-        self.yaw += frame.yaw_delta as f32;
-        if frame.buttons.pressed(Button::Forward) {
-            let rad = (self.yaw as f64).to_radians();
-            self.pos[0] += -rad.sin() * 0.215;
-            self.pos[2] += rad.cos() * 0.215;
-        }
-        frame
-    }
-}
-
-/// Unified host state manageable via MCP, CLI, or `SawbyteScript` VM.
-pub struct SawbyteEngineHost {
-    pub launcher: LauncherState,
+/// Real persistent launcher and live-session MCP bridge.
+pub struct SawbyteControlBridge {
+    pub launcher: PersistentLauncher,
     pub client: ClientController,
-    pub world: SimulatedWorldGrid,
-    pub active_screen: Option<ScreenState>,
-    pub swarm: Vec<SwarmAgent>,
+    pub active_instance: String,
+    pub live_endpoint: Option<String>,
+    pub custom_transport: Option<Box<dyn LiveSessionTransport>>,
     pub script_logs: Vec<String>,
 }
 
-impl Default for SawbyteEngineHost {
+impl Default for SawbyteControlBridge {
     fn default() -> Self {
-        let mut screen = ScreenState::container(1, 1, 3, "Shop");
-        screen.set_slot(
-            13,
-            Some(
-                ItemStack::new("minecraft:bricks", 1)
-                    .with_name("Building Blocks")
-                    .with_lore(["Click to browse building materials"]),
-            ),
-        );
+        let launcher = PersistentLauncher::load_or_init().unwrap_or_else(|_| {
+            PersistentLauncher::load_from(std::env::temp_dir().join("sawbyte-fallback")).unwrap()
+        });
+        let live_endpoint = std::env::var("SAWBYTE_LIVE_ENDPOINT").ok();
         Self {
-            launcher: LauncherState::default(),
+            launcher,
             client: ClientController::default(),
-            world: SimulatedWorldGrid::default(),
-            active_screen: Some(screen),
-            swarm: vec![SwarmAgent::new(0, "SawbyteAgent0".into(), false)],
+            active_instance: "default-native".into(),
+            live_endpoint,
+            custom_transport: None,
             script_logs: Vec::new(),
         }
     }
 }
 
-impl WorkflowHost for SawbyteEngineHost {
-    fn current_screen(&mut self) -> Option<&mut ScreenState> {
-        self.active_screen.as_mut()
-    }
-    fn poll_screen_until_title(&mut self, title: &str, _timeout_ms: u64) -> bool {
-        self.active_screen
-            .as_ref()
-            .is_some_and(|s| s.title == title)
-    }
-    fn poll_event(&mut self, event_name: &str, _timeout_ms: u64) -> bool {
-        event_name == "purchase_confirmed"
-    }
-    fn on_event_emitted(&mut self, event: &SubTickEvent) {
-        self.client.recorded_events.push(event.clone());
-        if let SubTickEvent::ContainerClick { slot: 13, .. } = event {
-            let mut next = ScreenState::container(2, 10, 3, "Building Blocks");
-            next.set_slot(
-                10,
-                Some(
-                    ItemStack::new("minecraft:stone", 64)
-                        .with_name("Stone")
-                        .with_lore(["Price: 100 coins"]),
-                ),
-            );
-            self.active_screen = Some(next);
-        } else if let SubTickEvent::ContainerClick { slot: 10, .. } = event {
-            if let Some(s) = &mut self.active_screen {
-                s.widgets.push(crate::screen::WidgetElement {
-                    id: 1,
-                    label: "Confirm".into(),
-                    enabled: true,
-                    bounds: (60, 40, 50, 20),
-                });
-                s.state_id += 1;
-            }
-        } else if let SubTickEvent::ContainerButtonClick { button_id: 1, .. } = event {
-            if let Some(s) = &mut self.active_screen {
-                s.fields.push(crate::screen::TextFieldState {
-                    name: "amount".into(),
-                    text: String::new(),
-                    max_length: 16,
-                    focused: true,
-                    editable: true,
-                });
-                s.widgets.push(crate::screen::WidgetElement {
-                    id: 2,
-                    label: "Pay".into(),
-                    enabled: true,
-                    bounds: (60, 70, 50, 20),
-                });
-                s.state_id += 1;
-            }
-        }
-    }
-    fn invoke_extension(
-        &mut self,
-        name: &str,
-        arg: &str,
-        vars: &mut HashMap<String, String>,
-    ) -> Result<(), String> {
-        vars.insert(format!("ext_{name}"), arg.to_owned());
-        Ok(())
-    }
-}
-
-impl SawbyteEngineHost {
-    pub fn profile_resources(&self) -> SubsystemProfileReport {
-        let scheduler_queue_bytes = self.swarm.len() * 64 * std::mem::size_of::<(u64, Action)>();
-        let world_chunk_cache_bytes =
-            self.world.solid_blocks.len() * std::mem::size_of::<[i32; 3]>();
-        let screen_container_bytes = self.active_screen.as_ref().map_or(0, |s| {
-            s.slots.len() * std::mem::size_of::<Option<ItemStack>>()
-        });
-        let entity_table_bytes = self.world.entities.len() * 64;
-        let launcher_profiles_bytes = self.launcher.instances.len() * 256;
-        let total_tracked_bytes = scheduler_queue_bytes
-            + world_chunk_cache_bytes
-            + screen_container_bytes
-            + entity_table_bytes
-            + launcher_profiles_bytes;
-        SubsystemProfileReport {
-            scheduler_queue_bytes,
-            world_chunk_cache_bytes,
-            screen_container_bytes,
-            entity_table_bytes,
-            launcher_profiles_bytes,
-            total_tracked_bytes,
-            verified_native_26_3_peak_rss_kib: 4380,
-        }
+impl SawbyteControlBridge {
+    pub fn with_root(root_dir: PathBuf) -> Result<Self, String> {
+        let launcher = PersistentLauncher::load_from(root_dir)?;
+        Ok(Self {
+            launcher,
+            client: ClientController::default(),
+            active_instance: "default-native".into(),
+            live_endpoint: None,
+            custom_transport: None,
+            script_logs: Vec::new(),
+        })
     }
 
-    /// Generates unambiguous selectors for every populated slot in the active screen.
-    pub fn generate_screen_selectors(&self) -> Vec<String> {
-        let Some(screen) = &self.active_screen else {
-            return Vec::new();
-        };
-        let mut selectors = Vec::new();
-        for (slot, item) in screen.slots.iter().enumerate() {
-            if let Some(stack) = item {
-                let name_clause = stack
-                    .display_name
-                    .as_deref()
-                    .map(|n| format!(", name=\"{n}\""))
-                    .unwrap_or_default();
-                selectors.push(format!(
-                    "slot={slot}: ItemSelector {{ id=\"{}\"{name_clause}, count={} }}",
-                    stack.id, stack.count
-                ));
-            }
-        }
-        selectors
+    pub fn set_live_transport(&mut self, transport: Box<dyn LiveSessionTransport>) {
+        self.custom_transport = Some(transport);
     }
 
-    /// Executes a programmable multi-line `SawbyteScript` controlling launcher, menus, settings,
-    /// gameplay inputs, world interactions, GUI workflows, or multi-agent swarms.
+    fn resolve_live_endpoint(&self) -> String {
+        if let Some(ref ep) = self.live_endpoint {
+            return ep.clone();
+        }
+        if let Some(inst) = self.launcher.instances.get(&self.active_instance) {
+            return inst.rpc_bind.clone();
+        }
+        "127.0.0.1:25580".into()
+    }
+
+    pub fn forward_live_command(&mut self, cmd: &str) -> Result<String, String> {
+        if let Some(ref mut transport) = self.custom_transport {
+            return transport.send_live_command(cmd);
+        }
+        let endpoint = self.resolve_live_endpoint();
+        let mut tcp = TcpLiveSessionTransport::new(endpoint);
+        tcp.send_live_command(cmd)
+    }
+
+    /// Executes launcher, menu, setting, or live-session commands.
+    /// Launcher and settings mutations persist to disk immediately; live gameplay/GUI/world/RL commands
+    /// are forwarded over TCP to the running `sawbyte-play live` process.
     pub fn execute_script(&mut self, script: &str) -> Result<Vec<String>, String> {
         let mut outputs = Vec::new();
         for (line_no, raw_line) in script.lines().enumerate() {
@@ -688,22 +255,55 @@ impl SawbyteEngineHost {
             let parts: Vec<&str> = line.split_whitespace().collect();
             match parts.as_slice() {
                 ["launcher.create_instance", name, version, mode] => {
-                    let runtime_mode = match *mode {
-                        "native" => RuntimeMode::NativeStandalone,
-                        "bridge" => RuntimeMode::FullClientBridge,
-                        _ => return Err(format!("line {}: unknown mode '{mode}'", line_no + 1)),
-                    };
+                    let runtime_mode = RuntimeMode::parse(mode)
+                        .map_err(|e| format!("line {}: {e}", line_no + 1))?;
                     self.launcher.create_instance(name, version, runtime_mode)?;
-                    outputs.push(format!("created instance '{name}' ({version}, {mode})"));
+                    self.active_instance = (*name).to_owned();
+                    outputs.push(format!(
+                        "persisted instance '{name}' ({version}, {mode}) to {}",
+                        self.launcher.root_dir.display()
+                    ));
+                }
+                ["launcher.use_instance", name] => {
+                    if !self.launcher.instances.contains_key(*name) {
+                        return Err(format!("instance '{name}' not found on disk"));
+                    }
+                    self.active_instance = (*name).to_owned();
+                    outputs.push(format!("selected active instance '{name}'"));
                 }
                 ["launcher.backup", name] => {
                     let snap = self.launcher.backup_instance(name)?;
-                    outputs.push(format!("backed up '{name}' -> snapshot #{snap}"));
+                    outputs.push(format!("saved token-free disk snapshot #{snap} for '{name}'"));
                 }
                 ["launcher.rollback", name, snap_id] => {
                     let id: u32 = snap_id.parse().map_err(|_| "invalid snapshot id")?;
                     self.launcher.rollback_instance(name, id)?;
-                    outputs.push(format!("rolled back '{name}' to snapshot #{id}"));
+                    outputs.push(format!("rolled back '{name}' on disk to snapshot #{id}"));
+                }
+                ["launcher.add_account", username, uuid_hex] => {
+                    self.launcher.add_account(username, uuid_hex, None)?;
+                    outputs.push(format!("persisted offline account '{username}'"));
+                }
+                ["launcher.connect_live", endpoint] => {
+                    self.live_endpoint = Some((*endpoint).to_owned());
+                    outputs.push(format!("attached control bridge to live endpoint {endpoint}"));
+                }
+                ["launcher.launch", instance, server, account, blocks_json] => {
+                    let (_child, log_path) = self.launcher.spawn_live_process(
+                        instance,
+                        Some(server),
+                        account,
+                        std::path::Path::new(blocks_json),
+                        &[],
+                    )?;
+                    self.active_instance = (*instance).to_owned();
+                    if let Some(inst) = self.launcher.instances.get(*instance) {
+                        self.live_endpoint = Some(inst.rpc_bind.clone());
+                    }
+                    outputs.push(format!(
+                        "spawned live sawbyte-play process for '{instance}' -> {server} (log: {})",
+                        log_path.display()
+                    ));
                 }
                 ["menu.goto", target] => {
                     let menu = match *target {
@@ -737,159 +337,19 @@ impl SawbyteEngineHost {
                 }
                 ["settings.set", key, value] => {
                     self.client.set_setting(key, value)?;
-                    outputs.push(format!("updated client setting {key}={value}"));
-                }
-                ["player.select_hotbar", slot] => {
-                    let s: u8 = slot.parse().map_err(|_| "invalid hotbar slot")?;
-                    if s >= 9 {
-                        return Err("hotbar slot must be 0..8".into());
-                    }
-                    self.world.selected_hotbar = s;
-                    self.client
-                        .recorded_events
-                        .push(SubTickEvent::SelectHotbar { slot: s });
-                    outputs.push(format!("selected hotbar slot {s}"));
-                }
-                ["interact.mine", x, y, z] => {
-                    let pos = [
-                        x.parse::<i32>().map_err(|_| "bad x")?,
-                        y.parse::<i32>().map_err(|_| "bad y")?,
-                        z.parse::<i32>().map_err(|_| "bad z")?,
-                    ];
-                    self.world.solid_blocks.remove(&pos);
-                    let events = ComposableTask::MineBlock {
-                        pos,
-                        face: BlockFace::Up,
-                        duration_ticks: 10,
-                    }
-                    .compile_events(0, 1);
-                    for (_, ev) in events {
-                        self.client.recorded_events.push(ev);
+                    let inst_name = self.active_instance.clone();
+                    if self.launcher.instances.contains_key(&inst_name) {
+                        self.launcher.set_setting(&inst_name, key, value)?;
                     }
                     outputs.push(format!(
-                        "mined block at ({}, {}, {})",
-                        pos[0], pos[1], pos[2]
+                        "persisted setting {key}={value} on disk for '{inst_name}'"
                     ));
                 }
-                ["interact.place", x, y, z, slot] => {
-                    let pos = [
-                        x.parse::<i32>().map_err(|_| "bad x")?,
-                        y.parse::<i32>().map_err(|_| "bad y")?,
-                        z.parse::<i32>().map_err(|_| "bad z")?,
-                    ];
-                    let s: u8 = slot.parse().map_err(|_| "bad slot")?;
-                    self.world.solid_blocks.insert(pos);
-                    let events = ComposableTask::PlaceBlock {
-                        support_pos: [pos[0], pos[1] - 1, pos[2]],
-                        face: BlockFace::Up,
-                        hotbar_slot: s,
-                    }
-                    .compile_events(0, 1);
-                    for (_, ev) in events {
-                        self.client.recorded_events.push(ev);
-                    }
-                    outputs.push(format!(
-                        "placed block at ({}, {}, {}) from slot {s}",
-                        pos[0], pos[1], pos[2]
-                    ));
-                }
-                ["task.navigate", x, y, z] => {
-                    let goal = [
-                        x.parse::<i32>().map_err(|_| "bad x")?,
-                        y.parse::<i32>().map_err(|_| "bad y")?,
-                        z.parse::<i32>().map_err(|_| "bad z")?,
-                    ];
-                    let start = [
-                        self.world.player_pos[0].floor() as i32,
-                        self.world.player_pos[1].floor() as i32,
-                        self.world.player_pos[2].floor() as i32,
-                    ];
-                    let path = find_path(&self.world, start, goal, 1024)?;
-                    let _inputs = compile_navigation_inputs(0, self.world.player_yaw, &path, true);
-                    self.world.player_pos =
-                        [goal[0] as f64 + 0.5, goal[1] as f64, goal[2] as f64 + 0.5];
-                    outputs.push(format!(
-                        "navigated {} waypoints to ({}, {}, {})",
-                        path.len(),
-                        goal[0],
-                        goal[1],
-                        goal[2]
-                    ));
-                }
-                ["gui.run_shop_workflow", item_id, amount] => {
-                    // Reset shop screen to starting state and execute full multi-screen workflow
-                    let mut shop = ScreenState::container(1, 1, 3, "Shop");
-                    shop.set_slot(
-                        13,
-                        Some(ItemStack::new("minecraft:bricks", 1).with_name("Building Blocks")),
-                    );
-                    self.active_screen = Some(shop);
-                    let wf = shop_purchase_workflow(item_id, amount);
-                    match execute_workflow(&wf, self) {
-                        WorkflowOutcome::Completed {
-                            emitted_events,
-                            final_revision,
-                            ..
-                        } => outputs.push(format!(
-                            "shop workflow completed ({} events, final_rev={final_revision})",
-                            emitted_events.len()
-                        )),
-                        other => return Err(format!("shop workflow did not complete: {other:?}")),
-                    }
-                }
-                ["chat.send", rest @ ..] if !rest.is_empty() => {
-                    let msg = rest.join(" ");
-                    let ev = SubTickEvent::SendChat {
-                        message: msg.clone(),
-                    };
-                    if !ev.valid() {
-                        return Err("invalid chat message".into());
-                    }
-                    self.client.recorded_events.push(ev);
-                    outputs.push(format!("sent chat: {msg}"));
-                }
-                ["cmd.run", rest @ ..] if !rest.is_empty() => {
-                    let cmd = rest.join(" ");
-                    let ev = SubTickEvent::SendCommand {
-                        command: cmd.clone(),
-                    };
-                    if !ev.valid() {
-                        return Err("invalid command".into());
-                    }
-                    self.client.recorded_events.push(ev);
-                    outputs.push(format!("executed command: /{cmd}"));
-                }
-                ["swarm.spawn", count, mode] => {
-                    let n: usize = count.parse().map_err(|_| "invalid swarm count")?;
-                    if n == 0 || n > 64 {
-                        return Err("swarm count must be 1..=64".into());
-                    }
-                    let isolated = *mode == "isolated";
-                    self.swarm = (0..n)
-                        .map(|i| SwarmAgent::new(i, format!("SawbyteAgent{i}"), isolated))
-                        .collect();
-                    for agent in &mut self.swarm {
-                        agent.step_agent(true, false, 15.0);
-                    }
-                    outputs.push(format!(
-                        "spawned and stepped {n} agents (isolated={isolated})"
-                    ));
-                }
-                ["inspect.map"] => {
-                    outputs.push(self.world.render_ascii_map(5));
-                }
-                ["inspect.profile"] => {
-                    let p = self.profile_resources();
-                    outputs.push(format!(
-                        "profile: tracked_bytes={}, verified_26_3_rss_kib={}",
-                        p.total_tracked_bytes, p.verified_native_26_3_peak_rss_kib
-                    ));
-                }
+                // All live gameplay, navigation, raycast, GUI workflow, inspector, and RL commands
+                // are forwarded directly to the live `sawbyte-play live` process.
                 _ => {
-                    return Err(format!(
-                        "line {}: unknown or malformed statement '{line}'",
-                        line_no + 1
-                    ))
+                    let live_reply = self.forward_live_command(line)?;
+                    outputs.push(live_reply);
                 }
             }
         }
@@ -897,7 +357,7 @@ impl SawbyteEngineHost {
         Ok(outputs)
     }
 
-    /// Handles a JSON-RPC 2.0 / Model Context Protocol (MCP) request line and returns a JSON-RPC 2.0 response string.
+    /// Handles a JSON-RPC 2.0 / Model Context Protocol (MCP) request line.
     pub fn handle_mcp_json_rpc(&mut self, request_line: &str) -> String {
         let req = request_line.trim();
         let id = extract_json_id(req).unwrap_or_else(|| "1".to_owned());
@@ -911,43 +371,39 @@ impl SawbyteEngineHost {
             "ping" => format!("{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{}}}}"),
             "tools/list" => format!(
                 "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"tools\":[\
-                {{\"name\":\"launcher_control\",\"description\":\"Create, list, backup, rollback, and configure Sawbyte launcher instances, accounts, mods, and version profiles (sawbyte-26.3, sawbyte-26.2).\"}},\
-                {{\"name\":\"client_menu_and_settings\",\"description\":\"Navigate out-of-game and pause menus (main_menu, singleplayer, multiplayer, direct_connect, options, video_settings, audio_settings, keybinds) and modify any client setting or keybind.\"}},\
-                {{\"name\":\"player_input\",\"description\":\"Schedule low-level continuous buttons, humanised/smooth/direct camera look deltas, mouse clicks, hotbar selection, or manual handoff.\"}},\
-                {{\"name\":\"player_interact\",\"description\":\"Execute raycast-verified block mining, block placement, item use, and entity combat/interaction.\"}},\
-                {{\"name\":\"gui_screen_automation\",\"description\":\"Inspect open containers/screens, run selectors, click slots/widgets with state_id verification, fill text fields/anvils/signs/books, or run complex multi-screen shop workflows.\"}},\
-                {{\"name\":\"task_and_navigation\",\"description\":\"Run budgeted 3D A* pathfinding and composable tasks (navigate, mine, place, craft, smelt, trade, equip, eat, follow).\"}},\
-                {{\"name\":\"code_execute\",\"description\":\"Execute multi-line SawbyteScript automation programs controlling launcher, menus, settings, gameplay, GUIs, and swarms.\"}},\
-                {{\"name\":\"workflow_recorder\",\"description\":\"Export recorded manual/automated events into a reusable workflow with selectors and waits.\"}},\
-                {{\"name\":\"world_inspector_and_profiler\",\"description\":\"Render 2D top-down ASCII map, generate screen selectors, and inspect per-subsystem memory/CPU profiles.\"}},\
-                {{\"name\":\"swarm_and_gym\",\"description\":\"Control 1..64 concurrent agents in shared/isolated worlds or run Gymnasium reset/step/observation loops.\"}}\
+                {{\"name\":\"launcher_control\",\"description\":\"Persistently create, list, backup, rollback, configure, and launch real `sawbyte-play live` headless client instances on disk.\"}},\
+                {{\"name\":\"client_menu_and_settings\",\"description\":\"Navigate client menus and persist `options.txt` settings and keybinds on disk.\"}},\
+                {{\"name\":\"player_input\",\"description\":\"Forward live humanised/smooth/direct movement, camera, and hotbar inputs to a running `sawbyte-play live` session.\"}},\
+                {{\"name\":\"player_interact\",\"description\":\"Forward live raycast block mining, block placement, and entity combat to `sawbyte-play live`.\"}},\
+                {{\"name\":\"gui_screen_automation\",\"description\":\"Inspect live server containers, click slots/items/widgets with state_id verification, and run live multi-screen workflows on `sawbyte-play live`.\"}},\
+                {{\"name\":\"task_and_navigation\",\"description\":\"Run live 3D A* pathfinding across the server's loaded chunk sections on `sawbyte-play live`.\"}},\
+                {{\"name\":\"world_inspector_and_profiler\",\"description\":\"Render the live 2D ASCII map from server chunks and query live player status.\"}},\
+                {{\"name\":\"gym_step_and_observe\",\"description\":\"Step and observe the live `sawbyte-play` session for PyTorch/Gymnasium reinforcement learning.\"}},\
+                {{\"name\":\"code_execute\",\"description\":\"Execute multi-line SawbyteScript across the persistent disk launcher and live `sawbyte-play` session.\"}}\
                 ]}}}}"
             ),
             "resources/list" => format!(
                 "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"resources\":[\
-                {{\"uri\":\"sawbyte://status/overview\",\"name\":\"Sawbyte Runtime & Launcher Overview\",\"mimeType\":\"application/json\"}},\
-                {{\"uri\":\"sawbyte://world/map2d\",\"name\":\"Live 2D World Map\",\"mimeType\":\"text/plain\"}},\
-                {{\"uri\":\"sawbyte://client/options\",\"name\":\"Client options.txt & Keybinds\",\"mimeType\":\"text/plain\"}},\
-                {{\"uri\":\"sawbyte://screen/selectors\",\"name\":\"Active Screen Selectors\",\"mimeType\":\"text/plain\"}}\
+                {{\"uri\":\"sawbyte://launcher/state\",\"name\":\"Persistent Disk Launcher State\",\"mimeType\":\"text/plain\"}},\
+                {{\"uri\":\"sawbyte://client/options\",\"name\":\"Persistent Client options.txt & Keybinds\",\"mimeType\":\"text/plain\"}},\
+                {{\"uri\":\"sawbyte://world/map2d\",\"name\":\"Live Server 2D World Map\",\"mimeType\":\"text/plain\"}}\
                 ]}}}}"
             ),
             "resources/read" => {
                 let uri = extract_json_string(req, "uri").unwrap_or_default();
                 let text = match uri.as_str() {
-                    "sawbyte://world/map2d" => self.world.render_ascii_map(6),
                     "sawbyte://client/options" => self.client.export_options_txt(),
-                    "sawbyte://screen/selectors" => self.generate_screen_selectors().join("\n"),
-                    _ => {
-                        let p = self.profile_resources();
-                        format!(
-                            "instances={} agents={} active_menu={:?} tracked_bytes={} verified_26_3_rss_kib={}",
-                            self.launcher.instances.len(),
-                            self.swarm.len(),
-                            self.client.active_menu,
-                            p.total_tracked_bytes,
-                            p.verified_native_26_3_peak_rss_kib
-                        )
-                    }
+                    "sawbyte://world/map2d" => self
+                        .forward_live_command("inspect.map")
+                        .unwrap_or_else(|e| e),
+                    _ => format!(
+                        "root_dir={} instances={} accounts={} active_instance={} live_endpoint={}",
+                        self.launcher.root_dir.display(),
+                        self.launcher.instances.len(),
+                        self.launcher.accounts.len(),
+                        self.active_instance,
+                        self.resolve_live_endpoint()
+                    ),
                 };
                 format!(
                     "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"contents\":[{{\"uri\":\"{}\",\"mimeType\":\"text/plain\",\"text\":\"{}\"}}]}}}}",
@@ -957,7 +413,7 @@ impl SawbyteEngineHost {
             }
             "prompts/list" => format!(
                 "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"prompts\":[\
-                {{\"name\":\"automate_anything\",\"description\":\"System prompt for full-stack Minecraft + Launcher + GUI + Code automation via Sawbyte MCP.\"}}\
+                {{\"name\":\"automate_anything\",\"description\":\"System prompt for live headless Rust Minecraft automation and RL control via Sawbyte MCP.\"}}\
                 ]}}}}"
             ),
             "tools/call" => {
@@ -965,102 +421,30 @@ impl SawbyteEngineHost {
                 let script_or_cmd = extract_json_string(req, "script")
                     .or_else(|| extract_json_string(req, "command"))
                     .unwrap_or_default();
-                let result_text = match tool_name.as_str() {
-                    "code_execute" => match self.execute_script(&script_or_cmd) {
-                        Ok(lines) => lines.join("\n"),
-                        Err(err) => {
-                            return format!(
-                                "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"isError\":true,\"content\":[{{\"type\":\"text\",\"text\":\"{}\"}}]}}}}",
-                                escape_json(&err)
-                            );
-                        }
-                    },
-                    "launcher_control" => {
-                        let cmd = if script_or_cmd.is_empty() {
-                            "launcher.backup default-native"
-                        } else {
-                            &script_or_cmd
-                        };
-                        match self.execute_script(cmd) {
-                            Ok(lines) => lines.join("\n"),
-                            Err(err) => format!("error: {err}"),
-                        }
-                    }
-                    "client_menu_and_settings" => {
-                        let cmd = if script_or_cmd.is_empty() {
-                            "menu.goto options\nsettings.set fov 90"
-                        } else {
-                            &script_or_cmd
-                        };
-                        match self.execute_script(cmd) {
-                            Ok(lines) => lines.join("\n"),
-                            Err(err) => format!("error: {err}"),
-                        }
-                    }
-                    "gui_screen_automation" => {
-                        let cmd = if script_or_cmd.is_empty() {
-                            "gui.run_shop_workflow minecraft:stone 64"
-                        } else {
-                            &script_or_cmd
-                        };
-                        match self.execute_script(cmd) {
-                            Ok(lines) => lines.join("\n"),
-                            Err(err) => format!("error: {err}"),
-                        }
-                    }
-                    "task_and_navigation" => {
-                        let cmd = if script_or_cmd.is_empty() {
-                            "task.navigate 4 -60 4"
-                        } else {
-                            &script_or_cmd
-                        };
-                        match self.execute_script(cmd) {
-                            Ok(lines) => lines.join("\n"),
-                            Err(err) => format!("error: {err}"),
-                        }
-                    }
-                    "world_inspector_and_profiler" => {
-                        let map = self.world.render_ascii_map(5);
-                        let prof = self.profile_resources();
-                        format!(
-                            "{map}\nTracked bytes: {}, Verified 26.3 Peak RSS: {} KiB",
-                            prof.total_tracked_bytes, prof.verified_native_26_3_peak_rss_kib
-                        )
-                    }
-                    "workflow_recorder" => {
-                        format!(
-                            "Recorded {} discrete events ready for workflow export.",
-                            self.client.recorded_events.len()
-                        )
-                    }
-                    "swarm_and_gym" => {
-                        let cmd = if script_or_cmd.is_empty() {
-                            "swarm.spawn 4 shared"
-                        } else {
-                            &script_or_cmd
-                        };
-                        match self.execute_script(cmd) {
-                            Ok(lines) => lines.join("\n"),
-                            Err(err) => format!("error: {err}"),
-                        }
-                    }
-                    "player_input" | "player_interact" => {
-                        let cmd = if script_or_cmd.is_empty() {
-                            "player.select_hotbar 1\ninteract.place 1 -60 1 1"
-                        } else {
-                            &script_or_cmd
-                        };
-                        match self.execute_script(cmd) {
-                            Ok(lines) => lines.join("\n"),
-                            Err(err) => format!("error: {err}"),
-                        }
-                    }
-                    other => format!("unknown tool '{other}'"),
+                let default_cmd = match tool_name.as_str() {
+                    "launcher_control" => "launcher.backup default-native",
+                    "client_menu_and_settings" => "menu.goto options\nsettings.set fov 90",
+                    "world_inspector_and_profiler" => "inspect.map\ninspect.status",
+                    "gym_step_and_observe" => "gym.observe",
+                    "gui_screen_automation" => "gui.inspect",
+                    "task_and_navigation" => "task.navigate 3 -60 2",
+                    _ => "inspect.status",
                 };
-                format!(
-                    "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"isError\":false,\"content\":[{{\"type\":\"text\",\"text\":\"{}\"}}]}}}}",
-                    escape_json(&result_text)
-                )
+                let cmd = if script_or_cmd.is_empty() {
+                    default_cmd
+                } else {
+                    &script_or_cmd
+                };
+                match self.execute_script(cmd) {
+                    Ok(lines) => format!(
+                        "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"isError\":false,\"content\":[{{\"type\":\"text\",\"text\":\"{}\"}}]}}}}",
+                        escape_json(&lines.join("\n"))
+                    ),
+                    Err(err) => format!(
+                        "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"isError\":true,\"content\":[{{\"type\":\"text\",\"text\":\"{}\"}}]}}}}",
+                        escape_json(&err)
+                    ),
+                }
             }
             _ => format!(
                 "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"error\":{{\"code\":-32601,\"message\":\"Method not found\"}}}}"
@@ -1165,43 +549,54 @@ const _: MouseButton = MouseButton::Left;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::net::TcpListener;
 
     #[test]
-    fn mcp_server_and_script_vm_control_launcher_menus_settings_gui_and_swarm() {
-        let mut host = SawbyteEngineHost::default();
+    fn mcp_bridge_persists_launcher_to_disk_and_forwards_live_commands_over_tcp() {
+        let temp_root = std::env::temp_dir().join(format!(
+            "sawbyte-mcp-bridge-test-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&temp_root);
 
-        // 1. Test MCP initialize and tools/list
+        // Start a real loopback TCP listener representing a running `sawbyte-play live --listen` process
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap().to_string();
+        let server_thread = std::thread::spawn(move || {
+            for stream in listener.incoming().take(3).flatten() {
+                let mut writer = stream.try_clone().unwrap();
+                let reader = BufReader::new(stream);
+                for line in reader.lines().map_while(Result::ok) {
+                    let reply = format!("live_ack:{line}");
+                    writeln!(writer, "{reply}").unwrap();
+                    writer.flush().unwrap();
+                }
+            }
+        });
+
+        let mut bridge = SawbyteControlBridge::with_root(temp_root.clone()).unwrap();
+        bridge.live_endpoint = Some(addr.clone());
+
         let init_resp =
-            host.handle_mcp_json_rpc(r#"{"jsonrpc":"2.0","id":1,"method":"initialize"}"#);
+            bridge.handle_mcp_json_rpc(r#"{"jsonrpc":"2.0","id":1,"method":"initialize"}"#);
         assert!(init_resp.contains("sawbyte-mcp"));
-        let tools_resp =
-            host.handle_mcp_json_rpc(r#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#);
-        assert!(tools_resp.contains("launcher_control"));
-        assert!(tools_resp.contains("client_menu_and_settings"));
-        assert!(tools_resp.contains("code_execute"));
 
-        // 2. Test full-stack script execution via MCP `code_execute`
-        let script_req = r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"code_execute","script":"launcher.create_instance lab-26-2 sawbyte-26.2 bridge\nlauncher.backup lab-26-2\nmenu.goto options\nsettings.set fov 95\nmenu.goto direct_connect:127.0.0.1:25565\nplayer.select_hotbar 3\ninteract.place 1 -60 1 3\ninteract.mine 1 -60 1\ntask.navigate 4 -60 4\ngui.run_shop_workflow minecraft:stone 64\nchat.send Hello from Sawbyte MCP\ncmd.run gamemode survival\nswarm.spawn 16 shared\ninspect.map\ninspect.profile"}}"#;
-        let call_resp = host.handle_mcp_json_rpc(script_req);
-        assert!(call_resp.contains("\"isError\":false"));
-        assert!(call_resp.contains("shop workflow completed"));
-        assert!(call_resp.contains("spawned and stepped 16 agents"));
-        assert_eq!(
-            host.client.settings.get("fov").map(String::as_str),
-            Some("95")
+        let script_req = format!(
+            r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"code_execute","script":"launcher.create_instance rl-node-1 sawbyte-26.3 native\nsettings.set fov 95\nlauncher.backup rl-node-1\nlauncher.connect_live {addr}\ntask.navigate 4 -60 4\ngui.run_shop_workflow minecraft:stone 64\ngym.observe"}}}}"#
         );
-        assert_eq!(host.swarm.len(), 16);
+        let call_resp = bridge.handle_mcp_json_rpc(&script_req);
+        assert!(call_resp.contains("\"isError\":false"));
+        assert!(call_resp.contains("live_ack:task.navigate 4 -60 4"));
+        assert!(call_resp.contains("live_ack:gui.run_shop_workflow minecraft:stone 64"));
+        assert!(call_resp.contains("live_ack:gym.observe"));
 
-        // 3. Verify account lock prevents duplicate concurrent sessions
-        host.launcher
-            .acquire_account_session("SawbyteNative", "default-native")
-            .unwrap();
-        assert!(host
-            .launcher
-            .acquire_account_session("SawbyteNative", "default-bridge")
-            .is_err());
-        host.launcher
-            .release_account_session("SawbyteNative")
-            .unwrap();
+        // Verify disk persistence across reload
+        let reloaded = PersistentLauncher::load_from(temp_root.clone()).unwrap();
+        let inst = reloaded.instances.get("rl-node-1").unwrap();
+        assert_eq!(inst.settings.get("fov").map(String::as_str), Some("95"));
+        assert_eq!(inst.snapshot_count, 1);
+
+        let _ = server_thread.join();
+        let _ = std::fs::remove_dir_all(&temp_root);
     }
 }

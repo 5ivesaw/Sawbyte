@@ -25,7 +25,7 @@
 
 ---
 
-**Sawbyte** is an independently written, aggressively stripped-down **Rust Minecraft Java client, launcher, and full-stack automation platform** with an optional **normal-client Fabric bridge**. Every player operation—from out-of-game launcher instances, main menus, and client settings to in-game movement, raycast mining/building, complex multi-screen shop GUIs, and dynamic code execution—is programmable through a shared input and event pipeline, with configurable humanisation enabled by default.
+**Sawbyte** is an independently written, zero-graphics **headless Rust Minecraft Java client (`sawbyte-play`), persistent launcher, and foundational automation & neural-network training engine** with an optional secondary **normal-client Fabric bridge**. Engineered for extreme CPU/RAM efficiency (`~4.3 MiB` RSS) and 1:1 Vanilla Java network protocol and client-tick physics parity, every player operation—from persistent launcher instances and client settings to live 3D A* navigation across server chunks, raycast mining/building, container/shop GUI workflows, MCP agent control, and PyTorch/Gymnasium reinforcement learning—runs directly against a live server through genuine client-tick simulation.
 
 <p align="center">
   <img src="assets/cream-metrics.svg" width="100%" alt="Verified 26.3 CI Parity and Resource Metrics" />
@@ -39,21 +39,17 @@
 
 ## What Is Built & Verified
 
-- **Standalone Native 26.3 Runtime (`native/`, `sawbyte-play`)**:
-  - Independently written Rust 26.3 (`protocol 777`) login, configuration, AES-128-CFB8 encryption, zlib framing, chunk palette storage, dynamic block updates (`BlockUpdate` packet `8` & `SectionBlocksUpdate` packet `86`), and collision/motion physics. Zero Azalea or external game-engine dependencies.
-  - Verified against the real Minecraft 26.3 client (`sawbyte-bridge` under HeadlessMC) on a live vanilla 26.3 server in GitHub Actions: **`max_position_error_blocks = 3.41e-7`**, **`rms_position_error_blocks = 2.29e-7`**, **`0` ground mismatches**, and **`4,380 KiB` (~4.28 MiB) sampled peak RSS** on the 160-tick fixture.
-  - Extended collision & movement engine covering slabs, stairs, fences, carpets, climbables (ladders/vines/scaffolding), water/lava fluids, cobwebs, ice slipperiness, sprinting, sneaking with ground edge-clamping, `0.6`-block stepping, player attributes, status effects, eye-to-target voxel/entity raycasting with occlusion, and serverbound interaction packets.
-- **Full-Client Graphical Bridge (`bridge/`, `sawbyte-bridge`)**:
-  - Fabric 26.3 client mod sharing the exact same binary `.sbif` input recordings and supporting external runtime commands (`hotbar`, `respawn`, `disconnect`, and manual player priority/handoff `handoff.pause` / `handoff.resume`).
-- **Complete GUI, Container, Menu & Settings Programmability (`crates/sawbyte-core`)**:
-  - Revision-checked (`state_id`) container & screen state machine supporting all 7 `ContainerClick` modes (`Pickup`, `QuickMove`, `Swap`, `Clone`, `Throw`, `QuickCraft`, `PickupAll`), 26.3 item components, widgets, editable text fields, anvils, signs, books, villager trades, and server dialogs.
-  - Disambiguated `ItemSelector` engine (matching ID, exact/substring display name, lore, components, count, and slot range; rejecting ambiguous matches unless explicitly disambiguated).
-  - Multi-screen workflow engine with variables, conditionals, bounded loops, event/screen waits, and `RetryPolicy::Never` protection so payment/irrevocable clicks are never repeated after a timeout.
-  - Out-of-game client menu & settings controller (`MainMenu`, `Singleplayer`, `Multiplayer`, `DirectConnect`, `Options`, `VideoSettings`, `AudioSettings`, `Keybinds`, `PauseMenu`, `options.txt` export).
-- **Model Context Protocol (MCP) Server & `SawbyteScript` VM (`sawbyte mcp`)**:
-  - Built-in JSON-RPC 2.0 MCP server over `stdio` exposing **10 agent tools**, **4 live resources**, and prompts so any AI agent can control the launcher, client menus, settings, player inputs, world interactions, GUI workflows, 3D A* pathfinding, multi-agent swarms, and dynamic script execution.
-- **Humanisation Enabled by Default + Freedom**:
-  - Bounded (`Humanised`) and seedable smooth acceleration/deceleration (`SmoothHumanisedCamera`) aiming policies, Fitts'-law-inspired `GuiTimingPolicy` virtual cursor travel and post-revision reaction delays, and `TypingPolicy` character cadence—plus an instant `Direct` bypass and custom `InputPolicy` trait hooks.
+- **True Headless Rust Client (`native/`, `sawbyte-play`)**:
+  - Independently written Rust 26.3 (`protocol 777`) login, configuration, AES-128-CFB8 encryption, zlib framing, chunk palette storage, dynamic block updates (`BlockUpdate` packet `8` & `SectionBlocksUpdate` packet `86`), live container/entity/health/chat packet decoders, and collision/motion physics. Zero Azalea, zero JVM, and zero fake in-memory simulators.
+  - Verified against the real Minecraft 26.3 client (`sawbyte-bridge` under HeadlessMC) on a live vanilla 26.3 server in GitHub Actions: **`max_position_error_blocks = 3.41e-7`**, **`rms_position_error_blocks = 2.29e-7`**, **`0` ground mismatches**, and **`4,380 KiB` (~4.28 MiB) sampled peak RSS** on the 160-tick fixture, plus live interactive 3D A* pathfinding and workflow execution (`sawbyte-play live`) on the 26.3 server.
+  - **Live Interactive Session (`sawbyte-play live`)**: Connects to any 26.3 server without needing pre-recorded `.sbif` tapes, exposing a real-time TCP control socket (`--listen <ip:port>`), MCP stdio server (`--mcp-stdio`), or startup script (`--script`) that drives live 3D A* pathfinding on the server's loaded chunk sections, eye raycasting, block mining/placement, container/shop GUI workflows, and zero-allocation RL observations (`gym.observe` / `gym.step`).
+  - **100% Modular & Pluggable (`LiveModule` & `LiveSessionTransport` traits)**: All built-in smart features (3D A*, raycasting, GUI selectors, shop workflows) are modular and replaceable via Rust traits or external Python/TypeScript SDKs.
+- **Persistent Disk Launcher (`crates/sawbyte-core/src/launcher.rs`, `sawbyte launcher`)**:
+  - Persists all instances, `options.txt` files, token-free snapshot backups, and account lockfiles on disk (`~/.sawbyte/launcher.db` and `~/.sawbyte/instances/<name>/`), and spawns real `sawbyte-play live` OS processes (`sawbyte launcher launch`).
+- **Foundational Base Engine for RL & Neural Network Training (`SawbyteEnv`)**:
+  - Razor-thin memory footprint and pre-allocated local voxel patch extraction (`extract_voxel_patch`) allow running high-throughput PyTorch/Gymnasium training loops (`SawbyteEnv`) or multi-bot swarms directly on live servers with minimal CPU and power draw.
+- **Optional Full-Client Graphical Bridge (`bridge/`, `sawbyte-bridge`)**:
+  - Secondary Fabric 26.3 client mod sharing the binary `.sbif` input format for parity verification and manual player handoff.
 
 > **Scope & Honesty Note**: The live vanilla 26.3 server comparison in CI currently certifies the 160-tick controlled flat-world fixture; extended collision shapes, GUI workflows, 3D A* navigation, launcher profiles (`sawbyte-26.3` and `sawbyte-26.2`), and MCP tools are verified by deterministic unit and integration suites in CI. Online Microsoft sign-in requires a live account and registered client ID. See [docs/COVERAGE.md](docs/COVERAGE.md) and [docs/PLAYER.md](docs/PLAYER.md).
 
@@ -89,25 +85,28 @@ Any MCP-compatible AI client (Claude Desktop, Cursor, Antigravity, custom LLM ag
 
 ---
 
-## Complete Programmability & GUI Workflows
+## Complete Programmability & Live Server Control
 
-Execute a full-stack script from the command line or through MCP:
+Launch a live headless Rust bot or control it over TCP / MCP:
 
 ```bash
+# 1. Start a live interactive headless 26.3 session listening for TCP / MCP / RL control
+sawbyte-play live 127.0.0.1:25565 --offline SawbyteBot block-profile.json --listen 127.0.0.1:25580
+
+# 2. Or manage persistent instances on disk (~/.sawbyte/) and launch via sawbyte launcher
+sawbyte launcher create survival-bot sawbyte-26.3 native
+sawbyte launcher set-setting survival-bot fov 90
+sawbyte launcher backup survival-bot
+sawbyte launcher launch survival-bot 127.0.0.1:25565 SawbyteNative block-profile.json
+
+# 3. Execute live 3D A* navigation, GUI workflows, and RL observation against the running bot
 sawbyte eval "
-  launcher.create_instance survival-bot sawbyte-26.3 native
-  launcher.backup survival-bot
-  menu.goto options
-  settings.set fov 90
-  menu.goto direct_connect:127.0.0.1:25565
+  task.navigate 3 -60 2
   player.select_hotbar 2
-  interact.place 1 -60 1 2
-  task.navigate 4 -60 4
   gui.run_shop_workflow minecraft:stone 64
-  swarm.spawn 4 shared
   inspect.map
-  inspect.profile
-"
+  gym.observe
+" --connect 127.0.0.1:25580
 ```
 
 ---

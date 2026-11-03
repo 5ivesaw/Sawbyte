@@ -21,6 +21,21 @@ export class SawbyteWorkflow {
     return this;
   }
 
+  connectLive(endpoint: string): this {
+    this.statements.push(`launcher.connect_live ${endpoint}`);
+    return this;
+  }
+
+  launchInstance(instance: string, server: string, account: string, blocksJsonPath: string): this {
+    this.statements.push(`launcher.launch ${instance} ${server} ${account} ${blocksJsonPath}`);
+    return this;
+  }
+
+  observeGym(): this {
+    this.statements.push("gym.observe");
+    return this;
+  }
+
   gotoMenu(target: string): this {
     this.statements.push(`menu.goto ${target}`);
     return this;
