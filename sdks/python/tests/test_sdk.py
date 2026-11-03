@@ -13,11 +13,11 @@ from sawbyte import SawbyteEnv, SawbyteLiveTcpClient, SawbyteMcpClient, Workflow
 def _start_mock_live_server():
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     srv.bind(("127.0.0.1", 0))
-    srv.listen(4)
+    srv.listen(16)
     host, port = srv.getsockname()
 
     def _run():
-        for _ in range(3):
+        while True:
             try:
                 conn, _ = srv.accept()
             except OSError:

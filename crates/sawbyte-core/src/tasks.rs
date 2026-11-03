@@ -42,16 +42,26 @@ impl PartialOrd for Node {
 }
 
 fn heuristic(a: [i32; 3], b: [i32; 3]) -> u32 {
-    let dx = (i64::from(a[0]) - i64::from(b[0])).unsigned_abs().min(100_000) as u32;
-    let dy = (i64::from(a[1]) - i64::from(b[1])).unsigned_abs().min(100_000) as u32;
-    let dz = (i64::from(a[2]) - i64::from(b[2])).unsigned_abs().min(100_000) as u32;
+    let dx = (i64::from(a[0]) - i64::from(b[0]))
+        .unsigned_abs()
+        .min(100_000) as u32;
+    let dy = (i64::from(a[1]) - i64::from(b[1]))
+        .unsigned_abs()
+        .min(100_000) as u32;
+    let dz = (i64::from(a[2]) - i64::from(b[2]))
+        .unsigned_abs()
+        .min(100_000) as u32;
     let y_cost = if a[1] <= b[1] { dy * 6 } else { dy * 2 };
     (dx + dz) * 10 + y_cost
 }
 
 fn can_stand_at(world: &impl VoxelQuery, x: i32, y: i32, z: i32) -> bool {
-    let Some(y_above) = y.checked_add(1) else { return false; };
-    let Some(y_below) = y.checked_sub(1) else { return false; };
+    let Some(y_above) = y.checked_add(1) else {
+        return false;
+    };
+    let Some(y_below) = y.checked_sub(1) else {
+        return false;
+    };
     let head_clear = !world.is_solid(x, y, z) && !world.is_solid(x, y_above, z);
     let supported =
         world.is_solid(x, y_below, z) || world.is_climbable(x, y, z) || world.is_water(x, y, z);
@@ -105,15 +115,21 @@ pub fn find_path(
 
         let [cx, cy, cz] = current.pos;
         for [dx, dz] in [[-1, 0], [1, 0], [0, -1], [0, 1]] {
-            let Some(nx) = cx.checked_add(dx) else { continue };
-            let Some(nz) = cz.checked_add(dz) else { continue };
+            let Some(nx) = cx.checked_add(dx) else {
+                continue;
+            };
+            let Some(nz) = cz.checked_add(dz) else {
+                continue;
+            };
             // Flat step, step/jump up (+1 with overhead clearance), or step down (-1)
             for (dy, step_cost, needs_jump_headroom) in [
                 (0i32, 10u32, false),
                 (1i32, 16u32, true),
                 (-1i32, 12u32, false),
             ] {
-                let Some(ny) = cy.checked_add(dy) else { continue };
+                let Some(ny) = cy.checked_add(dy) else {
+                    continue;
+                };
                 if needs_jump_headroom {
                     if let Some(y_head) = cy.checked_add(2) {
                         if world.is_solid(cx, y_head, cz) {
@@ -808,7 +824,12 @@ mod tests {
 
     #[test]
     fn pathfinder_handles_overflow_coordinates_safely() {
-        let res = find_path(&FlatWithWall, [i32::MAX - 1, -60, i32::MAX - 1], [i32::MAX, -60, i32::MAX], 32);
+        let res = find_path(
+            &FlatWithWall,
+            [i32::MAX - 1, -60, i32::MAX - 1],
+            [i32::MAX, -60, i32::MAX],
+            32,
+        );
         assert!(res.is_err() || res.is_ok());
     }
 

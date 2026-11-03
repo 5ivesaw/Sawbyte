@@ -167,6 +167,16 @@ class SawbyteMcpClient:
                     self._proc.stdin.close()
                 except Exception:
                     pass
+            if self._proc.stdout:
+                try:
+                    self._proc.stdout.close()
+                except Exception:
+                    pass
+            if self._proc.stderr:
+                try:
+                    self._proc.stderr.close()
+                except Exception:
+                    pass
             try:
                 self._proc.wait(timeout=5)
             except subprocess.TimeoutExpired:

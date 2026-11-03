@@ -618,7 +618,7 @@ impl PlayerStateTable {
         let dx = i16::from_be_bytes(r.take(2)?.try_into()?) as f64 / 4096.0;
         let dy = i16::from_be_bytes(r.take(2)?.try_into()?) as f64 / 4096.0;
         let dz = i16::from_be_bytes(r.take(2)?.try_into()?) as f64 / 4096.0;
-        let _on_ground = r.bool()?;
+        let _on_ground = r.byte()? != 0;
         if let Some(ent) = self.entities.get_mut(&entity_id) {
             ent.pos[0] += dx;
             ent.pos[1] += dy;
