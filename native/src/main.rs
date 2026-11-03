@@ -1691,13 +1691,14 @@ fn run_live(args: &[String]) -> Result<()> {
                     };
                     let reader = BufReader::new(stream);
                     for line in reader.lines().map_while(std::result::Result::ok) {
+                        let is_json = line.trim_start().starts_with('{');
                         let (reply_tx, reply_rx) = mpsc::channel();
                         if sender_conn.send((line, Some(reply_tx))).is_err() {
                             break;
                         }
                         if let Ok(resp) = reply_rx.recv_timeout(Duration::from_secs(5)) {
                             if !resp.is_empty() {
-                                let framed = if line.trim_start().starts_with('{') {
+                                let framed = if is_json {
                                     resp.replace('\n', " ")
                                 } else {
                                     resp.replace('\r', "").replace('\n', "\\n")
