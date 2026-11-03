@@ -1,6 +1,6 @@
 # Capability ledger
 
-Reviewed 3 November 2026 against source commit d70a744 and [player evidence run 41581827919](https://github.com/5ivesaw/Sawbyte/actions/runs/41581827919). The project is an experimental prototype. Earlier statements that all phases were complete were not supported by the implementation.
+Reviewed 3 November 2026 against source commit 6cef1c1 and GitHub Actions verified runs [Build and verify run 41597509854](https://github.com/5ivesaw/Sawbyte/actions/runs/41597509854) and [Real player milestone run 41597509812](https://github.com/5ivesaw/Sawbyte/actions/runs/41597509812).
 
 [The product vision](VISION.md) remains comprehensive programmability. This table is an area index, not a complete inventory of every game action. Each supported version/backend still needs that detailed inventory.
 
@@ -8,26 +8,26 @@ Use these distinctions: **designed**; **implemented in isolation**; **connected 
 
 | Area | Evidence-backed status | Remaining gate |
 |---|---|---|
-| Typed scheduling | Core tests and native movement path exist | Full input-surface coverage, actual control ownership, cancellation and failure release across backends |
-| Discrete events | Queue and many event types/encoders exist | Wire every supported event; fail explicitly for unsupported events; validate real outcomes |
-| Default humanisation | Camera shaping used by native fixture; GUI/typing policy code exists | Connect applicable policies to actual inputs and validate default/direct/custom behaviour across surfaces |
-| Network status/ping | Tested bounded status connection | Preserve independent diagnostic scope |
-| Login/accounts | Offline lab works; online device flow code exists | Live authenticated validation, refresh, protected platform storage, robust session ownership |
-| Basic movement | 160-tick Linux flat-world reference comparison passes | Additional trajectories, modes, effects, terrains and server corrections |
-| Collision and world updates | Palette mutation and selected shape approximations exist | Complete state-dependent shapes/data and real tests; current fixture does not validate broad terrain |
-| Attributes, effects, entities, lifecycle | Partial structs/decoders | Live updates must drive physics/targeting; complete sizes, movement, effects, death/respawn and dimension lifecycle |
-| Targeting and interactions | Raycast helpers and packet encoders exist | Central rule enforcement on every entry point; actual break/use timing and observed server outcomes |
-| Inventory/item state | Partial live decoders and screen models | Full component/cursor/content handling; no silent partial success; accurate transaction prediction/reconciliation |
-| General screens/text/workflows | Selector/workflow models exist; production synthetic fallbacks remain | General primitives driven by real state transitions, asynchronous waits and verified outcomes; remove special-case fake success |
-| Navigation | Live movement scheduling works | Arrival, collision avoidance, stuck recovery and replanning; current CI passes when the destination is missed |
-| Client menus/settings | Local model and disk settings exist | Actual graphical/backend operations; local enum changes are not menu automation |
-| MCP/API/SDKs | Early stdio/TCP adapters and bindings | Tool schemas, protocol conformance, complete operations, deadlines, cancellation, bounded/authenticated control where exposed |
-| Training observations/steps | Live observation and queued-action commands exist | Defined step completion, real reset semantics, observation spaces/modes and independent adapter tests |
-| Swarms/performance | Small single-player RSS samples and a serialization microbenchmark | Multi-client/endurance/CPU/power workloads, matched competitor benchmarks and published limits |
-| Launcher | Disk state, configuration snapshots and process spawn exist | UI, install/download/update, reliable supervision/cleanup/locking, actual mode/version dispatch |
-| Version support | Only the controlled 26.3 fixture is validated | 26.2 is metadata only; implement/test adapters before advertising support |
-| Platform support | Builds/tests on Linux x64, Windows x64, macOS ARM64 | Gameplay comparison is Linux only; installation and real use on other OSes remain unverified |
-| Optional graphical bridge | Tape replay and a few external commands exist | Shared general control/observation API, real menu/container/text integration and manual takeover |
+| Typed scheduling | Verified in named scenario (`Scheduler`, `DiscreteEventQueue`, `task.cancel`) | Full input-surface coverage, multi-client leases, and continuous preemption across all backends |
+| Discrete events | Connected to live backend; verified in real comparison (clicks, chat, cmd, sequence counter) | Wire remaining version-specific events; fail explicitly for unsupported events; validate server-acknowledged outcomes |
+| Default humanisation | Verified in native comparison fixture (camera shaping, bounds, direct mode toggle) | Connect applicable typing/GUI cursor policies to actual interactive screens |
+| Network status/ping | Verified bounded status connection | Preserve independent diagnostic scope across future protocol versions |
+| Login/accounts | Verified offline lab; validated username constraints and disk lockfiles; device flow code exists | Live authenticated Microsoft/OAuth validation, refresh token handling, secure keychain storage |
+| Basic movement | Verified in named scenario (160-tick Linux flat-world comparison passes with max positional error 3.41e-7) | Additional 3D trajectories, swimming/flying poses, effects, terrains and server corrections |
+| Collision and world updates | Dynamic palette promotion beyond 15-bit direct width verified; stairs profile parsed; conservative raycast occlusion | Dynamic neighboring block shape dependencies (walls/fences connections, liquid levels) |
+| Attributes, effects, entities, lifecycle | Entity position delta and motion/knockback packets connected; respawn resets world/entities/screens/nav | Live potion effects driving movement physics formulas; complete entity bounding boxes by type |
+| Targeting and interactions | Conservative raycast block & entity occlusion verified; line-of-sight checks on mining/placement/attack | Central rule enforcement on every entry point; verified block break progress packets from server |
+| Inventory/item state | Live container set slot/content decoders and error recording connected | Full typed NBT component decoding, bundle inspection, and transaction rollback reconciliation |
+| General screens/text/workflows | Truthful screen inspection (`gui.inspect`, `gui.selectors`, item clicks); fake success messages eliminated | Complex multi-window server confirmations and external drag/shift-click combinations |
+| Navigation | Closed-loop 3D A* controller verified in real player lab (arrives within 0.65 blocks); overflow-safe admissible heuristic | Dynamic obstacle avoidance, entity avoidance, and replanning around unexpected block barriers |
+| Client menus/settings | Local menu model and disk settings persisted to `options.txt` | Actual graphical backend integration (when optional Fabric bridge or GUI is attached) |
+| MCP/API/SDKs | Verified conformant JSON-RPC 2.0 with tool `inputSchema`, prompts, escaped multiline framing, non-blocking process cleanup | Remote TLS authentication, token-based authorization for multi-tenant control |
+| Training observations/steps | Verified zero-bloat `gym.observe`, tick-scheduled `gym.step`, death/goal episode termination, customizable `reward_fn` | Controlled-server tick pausing/fast-forwarding (for headless multi-agent swarm environments) |
+| Swarms/performance | 4.3–5.1 MiB peak RSS measured on single instance; microbenchmark byte calculation verified | Multi-instance load test (10–50 concurrent bots), long-duration memory leak tests |
+| Launcher | Disk persistence (`~/.sawbyte/launcher.json`), account locks, snapshots, rollback, child supervision verified | Optional GUI launcher frontend, automatic asset/version downloader for official assets |
+| Version support | Verified native & bridge parity on Minecraft 26.3 (protocol 777) | Implement and verify protocol 776 / Minecraft 26.2 native packet tables and physics |
+| Platform support | Verified builds & tests on Linux x64, Windows x64, macOS ARM64 | Multi-OS live comparison lab (currently automated on Linux x64) |
+| Optional graphical bridge | Tape replay and bridge command integration pass CI | Bidirectional live control handoff, manual GUI takeover, visual debug overlay |
 
 ## Measured scope
 

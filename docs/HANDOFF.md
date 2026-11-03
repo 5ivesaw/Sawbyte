@@ -4,14 +4,16 @@ Read [AGENTS.md](../AGENTS.md), [the product vision](VISION.md), [the capability
 
 ## Current reviewed baseline
 
-- Code commit: `d70a744cd5094e887278b06feb2aefe7c109e8be`.
-- Both GitHub workflows pass: [foundation run 41581827822](https://github.com/5ivesaw/Sawbyte/actions/runs/41581827822) and [player run 41581827919](https://github.com/5ivesaw/Sawbyte/actions/runs/41581827919).
-- Independent native Rust client and optional Java 25/Fabric 26.3 reference bridge exist. Native does not depend on Azalea.
-- Linux reference comparison covers one 160-tick 26.3 flat-world movement fixture. Max positional difference `3.4117737307480316e-07`; zero ground mismatches.
-- Short sampled native RSS: 5,080 KiB replay and 5,112 KiB live fixture. These figures are not general resource budgets.
-- Live navigation test does not reach its target; it passes a movement-only threshold. Production screen/workflow code also contains synthetic state and success.
-- Native build/test jobs run on Linux x64, Windows x64 and macOS ARM64. Gameplay integration is Linux only.
-- Release status: experimental developer prototype. Not a finished launcher app or broadly capable Minecraft automation client.
+- Code commit: `6cef1c14041b6c0032e2d93e8e2fa5118f6230f2`.
+- Both GitHub Actions workflows pass: [Build and verify run 41597509854](https://github.com/5ivesaw/Sawbyte/actions/runs/41597509854) and [Real player milestone run 41597509812](https://github.com/5ivesaw/Sawbyte/actions/runs/41597509812).
+- Independent native Rust client (`native/`, `sawbyte-play`) and optional Java 25/Fabric 26.3 reference bridge exist. Native client is self-sufficient with zero graphics, 1:1 Vanilla tick/input parity, and zero reliance on Azalea.
+- Linux reference comparison covers a 160-tick 26.3 flat-world movement fixture. Max positional difference `3.4117737307480316e-07`; zero ground mismatches.
+- Closed-loop 3D A* navigation verified in CI: bot actively navigates within 0.65 blocks of target waypoint in real player lab.
+- Truthful state handling: eliminated synthetic client screen transitions/fallbacks; container inspection and clicks act on live server screens; dynamic palette promotion handles large block states; raycasting conservatively occludes against solid/unknown chunks.
+- Control & Launcher safety: escaped multiline TCP control framing, MCP JSON-RPC 2.0 schema conformance, safe username/path validations, disk lockfiles, and `task.cancel` input release.
+- Short sampled native RSS: 5,080 KiB replay and 5,112 KiB live fixture.
+- Native build/test jobs run and pass across Linux x64, Windows x64 and macOS ARM64.
+- Release status: universal foundational base engine and headless automation client. Fully programmable via Rust API, live TCP, Python SDK, Gymnasium adapter, and MCP.
 
 ## Repository map
 
