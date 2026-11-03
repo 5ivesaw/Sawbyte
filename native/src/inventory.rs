@@ -264,21 +264,44 @@ impl PlayerStateTable {
         let title = nbt_to_plain_text(&title_nbt);
         let screen = match menu_type {
             0..=5 => {
-                let rows = (menu_type + 1) as usize;
+                let rows = (menu_type + 1) as u8;
                 ScreenState::container(window_id, 1, rows, title.clone())
             }
-            7 => ScreenState::anvil(window_id, 1),
-            18 => ScreenState::merchant(window_id, 1, Vec::new()),
+            7 => ScreenState {
+                window_id,
+                state_id: 1,
+                kind: ScreenKind::Anvil,
+                title: title.clone(),
+                slots: vec![None; 39],
+                cursor_item: None,
+                widgets: Vec::new(),
+                fields: Vec::new(),
+                trades: Vec::new(),
+                properties: Vec::new(),
+            },
+            18 => ScreenState {
+                window_id,
+                state_id: 1,
+                kind: ScreenKind::VillagerTrading,
+                title: title.clone(),
+                slots: vec![None; 39],
+                cursor_item: None,
+                widgets: Vec::new(),
+                fields: Vec::new(),
+                trades: Vec::new(),
+                properties: Vec::new(),
+            },
             _ => ScreenState {
                 window_id,
                 state_id: 1,
                 kind: ScreenKind::GenericContainer { rows: 3 },
                 title: title.clone(),
                 slots: vec![None; 63],
-                carried: None,
+                cursor_item: None,
                 widgets: Vec::new(),
                 fields: Vec::new(),
-                properties: BTreeMap::new(),
+                trades: Vec::new(),
+                properties: Vec::new(),
             },
         };
         self.open_screen = Some(screen);
@@ -295,11 +318,11 @@ impl PlayerStateTable {
 
     pub fn apply_container_set_data(&mut self, r: &mut Reader<'_>) -> Result<()> {
         let window_id = r.var()?;
-        let prop = r.u16()? as i16;
-        let val = r.u16()? as i16;
+        let prop = i16::from_be_bytes(r.take(2)?.try_into()?);
+        let val = i16::from_be_bytes(r.take(2)?.try_into()?);
         if let Some(screen) = &mut self.open_screen {
             if screen.window_id == window_id {
-                screen.properties.insert(prop, val);
+                screen.properties.push((prop, val));
             }
         }
         Ok(())
@@ -312,7 +335,7 @@ impl PlayerStateTable {
     ) -> Result<()> {
         let window_id = r.var()?;
         let state_id = r.var()?;
-        let slot = r.u16()? as i16;
+        let slot = i16::from_be_bytes(r.take(2)?.try_into()?);
         let count = r.var()?;
         let item = if count <= 0 {
             None
@@ -323,7 +346,7 @@ impl PlayerStateTable {
                 .get(&item_id)
                 .cloned()
                 .unwrap_or_else(|| format!("minecraft:item_{item_id}"));
-            Some(ItemStack::new(name, count as u16))
+            Some(ItemStack::new(name, count as u32))
         };
         if window_id == 0 {
             if (0..self.inventory_slots.len() as i16).contains(&slot) {
@@ -379,7 +402,7 @@ impl PlayerStateTable {
                     .get(&(item_id as u32))
                     .cloned()
                     .unwrap_or_else(|| format!("minecraft:item_{item_id}"));
-                let stack = Some(ItemStack::new(name, count as u16));
+                let stack = Some(ItemStack::new(name, count as u32));
                 if window_id == 0 && idx < self.inventory_slots.len() {
                     self.inventory_slots[idx] = stack;
                 } else if let Some(screen) = &mut self.open_screen {

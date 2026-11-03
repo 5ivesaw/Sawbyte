@@ -54,7 +54,9 @@ impl RuntimeMode {
         match s {
             "native" => Ok(Self::NativeStandalone),
             "bridge" => Ok(Self::FullClientBridge),
-            _ => Err(format!("unknown runtime mode '{s}'; expected 'native' or 'bridge'")),
+            _ => Err(format!(
+                "unknown runtime mode '{s}'; expected 'native' or 'bridge'"
+            )),
         }
     }
 }
@@ -120,7 +122,11 @@ impl PersistentLauncher {
             let content = fs::read_to_string(&state_file).map_err(|e| e.to_string())?;
             launcher.deserialize(&content)?;
         } else {
-            launcher.create_instance("default-native", "sawbyte-26.3", RuntimeMode::NativeStandalone)?;
+            launcher.create_instance(
+                "default-native",
+                "sawbyte-26.3",
+                RuntimeMode::NativeStandalone,
+            )?;
             launcher.add_account("SawbyteNative", "00000000000030008000000000000001", None)?;
             launcher.save()?;
         }
@@ -133,7 +139,9 @@ impl PersistentLauncher {
         let target = self.root_dir.join("launcher.db");
         let mut out = String::from("# Sawbyte Persistent Launcher State v1\n");
         for inst in self.instances.values() {
-            let pid_str = inst.last_pid.map_or_else(|| "none".into(), |p| p.to_string());
+            let pid_str = inst
+                .last_pid
+                .map_or_else(|| "none".into(), |p| p.to_string());
             out.push_str(&format!(
                 "INSTANCE|{}|{}|{}|{}|{}|{}|{}\n",
                 inst.name,
@@ -260,8 +268,18 @@ impl PersistentLauncher {
         self.save()
     }
 
-    pub fn set_setting(&mut self, instance_name: &str, key: &str, value: &str) -> Result<(), String> {
-        if key.is_empty() || key.contains('|') || value.contains('|') || key.contains('\n') || value.contains('\n') {
+    pub fn set_setting(
+        &mut self,
+        instance_name: &str,
+        key: &str,
+        value: &str,
+    ) -> Result<(), String> {
+        if key.is_empty()
+            || key.contains('|')
+            || value.contains('|')
+            || key.contains('\n')
+            || value.contains('\n')
+        {
             return Err("invalid setting key or value".into());
         }
         let dir = self.instance_dir(instance_name);
@@ -320,9 +338,13 @@ impl PersistentLauncher {
 
     pub fn rollback_instance(&mut self, name: &str, snapshot_id: u32) -> Result<(), String> {
         let dir = self.instance_dir(name);
-        let snap_path = dir.join("snapshots").join(format!("snapshot-{snapshot_id}.cfg"));
+        let snap_path = dir
+            .join("snapshots")
+            .join(format!("snapshot-{snapshot_id}.cfg"));
         if !snap_path.exists() {
-            return Err(format!("snapshot #{snapshot_id} does not exist on disk for '{name}'"));
+            return Err(format!(
+                "snapshot #{snapshot_id} does not exist on disk for '{name}'"
+            ));
         }
         let content = fs::read_to_string(&snap_path).map_err(|e| e.to_string())?;
         let inst = self
@@ -370,7 +392,11 @@ impl PersistentLauncher {
         self.save()
     }
 
-    pub fn acquire_account_lock(&mut self, username: &str, instance_name: &str) -> Result<(), String> {
+    pub fn acquire_account_lock(
+        &mut self,
+        username: &str,
+        instance_name: &str,
+    ) -> Result<(), String> {
         let lock_file = self.root_dir.join("locks").join(format!("{username}.lock"));
         let acc = self
             .accounts
@@ -465,13 +491,12 @@ impl PersistentLauncher {
         } else {
             cmd.arg("--offline").arg(&acc.username);
         }
-        cmd.arg(blocks_profile_path)
-            .arg("--listen")
-            .arg(&rpc_bind);
+        cmd.arg(blocks_profile_path).arg("--listen").arg(&rpc_bind);
         for arg in extra_args {
             cmd.arg(arg);
         }
-        cmd.stdout(Stdio::from(log_file)).stderr(Stdio::from(err_file));
+        cmd.stdout(Stdio::from(log_file))
+            .stderr(Stdio::from(err_file));
 
         let child = cmd.spawn().map_err(|e| {
             let _ = self.release_account_lock(account_name);
@@ -494,10 +519,8 @@ mod tests {
 
     #[test]
     fn launcher_persists_instances_settings_snapshots_and_locks_across_reloads() {
-        let temp_root = std::env::temp_dir().join(format!(
-            "sawbyte-launcher-test-{}",
-            std::process::id()
-        ));
+        let temp_root =
+            std::env::temp_dir().join(format!("sawbyte-launcher-test-{}", std::process::id()));
         let _ = fs::remove_dir_all(&temp_root);
 
         {
@@ -524,7 +547,10 @@ mod tests {
 
             l2.rollback_instance("bot-alpha", 1).unwrap();
             let inst_after = l2.instances.get("bot-alpha").unwrap();
-            assert_eq!(inst_after.settings.get("fov").map(String::as_str), Some("95"));
+            assert_eq!(
+                inst_after.settings.get("fov").map(String::as_str),
+                Some("95")
+            );
             let options_on_disk =
                 fs::read_to_string(l2.instance_dir("bot-alpha").join("options.txt")).unwrap();
             assert!(options_on_disk.contains("fov:95"));

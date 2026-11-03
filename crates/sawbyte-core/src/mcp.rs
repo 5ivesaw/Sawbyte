@@ -7,8 +7,8 @@
 
 use crate::events::{ClientMenuTarget, MouseButton, SubTickEvent};
 pub use crate::launcher::{
-    AccountRecord, InstanceRecord, PersistentLauncher, RuntimeMode, VersionAdapterProfile,
-    built_in_version_profiles,
+    built_in_version_profiles, AccountRecord, InstanceRecord, PersistentLauncher, RuntimeMode,
+    VersionAdapterProfile,
 };
 use crate::Direct;
 use std::collections::BTreeMap;
@@ -273,7 +273,9 @@ impl SawbyteControlBridge {
                 }
                 ["launcher.backup", name] => {
                     let snap = self.launcher.backup_instance(name)?;
-                    outputs.push(format!("saved token-free disk snapshot #{snap} for '{name}'"));
+                    outputs.push(format!(
+                        "saved token-free disk snapshot #{snap} for '{name}'"
+                    ));
                 }
                 ["launcher.rollback", name, snap_id] => {
                     let id: u32 = snap_id.parse().map_err(|_| "invalid snapshot id")?;
@@ -286,7 +288,9 @@ impl SawbyteControlBridge {
                 }
                 ["launcher.connect_live", endpoint] => {
                     self.live_endpoint = Some((*endpoint).to_owned());
-                    outputs.push(format!("attached control bridge to live endpoint {endpoint}"));
+                    outputs.push(format!(
+                        "attached control bridge to live endpoint {endpoint}"
+                    ));
                 }
                 ["launcher.launch", instance, server, account, blocks_json] => {
                     let (_child, log_path) = self.launcher.spawn_live_process(
@@ -553,10 +557,8 @@ mod tests {
 
     #[test]
     fn mcp_bridge_persists_launcher_to_disk_and_forwards_live_commands_over_tcp() {
-        let temp_root = std::env::temp_dir().join(format!(
-            "sawbyte-mcp-bridge-test-{}",
-            std::process::id()
-        ));
+        let temp_root =
+            std::env::temp_dir().join(format!("sawbyte-mcp-bridge-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&temp_root);
 
         // Start a real loopback TCP listener representing a running `sawbyte-play live --listen` process

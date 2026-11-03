@@ -596,7 +596,7 @@ impl Session {
         self.player.step(frame, &self.world)?;
 
         // Drain and transmit all discrete sub-tick events scheduled for this tick
-        for ev in self.event_queue.drain_for_tick(self.live_tick) {
+        for ev in self.event_queue.drain_tick(self.live_tick) {
             if let SubTickEvent::SelectHotbar { slot } = &ev {
                 self.state_table.selected_hotbar = *slot;
             }
@@ -698,8 +698,7 @@ impl Session {
                     ));
                 }
                 ["interact.raycast_block"] => {
-                    let reach = self.player.attributes.block_interaction_range;
-                    match raycast::raycast_block(&self.player, &self.world, reach) {
+                    match raycast::raycast_block(&self.player, &self.world) {
                         Some(hit) => outputs.push(format!(
                             "raycast_block hit=({}, {}, {}) face={:?} dist={:.3}",
                             hit.block_pos[0],
@@ -712,14 +711,13 @@ impl Session {
                     }
                 }
                 ["interact.raycast_entity"] => {
-                    let reach = self.player.attributes.entity_interaction_range;
                     let candidates: Vec<(i32, [f64; 6])> = self
                         .state_table
                         .entities
                         .values()
                         .map(|e| (e.entity_id, e.aabb()))
                         .collect();
-                    match raycast::raycast_entity(&self.player, &self.world, &candidates, reach) {
+                    match raycast::raycast_entity(&self.player, &self.world, &candidates) {
                         Some(hit) => outputs.push(format!(
                             "raycast_entity id={} dist={:.3}",
                             hit.entity_id, hit.distance
@@ -749,8 +747,7 @@ impl Session {
                     ));
                 }
                 ["interact.mine_look"] => {
-                    let reach = self.player.attributes.block_interaction_range;
-                    let hit = raycast::raycast_block(&self.player, &self.world, reach)
+                    let hit = raycast::raycast_block(&self.player, &self.world)
                         .ok_or_else(|| "no block in line of sight within reach".to_owned())?;
                     let seq = self.state_table.next_sequence();
                     let events = ComposableTask::MineBlock {
@@ -798,7 +795,7 @@ impl Session {
                                 SubTickEvent::InteractEntity {
                                     entity_id: id,
                                     interaction: EntityInteraction::Attack,
-                                    sneaking: self.player.crouching,
+                                    sneaking: self.player.sneaking,
                                 },
                             ),
                             (
@@ -1101,12 +1098,8 @@ impl Session {
                     ];
                     self.world
                         .extract_voxel_patch(center, 3, 1, 3, &mut self.voxel_patch_buf);
-                    let ray_dist = raycast::raycast_block(
-                        &self.player,
-                        &self.world,
-                        self.player.attributes.block_interaction_range,
-                    )
-                    .map_or(-1.0, |h| h.distance);
+                    let ray_dist =
+                        raycast::raycast_block(&self.player, &self.world).map_or(-1.0, |h| h.distance);
                     let solid_nearby = self.voxel_patch_buf.iter().filter(|&&b| b == 1).count();
                     outputs.push(format!(
                         "{{\"tick\":{},\"pos\":[{:.5},{:.5},{:.5}],\"vel\":[{:.5},{:.5},{:.5}],\"yaw\":{:.3},\"pitch\":{:.3},\"ground\":{},\"health\":{:.1},\"food\":{},\"raycast_dist\":{:.3},\"voxel_patch_len\":{},\"solid_voxels\":{}}}",

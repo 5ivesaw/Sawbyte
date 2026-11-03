@@ -12,22 +12,22 @@ fn run_with_home(args: &[&str], home: &std::path::Path) -> std::process::Output 
 
 #[test]
 fn cli_reports_scope_and_rejects_unknown_commands() {
-    let temp_home =
-        std::env::temp_dir().join(format!("sawbyte-cli-cap-{}", std::process::id()));
+    let temp_home = std::env::temp_dir().join(format!("sawbyte-cli-cap-{}", std::process::id()));
     let output = run_with_home(&["capabilities"], &temp_home);
     assert!(output.status.success());
     let text = String::from_utf8(output.stdout).unwrap();
     assert!(text.contains("sawbyte-play live"));
     assert!(text.contains("Persistent disk launcher"));
     assert!(!run_with_home(&["connect"], &temp_home).status.success());
-    assert!(!run_with_home(&["demo", "--unknown"], &temp_home).status.success());
+    assert!(!run_with_home(&["demo", "--unknown"], &temp_home)
+        .status
+        .success());
     let _ = std::fs::remove_dir_all(&temp_home);
 }
 
 #[test]
 fn demos_exercise_different_policies_and_release_forward() {
-    let temp_home =
-        std::env::temp_dir().join(format!("sawbyte-cli-demo-{}", std::process::id()));
+    let temp_home = std::env::temp_dir().join(format!("sawbyte-cli-demo-{}", std::process::id()));
     let human = run_with_home(&["demo"], &temp_home);
     let direct = run_with_home(&["demo", "--direct"], &temp_home);
     assert!(human.status.success() && direct.status.success());
@@ -42,8 +42,7 @@ fn demos_exercise_different_policies_and_release_forward() {
 
 #[test]
 fn persistent_disk_launcher_and_live_tcp_mcp_bridge_work_across_processes() {
-    let temp_home =
-        std::env::temp_dir().join(format!("sawbyte-cli-e2e-{}", std::process::id()));
+    let temp_home = std::env::temp_dir().join(format!("sawbyte-cli-e2e-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&temp_home);
 
     // 1. Create instance in Process 1, set setting, backup snapshot
@@ -59,9 +58,11 @@ fn persistent_disk_launcher_and_live_tcp_mcp_bridge_work_across_processes() {
     )
     .status
     .success());
-    assert!(run_with_home(&["launcher", "backup", "rl-bot-1"], &temp_home)
-        .status
-        .success());
+    assert!(
+        run_with_home(&["launcher", "backup", "rl-bot-1"], &temp_home)
+            .status
+            .success()
+    );
 
     // 2. Verify in Process 2 (`launcher list`) that disk state persisted after Process 1 exited
     let list_out = run_with_home(&["launcher", "list"], &temp_home);
@@ -74,7 +75,7 @@ fn persistent_disk_launcher_and_live_tcp_mcp_bridge_work_across_processes() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let addr = listener.local_addr().unwrap().to_string();
     let srv = std::thread::spawn(move || {
-        for stream in listener.incoming().take(2).flatten() {
+        for stream in listener.incoming().take(3).flatten() {
             let mut writer = stream.try_clone().unwrap();
             let reader = BufReader::new(stream);
             for line in reader.lines().map_while(Result::ok) {
