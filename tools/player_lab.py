@@ -82,6 +82,10 @@ class Server:
                         profile["top_slabs"].append(state["id"])
                     else:
                         profile["solid"].append(state["id"])
+        for key, val in block_data.items():
+            if key.endswith("_stairs") and "states" in val:
+                for state in val["states"]:
+                    profile["stairs"].append(state["id"])
         packets_file = self.directory / "generated/reports/packets.json"
         if packets_file.exists():
             packets_data = json.loads(packets_file.read_text())

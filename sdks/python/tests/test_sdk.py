@@ -77,10 +77,12 @@ class TestSawbytePythonSdk(unittest.TestCase):
                 .connect_live(endpoint)
                 .navigate(3, -60, 3)
                 .run_shop_purchase("minecraft:stone", 64)
+                .cancel_task()
                 .observe_gym()
             )
             script = wf.compile_script()
             self.assertIn("gui.run_shop_workflow minecraft:stone 64", script)
+            self.assertIn("task.cancel", script)
 
             binary = os.environ.get("SAWBYTE_BIN")
             if binary:

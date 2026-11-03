@@ -18,6 +18,7 @@ pub struct PacketTable {
     pub cb_container_set_content: i32,
     pub cb_container_set_data: i32,
     pub cb_container_set_slot: i32,
+    pub cb_move_entity_pos: i32,
     pub cb_open_screen: i32,
     pub cb_remove_entities: i32,
     pub cb_section_blocks_update: i32,
@@ -54,6 +55,7 @@ impl Default for PacketTable {
             cb_container_set_content: 18,
             cb_container_set_data: 19,
             cb_container_set_slot: 20,
+            cb_move_entity_pos: 49,
             cb_open_screen: 55,
             cb_remove_entities: 76,
             cb_section_blocks_update: 86,
@@ -111,6 +113,8 @@ impl PacketTable {
             "minecraft:container_set_slot",
             table.cb_container_set_slot,
         );
+        table.cb_move_entity_pos =
+            get_id(cb, "minecraft:move_entity_pos", table.cb_move_entity_pos);
         table.cb_open_screen = get_id(cb, "minecraft:open_screen", table.cb_open_screen);
         table.cb_remove_entities =
             get_id(cb, "minecraft:remove_entities", table.cb_remove_entities);
@@ -607,6 +611,31 @@ impl PlayerStateTable {
             ent.pitch = pitch;
         }
         Ok(())
+    }
+
+    pub fn apply_move_entity_pos(&mut self, r: &mut Reader<'_>) -> Result<()> {
+        let entity_id = r.var()?;
+        let dx = i16::from_be_bytes(r.take(2)?.try_into()?) as f64 / 4096.0;
+        let dy = i16::from_be_bytes(r.take(2)?.try_into()?) as f64 / 4096.0;
+        let dz = i16::from_be_bytes(r.take(2)?.try_into()?) as f64 / 4096.0;
+        let _on_ground = r.bool()?;
+        if let Some(ent) = self.entities.get_mut(&entity_id) {
+            ent.pos[0] += dx;
+            ent.pos[1] += dy;
+            ent.pos[2] += dz;
+        }
+        Ok(())
+    }
+
+    pub fn apply_set_entity_motion(&mut self, r: &mut Reader<'_>) -> Result<(i32, [f64; 3])> {
+        let entity_id = r.var()?;
+        let vx = i16::from_be_bytes(r.take(2)?.try_into()?) as f64 / 8000.0;
+        let vy = i16::from_be_bytes(r.take(2)?.try_into()?) as f64 / 8000.0;
+        let vz = i16::from_be_bytes(r.take(2)?.try_into()?) as f64 / 8000.0;
+        if let Some(ent) = self.entities.get_mut(&entity_id) {
+            ent.velocity = [vx, vy, vz];
+        }
+        Ok((entity_id, [vx, vy, vz]))
     }
 
     pub fn apply_system_chat(&mut self, r: &mut Reader<'_>) -> Result<()> {

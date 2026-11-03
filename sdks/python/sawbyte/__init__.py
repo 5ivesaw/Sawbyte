@@ -6,7 +6,7 @@ import json
 import math
 import socket
 import subprocess
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
 @dataclass
@@ -75,6 +75,10 @@ class WorkflowBuilder:
 
     def observe_gym(self) -> "WorkflowBuilder":
         self.statements.append("gym.observe")
+        return self
+
+    def cancel_task(self) -> "WorkflowBuilder":
+        self.statements.append("task.cancel")
         return self
 
     def compile_script(self) -> str:
@@ -159,8 +163,15 @@ class SawbyteMcpClient:
     def close(self) -> None:
         if self._proc is not None:
             if self._proc.stdin:
-                self._proc.stdin.close()
-            self._proc.wait(timeout=5)
+                try:
+                    self._proc.stdin.close()
+                except Exception:
+                    pass
+            try:
+                self._proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self._proc.kill()
+                self._proc.wait()
             self._proc = None
 
     def request(self, method: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -199,10 +210,12 @@ class SawbyteEnv:
         live_endpoint: str = "127.0.0.1:25580",
         goal_pos: Tuple[float, float, float] = (4.5, -60.0, 4.5),
         max_steps: int = 160,
+        reward_fn: Optional[Callable[[Dict[str, Any], bool, float], float]] = None,
     ) -> None:
         self.client = SawbyteLiveTcpClient(live_endpoint)
         self.goal_pos = goal_pos
         self.max_steps = max_steps
+        self.reward_fn = reward_fn
         self.step_count = 0
 
     def reset(self, seed: Optional[int] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -227,10 +240,20 @@ class SawbyteEnv:
         obs = self.observe()
         pos = obs.get("pos", [0.0, 0.0, 0.0])
         dist = math.sqrt(sum(( float(a) - float(g) ) ** 2 for a, g in zip(pos, self.goal_pos)))
-        terminated = dist < 0.75
+        dead = float(obs.get("health", 20.0)) <= 0.0
+        reached = dist < 0.75
+        terminated = dead or reached
         truncated = self.step_count >= self.max_steps
-        reward = 10.0 if terminated else -0.05 * dist
-        return obs, reward, terminated, truncated, {"distance_to_goal": dist}
+        if self.reward_fn is not None:
+            reward = self.reward_fn(obs, terminated, dist)
+        else:
+            if dead:
+                reward = -50.0
+            elif reached:
+                reward = 10.0
+            else:
+                reward = -0.05 * dist
+        return obs, reward, terminated, truncated, {"distance_to_goal": dist, "health": obs.get("health", 20.0), "dead": dead}
 
     def close(self) -> None:
         self.client.close()

@@ -158,7 +158,7 @@ pub fn raycast_block(player: &Player, world: &World) -> Option<BlockHit> {
 }
 
 /// Raycasts against candidate entity AABBs `(entity_id, aabb)`, enforcing both `entity_interaction_range`
-/// and line-of-sight block occlusion.
+/// and line-of-sight block occlusion (treating unloaded chunks conservatively as occluders).
 pub fn raycast_entity(
     player: &Player,
     world: &World,
@@ -170,8 +170,48 @@ pub fn raycast_entity(
         player.pos[2],
     ];
     let dir = look_direction(player.yaw, player.pitch);
-    let block_clip = raycast_block(player, world).map_or(f64::INFINITY, |b| b.distance);
-    let mut max_dist = player.attributes.entity_interaction_range.min(block_clip);
+    let mut max_dist = player.attributes.entity_interaction_range;
+
+    let end = [
+        origin[0] + dir[0] * max_dist,
+        origin[1] + dir[1] * max_dist,
+        origin[2] + dir[2] * max_dist,
+    ];
+    let min_v = [
+        origin[0].min(end[0]).floor() as i32,
+        origin[1].min(end[1]).floor() as i32,
+        origin[2].min(end[2]).floor() as i32,
+    ];
+    let max_v = [
+        origin[0].max(end[0]).floor() as i32,
+        origin[1].max(end[1]).floor() as i32,
+        origin[2].max(end[2]).floor() as i32,
+    ];
+
+    let mut occlusion_dist = max_dist;
+    for x in min_v[0]..=max_v[0] {
+        for y in min_v[1]..=max_v[1] {
+            for z in min_v[2]..=max_v[2] {
+                match world.collision_boxes(x, y, z) {
+                    Ok(boxes) => {
+                        for b in boxes {
+                            if let Some((dist, _, _)) = ray_intersect_aabb(origin, dir, b, occlusion_dist) {
+                                occlusion_dist = occlusion_dist.min(dist);
+                            }
+                        }
+                    }
+                    Err(_) => {
+                        // Conservative occlusion: unloaded or unknown block treated as solid unit cube
+                        let unit_box = [x as f64, y as f64, z as f64, (x + 1) as f64, (y + 1) as f64, (z + 1) as f64];
+                        if let Some((dist, _, _)) = ray_intersect_aabb(origin, dir, unit_box, occlusion_dist) {
+                            occlusion_dist = occlusion_dist.min(dist);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    max_dist = max_dist.min(occlusion_dist);
 
     let mut best = None;
     for &(entity_id, aabb) in entities {

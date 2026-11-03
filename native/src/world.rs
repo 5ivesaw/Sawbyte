@@ -67,6 +67,9 @@ impl Palette {
         if i >= 4096 {
             return Err(bad("block section index out of range"));
         }
+        if state_id >= 1_000_000 {
+            return Err(bad("block state ID out of range"));
+        }
         if self.bits == 0 {
             if self.ids[0] == state_id {
                 return Ok(());
@@ -82,6 +85,23 @@ impl Palette {
             return Ok(());
         }
         let palette_index = if self.ids.is_empty() {
+            if (state_id as usize) >= (1usize << self.bits) {
+                let new_bits = (32 - state_id.leading_zeros() as usize).max(self.bits);
+                let mut existing = Vec::with_capacity(4096);
+                for idx in 0..4096 {
+                    existing.push(self.get(idx)?);
+                }
+                existing[i] = state_id;
+                self.bits = new_bits;
+                let per = 64 / self.bits;
+                self.words = vec![0u64; 4096usize.div_ceil(per)];
+                for (idx, val) in existing.into_iter().enumerate() {
+                    let w = idx / per;
+                    let off = (idx % per) * self.bits;
+                    self.words[w] |= (val as u64) << off;
+                }
+                return Ok(());
+            }
             state_id as usize
         } else if let Some(pos) = self.ids.iter().position(|&id| id == state_id) {
             pos
@@ -89,13 +109,15 @@ impl Palette {
             self.ids.push(state_id);
             self.ids.len() - 1
         } else {
-            // Promote to direct global 15-bit palette when indirect capacity is exceeded
+            // Promote to direct global palette when indirect capacity is exceeded
             let mut existing = Vec::with_capacity(4096);
             for idx in 0..4096 {
                 existing.push(self.get(idx)?);
             }
             existing[i] = state_id;
-            self.bits = 15;
+            let max_id = existing.iter().copied().max().unwrap_or(0).max(state_id);
+            let direct_bits = (32 - max_id.leading_zeros() as usize).max(15);
+            self.bits = direct_bits;
             self.ids.clear();
             let per = 64 / self.bits;
             self.words = vec![0u64; 4096usize.div_ceil(per)];
@@ -561,5 +583,18 @@ mod tests {
         assert_eq!(boxes, vec![[2.0, -60.0, 2.0, 3.0, -59.5, 3.0]]);
         world.set_block(2, -59, 2, 3).unwrap();
         assert!(world.is_climbable(2, -59, 2));
+    }
+
+    #[test]
+    fn palette_set_promotes_to_direct_with_large_state_ids() {
+        let mut p = Palette::single(0);
+        for id in 1..=20 {
+            p.set(id as usize, id * 2000).unwrap();
+        }
+        for id in 1..=20 {
+            assert_eq!(p.get(id as usize).unwrap(), id * 2000);
+        }
+        assert_eq!(p.get(0).unwrap(), 0);
+        assert_eq!(p.get(21).unwrap(), 0);
     }
 }

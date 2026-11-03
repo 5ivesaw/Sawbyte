@@ -398,6 +398,12 @@ impl Session {
             84 => {
                 self.player.velocity = [0.0; 3];
                 self.state_table.health = 20.0;
+                self.world.chunks.clear();
+                self.state_table.entities.clear();
+                self.state_table.open_screen = None;
+                self.active_nav_path.clear();
+                self.active_nav_goal = None;
+                self.positioned = false;
             }
             120 => {
                 self.playing = false;
@@ -468,6 +474,25 @@ impl Session {
                 if let Err(e) = self.state_table.apply_teleport_entity(&mut r) {
                     self.state_table
                         .record_decode_error("teleport_entity", e.as_ref());
+                }
+            }
+            id if id == self.packets.cb_move_entity_pos => {
+                if let Err(e) = self.state_table.apply_move_entity_pos(&mut r) {
+                    self.state_table
+                        .record_decode_error("move_entity_pos", e.as_ref());
+                }
+            }
+            id if id == self.packets.cb_set_entity_motion => {
+                match self.state_table.apply_set_entity_motion(&mut r) {
+                    Ok((ent_id, vel)) => {
+                        if self.state_table.player_entity_id == Some(ent_id) {
+                            self.player.velocity = vel;
+                        }
+                    }
+                    Err(e) => {
+                        self.state_table
+                            .record_decode_error("set_entity_motion", e.as_ref());
+                    }
                 }
             }
             id if id == self.packets.cb_system_chat => {
@@ -801,6 +826,13 @@ impl Session {
                         "live 3D A* path active ({waypoints} waypoints) from ({}, {}, {}) -> ({}, {}, {})",
                         start[0], start[1], start[2], goal[0], goal[1], goal[2]
                     ));
+                }
+                ["task.cancel"] => {
+                    self.active_nav_path.clear();
+                    self.active_nav_goal = None;
+                    let _ = self.scheduler.cancel();
+                    self.event_queue.clear();
+                    outputs.push("cancelled active navigation and released all scheduled inputs".into());
                 }
                 ["interact.raycast_block"] => {
                     match raycast::raycast_block(&self.player, &self.world) {
@@ -1440,7 +1472,7 @@ impl Session {
                             ),
                         ])
                         .map_err(|e| format!("scheduler error: {e}"))?;
-                    outputs.push(format!("gym.step scheduled for tick {next_tick}"));
+                    outputs.push(format!("gym.step scheduled for tick {next_tick} (current_tick={})", self.live_tick));
                 }
                 _ => {
                     return Err(format!(
@@ -1708,6 +1740,7 @@ fn run_live(args: &[String]) -> Result<()> {
                             }
                         }
                     }
+                    let _ = sender_conn.send(("task.cancel".to_string(), None));
                 });
             }
         });
