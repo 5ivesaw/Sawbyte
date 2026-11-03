@@ -1,0 +1,4 @@
+GitHub Actions run 41581827919, commit d70a744.
+The live script requested task.navigate to (3, -60, 2).
+Its saved trace ended at (3.940612448, -60, 4.229433639), not the requested destination.
+The workflow only asserted 60 trace rows and displacement greater than 1.5 blocks.

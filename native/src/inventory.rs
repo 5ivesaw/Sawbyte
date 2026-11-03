@@ -50,10 +50,10 @@ impl Default for PacketTable {
         Self {
             cb_add_entity: 1,
             cb_block_update: 8,
-            cb_container_close: 18,
-            cb_container_set_content: 19,
-            cb_container_set_data: 20,
-            cb_container_set_slot: 21,
+            cb_container_close: 17,
+            cb_container_set_content: 18,
+            cb_container_set_data: 19,
+            cb_container_set_slot: 20,
             cb_open_screen: 55,
             cb_remove_entities: 76,
             cb_section_blocks_update: 86,
@@ -68,14 +68,14 @@ impl Default for PacketTable {
             sb_container_close: 18,
             sb_interact: 24,
             sb_place_recipe: 38,
-            sb_player_action: 40,
+            sb_player_action: 41,
             sb_rename_item: 48,
             sb_select_trade: 51,
             sb_set_carried_item: 52,
             sb_sign_update: 59,
             sb_swing: 60,
-            sb_use_item_on: 63,
-            sb_use_item: 64,
+            sb_use_item_on: 66,
+            sb_use_item: 67,
             item_names: HashMap::new(),
         }
     }
@@ -166,12 +166,28 @@ impl PacketTable {
 pub fn nbt_to_plain_text(val: &serde_json::Value) -> String {
     match val {
         serde_json::Value::String(s) => s.clone(),
+        serde_json::Value::Array(arr) => {
+            let mut out = String::new();
+            for item in arr {
+                out.push_str(&nbt_to_plain_text(item));
+            }
+            out
+        }
         serde_json::Value::Object(map) => {
             let mut out = String::new();
             if let Some(t) = map.get("text").and_then(|v| v.as_str()) {
                 out.push_str(t);
             } else if let Some(tr) = map.get("translate").and_then(|v| v.as_str()) {
                 out.push_str(tr);
+                if let Some(with_args) = map.get("with").and_then(|v| v.as_array()) {
+                    let rendered: Vec<String> =
+                        with_args.iter().map(nbt_to_plain_text).collect();
+                    if !rendered.is_empty() {
+                        out.push('(');
+                        out.push_str(&rendered.join(", "));
+                        out.push(')');
+                    }
+                }
             }
             if let Some(extra) = map.get("extra").and_then(|v| v.as_array()) {
                 for item in extra {
@@ -226,6 +242,8 @@ pub struct PlayerStateTable {
     pub action_sequence: i32,
     pub chat_log: Vec<String>,
     pub received_events: Vec<String>,
+    pub decode_errors: u64,
+    pub last_decode_error: Option<String>,
 }
 
 impl Default for PlayerStateTable {
@@ -246,15 +264,135 @@ impl Default for PlayerStateTable {
             action_sequence: 1,
             chat_log: Vec::new(),
             received_events: Vec::new(),
+            decode_errors: 0,
+            last_decode_error: None,
         }
     }
 }
 
+fn decode_slot_item(
+    r: &mut Reader<'_>,
+    packets: &PacketTable,
+) -> Result<(Option<ItemStack>, bool)> {
+    let count = r.var()?;
+    if count <= 0 {
+        return Ok((None, true));
+    }
+    let item_id = r.var()?;
+    if item_id < 0 {
+        return Err(crate::wire::bad("negative item id in slot"));
+    }
+    let added_components = r.var()?;
+    let removed_components = r.var()?;
+    if added_components < 0 || removed_components < 0 {
+        return Err(crate::wire::bad("negative component patch count"));
+    }
+    let name = packets
+        .item_names
+        .get(&(item_id as u32))
+        .cloned()
+        .unwrap_or_else(|| format!("minecraft:item_{item_id}"));
+    let mut stack = ItemStack::new(name, count as u32);
+    let mut exact_stream = true;
+    for _ in 0..added_components {
+        let Ok(comp_id) = r.var() else {
+            exact_stream = false;
+            break;
+        };
+        match comp_id {
+            // 3 = max_damage (VarInt), 4 = damage (VarInt) in 26.3 data_component_type
+            3 => {
+                if let Ok(max_dmg) = r.var() {
+                    let cur = stack.damage.map_or(0, |(d, _)| d);
+                    stack.damage = Some((cur, max_dmg));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            4 => {
+                if let Ok(dmg) = r.var() {
+                    let max_d = stack.damage.map_or(0, |(_, m)| m);
+                    stack.damage = Some((dmg, max_d));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 5 = custom_name (NBT), 6 = item_name (NBT)
+            5 | 6 => {
+                if let Ok(tag) = r.nbt() {
+                    let text = nbt_to_plain_text(&tag);
+                    if !text.is_empty() {
+                        stack.display_name = Some(text);
+                    }
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 7 = lore (list of NBT text components)
+            7 => {
+                if let Ok(line_count) = r.count(256) {
+                    let mut lines = Vec::with_capacity(line_count);
+                    for _ in 0..line_count {
+                        if let Ok(tag) = r.nbt() {
+                            lines.push(nbt_to_plain_text(&tag));
+                        } else {
+                            exact_stream = false;
+                            break;
+                        }
+                    }
+                    stack.lore = lines;
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            other => {
+                stack
+                    .components
+                    .push((format!("component_{other}"), "present".into()));
+                exact_stream = false;
+                break;
+            }
+        }
+    }
+    if exact_stream {
+        for _ in 0..removed_components {
+            if r.var().is_err() {
+                exact_stream = false;
+                break;
+            }
+        }
+    }
+    Ok((Some(stack), exact_stream))
+}
+
 impl PlayerStateTable {
     pub fn next_sequence(&mut self) -> i32 {
+        self.next_sequence_n(1)
+    }
+
+    pub fn next_sequence_n(&mut self, count: i32) -> i32 {
         let seq = self.action_sequence;
-        self.action_sequence = self.action_sequence.wrapping_add(1).max(1);
+        let step = count.max(1);
+        self.action_sequence = self.action_sequence.wrapping_add(step).max(1);
         seq
+    }
+
+    pub fn push_event(&mut self, event: impl Into<String>) {
+        if self.received_events.len() >= 256 {
+            self.received_events.remove(0);
+        }
+        self.received_events.push(event.into());
+    }
+
+    pub fn record_decode_error(&mut self, context: &str, err: &dyn std::error::Error) {
+        self.decode_errors = self.decode_errors.saturating_add(1);
+        let msg = format!("{context}: {err}");
+        self.last_decode_error = Some(msg.clone());
+        self.push_event(format!("decode_error:{msg}"));
     }
 
     pub fn apply_open_screen(&mut self, r: &mut Reader<'_>) -> Result<()> {
@@ -262,57 +400,58 @@ impl PlayerStateTable {
         let menu_type = r.var()?;
         let title_nbt = r.nbt()?;
         let title = nbt_to_plain_text(&title_nbt);
-        let screen = match menu_type {
+        let (kind, slot_count) = match menu_type {
             0..=5 => {
                 let rows = (menu_type + 1) as u8;
-                ScreenState::container(window_id, 1, rows, title.clone())
+                (ScreenKind::GenericContainer { rows }, (rows as usize * 9) + 36)
             }
-            7 => ScreenState {
-                window_id,
-                state_id: 1,
-                kind: ScreenKind::Anvil,
-                title: title.clone(),
-                slots: vec![None; 39],
-                cursor_item: None,
-                widgets: Vec::new(),
-                fields: Vec::new(),
-                trades: Vec::new(),
-                properties: Vec::new(),
-            },
-            18 => ScreenState {
-                window_id,
-                state_id: 1,
-                kind: ScreenKind::VillagerTrading,
-                title: title.clone(),
-                slots: vec![None; 39],
-                cursor_item: None,
-                widgets: Vec::new(),
-                fields: Vec::new(),
-                trades: Vec::new(),
-                properties: Vec::new(),
-            },
-            _ => ScreenState {
-                window_id,
-                state_id: 1,
-                kind: ScreenKind::GenericContainer { rows: 3 },
-                title: title.clone(),
-                slots: vec![None; 63],
-                cursor_item: None,
-                widgets: Vec::new(),
-                fields: Vec::new(),
-                trades: Vec::new(),
-                properties: Vec::new(),
-            },
+            6 => (ScreenKind::DropperOrDispenser, 9 + 36),
+            7 => (ScreenKind::Crafter3x3, 10 + 36),
+            8 => (ScreenKind::Anvil, 3 + 36),
+            9 => (ScreenKind::Beacon, 1 + 36),
+            10 => (ScreenKind::BlastFurnace, 3 + 36),
+            11 => (ScreenKind::BrewingStand, 5 + 36),
+            12 => (ScreenKind::CraftingTable, 10 + 36),
+            13 => (ScreenKind::EnchantingTable, 2 + 36),
+            14 => (ScreenKind::Furnace, 3 + 36),
+            15 => (ScreenKind::Grindstone, 3 + 36),
+            16 => (ScreenKind::Hopper, 5 + 36),
+            17 => (ScreenKind::Lectern, 1),
+            18 => (ScreenKind::Loom, 4 + 36),
+            19 => (ScreenKind::VillagerTrading, 3 + 36),
+            20 => (ScreenKind::ShulkerBox, 27 + 36),
+            21 => (ScreenKind::SmithingTable, 4 + 36),
+            22 => (ScreenKind::Smoker, 3 + 36),
+            23 => (ScreenKind::CartographyTable, 3 + 36),
+            24 => (ScreenKind::Stonecutter, 2 + 36),
+            other => (
+                ScreenKind::CustomModScreen {
+                    screen_id: format!("menu_type_{other}"),
+                },
+                0,
+            ),
+        };
+        let screen = ScreenState {
+            window_id,
+            state_id: 1,
+            kind,
+            title: title.clone(),
+            slots: vec![None; slot_count],
+            cursor_item: None,
+            widgets: Vec::new(),
+            fields: Vec::new(),
+            trades: Vec::new(),
+            properties: Vec::new(),
         };
         self.open_screen = Some(screen);
-        self.received_events.push(format!("screen_open:{title}"));
+        self.push_event(format!("screen_open:{title}"));
         Ok(())
     }
 
     pub fn apply_container_close(&mut self, r: &mut Reader<'_>) -> Result<()> {
         let _window_id = r.var()?;
         self.open_screen = None;
-        self.received_events.push("screen_closed".into());
+        self.push_event("screen_closed");
         Ok(())
     }
 
@@ -322,7 +461,14 @@ impl PlayerStateTable {
         let val = i16::from_be_bytes(r.take(2)?.try_into()?);
         if let Some(screen) = &mut self.open_screen {
             if screen.window_id == window_id {
-                screen.properties.push((prop, val));
+                if let Some(existing) = screen.properties.iter_mut().find(|(p, _)| *p == prop) {
+                    existing.1 = val;
+                } else {
+                    if screen.properties.len() >= 64 {
+                        screen.properties.remove(0);
+                    }
+                    screen.properties.push((prop, val));
+                }
             }
         }
         Ok(())
@@ -336,27 +482,26 @@ impl PlayerStateTable {
         let window_id = r.var()?;
         let state_id = r.var()?;
         let slot = i16::from_be_bytes(r.take(2)?.try_into()?);
-        let count = r.var()?;
-        let item = if count <= 0 {
-            None
-        } else {
-            let item_id = r.var()? as u32;
-            let name = packets
-                .item_names
-                .get(&item_id)
-                .cloned()
-                .unwrap_or_else(|| format!("minecraft:item_{item_id}"));
-            Some(ItemStack::new(name, count as u32))
-        };
+        let (item, _) = decode_slot_item(r, packets)?;
+        if window_id == -1 && slot == -1 {
+            if let Some(screen) = &mut self.open_screen {
+                screen.state_id = state_id;
+                screen.cursor_item = item;
+            }
+            return Ok(());
+        }
         if window_id == 0 {
             if (0..self.inventory_slots.len() as i16).contains(&slot) {
-                self.inventory_slots[slot as usize] = item;
+                self.inventory_slots[slot as usize] = item.clone();
             }
-        } else if let Some(screen) = &mut self.open_screen {
+        }
+        if let Some(screen) = &mut self.open_screen {
             if screen.window_id == window_id {
                 screen.state_id = state_id;
-                if slot >= 0 {
-                    screen.set_slot(slot as usize, item);
+                if slot == -1 {
+                    screen.cursor_item = item;
+                } else if slot >= 0 {
+                    screen.set_slot_authoritative(slot as usize, item);
                 }
             }
         }
@@ -371,49 +516,31 @@ impl PlayerStateTable {
         let window_id = r.var()?;
         let state_id = r.var()?;
         let slot_count = r.count(256)?;
-        if let Some(screen) = &mut self.open_screen {
-            if screen.window_id == window_id {
-                screen.state_id = state_id;
-                if screen.slots.len() < slot_count {
-                    screen.slots.resize(slot_count, None);
+        let mut staged_slots = vec![None; slot_count];
+        let mut stream_intact = true;
+        for slot_ref in staged_slots.iter_mut() {
+            let (stack, exact) = decode_slot_item(r, packets)?;
+            *slot_ref = stack;
+            if !exact {
+                stream_intact = false;
+                break;
+            }
+        }
+        let cursor_item = if stream_intact && !r.0.is_empty() {
+            decode_slot_item(r, packets).ok().and_then(|(it, _)| it)
+        } else {
+            None
+        };
+        if window_id == 0 {
+            for (idx, item) in staged_slots.iter().enumerate() {
+                if idx < self.inventory_slots.len() {
+                    self.inventory_slots[idx] = item.clone();
                 }
             }
         }
-        for idx in 0..slot_count {
-            let Ok(count) = r.var() else {
-                break;
-            };
-            if count <= 0 {
-                if window_id == 0 && idx < self.inventory_slots.len() {
-                    self.inventory_slots[idx] = None;
-                } else if let Some(screen) = &mut self.open_screen {
-                    if screen.window_id == window_id {
-                        screen.set_slot(idx, None);
-                    }
-                }
-            } else {
-                let Ok(item_id) = r.var() else {
-                    break;
-                };
-                let added_components = r.var().unwrap_or(0);
-                let removed_components = r.var().unwrap_or(0);
-                let name = packets
-                    .item_names
-                    .get(&(item_id as u32))
-                    .cloned()
-                    .unwrap_or_else(|| format!("minecraft:item_{item_id}"));
-                let stack = Some(ItemStack::new(name, count as u32));
-                if window_id == 0 && idx < self.inventory_slots.len() {
-                    self.inventory_slots[idx] = stack;
-                } else if let Some(screen) = &mut self.open_screen {
-                    if screen.window_id == window_id {
-                        screen.set_slot(idx, stack);
-                    }
-                }
-                // If an item carries arbitrary variable-length component patches, stop slot loop cleanly after recording it.
-                if added_components > 0 || removed_components > 0 {
-                    break;
-                }
+        if let Some(screen) = &mut self.open_screen {
+            if screen.window_id == window_id {
+                screen.apply_server_content(state_id, staged_slots, cursor_item);
             }
         }
         Ok(())
@@ -433,6 +560,11 @@ impl PlayerStateTable {
         let x = r.f64()?;
         let y = r.f64()?;
         let z = r.f64()?;
+        if self.entities.len() >= 1024 && !self.entities.contains_key(&entity_id) {
+            if let Some(&oldest) = self.entities.keys().next() {
+                self.entities.remove(&oldest);
+            }
+        }
         self.entities.insert(
             entity_id,
             TrackedEntity {
@@ -481,10 +613,7 @@ impl PlayerStateTable {
         let content = r.nbt()?;
         let text = nbt_to_plain_text(&content);
         if !text.is_empty() {
-            if text.to_lowercase().contains("purchased") || text.to_lowercase().contains("bought") {
-                self.received_events.push("purchase_confirmed".into());
-            }
-            self.received_events.push(format!("chat:{text}"));
+            self.push_event(format!("chat:{text}"));
             if self.chat_log.len() >= 128 {
                 self.chat_log.remove(0);
             }
@@ -509,6 +638,15 @@ pub fn encode_serverbound_event(event: &SubTickEvent) -> Option<(i32, Vec<u8>)> 
 pub fn encode_serverbound_event_with_table(
     event: &SubTickEvent,
     packets: &PacketTable,
+) -> Option<(i32, Vec<u8>)> {
+    encode_serverbound_event_with_pose(event, packets, 0.0, 0.0)
+}
+
+pub fn encode_serverbound_event_with_pose(
+    event: &SubTickEvent,
+    packets: &PacketTable,
+    player_yaw: f32,
+    player_pitch: f32,
 ) -> Option<(i32, Vec<u8>)> {
     let mut out = Vec::new();
     match event {
@@ -588,8 +726,8 @@ pub fn encode_serverbound_event_with_table(
         SubTickEvent::UseItem { hand, sequence } => {
             var(if *hand == Hand::MainHand { 0 } else { 1 }, &mut out);
             var(*sequence, &mut out);
-            out.extend(0.0f32.to_be_bytes());
-            out.extend(0.0f32.to_be_bytes());
+            out.extend(player_yaw.to_be_bytes());
+            out.extend(player_pitch.to_be_bytes());
             Some((packets.sb_use_item, out))
         }
         SubTickEvent::SwipeArm { hand } => {
@@ -715,7 +853,7 @@ mod tests {
             sequence: 7,
         })
         .unwrap();
-        assert_eq!(pkt_id, 40);
+        assert_eq!(pkt_id, 41);
         assert!(!payload.is_empty());
 
         let (click_id, _) = encode_serverbound_event(&SubTickEvent::ContainerClick {
@@ -727,5 +865,52 @@ mod tests {
         })
         .unwrap();
         assert_eq!(click_id, 17);
+    }
+
+    #[test]
+    fn container_set_content_preserves_authoritative_server_state_id_and_cursor() {
+        let mut table = PlayerStateTable::default();
+        table.open_screen = Some(ScreenState::container(2, 1, 1, "Chest"));
+        let mut packets = PacketTable::default();
+        packets.item_names.insert(1, "minecraft:stone".into());
+        packets.item_names.insert(4, "minecraft:cobblestone".into());
+
+        // Build a synthetic ContainerSetContent packet: window_id=2, state_id=42, 3 slots + cursor item
+        let mut raw = Vec::new();
+        var(2, &mut raw); // window_id
+        var(42, &mut raw); // authoritative server state_id
+        var(3, &mut raw); // slot_count = 3
+        // slot 0: 64x stone, 0 added, 0 removed
+        var(64, &mut raw);
+        var(1, &mut raw);
+        var(0, &mut raw);
+        var(0, &mut raw);
+        // slot 1: empty
+        var(0, &mut raw);
+        // slot 2: 16x cobblestone, 0 added, 0 removed
+        var(16, &mut raw);
+        var(4, &mut raw);
+        var(0, &mut raw);
+        var(0, &mut raw);
+        // cursor item: 8x stone
+        var(8, &mut raw);
+        var(1, &mut raw);
+        var(0, &mut raw);
+        var(0, &mut raw);
+
+        let mut reader = Reader(&raw);
+        table
+            .apply_container_set_content(&mut reader, &packets)
+            .unwrap();
+        let screen = table.open_screen.as_ref().unwrap();
+        assert_eq!(screen.state_id, 42);
+        assert_eq!(screen.slots[0].as_ref().unwrap().id, "minecraft:stone");
+        assert_eq!(screen.slots[0].as_ref().unwrap().count, 64);
+        assert!(screen.slots[1].is_none());
+        assert_eq!(
+            screen.slots[2].as_ref().unwrap().id,
+            "minecraft:cobblestone"
+        );
+        assert_eq!(screen.cursor_item.as_ref().unwrap().count, 8);
     }
 }

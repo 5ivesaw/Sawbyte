@@ -78,13 +78,45 @@ impl<'a> Reader<'a> {
                 if !(0..=262144).contains(&n) {
                     return Err(bad("NBT array limit"));
                 }
-                let width = match tag {
-                    7 => 1,
-                    11 => 4,
-                    _ => 8,
-                };
-                self.take(n as usize * width)?;
-                Value::Null
+                let count = n as usize;
+                match tag {
+                    7 => {
+                        let raw = self.take(count)?;
+                        if count <= 256 {
+                            Value::Array(raw.iter().map(|&b| Value::from(b as i8)).collect())
+                        } else {
+                            Value::from(format!("byte_array[{count}]"))
+                        }
+                    }
+                    11 => {
+                        let raw = self.take(count * 4)?;
+                        if count <= 256 {
+                            Value::Array(
+                                raw.chunks_exact(4)
+                                    .map(|c| Value::from(i32::from_be_bytes([c[0], c[1], c[2], c[3]])))
+                                    .collect(),
+                            )
+                        } else {
+                            Value::from(format!("int_array[{count}]"))
+                        }
+                    }
+                    _ => {
+                        let raw = self.take(count * 8)?;
+                        if count <= 256 {
+                            Value::Array(
+                                raw.chunks_exact(8)
+                                    .map(|c| {
+                                        Value::from(i64::from_be_bytes([
+                                            c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7],
+                                        ]))
+                                    })
+                                    .collect(),
+                            )
+                        } else {
+                            Value::from(format!("long_array[{count}]"))
+                        }
+                    }
+                }
             }
             9 => {
                 let kind = self.byte()?;
@@ -92,10 +124,14 @@ impl<'a> Reader<'a> {
                 if !(0..=16384).contains(&n) {
                     return Err(bad("NBT list limit"));
                 }
-                for _ in 0..n {
-                    self.tag(kind, depth + 1)?;
+                let mut items = Vec::with_capacity((n as usize).min(4096));
+                for idx in 0..n {
+                    let elem = self.tag(kind, depth + 1)?;
+                    if (idx as usize) < 4096 {
+                        items.push(elem);
+                    }
                 }
-                Value::Null
+                Value::Array(items)
             }
             10 => {
                 let mut map = Map::new();

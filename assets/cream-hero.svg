@@ -25,20 +25,20 @@
   <text x="300" y="61" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" font-weight="700" fill="#8C5230">v0.2.0 · 26.3</text>
 
   <text x="44" y="106" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="600" fill="#3D372E">
-    A smaller native client. A fully programmable player &amp; MCP platform.
+    Experimental native client and automation foundation.
   </text>
   <text x="44" y="138" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14.5" fill="#5C5346">
-    Standalone Rust Minecraft 26.3 runtime · Full-client Fabric bridge · Revision-safe GUI selectors · Built-in MCP server
+    Independent Rust client · Minecraft Java 26.3 prototype · Optional reference bridge
   </text>
   <text x="44" y="162" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14.5" fill="#5C5346">
-    Humanised camera, cursor &amp; typing policies by default · Launcher, main menu, settings &amp; code controllable by any AI agent
+    General automation, reliable outcomes and a real launcher remain in development
   </text>
 
   <!-- Cream Feature Pills at Bottom -->
   <g transform="translate(44, 222)">
     <rect x="0" y="0" width="198" height="36" rx="10" fill="#FDFBF7" stroke="#D5C7B0" stroke-width="1.2" />
     <circle cx="20" cy="18" r="5" fill="#2B6E5B" />
-    <text x="34" y="23" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">4,380 KiB Peak RSS</text>
+    <text x="34" y="23" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">~5 MiB Fixture RSS</text>
 
     <rect x="212" y="0" width="222" height="36" rx="10" fill="#FDFBF7" stroke="#D5C7B0" stroke-width="1.2" />
     <circle cx="232" cy="18" r="5" fill="#C47A2C" />
@@ -46,10 +46,10 @@
 
     <rect x="448" y="0" width="206" height="36" rx="10" fill="#FDFBF7" stroke="#D5C7B0" stroke-width="1.2" />
     <circle cx="468" cy="18" r="5" fill="#2B6E5B" />
-    <text x="482" y="23" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">10 MCP Agent Tools</text>
+    <text x="482" y="23" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">MCP In Development</text>
 
     <rect x="668" y="0" width="204" height="36" rx="10" fill="#FDFBF7" stroke="#D5C7B0" stroke-width="1.2" />
     <circle cx="688" cy="18" r="5" fill="#8C5230" />
-    <text x="702" y="23" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">Native + Bridge Modes</text>
+    <text x="702" y="23" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">Linux · Windows · macOS builds</text>
   </g>
 </svg>

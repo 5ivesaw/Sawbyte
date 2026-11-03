@@ -1,35 +1,22 @@
-# Foundation decisions
+# Current engineering decisions
 
-## Typed core before transport
+## Product boundary
+[The user’s product vision](VISION.md) governs this document. Sawbyte is an independent Rust Minecraft Java client, a general automation engine and a real launcher. User examples describe breadth; they do not define special features. Native operation is primary; normal-client integration remains an optional goal.
 
-The user's JSON example describes expressiveness, not a required format. The core uses Rust enums/structs and direct calls. An external transport will be chosen using workload measurements, ecosystem fit and debugging needs. JSON remains a possible control-plane format, not the execution engine. No workflow language is committed yet.
+## Language and interfaces
+Rust remains the natural implementation language for the small native runtime and shared engine. Python and TypeScript are optional control adapters, not required runtime dependencies. No custom workflow language or JSON execution format is committed. First build a complete typed, observable control boundary; choose serialization and scripting formats from measured needs.
 
-## Small independent status slice
+## Correctness before policy
+All controllers must share one rule-validating execution path. Humanised behaviour is the default where applicable; direct mode disables optional shaping only. Version, state, reach, collision, target, timing and inventory constraints still apply. Report queued actions separately from verified outcomes. Client-side prediction and synchronized memory are normal parts of a native client; invented production state/results are not.
 
-Implement the status handshake as the first real network operation. This exercises framing, deadlines and CLI packaging without pretending authentication or physics are complete. Wire sequencing was checked against the established Java handshake/status design; test fixtures assert packet structure and fragmentation. This does not certify any gameplay version or substitute for a vanilla-server integration test.
+## Backends and version support
+The standalone client is the primary backend. The Fabric bridge is optional graphical integration and a useful reference harness. A profile label does not establish a working adapter. Every claimed version/backend requires a capability list and independent tests.
 
-## Caller-owned ticks and controls
+## Performance
+Measure representative CPU, memory, power, allocations, reliability and multi-client loads. The existing movement comparison and small RSS samples are starting evidence, not general limits or proof of superiority. Preserve required behaviour while optimizing.
 
-The scheduler never sleeps or creates threads. Its owner supplies consecutive tick numbers. Missing a tick is an explicit error because silently coalescing inputs can erase press/release transitions. Button state persists until changed or cancelled. A new camera intent replaces unfinished camera motion. The default policy caps camera-vector magnitude to 12 degrees per tick; it is configurable and is not a scientific model of human movement.
+## GitHub-only validation
+All builds, tests, formatting, analysis and packaging run through GitHub Actions. Keep scenario inputs, generated reports and limits reviewable. A passing build is not a gameplay result; a passing workflow must assert the outcome it claims.
 
-Pending actions use a bounded FIFO. Submission is ordered and atomic. Failures clear pending actions, attempt control release, and halt the scheduler until explicit cancellation succeeds. A partially applied action is never automatically retried. Drop attempts release as a best effort; callers must explicitly cancel to observe errors. Killing a process cannot guarantee remote releases; connected backends will need a watchdog.
-
-## Backends and breadth
-
-The trait is the first input execution boundary, not the final screen/observation API. Experimental native and graphical adapters now consume the same bounded binary input recording. Keep discrete events (click edges, text edits, UI actions) separate from continuous button snapshots. Extend capability discovery rather than treating two current capability variants as the entire product.
-
-## CI-only validation
-
-Use GitHub-hosted machines to compile, test, format and package. Pin Rust and action revisions; no credentials in builds. No external crates means locked offline Cargo execution works once the toolchain is installed. Artifacts include checksums, license and current capability ledger. Toolchain setup itself requires network access.
-
-## Stage 0 completion and next engineering slice
-
-Stage 0's exit criterion—reproducing and comparing a real 26.3 join/move/turn/jump/stop trace between the independent native Rust runtime (`sawbyte-play`) and the reference Fabric 26.3 client (`sawbyte-bridge`) against a live vanilla 26.3 server in GitHub Actions—is now met (`max_position_error_blocks`: `3.41e-7`, `rms_position_error_blocks`: `2.29e-7`, `0` ground-state mismatches, `4,380 KiB` sampled native peak RSS).
-
-Key protocol fact verified during Stage 0: in Minecraft 26.3 (protocol `777`), `ServerboundAcceptTeleportationPacket` (`packet 0`) carries `(id, x, y, z, yRot, xRot)` and sets `ServerGamePacketListenerImpl.receivedPositionThisTick = true`, which is only cleared by `ServerboundClientTickEndPacket` (`packet 13`). Sending an extra `ServerboundMovePlayerPosRot` (`packet 31`) in the same tick immediately triggers `multiplayer.disconnect.invalid_player_movement`.
-
-Next engineering priorities (Stage 1 & Live Engine Architecture):
-
-1. **Zero In-Memory Practice Worlds**: All navigation (3D A* on `native::world::World`), raycasting, container/GUI state machines, and RL observation/step primitives (`gym.observe` / `gym.step`) run directly on the live `sawbyte-play live` network session (`native/src/main.rs`) rather than an in-memory simulator.
-2. **Modular Trait Boundaries**: Keep smart features replaceable via `LiveModule` (`native/src/main.rs`), `VoxelQuery` (`crates/sawbyte-core/src/tasks.rs`), `InputPolicy` (`crates/sawbyte-core/src/lib.rs`), and `LiveSessionTransport` (`crates/sawbyte-core/src/mcp.rs`).
-3. **Persistent Disk Launcher**: Persist all launcher state, `options.txt`, snapshots, and account locks on disk (`~/.sawbyte/launcher.db`) via `PersistentLauncher` (`crates/sawbyte-core/src/launcher.rs`) and spawn real `sawbyte-play live` child processes on launch.
+## Current verified fact
+At commit `d70a744`, Linux CI matches the normal client on one 160-tick 26.3 flat-world movement recording. This does not establish broad physics, interactions, screens, online accounts, training, other versions or desktop installation. See [the whole-repository audit](AUDIT-2026-11-03.md).

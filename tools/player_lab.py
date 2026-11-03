@@ -257,15 +257,22 @@ def main():
         live_metrics = run_process([
             str(args.native.resolve()), "live", "127.0.0.1:25565", "--offline",
             "SawbyteLive", str(REPORTS / "block-profile.json"),
-            "--script", "task.navigate 3 -60 2\nplayer.select_hotbar 2\ngui.run_shop_workflow minecraft:stone 64\ninspect.map\ngym.observe",
-            "--ticks", "60",
+            "--script", "task.navigate 3 -60 2\nplayer.select_hotbar 2\ngui.inspect\ninventory.inspect\ninteract.raycast_block\ninspect.map\ngym.observe",
+            "--ticks", "80",
             "--trace", str(REPORTS / "live.csv"),
         ], "native-live", 90)
         (REPORTS / "native-live-resources.json").write_text(json.dumps(live_metrics, indent=2) + "\n")
         with (REPORTS / "live.csv").open() as f:
             live_rows = list(csv.DictReader(f))
-        if len(live_rows) != 60 or distance(live_rows[0], live_rows[-1]) < 1.5:
-            raise AssertionError("live interactive 3D A* navigation on 26.3 server did not move player")
+        if len(live_rows) != 80:
+            raise AssertionError(f"expected 80 live ticks, got {len(live_rows)}")
+        final_x = float(live_rows[-1]["x"])
+        final_z = float(live_rows[-1]["z"])
+        goal_dist = math.hypot(final_x - 3.5, final_z - 2.5)
+        if goal_dist > 0.65:
+            raise AssertionError(
+                f"live closed-loop 3D A* navigation did not reach goal (3.5, 2.5): final=({final_x:.3f}, {final_z:.3f}), dist={goal_dist:.3f}"
+            )
     finally:
         server.close()
 

@@ -118,7 +118,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         Some("capabilities") if args.len() == 1 => println!(
             "Implemented: typed input scheduler, smooth & bounded humanised camera policies, discrete sub-tick events, status/ping.\n\
              Headless Rust client (`sawbyte-play`): live 20 TPS session (`sawbyte-play live`) + deterministic `.sbif` parity replay (`max_position_error_blocks = 3.41e-7`, `4,380 KiB` peak RSS on 26.3).\n\
-             Live smart modules on `sawbyte-play`: 3D A* pathfinding on live server chunks, eye raycasting, block mining/placement, container/GUI state machine & multi-screen shop workflow, and zero-bloat Gymnasium RL observation/step (`gym.observe` / `gym.step`).\n\
+             Live smart modules on `sawbyte-play`: 3D A* pathfinding on live server chunks, eye raycasting, block mining/placement, general container/GUI inspection & multi-step screen automation, and zero-bloat Gymnasium RL observation/step (`gym.observe` / `gym.step`).\n\
              Persistent disk launcher (`sawbyte launcher`): stores instances, `options.txt`, token-free snapshots, and account locks in `~/.sawbyte/` and spawns real `sawbyte-play live` processes.\n\
              Full Minecraft client bridge: optional secondary Fabric 26.3 parity-reference mod."
         ),

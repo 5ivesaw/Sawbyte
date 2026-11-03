@@ -698,7 +698,7 @@ pub fn execute_workflow(steps: &[WorkflowStep], host: &mut impl WorkflowHost) ->
     }
 }
 
-/// Canonical multi-screen Shop purchase workflow matching `PLAN.md`.
+/// Example multi-screen test fixture workflow demonstrating general UI transitions and state verification.
 pub fn shop_purchase_workflow(item_id: &str, amount: &str) -> Vec<WorkflowStep> {
     vec![
         WorkflowStep::SetVar {

@@ -1,0 +1,9 @@
+{
+  "minecraft": "26.3",
+  "scenario": "flat-walk-turn-jump-stop",
+  "ticks": 160,
+  "max_position_error_blocks": 3.4117737307480316e-07,
+  "rms_position_error_blocks": 2.2887988105447855e-07,
+  "ground_state_mismatches": 0,
+  "position_tolerance_blocks": 0.001
+}

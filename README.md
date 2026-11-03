@@ -1,187 +1,100 @@
 <p align="center">
   <img src="assets/sawbyte.png" width="148" alt="Sawbyte icon" />
 </p>
-
 <p align="center">
-  <img src="assets/cream-hero.svg" width="100%" alt="Sawbyte Cream Hero Banner" />
+  <img src="assets/cream-hero.svg" width="100%" alt="Sawbyte — native Minecraft automation engine in development" />
 </p>
-
 <p align="center">
-  <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/ci.yml?branch=main&style=for-the-badge&label=Build%20%26%20Verify&labelColor=F3ECE0&color=2B6E5B" alt="Build and verify" /></a>
-  <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/player.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/player.yml?branch=main&style=for-the-badge&label=26.3%20Parity%20Lab&labelColor=F3ECE0&color=C47A2C" alt="Real player milestone" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-8C5230?style=for-the-badge&labelColor=F3ECE0" alt="MIT license" /></a>
-  <a href="docs/COVERAGE.md"><img src="https://img.shields.io/badge/MCP_2.0-Agent_Ready-1F1D1A?style=for-the-badge&labelColor=F3ECE0" alt="MCP Ready" /></a>
+  <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/ci.yml?branch=main&style=for-the-badge&label=Build&amp;labelColor=F3ECE0&amp;color=2B6E5B" alt="Build and verify" /></a>
+  <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/player.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/player.yml?branch=main&style=for-the-badge&label=Movement%20Lab&amp;labelColor=F3ECE0&amp;color=C47A2C" alt="Movement lab" /></a>
+  <img src="https://img.shields.io/badge/Status-Experimental-8C5230?style=for-the-badge&amp;labelColor=F3ECE0" alt="Experimental" />
 </p>
-
 <p align="center">
-  <a href="#download--quick-start"><strong>Downloads &amp; CLI</strong></a> ·
-  <a href="#model-context-protocol-mcp--ai-agent-control"><strong>MCP &amp; AI Agents</strong></a> ·
-  <a href="#complete-programmability--gui-workflows"><strong>GUI &amp; Workflows</strong></a> ·
-  <a href="#python--typescript-sdks"><strong>Python &amp; TS SDKs</strong></a> ·
-  <a href="PLAN.md"><strong>Architecture Plan</strong></a> ·
-  <a href="docs/COVERAGE.md"><strong>Capability Ledger</strong></a> ·
-  <a href="docs/HANDOFF.md"><strong>Technical Reference</strong></a>
+  <a href="docs/VISION.md"><strong>Product vision</strong></a> ·
+  <a href="docs/COVERAGE.md"><strong>Actual coverage</strong></a> ·
+  <a href="PLAN.md"><strong>Plan</strong></a> ·
+  <a href="docs/HANDOFF.md"><strong>Agent handoff</strong></a> ·
+  <a href="docs/AUDIT-2026-11-03.md"><strong>Implementation audit</strong></a>
 </p>
 
 ---
 
-**Sawbyte** is an independently written, zero-graphics **headless Rust Minecraft Java client (`sawbyte-play`), persistent launcher, and foundational automation & neural-network training engine** with an optional secondary **normal-client Fabric bridge**. Engineered for extreme CPU/RAM efficiency (`~4.3 MiB` RSS) and 1:1 Vanilla Java network protocol and client-tick physics parity, every player operation—from persistent launcher instances and client settings to live 3D A* navigation across server chunks, raycast mining/building, container/shop GUI workflows, MCP agent control, and PyTorch/Gymnasium reinforcement learning—runs directly against a live server through genuine client-tick simulation.
+**Sawbyte aims to become a small, independent Rust Minecraft client with a fully programmable player.** Its native headless runtime is intended as the common foundation for automation, scripts, AI agents and neural-network experiments. A real launcher and optional normal-client integration are part of the goal.
 
-<p align="center">
-  <img src="assets/cream-metrics.svg" width="100%" alt="Verified 26.3 CI Parity and Resource Metrics" />
-</p>
+**Current status: experimental prototype. The full product is unfinished.** General programmability means users can compose behaviours the authors never anticipated; it is not a catalogue of hardcoded workflows. See [the governing requirements](docs/VISION.md).
 
-<p align="center">
-  <img src="assets/cream-architecture.svg" width="100%" alt="Sawbyte Unified Architecture" />
-</p>
+## What is Sawbyte? (Plain-English Overview)
 
----
+Normally, playing Minecraft requires launching the official graphical game—which consumes gigabytes of RAM, renders 3D graphics, and expects a human sitting at a keyboard and mouse. Existing bot libraries either spin up heavy headless Java instances or cut corners on client physics and network timing, causing servers to reject or flag them immediately.
 
-## What Is Built & Verified
+**Sawbyte** is an independent, zero-graphics Minecraft Java client and universal automation engine written in Rust:
 
-- **True Headless Rust Client (`native/`, `sawbyte-play`)**:
-  - Independently written Rust 26.3 (`protocol 777`) login, configuration, AES-128-CFB8 encryption, zlib framing, chunk palette storage, dynamic block updates (`BlockUpdate` packet `8` & `SectionBlocksUpdate` packet `86`), live container/entity/health/chat packet decoders, and collision/motion physics. Zero Azalea, zero JVM, and zero fake in-memory simulators.
-  - Verified against the real Minecraft 26.3 client (`sawbyte-bridge` under HeadlessMC) on a live vanilla 26.3 server in GitHub Actions: **`max_position_error_blocks = 3.41e-7`**, **`rms_position_error_blocks = 2.29e-7`**, **`0` ground mismatches**, and **`4,380 KiB` (~4.28 MiB) sampled peak RSS** on the 160-tick fixture, plus live interactive 3D A* pathfinding and workflow execution (`sawbyte-play live`) on the 26.3 server.
-  - **Live Interactive Session (`sawbyte-play live`)**: Connects to any 26.3 server without needing pre-recorded `.sbif` tapes, exposing a real-time TCP control socket (`--listen <ip:port>`), MCP stdio server (`--mcp-stdio`), or startup script (`--script`) that drives live 3D A* pathfinding on the server's loaded chunk sections, eye raycasting, block mining/placement, container/shop GUI workflows, and zero-allocation RL observations (`gym.observe` / `gym.step`).
-  - **100% Modular & Pluggable (`LiveModule` & `LiveSessionTransport` traits)**: All built-in smart features (3D A*, raycasting, GUI selectors, shop workflows) are modular and replaceable via Rust traits or external Python/TypeScript SDKs.
-- **Persistent Disk Launcher (`crates/sawbyte-core/src/launcher.rs`, `sawbyte launcher`)**:
-  - Persists all instances, `options.txt` files, token-free snapshot backups, and account lockfiles on disk (`~/.sawbyte/launcher.db` and `~/.sawbyte/instances/<name>/`), and spawns real `sawbyte-play live` OS processes (`sawbyte launcher launch`).
-- **Foundational Base Engine for RL & Neural Network Training (`SawbyteEnv`)**:
-  - Razor-thin memory footprint and pre-allocated local voxel patch extraction (`extract_voxel_patch`) allow running high-throughput PyTorch/Gymnasium training loops (`SawbyteEnv`) or multi-bot swarms directly on live servers with minimal CPU and power draw.
-- **Optional Full-Client Graphical Bridge (`bridge/`, `sawbyte-bridge`)**:
-  - Secondary Fabric 26.3 client mod sharing the binary `.sbif` input format for parity verification and manual player handoff.
+1. **Zero-Graphics, Tick-Accurate Rust Client**: It connects directly to Minecraft Java servers, tracks chunk/block/inventory/entity state in memory, and steps player movement at 20 Hz (`50 ms` ticks) without rendering a single pixel.
+2. **Universal Building Blocks (Zero Hardcoding)**: Sawbyte is a foundational base engine—not built for any single server, minigame, or economy workflow. Instead of hardcoded scripts or fake simulated screens, it exposes composable primitives for movement, navigation, raycasting, block/entity interaction, and screen/container inspection based strictly on authoritative server state.
+3. **Structured Code Observations for AI & Neural Networks**: Because there is no graphical window, Sawbyte exposes exact game observations directly as structured data—sub-voxel coordinates, velocity vectors, orientation, 3D local voxel patches, full item components/lore/damage, open container slots, and tracked entities—for Python/TypeScript scripts, MCP agents, and reinforcement-learning loops.
 
-> **Scope & Honesty Note**: The live vanilla 26.3 server comparison in CI currently certifies the 160-tick controlled flat-world fixture; extended collision shapes, GUI workflows, 3D A* navigation, launcher profiles (`sawbyte-26.3` and `sawbyte-26.2`), and MCP tools are verified by deterministic unit and integration suites in CI. Online Microsoft sign-in requires a live account and registered client ID. See [docs/COVERAGE.md](docs/COVERAGE.md) and [docs/PLAYER.md](docs/PLAYER.md).
+## Verified progress
 
----
+- Foundation and native executable builds/tests pass on Linux x86-64, Windows x86-64 and macOS ARM64.
+- The native 26.3 client connects to the controlled vanilla server, receives world data, and executes a real input recording.
+- The Linux 160-tick walk/turn/jump/stop comparison matches the reference client with maximum position error of about 0.000000341 blocks and zero ground-state mismatches.
+- A live command path can schedule movement. Persistent launcher metadata and actual child-process spawning exist.
 
-## Model Context Protocol (MCP) & AI Agent Control
+Evidence: [foundation CI](https://github.com/5ivesaw/Sawbyte/actions/runs/41581827822), [player CI and downloadable evidence](https://github.com/5ivesaw/Sawbyte/actions/runs/41581827919), source commit d70a744. The latter recorded 5,080 KiB sampled native RSS for the replay and 5,112 KiB for the short interactive run. These are small Linux fixture measurements, not general resource budgets or competitor benchmarks.
 
-Any MCP-compatible AI client (Claude Desktop, Cursor, Antigravity, custom LLM agents) can attach directly to `sawbyte mcp --stdio` to control **the launcher, out-of-game menus, client settings, in-game actions, GUI workflows, and code execution**:
+## What still needs work
 
-```json
-{
-  "mcpServers": {
-    "sawbyte": {
-      "command": "sawbyte",
-      "args": ["mcp", "--stdio"]
-    }
-  }
-}
-```
+General interaction and screen automation, complete version-specific physics/state decoding, reliable task completion, standards-compatible MCP, training semantics, online account lifecycle, launcher UI/install/update/supervision, and broader version/platform gameplay validation remain unfinished.
 
-| MCP Tool | Capabilities Exposed to AI Agents |
-|---|---|
-| `launcher_control` | Create, list, backup (token-free), rollback, and lock isolated instances (`sawbyte-26.3`, `sawbyte-26.2`) & accounts |
-| `client_menu_and_settings` | Navigate `main_menu`, `singleplayer`, `multiplayer`, `direct_connect:<ip>`, `options`, `keybinds`, and edit `options.txt` settings |
-| `player_input` | Submit continuous movement buttons, humanised/smooth/direct camera look deltas, mouse clicks, hotbar selection, or manual handoff |
-| `player_interact` | Execute raycast-verified block mining, block placement, item use, and entity combat/interaction |
-| `gui_screen_automation` | Inspect open screens, run `ItemSelector` queries, click slots/widgets with `state_id` checks, fill text fields, or run the multi-screen shop workflow |
-| `task_and_navigation` | Run budgeted 3D A* jump-aware pathfinding and composable tasks (`navigate`, `mine`, `place`, `craft`, `smelt`, `trade`, `equip`, `eat`) |
-| `code_execute` | Execute multi-line `SawbyteScript` automation programs combining launcher, menu, setting, gameplay, GUI, and swarm commands |
-| `workflow_recorder` | Export recorded manual or scripted actions into reusable workflows |
-| `world_inspector_and_profiler` | Render the live 2D ASCII top-down world map, generate screen selectors, and inspect per-subsystem memory usage |
-| `swarm_and_gym` | Spawn and step 1–64 concurrent agents in shared or isolated worlds |
+The [audit](docs/AUDIT-2026-11-03.md) found production synthetic screen/result fallbacks, incomplete item decoding, input-rule bypasses, a navigation test that passes without arrival, and overstated completion claims. The documentation now records these as defects. Updating this README does not fix their implementation.
 
----
+A 26.2 profile label exists in code; it is not a supported 26.2 client. The Fabric bridge is optional and secondary. A passing build is not certification of arbitrary-server operation or complete player equivalence.
 
-## Complete Programmability & Live Server Control
+## Experimental downloads
 
-Launch a live headless Rust bot or control it over TCP / MCP:
+Open **Actions → Build and verify** or **Real player milestone → a successful run → Artifacts**. The two workflows package the CLI and native player separately. Archives include checksums and platform icons derived from the supplied PNG.
 
-```bash
-# 1. Start a live interactive headless 26.3 session listening for TCP / MCP / RL control
-sawbyte-play live 127.0.0.1:25565 --offline SawbyteBot block-profile.json --listen 127.0.0.1:25580
+The current foundation artifacts are named by runner, such as `sawbyte-ubuntu-24.04-X64`, `sawbyte-windows-2022-X64` and `sawbyte-macos-14-ARM64`. Native artifacts use `sawbyte-play-linux-x64`, `sawbyte-play-windows-x64` and `sawbyte-play-macos-arm64`.
 
-# 2. Or manage persistent instances on disk (~/.sawbyte/) and launch via sawbyte launcher
-sawbyte launcher create survival-bot sawbyte-26.3 native
-sawbyte launcher set-setting survival-bot fov 90
-sawbyte launcher backup survival-bot
-sawbyte launcher launch survival-bot 127.0.0.1:25565 SawbyteNative block-profile.json
-
-# 3. Execute live 3D A* navigation, GUI workflows, and RL observation against the running bot
-sawbyte eval "
-  task.navigate 3 -60 2
-  player.select_hotbar 2
-  gui.run_shop_workflow minecraft:stone 64
-  inspect.map
-  gym.observe
-" --connect 127.0.0.1:25580
-```
-
----
-
-## Python & TypeScript SDKs
-
-### Python SDK & Gymnasium RL Environment (`sdks/python/`)
-
-```python
-from sawbyte import SawbyteEnv, SawbyteMcpClient, WorkflowBuilder
-
-wf = (
-    WorkflowBuilder(policy="humanised")
-    .create_instance("agent-1", "sawbyte-26.3", "native")
-    .goto_menu("options")
-    .set_setting("fov", "90")
-    .navigate(4, -60, 4)
-    .run_shop_purchase("minecraft:stone", amount=64)
-)
-
-with SawbyteMcpClient("sawbyte") as mcp:
-    print(mcp.execute_workflow(wf))
-
-env = SawbyteEnv(observation_mode="visible")
-obs, info = env.reset(seed=42)
-obs, reward, terminated, truncated, step_info = env.step({"forward": True, "yaw_delta": 6.0})
-```
-
-### TypeScript SDK (`sdks/typescript/`)
-
-```typescript
-import { SawbyteWorkflow, createMcpToolCallRequest } from "./sdks/typescript/index";
-
-const workflow = new SawbyteWorkflow()
-  .createInstance("ts-agent", "sawbyte-26.3", "native")
-  .gotoMenu("multiplayer")
-  .setSetting("renderDistance", 4)
-  .navigate(4, -60, 4)
-  .runShopPurchase("minecraft:stone", 64);
-
-const rpcPayload = createMcpToolCallRequest(1, "code_execute", workflow.compileScript());
-```
-
----
-
-## Download & Quick Start
-
-Open **Actions → Build and verify** (or **Real player milestone**) → select the latest run → download the artifact for your OS (`linux-x64`, `windows-x64`, or `macos-arm64`). Every archive includes `SHA256SUMS` and platform icons generated from `assets/sawbyte.png`.
+These are experimental command-line tools. There is no finished graphical launcher or supported general installation experience yet.
 
 ```text
 sawbyte --help
-sawbyte capabilities
-sawbyte launcher list
-sawbyte workflow shop-demo
-sawbyte inspect
-sawbyte benchmark
-sawbyte mcp --stdio
 sawbyte status 127.0.0.1:25565
-sawbyte tape movement.sbif
-sawbyte-play 127.0.0.1:25565 --offline SawbyteNative movement.sbif native.csv block-profile.json
+sawbyte launcher list
+sawbyte-play --help
 ```
 
----
+Live experiments require matching block/protocol data, a controlled server and the limitations in [PLAYER.md](docs/PLAYER.md). MCP and SDK code exists, but broad external-client compatibility is not established.
 
-## Repository Structure
+## Architecture
 
-| Component | Description |
+```text
+CLI / SDKs / AI adapters / optional UI
+                  ↓
+       observable actions and tasks
+                  ↓
+     shared validated input executor
+                  ↓
+  native Rust client → Minecraft server
+                  ↑
+   synchronized state, events and results
+
+Launcher: instances, accounts, processes, installation and updates
+Optional bridge: reference tests and normal graphical-client integration
+```
+
+This is the intended architecture. [COVERAGE.md](docs/COVERAGE.md) distinguishes implemented parts from missing connections and unverified behaviour.
+
+| Component | Current purpose |
 |---|---|
-| [`crates/sawbyte-core`](crates/sawbyte-core) | Zero-dependency Rust core: scheduler, humanisation policies, discrete sub-tick events, screen selector engine, 3D A* pathfinder, workflow runner, launcher/menu state, and MCP server |
-| [`crates/sawbyte-protocol`](crates/sawbyte-protocol) | Bounded Minecraft Java TCP status/ping client and VarInt framing |
-| [`crates/sawbyte-cli`](crates/sawbyte-cli) | Unified `sawbyte` CLI (`mcp`, `launcher`, `workflow`, `inspect`, `eval`, `benchmark`, `demo`, `tape`, `status`) |
-| [`native/`](native) | Standalone `sawbyte-play` Rust 26.3 client (chunk palettes, dynamic block updates, extended collision/motion physics, raycasting, inventory/container packets, OAuth device login) |
-| [`bridge/`](bridge) | Optional Fabric 26.3 mod (`sawbyte-bridge`) for normal graphical Minecraft replay, commands, and manual handoff |
-| [`sdks/python`](sdks/python) & [`sdks/typescript`](sdks/typescript) | Zero-dependency Python SDK (with Gymnasium `SawbyteEnv`) and TypeScript SDK |
+| `crates/sawbyte-core` | Typed scheduling, event/state models, early policies/tasks, launcher and control adapters |
+| `crates/sawbyte-protocol` | Status/ping and bounded protocol primitives |
+| `crates/sawbyte-cli` | Command-line diagnostics, launcher commands and control forwarding |
+| `native/` | Independent experimental 26.3 client |
+| `bridge/` | Optional Fabric reference replay/integration |
+| `sdks/python`, `sdks/typescript` | Early controller bindings requiring further validation |
 
-All compilation, testing, formatting, icon generation, and live 26.3 server/client parity comparisons execute in GitHub Actions. See [docs/DECISIONS.md](docs/DECISIONS.md) and [docs/HANDOFF.md](docs/HANDOFF.md).
+All compilation, tests, formatting and packaging run in GitHub Actions. Native gameplay has no Azalea or Java runtime dependency; the controlled lab runs an official Java server and reference client.
 
 *Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.*

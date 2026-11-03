@@ -10,11 +10,11 @@ use sawbyte_core::{
     Action, Backend, Button, Capability, Direct, Humanised, InputFrame, InputPolicy, Scheduler,
     events::{BlockFace, ClickMode, DiscreteEventQueue, EntityInteraction, Hand, SubTickEvent},
     humanisation::SmoothHumanisedCamera,
-    screen::{ItemSelector, ItemStack, ScreenState},
+    screen::{ItemSelector, ScreenState},
     tape,
     tasks::{
-        ComposableTask, WorkflowHost, WorkflowOutcome, compile_navigation_inputs, execute_workflow,
-        find_path, shop_purchase_workflow,
+        ComposableTask, WorkflowHost, WorkflowOutcome, execute_workflow, find_path,
+        shop_purchase_workflow,
     },
 };
 use std::{
@@ -155,6 +155,8 @@ pub struct Session {
     pub event_queue: DiscreteEventQueue,
     pub voxel_patch_buf: Vec<u8>,
     pub custom_modules: Vec<Box<dyn LiveModule>>,
+    pub active_nav_path: Vec<[i32; 3]>,
+    pub active_nav_goal: Option<([i32; 3], bool)>,
     dimensions: Vec<(i32, i32)>,
     playing: bool,
     positioned: bool,
@@ -164,7 +166,6 @@ pub struct Session {
     index: usize,
     live_tick: u64,
     previous_buttons: u16,
-    shop_fixture_mode: bool,
 }
 
 impl WorkflowHost for Session {
@@ -185,53 +186,9 @@ impl WorkflowHost for Session {
     }
     fn on_event_emitted(&mut self, event: &SubTickEvent) {
         let target_tick = self.live_tick.saturating_add(1);
-        let _ = self.event_queue.submit(&[(target_tick, event.clone())]);
-        // When shop_fixture_mode is enabled on a vanilla test server without a shop plugin,
-        // synthesize the container state transitions so multi-screen workflows can be verified end-to-end.
-        if self.shop_fixture_mode {
-            if let SubTickEvent::ContainerClick { slot: 13, .. } = event {
-                let mut next = ScreenState::container(2, 10, 3, "Building Blocks");
-                next.set_slot(
-                    10,
-                    Some(
-                        ItemStack::new("minecraft:stone", 64)
-                            .with_name("Stone")
-                            .with_lore(["Price: 100 coins"]),
-                    ),
-                );
-                self.state_table.open_screen = Some(next);
-            } else if let SubTickEvent::ContainerClick { slot: 10, .. } = event {
-                if let Some(s) = &mut self.state_table.open_screen {
-                    s.widgets.push(sawbyte_core::screen::WidgetElement {
-                        id: 1,
-                        label: "Confirm".into(),
-                        enabled: true,
-                        bounds: (60, 40, 50, 20),
-                    });
-                    s.state_id += 1;
-                }
-            } else if let SubTickEvent::ContainerButtonClick { button_id: 1, .. } = event {
-                if let Some(s) = &mut self.state_table.open_screen {
-                    s.fields.push(sawbyte_core::screen::TextFieldState {
-                        name: "amount".into(),
-                        text: String::new(),
-                        max_length: 16,
-                        focused: true,
-                        editable: true,
-                    });
-                    s.widgets.push(sawbyte_core::screen::WidgetElement {
-                        id: 2,
-                        label: "Pay".into(),
-                        enabled: true,
-                        bounds: (60, 70, 50, 20),
-                    });
-                    s.state_id += 1;
-                }
-            } else if let SubTickEvent::ContainerButtonClick { button_id: 2, .. } = event {
-                self.state_table
-                    .received_events
-                    .push("purchase_confirmed".into());
-            }
+        if let Err(err) = self.event_queue.submit(&[(target_tick, event.clone())]) {
+            self.state_table
+                .push_event(format!("event_queue_error:{err}"));
         }
     }
     fn invoke_extension(
@@ -256,6 +213,8 @@ impl Session {
             event_queue: DiscreteEventQueue::new(4096),
             voxel_patch_buf: Vec::with_capacity(245),
             custom_modules: Vec::new(),
+            active_nav_path: Vec::new(),
+            active_nav_goal: None,
             dimensions: Vec::new(),
             playing: false,
             positioned: false,
@@ -265,7 +224,6 @@ impl Session {
             index: 0,
             live_tick: 0,
             previous_buttons: 0,
-            shop_fixture_mode: false,
         })
     }
 
@@ -453,36 +411,69 @@ impl Session {
             }
             // Live container, inventory, entity, vitals, and chat packets
             id if id == self.packets.cb_open_screen => {
-                let _ = self.state_table.apply_open_screen(&mut r);
+                if let Err(e) = self.state_table.apply_open_screen(&mut r) {
+                    self.state_table.record_decode_error("open_screen", e.as_ref());
+                }
             }
             id if id == self.packets.cb_container_close => {
-                let _ = self.state_table.apply_container_close(&mut r);
+                if let Err(e) = self.state_table.apply_container_close(&mut r) {
+                    self.state_table
+                        .record_decode_error("container_close", e.as_ref());
+                }
             }
             id if id == self.packets.cb_container_set_data => {
-                let _ = self.state_table.apply_container_set_data(&mut r);
+                if let Err(e) = self.state_table.apply_container_set_data(&mut r) {
+                    self.state_table
+                        .record_decode_error("container_set_data", e.as_ref());
+                }
             }
             id if id == self.packets.cb_container_set_slot => {
-                let _ = self.state_table.apply_container_set_slot(&mut r, &self.packets);
+                if let Err(e) = self
+                    .state_table
+                    .apply_container_set_slot(&mut r, &self.packets)
+                {
+                    self.state_table
+                        .record_decode_error("container_set_slot", e.as_ref());
+                }
             }
             id if id == self.packets.cb_container_set_content => {
-                let _ = self
+                if let Err(e) = self
                     .state_table
-                    .apply_container_set_content(&mut r, &self.packets);
+                    .apply_container_set_content(&mut r, &self.packets)
+                {
+                    self.state_table
+                        .record_decode_error("container_set_content", e.as_ref());
+                }
             }
             id if id == self.packets.cb_set_health => {
-                let _ = self.state_table.apply_set_health(&mut r);
+                match self.state_table.apply_set_health(&mut r) {
+                    Ok(()) => {
+                        self.player.food_level = self.state_table.food;
+                    }
+                    Err(e) => self.state_table.record_decode_error("set_health", e.as_ref()),
+                }
             }
             id if id == self.packets.cb_add_entity => {
-                let _ = self.state_table.apply_add_entity(&mut r);
+                if let Err(e) = self.state_table.apply_add_entity(&mut r) {
+                    self.state_table.record_decode_error("add_entity", e.as_ref());
+                }
             }
             id if id == self.packets.cb_remove_entities => {
-                let _ = self.state_table.apply_remove_entities(&mut r);
+                if let Err(e) = self.state_table.apply_remove_entities(&mut r) {
+                    self.state_table
+                        .record_decode_error("remove_entities", e.as_ref());
+                }
             }
             id if id == self.packets.cb_teleport_entity => {
-                let _ = self.state_table.apply_teleport_entity(&mut r);
+                if let Err(e) = self.state_table.apply_teleport_entity(&mut r) {
+                    self.state_table
+                        .record_decode_error("teleport_entity", e.as_ref());
+                }
             }
             id if id == self.packets.cb_system_chat => {
-                let _ = self.state_table.apply_system_chat(&mut r);
+                if let Err(e) = self.state_table.apply_system_chat(&mut r) {
+                    self.state_table.record_decode_error("system_chat", e.as_ref());
+                }
             }
             _ => {}
         }
@@ -564,6 +555,114 @@ impl Session {
         Ok(false)
     }
 
+    /// Closed-loop feedback controller for live 3D A* navigation.
+    /// Steers toward each waypoint using observed player position and yaw, stopping only on arrival.
+    fn step_live_navigation(&mut self) {
+        let Some((goal, sprint)) = self.active_nav_goal else {
+            return;
+        };
+        if self.scheduler.pending() > 0 {
+            return;
+        }
+        let gx = goal[0] as f64 + 0.5;
+        let gz = goal[2] as f64 + 0.5;
+        let dist_goal = (gx - self.player.pos[0]).hypot(gz - self.player.pos[2]);
+        if dist_goal <= 0.42 && (self.player.pos[1] - goal[1] as f64).abs() <= 0.75 {
+            let _ = self.scheduler.submit(&[
+                (
+                    self.live_tick,
+                    Action::Button {
+                        button: Button::Forward,
+                        down: false,
+                    },
+                ),
+                (
+                    self.live_tick,
+                    Action::Button {
+                        button: Button::Sprint,
+                        down: false,
+                    },
+                ),
+                (
+                    self.live_tick,
+                    Action::Button {
+                        button: Button::Jump,
+                        down: false,
+                    },
+                ),
+            ]);
+            self.active_nav_goal = None;
+            self.active_nav_path.clear();
+            self.state_table.push_event(format!(
+                "nav_arrived:({},{},{})",
+                goal[0], goal[1], goal[2]
+            ));
+            return;
+        }
+
+        while let Some(&wp) = self.active_nav_path.first() {
+            if self.active_nav_path.len() <= 1 {
+                break;
+            }
+            let wx = wp[0] as f64 + 0.5;
+            let wz = wp[2] as f64 + 0.5;
+            if (wx - self.player.pos[0]).hypot(wz - self.player.pos[2]) <= 0.45 {
+                self.active_nav_path.remove(0);
+            } else {
+                break;
+            }
+        }
+
+        let target = self.active_nav_path.first().copied().unwrap_or(goal);
+        let tx = target[0] as f64 + 0.5;
+        let tz = target[2] as f64 + 0.5;
+        let dx = tx - self.player.pos[0];
+        let dz = tz - self.player.pos[2];
+        let desired_yaw = (-dx).atan2(dz).to_degrees();
+        let mut yaw_delta = (desired_yaw - self.player.yaw as f64) % 360.0;
+        if yaw_delta > 180.0 {
+            yaw_delta -= 360.0;
+        } else if yaw_delta < -180.0 {
+            yaw_delta += 360.0;
+        }
+        let aligned = yaw_delta.abs() < 35.0;
+        let need_jump = target[1] as f64 > self.player.pos[1] + 0.4;
+        let use_sprint = sprint && dist_goal > 1.1 && aligned;
+        let mut actions = vec![
+            (
+                self.live_tick,
+                Action::Button {
+                    button: Button::Forward,
+                    down: aligned,
+                },
+            ),
+            (
+                self.live_tick,
+                Action::Button {
+                    button: Button::Sprint,
+                    down: use_sprint,
+                },
+            ),
+            (
+                self.live_tick,
+                Action::Button {
+                    button: Button::Jump,
+                    down: need_jump && aligned,
+                },
+            ),
+        ];
+        if yaw_delta.abs() > 0.25 {
+            actions.push((
+                self.live_tick,
+                Action::Look {
+                    yaw: yaw_delta,
+                    pitch: 0.0,
+                },
+            ));
+        }
+        let _ = self.scheduler.submit(&actions);
+    }
+
     /// Live interactive 20 TPS client tick driven by the live `Scheduler` and `DiscreteEventQueue`.
     fn tick_live(
         &mut self,
@@ -591,6 +690,7 @@ impl Session {
             }
             return Ok(false);
         }
+        self.step_live_navigation();
         let frame = self
             .scheduler
             .advance(self.live_tick)
@@ -598,18 +698,24 @@ impl Session {
         self.player.step(frame, &self.world)?;
 
         // Drain and transmit all discrete sub-tick events scheduled for this tick
-        for ev in self
+        let drained = self
             .event_queue
             .drain_tick(self.live_tick)
-            .unwrap_or_default()
-        {
+            .map_err(|e| bad(&format!("event queue error: {e}")))?;
+        for ev in drained {
             if let SubTickEvent::SelectHotbar { slot } = &ev {
                 self.state_table.selected_hotbar = *slot;
             }
-            if let Some((pkt_id, payload)) =
-                inventory::encode_serverbound_event_with_table(&ev, &self.packets)
-            {
+            if let Some((pkt_id, payload)) = inventory::encode_serverbound_event_with_pose(
+                &ev,
+                &self.packets,
+                self.player.yaw,
+                self.player.pitch,
+            ) {
                 tx.packet(pkt_id, &payload)?;
+            } else {
+                self.state_table
+                    .push_event(format!("unsupported_native_event:{ev:?}"));
             }
         }
 
@@ -683,24 +789,17 @@ impl Session {
                         self.player.pos[2].floor() as i32,
                     ];
                     let path = find_path(&self.world, start, goal, 2048)?;
-                    let actions =
-                        compile_navigation_inputs(next_tick, self.player.yaw, &path, sprint);
-                    let scheduled = actions.len();
-                    if !actions.is_empty() {
-                        self.scheduler
-                            .submit(&actions)
-                            .map_err(|e| format!("scheduler rejected navigation: {e}"))?;
-                    }
+                    let waypoints = path.len();
+                    let _ = self.scheduler.cancel();
+                    self.active_nav_path = if path.len() > 1 {
+                        path[1..].to_vec()
+                    } else {
+                        path
+                    };
+                    self.active_nav_goal = Some((goal, sprint));
                     outputs.push(format!(
-                        "live 3D A* path found ({} waypoints, {} input actions queued) from ({}, {}, {}) -> ({}, {}, {})",
-                        path.len(),
-                        scheduled,
-                        start[0],
-                        start[1],
-                        start[2],
-                        goal[0],
-                        goal[1],
-                        goal[2]
+                        "live 3D A* path active ({waypoints} waypoints) from ({}, {}, {}) -> ({}, {}, {})",
+                        start[0], start[1], start[2], goal[0], goal[1], goal[2]
                     ));
                 }
                 ["interact.raycast_block"] => {
@@ -737,36 +836,65 @@ impl Session {
                         y.parse::<i32>().map_err(|_| "bad y")?,
                         z.parse::<i32>().map_err(|_| "bad z")?,
                     ];
-                    let seq = self.state_table.next_sequence();
+                    let eye = self.player.eye_position();
+                    let dist = ((pos[0] as f64 + 0.5 - eye[0]).powi(2)
+                        + (pos[1] as f64 + 0.5 - eye[1]).powi(2)
+                        + (pos[2] as f64 + 0.5 - eye[2]).powi(2))
+                    .sqrt();
+                    let max_reach = self.player.attributes.block_interaction_range;
+                    if dist > max_reach {
+                        return Err(format!(
+                            "block ({}, {}, {}) out of player reach ({dist:.2} > {max_reach:.2})",
+                            pos[0], pos[1], pos[2]
+                        ));
+                    }
+                    let face = raycast::raycast_block(&self.player, &self.world)
+                        .filter(|h| h.block_pos == pos)
+                        .map(|h| h.face)
+                        .ok_or_else(|| {
+                            format!(
+                                "block ({}, {}, {}) is not currently in player line of sight",
+                                pos[0], pos[1], pos[2]
+                            )
+                        })?;
+                    let duration_ticks = self
+                        .player
+                        .compute_break_ticks(1.5, 1.0, true, false)
+                        .unwrap_or(6);
+                    let seq = self.state_table.next_sequence_n(2);
                     let events = ComposableTask::MineBlock {
                         pos,
-                        face: BlockFace::Up,
-                        duration_ticks: 6,
+                        face,
+                        duration_ticks,
                     }
                     .compile_events(next_tick, seq);
                     self.event_queue
                         .submit(&events)
                         .map_err(|e| format!("{e:?}"))?;
                     outputs.push(format!(
-                        "queued live block mining at ({}, {}, {})",
+                        "queued validated block mining at ({}, {}, {}) face={face:?} duration_ticks={duration_ticks}",
                         pos[0], pos[1], pos[2]
                     ));
                 }
                 ["interact.mine_look"] => {
                     let hit = raycast::raycast_block(&self.player, &self.world)
                         .ok_or_else(|| "no block in line of sight within reach".to_owned())?;
-                    let seq = self.state_table.next_sequence();
+                    let duration_ticks = self
+                        .player
+                        .compute_break_ticks(1.5, 1.0, true, false)
+                        .unwrap_or(6);
+                    let seq = self.state_table.next_sequence_n(2);
                     let events = ComposableTask::MineBlock {
                         pos: hit.block_pos,
                         face: hit.face,
-                        duration_ticks: 6,
+                        duration_ticks,
                     }
                     .compile_events(next_tick, seq);
                     self.event_queue
                         .submit(&events)
                         .map_err(|e| format!("{e:?}"))?;
                     outputs.push(format!(
-                        "queued raycast block mining at ({}, {}, {}) face={:?}",
+                        "queued raycast block mining at ({}, {}, {}) face={:?} duration_ticks={duration_ticks}",
                         hit.block_pos[0], hit.block_pos[1], hit.block_pos[2], hit.face
                     ));
                 }
@@ -777,9 +905,25 @@ impl Session {
                         z.parse::<i32>().map_err(|_| "bad z")?,
                     ];
                     let s: u8 = slot.parse().map_err(|_| "bad slot")?;
+                    if s >= 9 {
+                        return Err("hotbar slot must be in 0..=8".into());
+                    }
+                    let support_pos = [pos[0], pos[1] - 1, pos[2]];
+                    let eye = self.player.eye_position();
+                    let dist = ((support_pos[0] as f64 + 0.5 - eye[0]).powi(2)
+                        + (support_pos[1] as f64 + 0.5 - eye[1]).powi(2)
+                        + (support_pos[2] as f64 + 0.5 - eye[2]).powi(2))
+                    .sqrt();
+                    let max_reach = self.player.attributes.block_interaction_range;
+                    if dist > max_reach {
+                        return Err(format!(
+                            "placement support ({}, {}, {}) out of player reach ({dist:.2} > {max_reach:.2})",
+                            support_pos[0], support_pos[1], support_pos[2]
+                        ));
+                    }
                     let seq = self.state_table.next_sequence();
                     let events = ComposableTask::PlaceBlock {
-                        support_pos: [pos[0], pos[1] - 1, pos[2]],
+                        support_pos,
                         face: BlockFace::Up,
                         hotbar_slot: s,
                     }
@@ -788,12 +932,28 @@ impl Session {
                         .submit(&events)
                         .map_err(|e| format!("{e:?}"))?;
                     outputs.push(format!(
-                        "queued live block placement at ({}, {}, {}) slot={s}",
+                        "queued validated block placement at ({}, {}, {}) slot={s}",
                         pos[0], pos[1], pos[2]
                     ));
                 }
                 ["interact.attack", entity_id] => {
                     let id: i32 = entity_id.parse().map_err(|_| "bad entity_id")?;
+                    let ent = self
+                        .state_table
+                        .entities
+                        .get(&id)
+                        .ok_or_else(|| format!("entity {id} is not tracked in live session"))?;
+                    let eye = self.player.eye_position();
+                    let dist = ((ent.pos[0] - eye[0]).powi(2)
+                        + (ent.pos[1] + ent.height * 0.5 - eye[1]).powi(2)
+                        + (ent.pos[2] - eye[2]).powi(2))
+                    .sqrt();
+                    let max_reach = self.player.attributes.entity_interaction_range + 0.5;
+                    if dist > max_reach {
+                        return Err(format!(
+                            "entity {id} out of attack reach ({dist:.2} > {max_reach:.2})"
+                        ));
+                    }
                     self.event_queue
                         .submit(&[
                             (
@@ -812,7 +972,7 @@ impl Session {
                             ),
                         ])
                         .map_err(|e| format!("{e:?}"))?;
-                    outputs.push(format!("queued live attack on entity {id}"));
+                    outputs.push(format!("queued validated live attack on entity {id}"));
                 }
                 ["player.select_hotbar", slot] => {
                     let s: u8 = slot.parse().map_err(|_| "invalid hotbar slot")?;
@@ -904,12 +1064,14 @@ impl Session {
                     if let Some(s) = &self.state_table.open_screen {
                         let populated = s.slots.iter().filter(|it| it.is_some()).count();
                         outputs.push(format!(
-                            "open_screen window_id={} state_id={} title=\"{}\" slots={}/{} widgets={} fields={}",
+                            "open_screen window_id={} state_id={} kind={:?} title=\"{}\" slots={}/{} cursor={} widgets={} fields={}",
                             s.window_id,
                             s.state_id,
+                            s.kind,
                             s.title,
                             populated,
                             s.slots.len(),
+                            s.cursor_item.as_ref().map_or("none", |c| c.id.as_str()),
                             s.widgets.len(),
                             s.fields.len()
                         ));
@@ -923,8 +1085,8 @@ impl Session {
                         for (slot, item) in screen.slots.iter().enumerate() {
                             if let Some(stack) = item {
                                 sels.push(format!(
-                                    "slot={slot}: id=\"{}\" count={}",
-                                    stack.id, stack.count
+                                    "slot={slot}: id=\"{}\" count={} name={:?} lore={:?}",
+                                    stack.id, stack.count, stack.display_name, stack.lore
                                 ));
                             }
                         }
@@ -944,7 +1106,7 @@ impl Session {
                         .state_table
                         .open_screen
                         .as_mut()
-                        .ok_or_else(|| "no open container screen".to_owned())?;
+                        .ok_or_else(|| "no open container screen on server".to_owned())?;
                     let ev = SubTickEvent::ContainerClick {
                         window_id: screen.window_id,
                         state_id: screen.state_id,
@@ -966,7 +1128,7 @@ impl Session {
                         .state_table
                         .open_screen
                         .as_mut()
-                        .ok_or_else(|| "no open container screen".to_owned())?;
+                        .ok_or_else(|| "no open container screen on server".to_owned())?;
                     let rev = screen.state_id;
                     let selector = if query.contains(':') {
                         ItemSelector {
@@ -980,7 +1142,7 @@ impl Session {
                         }
                     };
                     let ev = screen
-                        .click_matching_item(Some(rev), &selector, false, 0, ClickMode::Pickup)
+                        .click_matching_item(Some(rev), &selector, true, 0, ClickMode::Pickup)
                         .map_err(|e| format!("{e:?}"))?;
                     self.event_queue
                         .submit(&[(next_tick, ev)])
@@ -988,38 +1150,23 @@ impl Session {
                     outputs.push(format!("queued live item click for '{query}'"));
                 }
                 ["gui.close"] => {
-                    let wid = self
+                    let screen = self
                         .state_table
                         .open_screen
-                        .as_ref()
-                        .map_or(0, |s| s.window_id);
-                    self.state_table.open_screen = None;
+                        .take()
+                        .ok_or_else(|| "no open container screen on server".to_owned())?;
+                    let wid = screen.window_id;
                     self.event_queue
                         .submit(&[(next_tick, SubTickEvent::CloseContainer { window_id: wid })])
                         .map_err(|e| format!("{e:?}"))?;
                     outputs.push(format!("closed container window_id={wid}"));
                 }
-                ["gui.open_shop_fixture"] => {
-                    let mut shop = ScreenState::container(1, 1, 3, "Shop");
-                    shop.set_slot(
-                        13,
-                        Some(ItemStack::new("minecraft:bricks", 1).with_name("Building Blocks")),
-                    );
-                    self.state_table.open_screen = Some(shop);
-                    self.shop_fixture_mode = true;
-                    outputs.push("initialized shop container fixture on live session".into());
-                }
                 ["gui.run_shop_workflow", item_id, amount] => {
                     if self.state_table.open_screen.is_none() {
-                        let mut shop = ScreenState::container(1, 1, 3, "Shop");
-                        shop.set_slot(
-                            13,
-                            Some(
-                                ItemStack::new("minecraft:bricks", 1).with_name("Building Blocks"),
-                            ),
+                        return Err(
+                            "cannot run screen workflow: no container screen is open on the live server"
+                                .into(),
                         );
-                        self.state_table.open_screen = Some(shop);
-                        self.shop_fixture_mode = true;
                     }
                     let wf = shop_purchase_workflow(item_id, amount);
                     match execute_workflow(&wf, self) {
@@ -1028,13 +1175,48 @@ impl Session {
                             final_revision,
                             ..
                         } => outputs.push(format!(
-                            "live shop workflow completed ({} serverbound events queued, final_rev={final_revision})",
+                            "live screen workflow completed ({} serverbound events queued, final_rev={final_revision})",
                             emitted_events.len()
                         )),
                         other => {
-                            return Err(format!("live shop workflow did not complete: {other:?}"))
+                            return Err(format!("live screen workflow did not complete: {other:?}"))
                         }
                     }
+                }
+                ["inventory.inspect"] => {
+                    let populated: Vec<String> = self
+                        .state_table
+                        .inventory_slots
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(idx, it)| {
+                            it.as_ref().map(|s| format!("slot={idx}:{}x{}", s.count, s.id))
+                        })
+                        .collect();
+                    outputs.push(format!(
+                        "selected_hotbar={} populated_slots={} items=[{}]",
+                        self.state_table.selected_hotbar,
+                        populated.len(),
+                        populated.join(", ")
+                    ));
+                }
+                ["entities.inspect"] => {
+                    let ents: Vec<String> = self
+                        .state_table
+                        .entities
+                        .values()
+                        .map(|e| {
+                            format!(
+                                "id={} type={} pos=({:.2},{:.2},{:.2})",
+                                e.entity_id, e.entity_type, e.pos[0], e.pos[1], e.pos[2]
+                            )
+                        })
+                        .collect();
+                    outputs.push(format!(
+                        "tracked_entities={} list=[{}]",
+                        ents.len(),
+                        ents.join(", ")
+                    ));
                 }
                 ["chat.send", rest @ ..] if !rest.is_empty() => {
                     let msg = rest.join(" ");
@@ -1078,7 +1260,7 @@ impl Session {
                 }
                 ["inspect.status"] | ["inspect.profile"] => {
                     outputs.push(format!(
-                        "live_tick={} pos=({:.3}, {:.3}, {:.3}) vel=({:.4}, {:.4}, {:.4}) yaw={:.2} pitch={:.2} ground={} health={:.1} food={} chunks={} entities={} pending_inputs={}",
+                        "live_tick={} pos=({:.3}, {:.3}, {:.3}) vel=({:.4}, {:.4}, {:.4}) yaw={:.2} pitch={:.2} ground={} health={:.1} food={} chunks={} entities={} pending_inputs={} nav_active={} decode_errors={}",
                         self.live_tick,
                         self.player.pos[0],
                         self.player.pos[1],
@@ -1093,7 +1275,9 @@ impl Session {
                         self.state_table.food,
                         self.world.chunks.len(),
                         self.state_table.entities.len(),
-                        self.scheduler.pending()
+                        self.scheduler.pending(),
+                        self.active_nav_goal.is_some(),
+                        self.state_table.decode_errors
                     ));
                 }
                 ["gym.observe"] => {
@@ -1104,27 +1288,93 @@ impl Session {
                     ];
                     self.world
                         .extract_voxel_patch(center, 3, 1, 3, &mut self.voxel_patch_buf);
-                    let ray_dist =
-                        raycast::raycast_block(&self.player, &self.world).map_or(-1.0, |h| h.distance);
+                    let ray_hit = raycast::raycast_block(&self.player, &self.world);
+                    let ray_dist = ray_hit.as_ref().map_or(-1.0, |h| h.distance);
                     let solid_nearby = self.voxel_patch_buf.iter().filter(|&&b| b == 1).count();
-                    outputs.push(format!(
-                        "{{\"tick\":{},\"pos\":[{:.5},{:.5},{:.5}],\"vel\":[{:.5},{:.5},{:.5}],\"yaw\":{:.3},\"pitch\":{:.3},\"ground\":{},\"health\":{:.1},\"food\":{},\"raycast_dist\":{:.3},\"voxel_patch_len\":{},\"solid_voxels\":{}}}",
-                        self.live_tick,
-                        self.player.pos[0],
-                        self.player.pos[1],
-                        self.player.pos[2],
-                        self.player.velocity[0],
-                        self.player.velocity[1],
-                        self.player.velocity[2],
-                        self.player.yaw,
-                        self.player.pitch,
-                        self.player.ground,
-                        self.state_table.health,
-                        self.state_table.food,
-                        ray_dist,
-                        self.voxel_patch_buf.len(),
-                        solid_nearby
-                    ));
+                    let inv_items: Vec<serde_json::Value> = self
+                        .state_table
+                        .inventory_slots
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(slot, it)| {
+                            it.as_ref().map(|s| {
+                                serde_json::json!({
+                                    "slot": slot,
+                                    "id": s.id,
+                                    "count": s.count,
+                                    "display_name": s.display_name,
+                                    "lore": s.lore,
+                                    "damage": s.damage,
+                                })
+                            })
+                        })
+                        .collect();
+                    let entities_json: Vec<serde_json::Value> = self
+                        .state_table
+                        .entities
+                        .values()
+                        .map(|e| {
+                            serde_json::json!({
+                                "id": e.entity_id,
+                                "type": e.entity_type,
+                                "pos": e.pos,
+                                "vel": e.velocity,
+                                "aabb": e.aabb(),
+                            })
+                        })
+                        .collect();
+                    let screen_json = self.state_table.open_screen.as_ref().map(|s| {
+                        let slots: Vec<serde_json::Value> = s
+                            .slots
+                            .iter()
+                            .enumerate()
+                            .filter_map(|(idx, it)| {
+                                it.as_ref().map(|item| {
+                                    serde_json::json!({
+                                        "slot": idx,
+                                        "id": item.id,
+                                        "count": item.count,
+                                        "display_name": item.display_name,
+                                        "lore": item.lore,
+                                    })
+                                })
+                            })
+                            .collect();
+                        serde_json::json!({
+                            "window_id": s.window_id,
+                            "state_id": s.state_id,
+                            "kind": format!("{:?}", s.kind),
+                            "title": s.title,
+                            "slots": slots,
+                            "cursor_item": s.cursor_item.as_ref().map(|c| serde_json::json!({"id": c.id, "count": c.count})),
+                        })
+                    });
+                    let obs = serde_json::json!({
+                        "tick": self.live_tick,
+                        "pos": self.player.pos,
+                        "vel": self.player.velocity,
+                        "yaw": self.player.yaw,
+                        "pitch": self.player.pitch,
+                        "ground": self.player.ground,
+                        "horizontal_collision": self.player.horizontal_collision,
+                        "health": self.state_table.health,
+                        "food": self.state_table.food,
+                        "saturation": self.state_table.saturation,
+                        "air_supply": self.state_table.air_supply,
+                        "game_mode": self.state_table.game_mode,
+                        "selected_hotbar": self.state_table.selected_hotbar,
+                        "raycast_dist": ray_dist,
+                        "raycast_block": ray_hit.map(|h| serde_json::json!({"pos": h.block_pos, "face": format!("{:?}", h.face), "dist": h.distance})),
+                        "voxel_patch_len": self.voxel_patch_buf.len(),
+                        "solid_voxels": solid_nearby,
+                        "voxels": self.voxel_patch_buf,
+                        "inventory": inv_items,
+                        "open_screen": screen_json,
+                        "entities": entities_json,
+                        "nav_active": self.active_nav_goal.is_some(),
+                        "decode_errors": self.state_table.decode_errors,
+                    });
+                    outputs.push(obs.to_string());
                 }
                 ["gym.step", fwd, back, left, right, jump, sneak, sprint, yaw_d, pitch_d] => {
                     let b_on = |s: &str| s == "1" || s == "true";

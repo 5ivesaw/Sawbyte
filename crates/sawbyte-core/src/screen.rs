@@ -147,6 +147,26 @@ impl ScreenState {
             self.state_id = self.state_id.wrapping_add(1).max(1);
         }
     }
+
+    /// Updates a slot from an authoritative server packet without locally incrementing `state_id`.
+    pub fn set_slot_authoritative(&mut self, slot: usize, item: Option<ItemStack>) {
+        if slot >= self.slots.len() {
+            self.slots.resize(slot + 1, None);
+        }
+        self.slots[slot] = item;
+    }
+
+    /// Atomically replaces the screen's slot table, carried cursor item, and authoritative server `state_id`.
+    pub fn apply_server_content(
+        &mut self,
+        state_id: i32,
+        slots: Vec<Option<ItemStack>>,
+        cursor_item: Option<ItemStack>,
+    ) {
+        self.state_id = state_id;
+        self.slots = slots;
+        self.cursor_item = cursor_item;
+    }
 }
 
 /// Composable item/slot selector for GUI automation.
@@ -323,7 +343,7 @@ impl ScreenState {
         })
     }
 
-    /// Updates a named text field (e.g. Anvil rename, Shop amount prompt, or Sign/Dialog input) and emits the appropriate event.
+    /// Updates a named text field (e.g. Anvil rename, custom dialog amount prompt, or Sign/Dialog input) and emits the appropriate event.
     pub fn fill_field(
         &mut self,
         field_name: &str,
@@ -344,7 +364,6 @@ impl ScreenState {
         }
         field.text = text.to_owned();
         field.focused = true;
-        self.state_id = self.state_id.wrapping_add(1).max(1);
         Ok(SubTickEvent::RenameItem {
             name: text.to_owned(),
         })
