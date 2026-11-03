@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_if)]
+
 mod auth;
 mod inventory;
 mod player;
@@ -92,7 +94,7 @@ fn connect(server: &str, account: &auth::Account) -> Result<(wire::Rx, wire::Tx)
 }
 
 #[derive(Default)]
-struct LiveInputBackend {
+pub struct LiveInputBackend {
     last_frame: InputFrame,
 }
 
@@ -111,7 +113,7 @@ impl Backend for LiveInputBackend {
     }
 }
 
-enum DynamicCameraPolicy {
+pub enum DynamicCameraPolicy {
     Humanised(Humanised),
     Smooth(SmoothHumanisedCamera),
     Direct(Direct),
