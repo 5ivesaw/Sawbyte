@@ -212,7 +212,7 @@ def main():
         env = dict(os.environ, HMC_FILES_LOCATION=str(config))
         run_process(["java", "-jar", str(hmc), "version", "install", "fabric", "26.3"],
             "reference-install", 240, env)
-        jvm = f"-Xmx1G -Dsawbyte.tape={tape} -Dsawbyte.trace={REPORTS / 'reference.csv'} -Dsawbyte.exit=true"
+        jvm = f"-Xms512M -Xmx2G -Dsawbyte.tape={tape} -Dsawbyte.trace={REPORTS / 'reference.csv'} -Dsawbyte.exit=true"
         run_process(["xvfb-run", "-a", "java", "-jar", str(hmc), "launch", "--offline",
             "--jvm", jvm, "--game", "--quickPlayMultiplayer 127.0.0.1:25565", "fabric", "26.3"],
             "reference", 240, env)
