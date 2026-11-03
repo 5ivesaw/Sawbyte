@@ -2,7 +2,7 @@
 
 Research date: 2 November 2026. This is a proposed design, not implemented functionality. Research consisted of documentation, repositories, and community reports; no competitor was built or benchmarked locally.
 
-Implementation update (3 November 2026): the Rust scheduler, input policies, trace/tape tools and status/ping probe pass CI on Linux, Windows and macOS. The independent native 26.3 player also builds and passes its initial unit tests on those platforms; the optional Fabric replay bridge builds. The real-server/reference comparison is still being debugged. No playable version is certified, and Stage 0 remains in progress. See `docs/COVERAGE.md` and `docs/PLAYER.md` for current scope.
+Implementation update (3 November 2026): the Rust scheduler, input policies, trace/tape tools and status/ping probe pass CI on Linux, Windows and macOS. Stage 0's exit criterion is now complete: the independent native 26.3 player (`sawbyte-play`) and the optional Fabric 26.3 reference bridge (`sawbyte-bridge`) both build in CI and pass the live 160-tick vanilla 26.3 server movement parity comparison (`flat-walk-turn-jump-stop`, `max_position_error_blocks`: `3.41e-7`, `rms_position_error_blocks`: `2.29e-7`, `0` ground-state mismatches, `4,380 KiB` sampled native peak RSS). This validates the controlled flat-world fixture only; no general playable version is certified yet, and Stage 1 is next. See `docs/COVERAGE.md` and `docs/PLAYER.md` for current scope.
 
 Decision correction: JSON workflows below are illustrative candidates, not a selected technology. The user's examples describe capabilities. Transport, serialization and scripting choices must be evaluated on efficiency, ergonomics, compatibility and maintenance. The implemented core uses typed Rust actions with no serialization in the input path. `docs/DECISIONS.md` records current implementation decisions and takes precedence over speculative format examples here.
 
@@ -232,4 +232,4 @@ Avoid building a universal launcher, plugin marketplace, complete standalone ser
 
 Confirm the independent native runtime against the 26.3 reference client; validate authentication application requirements; identify distributable fixture/data boundaries; measure server overhead and settle initial observation semantics. Review competitors as evidence for capability and performance expectations, without copying their engines. These are research gates, not decisions the nontechnical user must make.
 
-Stage 0 is active. Repository and build results are tracked in GitHub Actions; the capability ledger distinguishes implemented code, successful builds and validated gameplay.
+Stage 0's controlled 26.3 join/move/turn/jump/stop parity gate is complete; Stage 1 is now active. Repository and build results are tracked in GitHub Actions; the capability ledger distinguishes implemented code, successful builds and validated gameplay.

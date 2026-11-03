@@ -21,17 +21,17 @@ Sawbyte is being built as a **standalone native client and automation framework*
 - A dependency-free Rust input scheduler: bounded queues, atomic batch admission, held buttons, relative camera input, explicit cancellation, and backend fault handling.
 - Configurable input policy: bounded camera motion by default, direct mode, and a Rust trait for custom policies. This initial policy is only the first humanisation building block.
 - A real TCP Minecraft Java server-status handshake and ping, with bounded packets, UTF-8 validation, and a total request deadline.
-- Linux x86-64, Windows x86-64 and macOS ARM64 build/test jobs, with downloadable binaries and SHA-256 checksums.
+- Linux x86-64, Windows x86-64 and macOS ARM64 build/test jobs, with downloadable binaries, generated platform icons, and SHA-256 checksums.
 
-An independent native player and an optional normal-client input bridge are under development on `feat/real-player`. The bridge builds; native gameplay must still pass the real-server comparison before it is considered usable. No version has passed gameplay parity testing. The trace demo is not a game simulation.
+The independent native 26.3 runtime (`sawbyte-play`) and the optional normal-client Fabric 26.3 bridge (`sawbyte-bridge`) now pass the controlled 160-tick flat-world movement parity comparison in CI (`max_position_error_blocks`: `3.41e-7`, `rms_position_error_blocks`: `2.29e-7`, `0` ground-state mismatches against the `0.001`-block gate). This proves the Stage 0 evidence prototype on that controlled fixture; general gameplay compatibility is not yet certified. The foundation `sawbyte demo` command remains a local scheduler trace, not a game simulation.
 
 ## Standalone player milestone
 
 The separate `native/` Rust workspace implements the first 26.3 connection, authentication, chunk storage and ordinary-ground movement prototype. It uses low-level networking and cryptography libraries; it does not depend on Azalea or another gameplay engine. `bridge/` is an optional Fabric integration that plays the same input recording in the normal client for comparison.
 
-The **Real player milestone** workflow builds the native player for Linux x86-64, Windows x86-64 and macOS ARM64, builds the bridge, then runs a controlled Linux server/client comparison. A successful build alone does not establish gameplay compatibility. See [the test scope and usage](docs/PLAYER.md).
+The **Real player milestone** workflow builds the native player for Linux x86-64, Windows x86-64 and macOS ARM64, builds the bridge, and runs a controlled Linux server/client comparison (`flat-walk-turn-jump-stop`, 160 ticks). In that controlled Linux fixture, the native `sawbyte-play` process recorded a sampled peak RSS of `4,380 KiB` (~4.28 MiB). See [the test scope and usage](docs/PLAYER.md).
 
-Launcher UI, instance management, general scripting/API access, inventory and screen automation, complete physics and multi-version support remain unfinished. No memory reduction or superiority claim has been measured.
+Launcher UI, instance management, general scripting/API access, inventory and screen automation, complete physics and multi-version support remain unfinished. The controlled-fixture RSS measurement is not a general gameplay or competitor benchmark.
 
 ## Download and try
 

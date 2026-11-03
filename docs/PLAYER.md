@@ -14,9 +14,9 @@ This milestone targets Minecraft Java **26.3 only**. It is a controlled movement
 4. Runs the same recording in a normal Fabric client using a virtual display.
 5. Checks movement, complete traces and position differences (maximum 0.001 blocks), plus ground-state agreement.
 
-The `player-comparison-evidence` artifact contains logs, CSV traces, block IDs and measurements. A failed job is evidence of unfinished work. Passing this scenario establishes only that scenario; it does not establish complete client equivalence, online authentication or Windows/macOS gameplay parity.
+The `player-comparison-evidence` artifact contains logs, CSV traces, block IDs and measurements. In the verified 26.3 CI run (`flat-walk-turn-jump-stop`, 160 ticks), `sawbyte-play` matched the reference Fabric 26.3 client with `max_position_error_blocks = 3.4117737307480316e-07`, `rms_position_error_blocks = 2.2887988105447855e-07`, and `0` ground-state mismatches (within the `0.001`-block gate). Passing this scenario establishes only that controlled flat-world scenario; it does not establish complete client equivalence, online authentication or Windows/macOS gameplay parity.
 
-The native process's sampled peak RSS is recorded separately. Server and graphical-client processes are not included in that number. It is not a comparison against other automation clients, and no production memory target is established.
+The native process's sampled peak RSS is recorded separately (`4,380 KiB` on the 160-tick Linux fixture). Server and graphical-client processes are not included in that number. It is not a comparison against other automation clients, and no production memory target is established.
 
 ## Experimental command line
 
@@ -40,6 +40,6 @@ Online login requires an application registration permitted to use the relevant 
 - Inventory, clicks, combat, chat, text fields, dialogs and custom GUI automation are not exposed yet. The complete player-action requirement remains the product goal.
 - Some unimplemented server packets are ignored; this is one reason the experiment is restricted to the controlled lab. It cannot guarantee correct behaviour on arbitrary servers.
 - The bridge stops on screens opening during replay, death or disconnect. Its CSV `chunks` field records whether the current chunk is loaded (0 or 1), whereas the native trace records its cached chunk count.
-- The supplied Sawbyte icon is included in artifacts and the README. A branded launcher, embedded platform icons and installers remain separate packaging work.
+- The supplied Sawbyte icon (`assets/sawbyte.png`) is embedded into Windows `.exe` resources (`sawbyte.ico`) and packaged into macOS `.app` bundles (`sawbyte.icns`) and Linux desktop folders during CI. A graphical launcher and system installers remain separate work.
 
-Before a usable client preview: pass the controlled comparison, add coverage for collision and input edge cases, handle changing world state and player attributes, validate online sessions, and provide a supported installation/account/profile workflow. Full automation and multi-version support require further milestones.
+Before a usable general client preview: add coverage for non-full-cube collision, sprinting/sneaking/fluid/attribute/effect motion edge cases, handle dynamic loaded-world block updates, validate live online sessions, and provide a supported installation/account/profile workflow. Full automation and multi-version support require further milestones.

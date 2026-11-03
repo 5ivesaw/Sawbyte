@@ -22,11 +22,14 @@ The trait is the first input execution boundary, not the final screen/observatio
 
 Use GitHub-hosted machines to compile, test, format and package. Pin Rust and action revisions; no credentials in builds. No external crates means locked offline Cargo execution works once the toolchain is installed. Artifacts include checksums, license and current capability ledger. Toolchain setup itself requires network access.
 
-## Next engineering slice
+## Stage 0 completion and next engineering slice
 
-1. Validate Sawbyte's independent 26.3 native runtime. There is no Azalea gameplay dependency; standard compression, HTTP and cryptography libraries are used.
-2. Complete the real-client trace comparison using the optional Fabric 26.3 bridge and the shared input recording.
-3. Validate online authentication, broaden motion/world-state coverage and expose observable session lifecycle.
-4. Extend the ordered-event contract for all screens and player interactions, then select the external API using representative workloads.
+Stage 0's exit criterion—reproducing and comparing a real 26.3 join/move/turn/jump/stop trace between the independent native Rust runtime (`sawbyte-play`) and the reference Fabric 26.3 client (`sawbyte-bridge`) against a live vanilla 26.3 server in GitHub Actions—is now met (`max_position_error_blocks`: `3.41e-7`, `rms_position_error_blocks`: `2.29e-7`, `0` ground-state mismatches, `4,380 KiB` sampled native peak RSS).
 
-Stage 0 is not complete until a real join/move/stop trace can be compared against the reference client.
+Key protocol fact verified during Stage 0: in Minecraft 26.3 (protocol `777`), `ServerboundAcceptTeleportationPacket` (`packet 0`) carries `(id, x, y, z, yRot, xRot)` and sets `ServerGamePacketListenerImpl.receivedPositionThisTick = true`, which is only cleared by `ServerboundClientTickEndPacket` (`packet 13`). Sending an extra `ServerboundMovePlayerPosRot` (`packet 31`) in the same tick immediately triggers `multiplayer.disconnect.invalid_player_movement`.
+
+Next engineering priorities (Stage 1):
+
+1. Broaden native world-state and motion mechanics beyond ordinary full cubes (block updates in loaded chunks, sprinting, sneaking, stepping, stairs/slabs, fluids, attributes/effects, and target raycasting).
+2. Validate live online authentication and session lifecycle recovery/reconnection.
+3. Extend the ordered-event contract for discrete sub-tick actions, inventory transactions, and screens across both native and full-client backends, then benchmark candidate external API transports.
