@@ -49,13 +49,39 @@ class Server:
                 "--reports", "--output", "generated"], cwd=self.directory, stdout=log,
                 stderr=subprocess.STDOUT, check=True, timeout=150)
         block_data = json.loads((self.directory / "generated/reports/blocks.json").read_text())
-        profile = {"minecraft": "26.3", "air": [], "solid": []}
+        profile = {
+            "minecraft": "26.3", "air": [], "solid": [],
+            "bottom_slabs": [], "top_slabs": [], "stairs": [], "fences": [],
+            "carpets": [], "climbable": [], "water": [], "lava": [],
+            "cobwebs": [], "soul_sand": [], "ice": [],
+        }
         for group, names in {
             "air": ["air", "cave_air", "void_air"],
-            "solid": ["bedrock", "dirt", "grass_block", "stone", "cobblestone"],
+            "solid": ["bedrock", "dirt", "grass_block", "stone", "cobblestone", "oak_planks", "sand", "gravel"],
+            "climbable": ["ladder", "vine", "scaffolding"],
+            "water": ["water"],
+            "lava": ["lava"],
+            "cobwebs": ["cobweb"],
+            "soul_sand": ["soul_sand", "honey_block"],
+            "ice": ["ice", "packed_ice", "blue_ice"],
+            "fences": ["oak_fence", "cobblestone_wall"],
+            "carpets": ["white_carpet"],
         }.items():
             for name in names:
-                profile[group].extend(state["id"] for state in block_data[f"minecraft:{name}"]["states"])
+                key = f"minecraft:{name}"
+                if key in block_data:
+                    profile[group].extend(state["id"] for state in block_data[key]["states"])
+        for slab in ["stone_slab", "oak_slab", "cobblestone_slab"]:
+            key = f"minecraft:{slab}"
+            if key in block_data:
+                for state in block_data[key]["states"]:
+                    stype = state.get("properties", {}).get("type", "bottom")
+                    if stype == "bottom":
+                        profile["bottom_slabs"].append(state["id"])
+                    elif stype == "top":
+                        profile["top_slabs"].append(state["id"])
+                    else:
+                        profile["solid"].append(state["id"])
         (REPORTS / "block-profile.json").write_text(json.dumps(profile, indent=2) + "\n")
         (self.directory / "eula.txt").write_text("eula=true\n")
         (self.directory / "server.properties").write_text("\n".join([

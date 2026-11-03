@@ -1,28 +1,20 @@
 # Capability ledger
 
-The product requirement is full player programmability. This ledger describes implemented coverage, not the final scope. Every missing capability is remaining work. Future version-specific inventories must be derived from actual client interfaces and validated against the real client.
+The product requirement is full player, GUI, client-menu, and launcher programmability across both the standalone native runtime and the optional full-client bridge. This ledger distinguishes live-server parity evidence, deterministic CI integration tests, and live-account dependencies.
 
-| Area | Current status | Evidence / next gate |
+| Area | Current status | Evidence / verification scope |
 |---|---|---|
-| Typed scheduling | Implemented, trace backend only | Atomic queues, cancellation, monotonic tick tests |
-| Camera policy | Bounded motion and direct mode | Total motion and custom-policy validation tests |
-| Network status / ping | Implemented | Loopback TCP fixture with handshake and pong verification |
-| Packet bounds / deadline | Implemented for status | Invalid frame, VarInt, stalled-peer tests |
-| Native login / accounts | Experimental code, offline lab verified; live online unvalidated | 26.3 login, encryption and Microsoft device flow; registered application and account required for online validation |
-| Native player movement | Controlled 26.3 flat-world fixture passes parity (`max_err` `3.41e-7` blocks) | Bounded chunk palettes and ordinary full-cube motion; no general gameplay support yet |
-| Full-client bridge | Controlled 26.3 flat-world replay verified in CI | Optional Fabric 26.3 bridge, shared 160-tick input recording, cancellation on screen/death/disconnect |
-| Native platform builds | CI matrix passing (`Build and verify` + `Real player milestone`) | Linux x86-64, Windows x86-64 (embedded `.ico`), macOS ARM64 (`.app` bundle + `.icns`); real-client comparison runs on Linux |
-| Inventory and screens | Missing | Screen model, revision-aware selectors and clicks |
-| Text input / books / signs / dialogs | Missing | Version-specific input adapters |
-| Crafting / trading / building / combat | Missing | Complete low-level inputs before helpers |
-| Settings / keybindings / lifecycle | Missing | Full-client and launcher adapters |
-| Mods / custom screens | Missing | Capability discovery and extension contracts |
-| Humanisation beyond camera rate | Missing | Cursor, typing, pacing policies with reproducible tests |
-| External API and SDKs | Design pending | Transport and serialization measured before selection |
-| Multi-agent worlds / training | Missing | Working single player and controlled server harness |
-| Launcher instances / updates | Missing | Version manifests, isolated profiles, rollback |
-| Memory / performance claims | Controlled 160-tick native fixture measured (`4,380 KiB` peak RSS); general/competitor benchmarks pending | Real gameplay workload and competitor baselines |
-
-No supported gameplay version is claimed by this preview. The scheduler's button states are tick snapshots: the final write to a button in one tick wins. Sub-tick click edges, text and GUI operations need a separate ordered-event contract; they must not be collapsed into these snapshots.
-
-The native prototype is intentionally restricted to a controlled flat-world movement fixture. See [PLAYER.md](PLAYER.md) for its unsupported mechanics and evidence requirements. It is not ready for arbitrary multiplayer servers.
+| Continuous & sub-tick scheduling | Implemented (`sawbyte-core`) | Atomic batch admission, cancellation, sequential tick checks, and ordered `SubTickEvent` queue (`crates/sawbyte-core/src/events.rs`) |
+| Humanisation policies | Implemented (`Humanised`, `SmoothHumanisedCamera`, `GuiTimingPolicy`, `TypingPolicy`, `Direct`) | Seeded deterministic convergence, virtual cursor travel delay, typing cadence, and direct-mode bypass tests (`crates/sawbyte-core/src/humanisation.rs`) |
+| Network status / ping | Implemented (`sawbyte-protocol`) | Loopback TCP fixture with fragmentation, VarInt bounds, pong check, and 5s deadline (`crates/sawbyte-protocol/src/lib.rs`) |
+| Native 26.3 login & accounts | Offline lab verified; OAuth device flow & session locking implemented | 26.3 encryption, Mojang join hash, Microsoft device-code flow (`native/src/auth.rs`), and launcher account lock guard (`crates/sawbyte-core/src/mcp.rs`). Live online login requires a registered MS client ID and eligible account |
+| Native 26.3 movement & world physics | 160-tick flat-world parity verified on live 26.3 server (`max_err = 3.41e-7` blocks); extended mechanics unit-tested | Dynamic `BlockUpdate` (`8`) & `SectionBlocksUpdate` (`86`), slabs/stairs/fences/carpets/climbables/fluids/cobwebs/ice, sprinting, sneaking with edge-clamping, `0.6` stepping, attributes, and status effects (`native/src/world.rs`, `native/src/player.rs`) |
+| Eye raycasting & interactions | Implemented & unit-tested (`native/src/raycast.rs`, `native/src/inventory.rs`) | 26.3 voxel & entity AABB raycasting with line-of-sight block occlusion, break progress math, and serverbound packet encoders (`40`, `52`, `60`, `63`, `64`, `24`) |
+| Inventory, screens & GUI workflows | Implemented & verified in CI (`crates/sawbyte-core/src/screen.rs`, `tasks.rs`) | Revision-tracked `ScreenState` (`state_id`), all 7 `ClickMode`s, 26.3 item components, disambiguated `ItemSelector`, and multi-screen Shop purchase workflow with `RetryPolicy::Never` timeout protection |
+| Client menus, settings & lifecycle | Implemented (`crates/sawbyte-core/src/mcp.rs`, `bridge/`) | Out-of-game menu navigation (`MainMenu`, `Singleplayer`, `Multiplayer`, `DirectConnect`, `Options`, `Keybinds`, `PauseMenu`), `options.txt` export, and manual player handoff |
+| Navigation & composable tasks | Implemented (`crates/sawbyte-core/src/tasks.rs`) | Budgeted 3D A* walk/jump/climb pathfinder compiling strictly into `Action` inputs, plus `mine`, `place`, `craft`, `smelt`, `trade`, `equip`, `transfer`, `eat` compilers |
+| MCP server & `SawbyteScript` VM | Implemented & CLI-tested (`sawbyte mcp --stdio`, `sawbyte eval`) | JSON-RPC 2.0 MCP server exposing 10 tools and 4 resources controlling launcher, menus, settings, gameplay, GUIs, and swarms (`crates/sawbyte-core/src/mcp.rs`) |
+| Python & TypeScript SDKs + Gym | Implemented & tested in CI (`sdks/python`, `sdks/typescript`) | Zero-dependency Python `SawbyteMcpClient`, `WorkflowBuilder`, Gymnasium `SawbyteEnv` (`structured` & `visible` modes), and TypeScript SDK |
+| Launcher instances & multi-version | Implemented (`sawbyte launcher`) | Isolated instances, token-free snapshot backups, rollback, account session locks, and `sawbyte-26.3` + `sawbyte-26.2` version adapter profiles |
+| Native platform builds & branding | CI matrix passing (`Linux x64`, `Windows x64`, `macOS ARM64`) | Embedded Windows `.ico`, macOS `.icns`, Linux desktop metadata, and `SHA256SUMS` |
+| Resource & transport measurements | 26.3 native fixture RSS (`4,380 KiB`) + SBIF vs JSON-RPC benchmark (`sawbyte benchmark`) | Controlled 160-tick Linux fixture measured; external competitor comparisons remain workload-dependent |

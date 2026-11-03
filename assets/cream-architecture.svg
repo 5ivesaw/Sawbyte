@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 320" width="100%">
+  <rect x="2" y="2" width="956" height="316" rx="16" fill="#FAF6EE" stroke="#D8CBB5" stroke-width="2" />
+  <text x="36" y="40" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="700" fill="#1F1D1A">
+    Unified Architecture — One Framework Across Launcher, Menus, Native Headless &amp; Graphical Client
+  </text>
+
+  <!-- Column 1: Control Surfaces -->
+  <g transform="translate(36, 62)">
+    <rect x="0" y="0" width="256" height="230" rx="12" fill="#F3ECE0" stroke="#C47A2C" stroke-width="1.5" />
+    <text x="20" y="30" font-family="ui-sans-serif, sans-serif" font-size="15" font-weight="700" fill="#8C5230">1. AI Agents, SDKs &amp; CLI</text>
+    <rect x="16" y="44" width="224" height="36" rx="8" fill="#FDFBF7" stroke="#D8CBB5" />
+    <text x="28" y="67" font-family="ui-monospace, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">MCP Server (sawbyte mcp)</text>
+    <rect x="16" y="90" width="224" height="36" rx="8" fill="#FDFBF7" stroke="#D8CBB5" />
+    <text x="28" y="113" font-family="ui-monospace, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">Python &amp; TypeScript SDKs</text>
+    <rect x="16" y="136" width="224" height="36" rx="8" fill="#FDFBF7" stroke="#D8CBB5" />
+    <text x="28" y="159" font-family="ui-monospace, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">SawbyteScript &amp; Workflows</text>
+    <rect x="16" y="182" width="224" height="36" rx="8" fill="#FDFBF7" stroke="#D8CBB5" />
+    <text x="28" y="205" font-family="ui-monospace, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">Gymnasium RL (SawbyteEnv)</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <path d="M 296 177 L 344 177" stroke="#8C5230" stroke-width="2.5" />
+  <polygon points="344,172 354,177 344,182" fill="#8C5230" />
+
+  <!-- Column 2: Shared Core -->
+  <g transform="translate(356, 62)">
+    <rect x="0" y="0" width="256" height="230" rx="12" fill="#F3ECE0" stroke="#2B6E5B" stroke-width="1.5" />
+    <text x="20" y="30" font-family="ui-sans-serif, sans-serif" font-size="15" font-weight="700" fill="#2B6E5B">2. Shared Core (sawbyte-core)</text>
+    <rect x="16" y="44" width="224" height="36" rx="8" fill="#FDFBF7" stroke="#D8CBB5" />
+    <text x="28" y="67" font-family="ui-monospace, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">Humanised / Smooth / Direct</text>
+    <rect x="16" y="90" width="224" height="36" rx="8" fill="#FDFBF7" stroke="#D8CBB5" />
+    <text x="28" y="113" font-family="ui-monospace, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">Tick &amp; Sub-Tick Scheduler</text>
+    <rect x="16" y="136" width="224" height="36" rx="8" fill="#FDFBF7" stroke="#D8CBB5" />
+    <text x="28" y="159" font-family="ui-monospace, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">Screen Selectors &amp; 3D A*</text>
+    <rect x="16" y="182" width="224" height="36" rx="8" fill="#FDFBF7" stroke="#D8CBB5" />
+    <text x="28" y="205" font-family="ui-monospace, monospace" font-size="12.5" font-weight="600" fill="#1F1D1A">Launcher &amp; Menu Controller</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <path d="M 616 177 L 664 177" stroke="#2B6E5B" stroke-width="2.5" />
+  <polygon points="664,172 674,177 664,182" fill="#2B6E5B" />
+
+  <!-- Column 3: Execution Backends -->
+  <g transform="translate(676, 62)">
+    <rect x="0" y="0" width="248" height="230" rx="12" fill="#F3ECE0" stroke="#8C5230" stroke-width="1.5" />
+    <text x="20" y="30" font-family="ui-sans-serif, sans-serif" font-size="15" font-weight="700" fill="#1F1D1A">3. Dual Execution Backends</text>
+    <rect x="16" y="48" width="216" height="78" rx="8" fill="#FDFBF7" stroke="#2B6E5B" stroke-width="1.2" />
+    <text x="28" y="72" font-family="ui-sans-serif, sans-serif" font-size="13.5" font-weight="700" fill="#2B6E5B">Standalone Native (Rust)</text>
+    <text x="28" y="92" font-family="ui-monospace, monospace" font-size="11.5" fill="#5C5346">sawbyte-play · Zero GPU/Audio</text>
+    <text x="28" y="110" font-family="ui-monospace, monospace" font-size="11.5" fill="#5C5346">26.3 Physics · Raycast · 4.28 MiB</text>
+
+    <rect x="16" y="138" width="216" height="78" rx="8" fill="#FDFBF7" stroke="#C47A2C" stroke-width="1.2" />
+    <text x="28" y="162" font-family="ui-sans-serif, sans-serif" font-size="13.5" font-weight="700" fill="#8C5230">Full-Client Bridge (Fabric)</text>
+    <text x="28" y="182" font-family="ui-monospace, monospace" font-size="11.5" fill="#5C5346">sawbyte-bridge · Normal Client</text>
+    <text x="28" y="200" font-family="ui-monospace, monospace" font-size="11.5" fill="#5C5346">Manual Handoff · Parity Lab</text>
+  </g>
+</svg>

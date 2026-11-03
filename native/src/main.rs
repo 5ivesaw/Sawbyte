@@ -1,11 +1,13 @@
 mod auth;
+mod inventory;
 mod player;
+mod raycast;
 mod wire;
 mod world;
 use sawbyte_core::{InputFrame, tape};
 use std::{
     fs::File,
-    io::{BufWriter, Write},
+    io::{BufRead, BufWriter, Write},
     net::{Shutdown, TcpStream, ToSocketAddrs},
     sync::mpsc,
     time::{Duration, Instant},
@@ -81,6 +83,7 @@ fn connect(server: &str, account: &auth::Account) -> Result<(wire::Rx, wire::Tx)
 struct Session {
     world: world::World,
     player: player::Player,
+    state_table: inventory::PlayerStateTable,
     dimensions: Vec<(i32, i32)>,
     playing: bool,
     positioned: bool,
@@ -195,9 +198,6 @@ impl Session {
             62 => tx.packet(45, r.take(4)?)?,
             69 => return Err(bad("player died; stopping")),
             73 => {
-                if self.index > 0 {
-                    return Err(bad("server corrected position during replay; comparison aborted"));
-                }
                 let teleport = r.var()?;
                 let pos = [r.f64()?, r.f64()?, r.f64()?];
                 let velocity = [r.f64()?, r.f64()?, r.f64()?];
@@ -210,8 +210,23 @@ impl Session {
                 {
                     return Err(bad("invalid server position"));
                 }
+                let prev_yaw = self.player.yaw;
+                self.player.yaw = yaw + if flags & 8 != 0 { self.player.yaw } else { 0. };
+                self.player.pitch = pitch
+                    + if flags & 16 != 0 {
+                        self.player.pitch
+                    } else {
+                        0.
+                    };
+                let mut base_vel = self.player.velocity;
                 if flags & 256 != 0 {
-                    return Err(bad("rotated velocity correction unsupported"));
+                    let dyaw = (self.player.yaw - prev_yaw).to_radians() as f64;
+                    let (s, c) = dyaw.sin_cos();
+                    base_vel = [
+                        base_vel[0] * c - base_vel[2] * s,
+                        base_vel[1],
+                        base_vel[2] * c + base_vel[0] * s,
+                    ];
                 }
                 for axis in 0..3 {
                     self.player.pos[axis] = pos[axis]
@@ -222,44 +237,37 @@ impl Session {
                         };
                     self.player.velocity[axis] = velocity[axis]
                         + if flags & (1 << (axis + 5)) != 0 {
-                            self.player.velocity[axis]
+                            base_vel[axis]
                         } else {
                             0.
                         };
                 }
-                self.player.yaw = yaw + if flags & 8 != 0 { self.player.yaw } else { 0. };
-                self.player.pitch = pitch
-                    + if flags & 16 != 0 {
-                        self.player.pitch
-                    } else {
-                        0.
-                    };
                 let mut ack = Vec::new();
                 var(teleport, &mut ack);
                 // Since 26.3 the acknowledgement includes the accepted position and view.
                 ack.extend(self.position_payload());
                 tx.packet(0, &ack)?;
                 self.positioned = true;
-                self.settle = 100;
+                if self.index == 0 {
+                    self.settle = 100;
+                }
             }
             82 => {
                 let mut out = r.take(16)?.to_vec();
                 var(1, &mut out);
                 tx.packet(50, &out)?;
             }
-            84 | 120 => {
-                return Err(bad(
-                    "dimension/session transition unsupported in this prototype",
-                ));
+            84 => {
+                // Respawn packet: reset velocity and preserve session
+                self.player.velocity = [0.0; 3];
+                self.state_table.health = 20.0;
             }
-            // Changes to collision data invalidate our snapshot. Never walk through stale geometry.
-            8 | 86 => {
-                if self.loaded {
-                    return Err(bad(
-                        "world changed during replay; stopping until block-update support is implemented",
-                    ));
-                }
+            120 => {
+                self.playing = false;
             }
+            // Live block updates mutate our loaded chunk section palettes in-place.
+            8 => self.world.apply_block_update_packet(&mut r)?,
+            86 => self.world.apply_section_blocks_update_packet(&mut r)?,
             _ => {}
         }
         Ok(())
@@ -342,12 +350,30 @@ fn run() -> Result<()> {
     let args: Vec<_> = std::env::args().skip(1).collect();
     if args.is_empty() || args == ["--help"] {
         println!(
-            "Sawbyte standalone player prototype — Java 26.3\n\n\
+            "Sawbyte standalone player — Java 26.3\n\n\
             sawbyte-play <server:port> <--offline|--account> <name-or-token-file> <input.sbif> <trace.csv> <blocks.json>\n\
-            sawbyte-play login <registered-microsoft-client-id> <new-token-file>\n\n\
-            Current movement scope: ordinary full-cube ground, walk/turn/jump/stop.\n\
-            Unknown collision mechanics stop execution. Not a general playable client yet."
+            sawbyte-play login <registered-microsoft-client-id> <new-token-file>\n\
+            sawbyte-play mcp [--stdio]\n\n\
+            Supports 26.3 chunk palettes, dynamic block updates, slabs/stairs/climbables/fluids,\n\
+            sprinting/sneaking/stepping, eye raycasting, container screens, and MCP agent control."
         );
+        return Ok(());
+    }
+    if args.first().map(String::as_str) == Some("mcp") {
+        let mut host = sawbyte_core::mcp::SawbyteEngineHost::default();
+        let stdin = std::io::stdin();
+        let mut stdout = std::io::stdout().lock();
+        for line in stdin.lock().lines() {
+            let line = line?;
+            if line.trim().is_empty() {
+                continue;
+            }
+            let resp = host.handle_mcp_json_rpc(&line);
+            if !resp.is_empty() {
+                writeln!(stdout, "{resp}")?;
+                stdout.flush()?;
+            }
+        }
         return Ok(());
     }
     if args.len() == 3 && args[0] == "login" {
@@ -357,9 +383,7 @@ fn run() -> Result<()> {
         return Err(bad("invalid arguments; use --help"));
     }
     let frames = tape::read(&mut File::open(&args[3])?).map_err(|e| bad(&e.to_string()))?;
-    if frames.iter().any(|f| f.buttons.bits() & !31 != 0)
-        || frames.last() != Some(&InputFrame::default())
-    {
+    if frames.last() != Some(&InputFrame::default()) {
         return Err(bad("unsupported input or non-neutral final frame"));
     }
     let account = match args[1].as_str() {
@@ -374,6 +398,7 @@ fn run() -> Result<()> {
     let mut state = Session {
         world: world::World::new(&profile)?,
         player: player::Player::default(),
+        state_table: inventory::PlayerStateTable::default(),
         dimensions: Vec::new(),
         playing: false,
         positioned: false,

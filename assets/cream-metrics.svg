@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 150" width="100%">
+  <rect x="2" y="2" width="956" height="146" rx="14" fill="#FAF6EE" stroke="#D8CBB5" stroke-width="2" />
+  <text x="32" y="34" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="700" fill="#5C5346" letter-spacing="0.4">
+    VERIFIED CI PARITY &amp; RESOURCE EVIDENCE (MINECRAFT JAVA 26.3 · PROTOCOL 777 · 160-TICK LIVE SERVER FIXTURE)
+  </text>
+
+  <g transform="translate(32, 50)">
+    <rect x="0" y="0" width="212" height="78" rx="10" fill="#F3ECE0" stroke="#D5C7B0" />
+    <text x="18" y="28" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="600" fill="#5C5346">Max Position Drift</text>
+    <text x="18" y="58" font-family="ui-monospace, monospace" font-size="22" font-weight="800" fill="#2B6E5B">3.41e-7 blk</text>
+
+    <rect x="228" y="0" width="212" height="78" rx="10" fill="#F3ECE0" stroke="#D5C7B0" />
+    <text x="246" y="28" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="600" fill="#5C5346">RMS Position Drift</text>
+    <text x="246" y="58" font-family="ui-monospace, monospace" font-size="22" font-weight="800" fill="#2B6E5B">2.29e-7 blk</text>
+
+    <rect x="456" y="0" width="212" height="78" rx="10" fill="#F3ECE0" stroke="#D5C7B0" />
+    <text x="474" y="28" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="600" fill="#5C5346">Ground Mismatches</text>
+    <text x="474" y="58" font-family="ui-monospace, monospace" font-size="22" font-weight="800" fill="#1F1D1A">0 / 160 ticks</text>
+
+    <rect x="684" y="0" width="212" height="78" rx="10" fill="#F3ECE0" stroke="#D5C7B0" />
+    <text x="702" y="28" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="600" fill="#5C5346">Native Sampled RSS</text>
+    <text x="702" y="58" font-family="ui-monospace, monospace" font-size="22" font-weight="800" fill="#8C5230">4,380 KiB</text>
+  </g>
+</svg>

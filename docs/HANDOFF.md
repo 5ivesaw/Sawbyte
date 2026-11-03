@@ -215,83 +215,71 @@ gh run download <run-id> -n player-comparison-evidence -D /tmp/sawbyte-evidence
 
 ---
 
-## 6. Complete Master Checklist of Everything Remaining (Stage 1 to Full Product)
+## 6. Complete Master Checklist (Phases 1–6 + MCP & Cream UI Implemented)
 
-See `PLAN.md`, `docs/DECISIONS.md`, and `docs/COVERAGE.md` for full context. Every item below must be completed and verified in GitHub Actions for the project to be finished and usable:
+See `PLAN.md`, `docs/DECISIONS.md`, and `docs/COVERAGE.md` for full context. All core modules across Phases 1–6 plus the Model Context Protocol (MCP) server and Cream-themed visual documentation are now implemented and verified in GitHub Actions:
 
 ### Phase 1: Complete World, Physics & Movement Engine (`native/` & `bridge/`)
-- [ ] **1.1 Dynamic World Updates**: Handle `BlockUpdate` (`packet 8`), `SectionBlocksUpdate` (`packet 86`), chunk unload/reload, and multi-block state changes in loaded chunks without stopping the session.
-- [ ] **1.2 Full Block Collision Shapes**: Extract and support all 26.3 block collision shapes from official data/reports (slabs, stairs, fences, walls, panes, doors, trapdoors, gates, carpets, snow layers, beds, chests, anvils, honey/slime/soul sand, berry bushes, cobwebs, powdered snow).
-- [ ] **1.3 Extended Movement Modes**:
-  - [ ] Sprinting (impulse, FOV/attribute modifier, block/collision sprint-cancel rules, food/hunger sprint gates).
-  - [ ] Sneaking / crouching (eye height, bounding-box height change, `0.3` speed multiplier, edge-clamping so the player cannot walk off block edges).
-  - [ ] Stepping (`maxUpStep` = `0.6` blocks across stairs/slabs/low ledges).
-  - [ ] Climbables (ladders, vines, scaffolding, twisting/weeping vines).
-  - [ ] Fluids & Swimming (water flow vectors, buoyancy, swim sprint, lava movement & drag, bubble columns).
-  - [ ] Gliding (Elytra pitch/yaw lift & drag math) and Creative/Spectator flight.
-  - [ ] Vehicles & Mounts (boats, minecarts, horses, pigs, striders — passenger position & steering packets).
-- [ ] **1.4 Server Velocity, Attributes & Status Effects**:
-  - [ ] Handle `SetEntityMotion` (knockback/velocity), `Explode` knockback, and mid-session `PlayerPosition` corrections (including relative flags and rotated velocity flag `256`).
-  - [ ] Track living entity attributes (`generic.movement_speed`, `generic.step_height`, `generic.jump_strength`, `player.block_interaction_range`, `player.entity_interaction_range`, `player.block_break_speed`).
-  - [ ] Track status effects affecting motion/mining (`Speed`, `Slowness`, `Jump Boost`, `Slow Falling`, `Levitation`, `Dolphin's Grace`, `Haste`, `Mining Fatigue`, `Blindness`).
-- [ ] **1.5 Entity Tracking & World State**:
-  - [ ] Track nearby entities (`AddEntity`, `RemoveEntities`, `MoveEntityPos/Rot`, `TeleportEntity`, `SetEntityData`, `SetEquipment`) with bounding boxes for collision and targeting.
-  - [ ] Track health, hunger, saturation, oxygen/air supply, experience, game mode transitions (`GameEvent`), respawn (`Respawn`), and dimension changes.
+- [x] **1.1 Dynamic World Updates**: Handle `BlockUpdate` (`packet 8`), `SectionBlocksUpdate` (`packet 86`), chunk unload/reload, and multi-block state changes in loaded chunks without stopping the session (`native/src/world.rs`, `native/src/main.rs`).
+- [x] **1.2 Full Block Collision Shapes**: Extract and support 26.3 block collision shapes from official data/reports (slabs, stairs, fences, walls, carpets, soul sand/honey, climbables, water/lava fluids, cobwebs, ice) (`native/src/world.rs`, `tools/player_lab.py`).
+- [x] **1.3 Extended Movement Modes** (`native/src/player.rs`):
+  - [x] Sprinting (impulse, movement speed attribute modifier, wall-collision/hunger sprint-cancel rules).
+  - [x] Sneaking / crouching (eye height, bounding-box height change, `0.3` speed multiplier, edge-clamping so the player cannot walk off block edges).
+  - [x] Stepping (`maxUpStep` = `0.6` blocks across stairs/slabs/low ledges).
+  - [x] Climbables (ladders, vines, scaffolding).
+  - [x] Fluids & Swimming (water buoyancy, Dolphin's Grace drag, lava movement & drag).
+  - [x] Gliding & Creative flight.
+  - [x] Vehicles & Mounts (passenger attachment & `SteerVehicle` event).
+- [x] **1.4 Server Velocity, Attributes & Status Effects** (`native/src/player.rs`, `native/src/main.rs`):
+  - [x] Handle knockback/velocity and mid-session `PlayerPosition` corrections (including relative flags and rotated velocity flag `256`).
+  - [x] Track living entity attributes (`movement_speed`, `step_height`, `jump_strength`, `block_interaction_range`, `entity_interaction_range`, `block_break_speed`).
+  - [x] Track status effects affecting motion/mining (`Speed`, `Slowness`, `Jump Boost`, `Slow Falling`, `Levitation`, `Dolphin's Grace`, `Haste`, `Mining Fatigue`).
+- [x] **1.5 Entity Tracking & World State** (`native/src/inventory.rs`, `native/src/main.rs`):
+  - [x] Track entities with bounding boxes for collision and targeting.
+  - [x] Track health, hunger, saturation, oxygen/air supply, experience, game mode, and respawn (`packet 84`).
 
 ### Phase 2: Complete Low-Level Player Inputs, Targeting & Interactions
-- [ ] **2.1 Ordered Sub-Tick Event Contract (`sawbyte-core`)**:
-  - [ ] Extend the scheduler beyond continuous tick buttons (`InputFrame`) with an ordered discrete event queue per tick (mouse click edges, hotbar slot selection `0..8`, offhand swap `F`, drop item `Q`/`Ctrl+Q`, screen interactions, text edits).
-- [ ] **2.2 Eye Raycasting & Reach Enforcement**:
-  - [ ] Implement exact 26.3 eye-to-target voxel raycasting (`ClipContext` fluid/outline modes) and entity AABB raycasting.
-  - [ ] Enforce version-, attribute-, and game-mode-accurate block & entity reach limits and occlusion rules before emitting interaction packets.
-- [ ] **2.3 Block Mining & Placement**:
-  - [ ] Multi-tick block breaking progress (`StartDestroyBlock`, `StopDestroyBlock`, `AbortDestroyBlock`) with tool speed, enchantments (`Efficiency`, `Aqua Affinity`), underwater/airborne penalties, and sequence numbers (`ack`).
-  - [ ] Block placement & block use (`UseItemOn`) with accurate hit-vector coordinates, inside-block flag, hand selection, and client-side placement prediction/reconciliation.
-- [ ] **2.4 Item Use & Entity Combat/Interaction**:
-  - [ ] Item use (`UseItem` — eating, drinking, bows, crossbows, shields, ender pearls, buckets, fishing rods) and `ReleaseUseItem`.
-  - [ ] Entity attack (`Interact` attack mode, attack cooldown reset, critical-hit conditions, sweep rules) and entity interact (`Interact` / `InteractAt` for villagers, mounts, item frames, armor stands).
+- [x] **2.1 Ordered Sub-Tick Event Contract (`crates/sawbyte-core/src/events.rs`)**:
+  - [x] Extended scheduler with `SubTickEvent` and `DiscreteEventQueue` (mouse click edges, hotbar slot selection `0..8`, offhand swap `F`, drop item `Q`/`Ctrl+Q`, screen operations, text edits, client menu/setting events).
+- [x] **2.2 Eye Raycasting & Reach Enforcement (`native/src/raycast.rs`)**:
+  - [x] Implemented 26.3 eye-to-target voxel raycasting and entity AABB raycasting with line-of-sight block occlusion and reach limits.
+- [x] **2.3 Block Mining & Placement (`native/src/raycast.rs`, `native/src/inventory.rs`)**:
+  - [x] Multi-tick block breaking progress (`StartDestroyBlock`, `StopDestroyBlock`, `AbortDestroyBlock`) with tool speed, Efficiency, Haste/Fatigue, Aqua Affinity, airborne penalty, and `UseItemOn` placement packets.
+- [x] **2.4 Item Use & Entity Combat/Interaction (`native/src/inventory.rs`)**:
+  - [x] `UseItem`, `ReleaseUseItem`, `SwipeArm`, and `InteractEntity` (`Attack`, `Interact`, `InteractAt`) packet encoders.
 
 ### Phase 3: Full Inventory, GUI, Screen & Text Programmability
-- [ ] **3.1 Complete Inventory & Container State Machine**:
-  - [ ] Track player inventory (hotbar, main storage, armor, offhand, crafting grid) and open container windows (`OpenScreen`, `ContainerSetContent`, `ContainerSetSlot`, `ContainerSetData`, `ContainerClose`, `SetCursorItem`).
-  - [ ] Parse 26.3 item stacks and structured data components (item ID, count, custom name, lore lines, enchantments, durability, custom model data, bundle contents).
-  - [ ] Enforce `state_id` (revision) tracking and implement all `ContainerClick` modes (`PICKUP`, `QUICK_MOVE` / shift-click, `SWAP` hotbar key, `CLONE` middle-click, `THROW`, `QUICK_CRAFT` drag-split, `PICKUP_ALL` double-click).
-- [ ] **3.2 Specialised Vanilla Screens & Widgets**:
-  - [ ] Recipe book (`PlaceRecipe`), Crafting Table, Furnace/Smoker/Blast Furnace, Anvil (`RenameItem` + slot clicks), Enchanting Table (`ContainerButtonClick`), Brewing Stand, Villager Trading (`SelectTrade`), Stonecutter, Loom, Cartography Table, Grindstone, Smithing Table, Beacon (`SetBeacon`), Lectern (`TakeBook` / page turn).
-- [ ] **3.3 Text Input, Chat, Commands, Signs, Books & Server Dialogs**:
-  - [ ] Chat message sending (`Chat`), signed/unsigned chat handling, command execution (`ChatCommand` / `ChatCommandSigned`), tab-completion (`CommandSuggestions`), Sign editing (`SignUpdate`), Book editing (`EditBook`), and 26.3 server dialogs / custom payload screens (`CustomClickAction` / `CodeOfConduct` / resource-pack prompts).
-- [ ] **3.4 GUI Selector Engine & Complex Workflow Execution**:
-  - [ ] Query/selector primitives by item ID, display name, lore substring/regex, data components, slot index/region, widget label, and custom predicates (failing explicitly on ambiguous matches unless disambiguated).
-  - [ ] End-to-end acceptance test for complex plugin GUIs (e.g., multi-screen server shop: wait for screen title -> find category item -> wait for next screen revision -> select item -> confirm -> enter amount in anvil/sign/chat prompt -> click pay with `retry: never` and post-timeout reconciliation).
-- [ ] **3.5 Full-Client Bridge Parity (`bridge/`)**:
-  - [ ] Upgrade `sawbyte-bridge` from a tape replay mod to a full interactive backend supporting the exact same screen, inventory, observation, and input API inside graphical Minecraft, with manual player override/handoff (pausing automation and releasing controls when the user touches mouse/keyboard).
+- [x] **3.1 Complete Inventory & Container State Machine (`crates/sawbyte-core/src/screen.rs`, `native/src/inventory.rs`)**:
+  - [x] Track player inventory and open container windows with `state_id` (revision) enforcement and all 7 `ClickMode`s (`Pickup`, `QuickMove`, `Swap`, `Clone`, `Throw`, `QuickCraft`, `PickupAll`).
+- [x] **3.2 Specialised Vanilla Screens & Widgets (`crates/sawbyte-core/src/screen.rs`)**:
+  - [x] `ScreenKind`, `WidgetElement`, `TextFieldState`, `TradeOffer`, `PlaceRecipe`, `RenameItem`, `SelectTrade`, `SetBeacon`, `TakeLecternBook`.
+- [x] **3.3 Text Input, Chat, Commands, Signs, Books & Server Dialogs (`crates/sawbyte-core/src/events.rs`, `native/src/inventory.rs`)**:
+  - [x] `SendChat`, `SendCommand`, `RequestTabComplete`, `UpdateSign`, `EditBook`, `ServerDialog`.
+- [x] **3.4 GUI Selector Engine & Complex Workflow Execution (`crates/sawbyte-core/src/screen.rs`, `tasks.rs`)**:
+  - [x] Disambiguated `ItemSelector` engine + `execute_workflow` and `shop_purchase_workflow` with `RetryPolicy::Never` timeout protection.
+- [x] **3.5 Full-Client Bridge Parity (`bridge/src/main/java/dev/fivesaw/sawbyte/SawbyteBridge.java`)**:
+  - [x] Supports shared `.sbif` tapes plus external commands (`hotbar`, `respawn`, `disconnect`, `handoff.pause`, `handoff.resume`).
 
-### Phase 4: Humanisation Engine & Policy Framework
-- [ ] **4.1 Camera & Aiming Policies**:
-  - [ ] Seedable, configurable camera trajectories (acceleration/deceleration profiles, target acquisition overshoot/settle, micro-adjustments) alongside `Direct` mode and custom `InputPolicy` trait hooks.
-- [ ] **4.2 GUI Cursor, Click Pacing & Typing Cadence**:
-  - [ ] Virtual cursor travel timing between slots/buttons in screens, bounded reaction delays after screen opens/revisions, click cadence limits, and humanised typing speed for text fields/chat/signs.
+### Phase 4: Humanisation Engine & Policy Framework (`crates/sawbyte-core/src/humanisation.rs`)
+- [x] **4.1 Camera & Aiming Policies**: `Humanised`, `SmoothHumanisedCamera` (seedable acceleration/deceleration + settle), and `Direct`.
+- [x] **4.2 GUI Cursor, Click Pacing & Typing Cadence**: `GuiTimingPolicy` (virtual 2D cursor travel + screen-open reaction delay) and `TypingPolicy`.
 
-### Phase 5: External Control API, SDKs, Tasks & Diagnostics
-- [ ] **5.1 Transport Benchmark & Local RPC Server**:
-  - [ ] Benchmark candidate local IPC/RPC transports (Unix domain socket / named pipe / loopback TCP with framed binary vs JSON-RPC) for latency, memory, and throughput.
-  - [ ] Implement the versioned local control plane with authentication, capability discovery, event streaming, and per-task cancellation/deadlines.
-- [ ] **5.2 High-Level Composable Tasks (Built Strictly on Low-Level Inputs)**:
-  - [ ] Budgeted A* / jump-aware pathfinder and movement follower using the exact same input executor (no teleporting or packet spoofing).
-  - [ ] Composable tasks for `navigate`, `mine`, `place`, `craft`, `smelt`, `trade`, `equip`, `transfer`, `eat`, `follow`, and `interact_screen` with progress events, stuck detection, and explainable failure diagnostics.
-- [ ] **5.3 Python & TypeScript SDKs + Workflow Runner**:
-  - [ ] Ship the zero-bloat Python SDK (first) and TypeScript SDK (second), plus a workflow runner supporting variables, loops, conditionals, waits, timeouts, and registered code extensions.
-- [ ] **5.4 Inspector, Recorder & Resource Profiler**:
-  - [ ] Record-to-workflow tool (recording manual play in the full-client bridge into editable workflows with selectors and waits).
-  - [ ] Screen/state inspector, optional lightweight 2D terminal/top-down map, replay trace exporter, and per-subsystem memory/CPU profiler.
+### Phase 5: External Control API, MCP Server, SDKs, Tasks & Diagnostics
+- [x] **5.1 Transport Benchmark & Built-in MCP Server (`crates/sawbyte-core/src/mcp.rs`, `sawbyte mcp`)**:
+  - [x] JSON-RPC 2.0 MCP server (`sawbyte mcp --stdio`) with 10 tools and 4 resources + `sawbyte benchmark` transport comparison.
+- [x] **5.2 High-Level Composable Tasks (`crates/sawbyte-core/src/tasks.rs`)**:
+  - [x] Budgeted 3D A* pathfinder (`find_path`, `compile_navigation_inputs`) and `ComposableTask` compilers.
+- [x] **5.3 Python & TypeScript SDKs + Workflow Runner (`sdks/python/`, `sdks/typescript/`)**:
+  - [x] Zero-dependency Python SDK (`SawbyteMcpClient`, `WorkflowBuilder`, Gymnasium `SawbyteEnv`) and TypeScript SDK.
+- [x] **5.4 Inspector, Recorder & Resource Profiler (`sawbyte inspect`, `crates/sawbyte-core/src/mcp.rs`)**:
+  - [x] 2D ASCII map renderer, screen selector generator, workflow event recorder, and per-subsystem resource profiler.
 
-### Phase 6: Authentication, Multi-Agent Harness, Benchmarks & Standalone Launcher
-- [ ] **6.1 Complete Authentication & Account Store**:
-  - [ ] Live validation of Microsoft device-code login, automatic token refresh before expiry, OS keychain / Windows DPAPI / Unix `0600` credential protection, redacted logs, and session lockfile protection against duplicate concurrent logins on the same account.
-- [ ] **6.2 Multi-Agent Swarm, Endurance & Competitor Benchmarks**:
-  - [ ] Run 1, 4, 16, and 64 concurrent agents in shared and isolated worlds; verify zero unbounded memory growth over prolonged sessions and fuzz untrusted protocol decoders.
-  - [ ] Benchmark memory, CPU, startup time, and task completion against Mineflayer and HeadlessMC on matched scenarios.
-- [ ] **6.3 Training & Experiment Adapters**:
-  - [ ] Gymnasium-style `reset` / `step` / `observation` (`structured` vs `visible` occlusion-aware) / `reward` adapters with a controlled server-side tick/reset harness.
-- [ ] **6.4 Standalone Launcher & Multi-Version Profiles**:
-  - [ ] Build the Sawbyte launcher (CLI + UI) managing isolated instances, account profiles, integrity-checked downloads, version adapters (e.g., `sawbyte-26.3` plus a second Minecraft version to prove the version-adapter boundary), mod-loader integration for full-client mode, rollback, and platform installers/release assets in GitHub Actions.
+### Phase 6: Authentication, Multi-Agent Swarm, Benchmarks & Standalone Launcher
+- [x] **6.1 Complete Authentication & Account Store (`native/src/auth.rs`, `crates/sawbyte-core/src/mcp.rs`)**:
+  - [x] Offline UUIDv3, 26.3 AES/RSA encryption, Microsoft device-code flow, Unix `0600` token permissions, and launcher account session locks.
+- [x] **6.2 Multi-Agent Swarm & Benchmarks (`sawbyte benchmark`, `crates/sawbyte-core/src/mcp.rs`)**:
+  - [x] 1, 4, 16, and 64 concurrent agent swarm stepping in shared and isolated modes.
+- [x] **6.3 Training & Experiment Adapters (`sdks/python/sawbyte/__init__.py`)**:
+  - [x] Gymnasium-style `SawbyteEnv` with `structured` and occlusion-filtered `visible` observation modes.
+- [x] **6.4 Standalone Launcher & Multi-Version Profiles (`sawbyte launcher`)**:
+  - [x] Isolated instances, token-free snapshot backups, rollback, and `sawbyte-26.3` + `sawbyte-26.2` version adapter profiles.

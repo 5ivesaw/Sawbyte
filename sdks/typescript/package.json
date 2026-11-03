@@ -1,0 +1,8 @@
+{
+  "name": "@sawbyte/sdk",
+  "version": "0.2.0",
+  "description": "TypeScript SDK, Workflow Builder, and MCP Client for Sawbyte Minecraft Automation",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.ts"
+}

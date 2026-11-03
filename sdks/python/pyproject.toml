@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sawbyte"
+version = "0.2.0"
+description = "Zero-dependency Python SDK, MCP client, and Gymnasium environment for Sawbyte Minecraft automation"
+readme = "../../README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "5ivesaw" }]
+dependencies = []

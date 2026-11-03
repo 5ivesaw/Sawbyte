@@ -4,7 +4,12 @@
 use std::collections::VecDeque;
 use std::fmt;
 
+pub mod events;
+pub mod humanisation;
+pub mod mcp;
+pub mod screen;
 pub mod tape;
+pub mod tasks;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]

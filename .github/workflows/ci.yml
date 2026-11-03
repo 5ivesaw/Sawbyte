@@ -53,6 +53,11 @@ jobs:
           ./target/release/sawbyte capabilities
           ./target/release/sawbyte demo
           ./target/release/sawbyte demo --direct
+          ./target/release/sawbyte launcher list
+          ./target/release/sawbyte workflow shop-demo
+          ./target/release/sawbyte inspect
+          ./target/release/sawbyte benchmark
+          SAWBYTE_BIN=./target/release/sawbyte python sdks/python/tests/test_sdk.py
       - name: Package preview
         shell: bash
         run: |

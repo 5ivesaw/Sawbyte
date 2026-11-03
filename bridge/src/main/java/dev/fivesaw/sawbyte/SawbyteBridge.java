@@ -11,9 +11,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
-/** Optional replay bridge. Inert unless explicitly launched with sawbyte.tape. */
+/**
+ * Full-client Fabric 26.3 integration and reference replay backend.
+ * Supports shared SBIF input tapes as well as interactive menu/settings/handoff commands.
+ */
 public final class SawbyteBridge implements ClientModInitializer {
     private record Frame(int buttons, double yaw, double pitch) {}
     private Frame[] frames;
@@ -23,17 +27,25 @@ public final class SawbyteBridge implements ClientModInitializer {
     private boolean started;
     private boolean finished;
     private boolean applied;
+    private boolean manualHandoffActive;
     private final boolean exitOnComplete = Boolean.getBoolean("sawbyte.exit");
+    private Path commandFile;
 
     @Override public void onInitializeClient() {
+        String cmdPath = System.getProperty("sawbyte.commands");
+        if (cmdPath != null) {
+            commandFile = Path.of(cmdPath);
+        }
         String filename = System.getProperty("sawbyte.tape");
-        if (filename == null) return;
-        try {
-            frames = load(Path.of(filename));
-            trace = Files.newBufferedWriter(Path.of(System.getProperty("sawbyte.trace", "sawbyte-reference.csv")));
-            trace.write("tick,x,y,z,yaw,pitch,on_ground,chunks\n");
-        } catch (IOException error) {
-            throw new IllegalStateException("Cannot load Sawbyte replay", error);
+        if (filename == null && commandFile == null) return;
+        if (filename != null) {
+            try {
+                frames = load(Path.of(filename));
+                trace = Files.newBufferedWriter(Path.of(System.getProperty("sawbyte.trace", "sawbyte-reference.csv")));
+                trace.write("tick,x,y,z,yaw,pitch,on_ground,chunks\n");
+            } catch (IOException error) {
+                throw new IllegalStateException("Cannot load Sawbyte replay", error);
+            }
         }
         ClientTickEvents.START_CLIENT_TICK.register(this::beforeTick);
         ClientTickEvents.END_CLIENT_TICK.register(this::afterTick);
@@ -68,9 +80,40 @@ public final class SawbyteBridge implements ClientModInitializer {
         return result;
     }
 
+    private void processExternalCommands(Minecraft client) {
+        if (commandFile == null || !Files.exists(commandFile)) return;
+        try {
+            List<String> lines = Files.readAllLines(commandFile, StandardCharsets.UTF_8);
+            Files.deleteIfExists(commandFile);
+            for (String raw : lines) {
+                String line = raw.trim();
+                if (line.isEmpty() || line.startsWith("#")) continue;
+                if (line.equals("handoff.pause")) {
+                    manualHandoffActive = true;
+                    keys(client, 0);
+                    System.out.println("SAWBYTE_MANUAL_HANDOFF paused");
+                } else if (line.equals("handoff.resume")) {
+                    manualHandoffActive = false;
+                    System.out.println("SAWBYTE_MANUAL_HANDOFF resumed");
+                } else if (line.startsWith("hotbar ")) {
+                    int slot = Integer.parseInt(line.substring(7).trim());
+                    if (client.player != null && slot >= 0 && slot < 9) {
+                        client.player.getInventory().setSelectedSlot(slot);
+                    }
+                } else if (line.equals("respawn") && client.player != null) {
+                    client.player.respawn();
+                } else if (line.equals("disconnect") && client.level != null) {
+                    client.level.disconnect(net.minecraft.network.chat.Component.literal("Sawbyte disconnect"));
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
     private void beforeTick(Minecraft client) {
         applied = false;
-        if (finished) return;
+        processExternalCommands(client);
+        if (manualHandoffActive || frames == null || finished) return;
         if (client.player == null || client.level == null) {
             if (started) finish(client, "disconnected during replay");
             return;
