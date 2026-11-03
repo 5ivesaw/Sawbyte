@@ -2,9 +2,10 @@ name: Real player milestone
 on:
   push:
     branches: [feat/real-player, main]
+    tags: ['v*']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: player-${{ github.ref }}
   cancel-in-progress: false
@@ -155,3 +156,52 @@ jobs:
           name: sawbyte-play-${{ matrix.platform }}
           path: run/player/
           if-no-files-found: error
+
+  release:
+    name: Publish player release assets
+    needs: [comparison, bridge, native]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Download all player artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          path: release-artifacts
+      - name: Package player release archives
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          find release-artifacts/sawbyte-bridge-26.3 -type f -name "*.jar" -exec cp {} release-assets/ \; || true
+          for dir in release-artifacts/sawbyte-play-*; do
+            if [ -d "$dir" ]; then
+              name=$(basename "$dir")
+              if [[ "$name" == *"windows"* ]]; then
+                (cd "$dir" && zip -r "../../release-assets/${name}.zip" .)
+              else
+                tar -czf "release-assets/${name}.tar.gz" -C "$dir" .
+              fi
+            fi
+          done
+          cd release-assets
+          sha256sum * > SHA256SUMS-sawbyte-play.txt
+          ls -lh
+      - name: Publish or update GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$TAG" == "main" || "$TAG" == "" ]]; then
+            TAG="v0.2.0"
+          fi
+          echo "Publishing player assets for $TAG"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release-assets/* --clobber
+          else
+            gh release create "$TAG" release-assets/* \
+              --title "Sawbyte $TAG" \
+              --generate-notes || gh release upload "$TAG" release-assets/* --clobber
+          fi

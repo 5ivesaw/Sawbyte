@@ -2,11 +2,13 @@ name: Build and verify
 
 on:
   push:
+    branches: ['**']
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -88,3 +90,51 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 14
+
+  release:
+    name: Publish CLI release assets
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download all preview artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          path: release-artifacts
+      - name: Package release archives
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          for dir in release-artifacts/sawbyte-*; do
+            if [ -d "$dir" ]; then
+              name=$(basename "$dir")
+              if [[ "$name" == *"windows"* ]]; then
+                (cd "$dir" && zip -r "../../release-assets/${name}.zip" .)
+              else
+                tar -czf "release-assets/${name}.tar.gz" -C "$dir" .
+              fi
+            fi
+          done
+          cd release-assets
+          sha256sum * > SHA256SUMS-sawbyte.txt
+          ls -lh
+      - name: Publish GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$TAG" == "main" || "$TAG" == "" ]]; then
+            TAG="v0.2.0"
+          fi
+          echo "Publishing release for $TAG"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release-assets/* --clobber
+          else
+            gh release create "$TAG" release-assets/* \
+              --title "Sawbyte $TAG" \
+              --generate-notes || gh release upload "$TAG" release-assets/* --clobber
+          fi
