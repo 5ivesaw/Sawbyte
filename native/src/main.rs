@@ -240,7 +240,7 @@ impl Session {
                 ack.extend(self.position_payload());
                 tx.packet(0, &ack)?;
                 self.positioned = true;
-                self.send_position(tx)?;
+                self.settle = 100;
             }
             82 => {
                 let mut out = r.take(16)?.to_vec();
@@ -412,6 +412,9 @@ fn run() -> Result<()> {
                 Err(mpsc::RecvTimeoutError::Timeout) => {}
             }
             if Instant::now() >= next {
+                while let Ok(packet) = receive.try_recv() {
+                    state.packet(&packet?, &mut tx)?;
+                }
                 if state.tick(&frames, &mut trace, &mut tx)? {
                     return Ok(());
                 }

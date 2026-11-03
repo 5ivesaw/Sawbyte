@@ -2,7 +2,7 @@
 
 Research date: 2 November 2026. This is a proposed design, not implemented functionality. Research consisted of documentation, repositories, and community reports; no competitor was built or benchmarked locally.
 
-Implementation update: the first source slice now contains a typed Rust scheduler, input policies, a diagnostic trace backend, a real Java status/ping probe, and CI build/test packaging. See `docs/COVERAGE.md` for current scope. Stage 0 is still in progress; gameplay and the graphical bridge are not implemented.
+Implementation update (3 November 2026): the Rust scheduler, input policies, trace/tape tools and status/ping probe pass CI on Linux, Windows and macOS. The independent native 26.3 player also builds and passes its initial unit tests on those platforms; the optional Fabric replay bridge builds. The real-server/reference comparison is still being debugged. No playable version is certified, and Stage 0 remains in progress. See `docs/COVERAGE.md` and `docs/PLAYER.md` for current scope.
 
 Decision correction: JSON workflows below are illustrative candidates, not a selected technology. The user's examples describe capabilities. Transport, serialization and scripting choices must be evaluated on efficiency, ergonomics, compatibility and maintenance. The implemented core uses typed Rust actions with no serialization in the input path. `docs/DECISIONS.md` records current implementation decisions and takes precedence over speculative format examples here.
 
@@ -39,7 +39,7 @@ Model screens explicitly: identity, type, revision, title, elements, slots, curs
 
 Server plugin inventory GUIs can often be represented through their container data. Text prompts may be anvil, sign, chat or dialog interactions; each needs its actual adapter. A custom client-mod screen may need a mod integration or full-client screen adapter. Texture-based meaning may require resource metadata or an optional visual observer. Never silently claim universal support from generic inventory clicks.
 
-JSON is a first-class workflow format with a versioned schema, variables, selectors, conditions, bounded loops, subroutines, event waits, timeouts, cancellation and extension calls. It expresses operations supported by the backend; arbitrary prose in JSON is not executable behaviour. Python/TypeScript can compute freely and submit actions or workflows through the same API.
+A workflow representation must support variables, selectors, conditions, loops, subroutines, event waits, timeouts, cancellation and extension calls. Its format is not yet selected. The JSON illustration below is not a commitment to a JSON execution engine. General-purpose SDKs must expose the same operations without requiring a separate declarative language.
 
 Proposed illustrative workflow (schema to be implemented):
 
@@ -91,7 +91,7 @@ The central promise should be **efficient automation through verified player con
 | Project | Evidence and relevance | Sawbyte decision |
 |---|---|---|
 | [Mineflayer](https://github.com/PrismarineJS/mineflayer) | JavaScript ecosystem with movement, inventory, crafting, building and many plugins; its README lists 1.8 through 26.1. | Use as an API/usability and performance comparison. Its breadth is a serious standard to work toward. |
-| [Azalea](https://github.com/azalea-rs/azalea) | Rust client libraries, swarm support and pathfinding. README targets 26.2, explicitly excludes simultaneous native multi-version support, and documents missing physics features. | Audit individual crates before deciding on reuse. Keep dependencies behind our own interfaces. |
+| [Azalea](https://github.com/azalea-rs/azalea) | Rust client libraries, swarm support and pathfinding; a useful comparison for capability coverage. | No gameplay dependency or copied engine. Sawbyte implements its own runtime; wire-format facts can be checked against public protocol documentation and implementations. |
 | [HeadlessMC](https://headlesshq.github.io/headlessmc/launch/) | Runs the real client headlessly by suppressing graphics calls. [Specifics](https://headlesshq.github.io/headlessmc/specifics/) adds client control. | Useful reference backend and CI test harness; graphics suppression alone does not establish minimum memory or CPU usage. |
 | [Minecraft Console Client](https://github.com/MCCTeam/Minecraft-Console-Client) | Existing terminal client with a 2.0 rewrite underway. | Study terminal workflows and diagnostics; a terminal interface alone is not differentiation. |
 | [Baritone](https://github.com/cabaletta/baritone) | Established pathfinder with version-specific client integrations. | Study navigation behaviours and failure recovery. Review its license before incorporating implementation. |
@@ -219,7 +219,7 @@ Local work is editing/reviewing repository files. GitHub Actions handles compila
 
 | Stage | Deliverable | Exit criterion |
 |---|---|---|
-| 0: Evidence prototype | GitHub repository, CI, dependency audit, 26.3 reference harness and minimal native connection | CI can reproduce a join/move/stop trace; decide Azalea reuse versus narrow custom adapter from evidence. |
+| 0: Evidence prototype | GitHub repository, CI, dependency audit, 26.3 reference harness and independent native connection | CI can reproduce and compare a join/move/stop trace. |
 | 1: Useful client | Authentication, chunks, basic input execution, terminal status, reconnect handling | Repeatable walk/jump/target tests match reference within documented tolerances; no stuck controls after cancellation. |
 | 2: Useful automation | Inventory, mining, placement, navigation, Python SDK, task scheduler | Gather a small material set and place a simple structure through inputs; failures are explainable. |
 | 3: Measured reliability | Traces, regression suite, endurance runs and benchmark reports | Four-agent workload completes reliably with published resource results and no unbounded memory growth. |
@@ -230,6 +230,6 @@ Avoid building a universal launcher, plugin marketplace, complete standalone ser
 
 ## Open engineering questions to resolve in Stage 0
 
-Audit how much Azalea can serve the 26.3 adapter without deep forks; inspect Rapidbot's tests and implementation provenance; confirm practical headless reference-client operation for 26.3; establish authentication application requirements; identify distributable fixture/data boundaries; measure server overhead and settle initial observation semantics. These are research gates, not decisions the nontechnical user must make.
+Confirm the independent native runtime against the 26.3 reference client; validate authentication application requirements; identify distributable fixture/data boundaries; measure server overhead and settle initial observation semantics. Review competitors as evidence for capability and performance expectations, without copying their engines. These are research gates, not decisions the nontechnical user must make.
 
-The next implementation task is Stage 0. This plan does not create a GitHub repository, publish anything, or claim that a build or test has run.
+Stage 0 is active. Repository and build results are tracked in GitHub Actions; the capability ledger distinguishes implemented code, successful builds and validated gameplay.

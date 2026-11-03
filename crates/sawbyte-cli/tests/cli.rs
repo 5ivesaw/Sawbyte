@@ -12,7 +12,8 @@ fn cli_reports_scope_and_rejects_unknown_commands() {
     let output = run(&["capabilities"]);
     assert!(output.status.success());
     let text = String::from_utf8(output.stdout).unwrap();
-    assert!(text.contains("Native gameplay backend: NOT IMPLEMENTED"));
+    assert!(text.contains("experimental sawbyte-play"));
+    assert!(text.contains("No Minecraft version is certified for gameplay yet"));
     assert!(!run(&["connect"]).status.success());
     assert!(!run(&["demo", "--unknown"]).status.success());
 }

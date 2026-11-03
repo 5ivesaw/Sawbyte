@@ -98,6 +98,7 @@ jobs:
           restore-keys: native-${{ matrix.platform }}-${{ hashFiles('native/Cargo.lock') }}-
       - name: Install backend toolchain
         run: rustup toolchain install 1.90.0 --profile minimal --component rustfmt --component clippy
+      - uses: ./.github/actions/branding
       - name: Resolve backend lockfile in CI
         working-directory: native
         run: |
@@ -138,6 +139,8 @@ jobs:
             cp native/target/release/sawbyte-play run/player/
           fi
           cp README.md LICENSE docs/COVERAGE.md assets/sawbyte.png run/player/
+          cp docs/PLAYER.md run/player/
+          cp packaging/generated/sawbyte.ico packaging/generated/sawbyte.icns run/player/
           python - <<'PY'
           import hashlib, pathlib
           root = pathlib.Path('run/player')

@@ -1,0 +1,19 @@
+name: Platform branding
+description: Generate platform icon resources from the supplied Sawbyte PNG
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      with:
+        python-version: '3.12'
+    - shell: bash
+      run: |
+        python -m pip install --disable-pip-version-check --only-binary=:all: Pillow==13.0.0
+        python tools/build_icons.py
+    - name: Locate Windows resource compiler
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $resourceCompiler = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\rc.exe' | Sort-Object FullName -Descending | Select-Object -First 1
+        if (-not $resourceCompiler) { throw 'Windows resource compiler missing' }
+        $resourceCompiler.DirectoryName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append

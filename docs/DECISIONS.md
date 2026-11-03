@@ -16,7 +16,7 @@ Pending actions use a bounded FIFO. Submission is ordered and atomic. Failures c
 
 ## Backends and breadth
 
-The trait is the first input execution boundary, not the final screen/observation API. Native and graphical gameplay adapters are still to be built. Keep discrete events (click edges, text edits, UI actions) separate from continuous button snapshots. Extend capability discovery rather than treating two current capability variants as the entire product.
+The trait is the first input execution boundary, not the final screen/observation API. Experimental native and graphical adapters now consume the same bounded binary input recording. Keep discrete events (click edges, text edits, UI actions) separate from continuous button snapshots. Extend capability discovery rather than treating two current capability variants as the entire product.
 
 ## CI-only validation
 
@@ -24,9 +24,9 @@ Use GitHub-hosted machines to compile, test, format and package. Pin Rust and ac
 
 ## Next engineering slice
 
-1. Choose and audit the 26.3 login/world foundation, comparing selective Azalea reuse to custom implementation; do not adopt a dependency based on README claims alone.
-2. Establish the full-client bridge and trace comparison harness on a verified loader/version combination.
-3. Implement authenticated connection, configuration/play lifecycle and world observations, then drive a real player's movement through the scheduler.
+1. Validate Sawbyte's independent 26.3 native runtime. There is no Azalea gameplay dependency; standard compression, HTTP and cryptography libraries are used.
+2. Complete the real-client trace comparison using the optional Fabric 26.3 bridge and the shared input recording.
+3. Validate online authentication, broaden motion/world-state coverage and expose observable session lifecycle.
 4. Extend the ordered-event contract for all screens and player interactions, then select the external API using representative workloads.
 
 Stage 0 is not complete until a real join/move/stop trace can be compared against the reference client.
