@@ -62,6 +62,8 @@ jobs:
             cp target/release/sawbyte dist/
           fi
           cp README.md LICENSE docs/COVERAGE.md dist/
+          cp assets/sawbyte.png dist/sawbyte.png
+          if [ "$RUNNER_OS" = "Linux" ]; then cp packaging/sawbyte.desktop dist/; fi
           python - <<'PY'
           import hashlib, pathlib
           root = pathlib.Path('dist')

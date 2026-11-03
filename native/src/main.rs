@@ -1,273 +1,176 @@
-use azalea::app::{App, AppExit, Plugin, PluginGroup};
-use azalea::core::tick::GameTick;
-use azalea::ecs::prelude::*;
-use azalea::entity::{HasClientLoaded, Jumping, LocalEntity, LookDirection, Physics, Position};
-use azalea::local_player::WorldHolder;
-use azalea::physics::{
-    PhysicsSystems,
-    client_movement::{ClientMovementState, DirectionStates},
-};
-use azalea::{Account, Client, ClientBuilder, Event, NoState};
-use sawbyte_core::{Button, InputFrame, tape};
-use std::fs::File;
-use std::io::{BufReader, BufWriter, Write};
-use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
+mod auth;
+mod player;
+mod wire;
+mod world;
+use wire::{Reader,Result,bad,var,string};
+use std::{fs::File,io::{Write,BufWriter},net::{TcpStream,ToSocketAddrs,Shutdown},time::{Duration,Instant},sync::mpsc};
+use sawbyte_core::{InputFrame,tape};
 
-#[derive(Resource)]
-struct Replay {
-    frames: Vec<InputFrame>,
-    index: usize,
-    settle: u32,
-    started: bool,
-    finished: bool,
-    trace: BufWriter<File>,
+fn information()->Vec<u8>{
+    let mut out=Vec::new(); string("en_us",&mut out);
+    out.extend([3,0,1,127,1,0,1,2]); out
 }
 
-struct InputPlugin(Arc<Mutex<Option<Replay>>>);
-impl Plugin for InputPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(self.0.lock().unwrap().take().unwrap())
-            .add_systems(GameTick, apply_inputs.before(PhysicsSystems))
-            .add_systems(
-                GameTick,
-                record_state.after(PhysicsSystems).after(apply_inputs),
-            );
-    }
-}
-
-// Run in the physics schedule, not the asynchronously delivered Event::Tick.
-#[allow(clippy::type_complexity)]
-fn apply_inputs(
-    mut replay: ResMut<Replay>,
-    mut players: Query<
-        (&mut ClientMovementState, &mut Jumping, &mut LookDirection),
-        (With<LocalEntity>, With<HasClientLoaded>),
-    >,
-) {
-    let Ok((mut movement, mut jumping, mut look)) = players.single_mut() else {
-        return;
-    };
-    if replay.finished {
-        return;
-    }
-    let frame = if replay.settle > 0 {
-        replay.settle -= 1;
-        InputFrame::default()
-    } else {
-        if !replay.started {
-            eprintln!("SAWBYTE_REPLAY_STARTED");
-        }
-        replay.started = true;
-        replay.frames.get(replay.index).copied().unwrap_or_default()
-    };
-    let b = frame.buttons;
-    movement.move_direction = DirectionStates {
-        forward: b.pressed(Button::Forward),
-        backward: b.pressed(Button::Back),
-        left: b.pressed(Button::Left),
-        right: b.pressed(Button::Right),
-    }
-    .into();
-    movement.trying_to_sprint = b.pressed(Button::Sprint);
-    movement.trying_to_crouch = b.pressed(Button::Sneak);
-    **jumping = b.pressed(Button::Jump);
-    *look = LookDirection::new(
-        look.y_rot() + frame.yaw_delta as f32,
-        look.x_rot() + frame.pitch_delta as f32,
-    );
-}
-
-#[allow(clippy::type_complexity)]
-fn record_state(
-    mut replay: ResMut<Replay>,
-    players: Query<
-        (&Position, &LookDirection, &Physics, &WorldHolder),
-        (With<LocalEntity>, With<HasClientLoaded>),
-    >,
-    mut exit: MessageWriter<AppExit>,
-) {
-    if !replay.started || replay.finished {
-        return;
-    }
-    let Ok((pos, look, physics, world)) = players.single() else {
-        return;
-    };
-    let index = replay.index;
-    let chunks = world
-        .partial
-        .read()
-        .chunks
-        .chunks()
-        .filter(|c| c.is_some())
-        .count();
-    let result = writeln!(
-        replay.trace,
-        "{index},{:.9},{:.9},{:.9},{:.6},{:.6},{},{}",
-        pos.x,
-        pos.y,
-        pos.z,
-        look.y_rot(),
-        look.x_rot(),
-        physics.on_ground(),
-        chunks
-    );
-    if result.is_err() {
-        eprintln!("trace write failed; disconnecting");
-        replay.finished = true;
-        exit.write(AppExit::error());
-        return;
-    }
-    replay.index += 1;
-    if replay.index >= replay.frames.len() {
-        // The tape must end with neutral input. Let the caller inspect the trace;
-        // exit disconnects the connection rather than leaving an unattended player.
-        replay.finished = true;
-        if replay.trace.flush().is_err() {
-            exit.write(AppExit::error());
-        } else {
-            eprintln!("SAWBYTE_REPLAY_COMPLETE frames={}", replay.index);
-            exit.write(AppExit::Success);
+fn connect(server:&str,account:&auth::Account)->Result<(wire::Rx,wire::Tx)> {
+    let endpoint=server.to_socket_addrs()?.next().ok_or_else(||bad("server address did not resolve"))?;
+    let socket=TcpStream::connect_timeout(&endpoint,Duration::from_secs(10))?;
+    socket.set_nodelay(true)?;socket.set_read_timeout(Some(Duration::from_secs(20)))?;
+    socket.set_write_timeout(Some(Duration::from_secs(10)))?;
+    let (mut rx,mut tx)=wire::connection(socket)?;
+    let mut hello=Vec::new();var(777,&mut hello);
+    let host=server.rsplit_once(':').map(|p|p.0).unwrap_or(server).trim_matches(['[',']']);
+    string(host,&mut hello);hello.extend(endpoint.port().to_be_bytes());var(2,&mut hello);tx.packet(0,&hello)?;
+    let mut start=Vec::new();string(&account.name,&mut start);start.extend(account.id);tx.packet(0,&start)?;
+    loop {
+        let packet=rx.packet()?;let mut r=Reader(&packet);
+        match r.var()? {
+            0=>return Err(bad("server rejected login")),
+            1=>account.encryption(&mut r,&mut rx,&mut tx)?,
+            2=>{tx.packet(3,&[])?;tx.packet(0,&information())?;return Ok((rx,tx));},
+            3=>{let threshold=r.count(wire::LIMIT)?;rx.threshold=Some(threshold);tx.threshold=Some(threshold);},
+            4=>{let mut out=Vec::new();var(r.var()?,&mut out);out.push(0);tx.packet(2,&out)?;},
+            5=>{let name=r.string()?;let mut out=Vec::new();string(&name,&mut out);out.push(0);tx.packet(4,&out)?;},
+            _=>return Err(bad("unknown login packet")),
         }
     }
 }
 
-async fn handle(bot: Client, event: Event, _: NoState) {
-    match event {
-        Event::Spawn => eprintln!("SAWBYTE_SPAWNED"),
-        Event::Disconnect(_) | Event::ConnectionFailed(_) => {
-            eprintln!("connection ended before replay completed");
-            bot.ecs.write().write_message(AppExit::error());
-        }
-        Event::Death(_) => {
-            eprintln!("player died; replay aborted");
-            bot.ecs.write().write_message(AppExit::error());
-        }
-        _ => {}
-    }
+struct Session {
+    world:world::World, player:player::Player, dimensions:Vec<(i32,i32)>,
+    playing:bool, positioned:bool, loaded:bool, settle:u32, index:usize, previous_buttons:u16,
 }
-
-fn auth_cache() -> Result<PathBuf, Box<dyn std::error::Error>> {
-    let base = std::env::var_os("LOCALAPPDATA")
-        .or_else(|| std::env::var_os("HOME"))
-        .ok_or("set LOCALAPPDATA or HOME for the credential directory")?;
-    let dir = PathBuf::from(base).join(".sawbyte").join("credentials");
-    std::fs::create_dir_all(&dir)?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700))?;
-    }
-    Ok(dir.join("microsoft.json"))
-}
-
-async fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<String> = std::env::args().skip(1).collect();
-    if args.len() == 1 && args[0] == "--help" {
-        println!(
-            "sawbyte-play <server:port> <--offline|--microsoft> <name-or-account-alias> <input.sbif> <trace.csv>\n\
-            Experimental Java 26.3 backend. Replays inputs after 100 settling ticks, then disconnects.\n\
-            Offline mode is only for explicitly configured test servers. Online mode opens Microsoft device login.\n\
-            Generate a tape with: sawbyte tape movement.sbif"
-        );
-        return Ok(());
-    }
-    if args.len() != 5 {
-        return Err("invalid arguments; use --help".into());
-    }
-    let frames = tape::read(&mut BufReader::new(File::open(&args[3])?))?;
-    if frames.iter().any(|f| f.buttons.bits() & !0x7f != 0) {
-        return Err("attack/use input is not implemented by this adapter".into());
-    }
-    if frames.last().copied() != Some(InputFrame::default()) {
-        return Err("input tape must end with a neutral frame".into());
-    }
-    let account = match args[1].as_str() {
-        "--offline" => {
-            if args[2].is_empty()
-                || args[2].len() > 16
-                || !args[2]
-                    .bytes()
-                    .all(|c| c.is_ascii_alphanumeric() || c == b'_')
-            {
-                return Err("invalid offline player name".into());
+impl Session {
+    fn packet(&mut self,packet:&[u8],tx:&mut wire::Tx)->Result<()> {
+        let mut r=Reader(packet);let id=r.var()?;
+        if !self.playing {
+            match id {
+                0=>{let name=r.string()?;let mut out=Vec::new();string(&name,&mut out);out.push(0);tx.packet(1,&out)?;},
+                2=>return Err(bad("server disconnected during configuration")),
+                3=>{tx.packet(3,&[])?;self.playing=true;},
+                4=>tx.packet(4,r.take(8)?)?,
+                5=>tx.packet(5,r.take(4)?)?,
+                7=>{
+                    let name=r.string()?;let n=r.count(65536)?;
+                    for _ in 0..n {
+                        r.string()?;
+                        let data=if r.byte()?!=0 {r.nbt()?} else {serde_json::Value::Null};
+                        if name=="minecraft:dimension_type" {
+                            let min=data["min_y"].as_i64().ok_or_else(||bad("dimension lacks min_y"))? as i32;
+                            let height=data["height"].as_i64().ok_or_else(||bad("dimension lacks height"))? as i32;
+                            if height<=0 || height>4096 || height%16!=0 {return Err(bad("invalid dimension height"));}
+                            self.dimensions.push((min,height));
+                        }
+                    }
+                },
+                9=>{let uuid=r.take(16)?.to_vec();let mut out=uuid;var(1,&mut out);tx.packet(6,&out)?;},
+                15=>tx.packet(7,&[0])?, // request full registry data; no known-pack assumptions
+                20=>return Err(bad("server requires a code-of-conduct acknowledgement; not automated in this preview")),
+                _=>{},
             }
-            Account::offline(&args[2])
+            return Ok(());
         }
-        "--microsoft" => {
-            let opts = azalea::account::MicrosoftAccountOpts {
-                check_ownership: true,
-                cache_file: Some(auth_cache()?),
-                ..Default::default()
-            };
-            // Device code is displayed by the auth provider; no passwords are accepted here.
-            Account::microsoft_with_opts(&args[2], opts).await?
+        match id {
+            11=>tx.packet(11,&20f32.to_be_bytes())?,
+            21=>{let name=r.string()?;let mut out=Vec::new();string(&name,&mut out);out.push(0);tx.packet(21,&out)?;},
+            32=>return Err(bad("server disconnected the player")),
+            38=>{let z=r.i32()?;let x=r.i32()?;self.world.chunks.remove(&(x,z));},
+            45=>tx.packet(28,r.take(8)?)?,
+            46=>self.world.chunk(&mut r)?,
+            50=>{
+                r.i32()?;r.byte()?;let n=r.count(1024)?;for _ in 0..n {r.string()?;}
+                r.var()?;r.var()?;r.var()?;r.take(3)?;
+                let dimension=r.count(1024)?;r.string()?;r.u64()?;
+                if r.byte()?!=0 {return Err(bad("prototype currently supports survival mode only"));}
+                let (min,height)=*self.dimensions.get(dimension).ok_or_else(||bad("unknown dimension type"))?;
+                self.world.min_y=min;self.world.height=height;
+            },
+            62=>tx.packet(45,r.take(4)?)?,
+            69=>return Err(bad("player died; stopping")),
+            73=>{
+                let teleport=r.var()?;
+                let pos=[r.f64()?,r.f64()?,r.f64()?];let velocity=[r.f64()?,r.f64()?,r.f64()?];
+                let yaw=r.f32()?;let pitch=r.f32()?;let flags=r.i32()?;
+                if !pos.iter().chain(velocity.iter()).all(|v|v.is_finite()) || !yaw.is_finite() || !pitch.is_finite() {return Err(bad("invalid server position"));}
+                if flags&256!=0 {return Err(bad("rotated velocity correction unsupported"));}
+                for axis in 0..3 {
+                    self.player.pos[axis]=pos[axis]+if flags&(1<<axis)!=0 {self.player.pos[axis]} else {0.};
+                    self.player.velocity[axis]=velocity[axis]+if flags&(1<<(axis+5))!=0 {self.player.velocity[axis]} else {0.};
+                }
+                self.player.yaw=yaw+if flags&8!=0 {self.player.yaw} else {0.};
+                self.player.pitch=pitch+if flags&16!=0 {self.player.pitch} else {0.};
+                let mut ack=Vec::new();var(teleport,&mut ack);tx.packet(0,&ack)?;
+                self.positioned=true;self.send_position(tx)?;
+            },
+            82=>{let mut out=r.take(16)?.to_vec();var(1,&mut out);tx.packet(50,&out)?;},
+            84|120=>return Err(bad("dimension/session transition unsupported in this prototype")),
+            // Changes to collision data invalidate our snapshot. Never walk through stale geometry.
+            8|86=>{if self.loaded {return Err(bad("world changed during replay; stopping until block-update support is implemented"));}},
+            _=>{},
         }
-        _ => return Err("select --offline or --microsoft explicitly".into()),
-    };
-    let mut trace = BufWriter::new(File::create(&args[4])?);
-    writeln!(trace, "tick,x,y,z,yaw,pitch,on_ground,chunks")?;
-    let deadline = Duration::from_secs(60 + (frames.len() as u64 / 20));
-    let replay = Replay {
-        frames,
-        index: 0,
-        settle: 100,
-        started: false,
-        finished: false,
-        trace,
-    };
-    let builder = ClientBuilder::new_without_plugins()
-        .add_plugins(azalea::DefaultPlugins)
-        .add_plugins(
-            azalea::bot::DefaultBotPlugins
-                .build()
-                .disable::<azalea::pathfinder::PathfinderPlugin>()
-                .disable::<azalea::auto_respawn::AutoRespawnPlugin>()
-                .disable::<azalea::accept_resource_packs::AcceptResourcePacksPlugin>(),
-        )
-        .add_plugins(InputPlugin(Arc::new(Mutex::new(Some(replay)))))
-        .set_handler(handle)
-        .reconnect_after(None);
-    let result = tokio::select! {
-        result = builder.start(account, args[0].as_str()) => result,
-        _ = tokio::signal::ctrl_c() => return Err("interrupted; connection closed".into()),
-        _ = tokio::time::sleep(deadline) => return Err("connection/replay deadline exceeded".into()),
-    };
-    if result != AppExit::Success {
-        return Err("player session failed".into());
+        Ok(())
     }
-    Ok(())
-}
-
-#[tokio::main]
-async fn main() -> std::process::ExitCode {
-    match run().await {
-        Ok(()) => std::process::ExitCode::SUCCESS,
-        Err(error) => {
-            eprintln!("sawbyte-play: {error}");
-            std::process::ExitCode::FAILURE
-        }
+    fn send_position(&self,tx:&mut wire::Tx)->Result<()> {
+        let mut out=Vec::with_capacity(33);for value in self.player.pos {out.extend(value.to_be_bytes());}
+        out.extend(self.player.yaw.to_be_bytes());out.extend(self.player.pitch.to_be_bytes());
+        out.push(u8::from(self.player.ground)|(u8::from(self.player.horizontal_collision)<<1));tx.packet(31,&out)
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use azalea::{buf::AzBuf, entity::MobEffectData};
-    use std::io::Cursor;
-
-    #[test]
-    fn pinned_backend_effect_flags_preserve_wire_format() {
-        for flags in 0u8..16 {
-            let mut effect = MobEffectData::default();
-            effect.flags.ambient = flags & 1 != 0;
-            effect.flags.show_particles = flags & 2 != 0;
-            effect.flags.show_icon = flags & 4 != 0;
-            effect.flags.blend = flags & 8 != 0;
-            let mut bytes = Vec::new();
-            effect.azalea_write(&mut bytes).unwrap();
-            assert_eq!(bytes, [0, 0, flags]);
-            assert_eq!(MobEffectData::azalea_read(&mut Cursor::new(bytes.as_slice())).unwrap(), effect);
+    fn tick(&mut self,frames:&[InputFrame],trace:&mut impl Write,tx:&mut wire::Tx)->Result<bool> {
+        if !self.playing || !self.positioned || !self.world.loaded(self.player.pos[0],self.player.pos[2]) {return Ok(false);}
+        if !self.loaded {tx.packet(44,&[])?;self.loaded=true;eprintln!("SAWBYTE_SPAWNED");}
+        let recording=self.settle==0;
+        let frame=if recording {frames[self.index]} else {self.settle-=1;InputFrame::default()};
+        if recording && self.index==0 {eprintln!("SAWBYTE_REPLAY_STARTED");}
+        self.player.step(frame,&self.world)?;
+        let buttons=frame.buttons.bits();
+        if buttons!=self.previous_buttons {tx.packet(43,&[buttons as u8])?;self.previous_buttons=buttons;}
+        self.send_position(tx)?;tx.packet(13,&[])?;
+        if recording {
+            let p=&self.player;
+            writeln!(trace,"{},{:.9},{:.9},{:.9},{:.6},{:.6},{},{}",self.index,p.pos[0],p.pos[1],p.pos[2],p.yaw,p.pitch,p.ground,self.world.chunks.len())?;
+            self.index+=1;
+            if self.index==frames.len() {trace.flush()?;eprintln!("SAWBYTE_REPLAY_COMPLETE frames={}",frames.len());return Ok(true);}
         }
+        Ok(false)
     }
 }
+
+fn run()->Result<()> {
+    let args:Vec<_>=std::env::args().skip(1).collect();
+    if args.is_empty() || args==["--help"] {
+        println!("Sawbyte standalone player prototype — Java 26.3\n\n\
+            sawbyte-play <server:port> <--offline|--account> <name-or-token-file> <input.sbif> <trace.csv> <blocks.json>\n\
+            sawbyte-play login <registered-microsoft-client-id> <new-token-file>\n\n\
+            Current movement scope: ordinary full-cube ground, walk/turn/jump/stop.\n\
+            Unknown collision mechanics stop execution. Not a general playable client yet.");return Ok(());
+    }
+    if args.len()==3 && args[0]=="login" {return auth::login(&args[1],std::path::Path::new(&args[2]));}
+    if args.len()!=6 {return Err(bad("invalid arguments; use --help"));}
+    let frames=tape::read(&mut File::open(&args[3])?).map_err(|e|bad(&e.to_string()))?;
+    if frames.iter().any(|f|f.buttons.bits()&!31!=0) || frames.last()!=Some(&InputFrame::default()) {return Err(bad("unsupported input or non-neutral final frame"));}
+    let account=match args[1].as_str(){"--offline"=>auth::Account::offline(&args[2])?,"--account"=>auth::Account::token_file(std::path::Path::new(&args[2]))?,_=>return Err(bad("choose --offline or --account"))};
+    let profile:serde_json::Value=serde_json::from_reader(File::open(&args[5])?)?;
+    if profile["minecraft"]!="26.3" {return Err(bad("wrong block profile version"));}
+    let mut state=Session{world:world::World::new(&profile)?,player:player::Player::default(),dimensions:Vec::new(),playing:false,positioned:false,loaded:false,settle:100,index:0,previous_buttons:0};
+    let (mut rx,mut tx)=connect(&args[0],&account)?;
+    let shutdown=tx.stream.try_clone()?;
+    let (send,receive)=mpsc::sync_channel(64);
+    let reader=std::thread::spawn(move||{loop{let packet=rx.packet();let done=packet.is_err();if send.send(packet).is_err() || done{break;}}});
+    let mut trace=BufWriter::new(File::create(&args[4])?);writeln!(trace,"tick,x,y,z,yaw,pitch,on_ground,chunks")?;
+    let start=Instant::now();let mut next=Instant::now();
+    let result=(||->Result<()>{loop {
+        if start.elapsed()>Duration::from_secs(60+frames.len() as u64/20){return Err(bad("session deadline exceeded"));}
+        let wait=next.saturating_duration_since(Instant::now());
+        match receive.recv_timeout(wait){
+            Ok(packet)=>state.packet(&packet?,&mut tx)?,
+            Err(mpsc::RecvTimeoutError::Disconnected)=>return Err(bad("network reader stopped")),
+            Err(mpsc::RecvTimeoutError::Timeout)=>{},
+        }
+        if Instant::now()>=next {
+            if state.tick(&frames,&mut trace,&mut tx)?{return Ok(());}
+            next+=Duration::from_millis(50);
+            if Instant::now().saturating_duration_since(next)>Duration::from_secs(1){return Err(bad("tick budget exceeded"));}
+        }
+    }})();
+    let _=shutdown.shutdown(Shutdown::Both);drop(receive);let _=reader.join();result
+}
+fn main()->std::process::ExitCode{match run(){Ok(())=>std::process::ExitCode::SUCCESS,Err(error)=>{eprintln!("sawbyte-play: {error}");std::process::ExitCode::FAILURE}}}

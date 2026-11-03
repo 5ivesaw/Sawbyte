@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Sawbyte
+Comment=Minecraft automation framework — development preview
+Exec=sawbyte --help
+Icon=sawbyte
+Terminal=true
+Categories=Development;Game;

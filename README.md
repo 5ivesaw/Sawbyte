@@ -1,6 +1,18 @@
-# Sawbyte
+<p align="center">
+  <img src="assets/sawbyte.png" width="180" alt="Sawbyte icon" />
+</p>
+<h1 align="center">Sawbyte</h1>
+<p align="center"><strong>A smaller client. A fully programmable player.</strong><br />Minecraft automation by 5ivesaw.</p>
+<p align="center">
+  <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/ci.yml"><img src="https://github.com/5ivesaw/Sawbyte/actions/workflows/ci.yml/badge.svg" alt="Build status" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-00c977" alt="MIT license" /></a>
+  <img src="https://img.shields.io/badge/status-early_development-111820" alt="Early development" />
+</p>
+<p align="center"><a href="#download-and-try">Downloads</a> · <a href="PLAN.md">Roadmap</a> · <a href="docs/COVERAGE.md">Capability coverage</a></p>
 
-A lightweight, programmable Minecraft player framework by 5ivesaw.
+---
+
+Sawbyte is being built as a **standalone native client and automation framework**. The optional normal-client bridge exists for integration and reference testing; it is not the main product.
 
 **Foundation preview — not a playable Minecraft client yet.** The goal is comprehensive player automation with a stripped native runtime and a normal-client bridge. See [the plan](PLAN.md) and [honest capability coverage](docs/COVERAGE.md).
 

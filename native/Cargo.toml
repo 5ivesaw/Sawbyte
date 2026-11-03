@@ -7,9 +7,17 @@ license = "MIT"
 [workspace]
 
 [dependencies]
-azalea = { git = "https://github.com/5ivesaw/sawbyte-azalea", rev = "abe71b291ebdf9365de1a8343be396cc1f647ab3", default-features = false, features = ["online-mode"] }
 sawbyte-core = { path = "../crates/sawbyte-core" }
-tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "signal", "time"] }
+sawbyte-protocol = { path = "../crates/sawbyte-protocol" }
+flate2 = "1.1"
+serde_json = "1.0"
+md-5 = "0.10"
+aes = "0.8"
+cfb8 = "0.8"
+rsa = "0.9"
+rand = "0.8"
+sha1 = "0.10"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 
 [profile.release]
 lto = "thin"

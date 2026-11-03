@@ -75,7 +75,7 @@ public final class SawbyteBridge implements ClientModInitializer {
             if (started) finish(client, "disconnected during replay");
             return;
         }
-        if (client.screen != null) {
+        if (client.gui.screen() != null) {
             if (started) finish(client, "screen opened: manual handoff");
             return;
         }

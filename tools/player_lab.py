@@ -44,6 +44,19 @@ class Server:
         self.directory = LAB / "server"
         self.directory.mkdir(parents=True, exist_ok=True)
         download(server["url"], self.directory / "server.jar", server["sha1"])
+        with (REPORTS / "data-generation.log").open("w") as log:
+            subprocess.run(["java", "-DbundlerMainClass=net.minecraft.data.Main", "-jar", "server.jar",
+                "--reports", "--output", "generated"], cwd=self.directory, stdout=log,
+                stderr=subprocess.STDOUT, check=True, timeout=150)
+        block_data = json.loads((self.directory / "generated/reports/blocks.json").read_text())
+        profile = {"minecraft": "26.3", "air": [], "solid": []}
+        for group, names in {
+            "air": ["air", "cave_air", "void_air"],
+            "solid": ["bedrock", "dirt", "grass_block", "stone", "cobblestone"],
+        }.items():
+            for name in names:
+                profile[group].extend(state["id"] for state in block_data[f"minecraft:{name}"]["states"])
+        (REPORTS / "block-profile.json").write_text(json.dumps(profile, indent=2) + "\n")
         (self.directory / "eula.txt").write_text("eula=true\n")
         (self.directory / "server.properties").write_text("\n".join([
             "server-ip=127.0.0.1", "server-port=25565", "online-mode=false",
@@ -174,7 +187,7 @@ def main():
     server = Server()
     try:
         metrics = run_process([str(args.native.resolve()), "127.0.0.1:25565", "--offline",
-            "SawbyteNative", str(tape), str(REPORTS / "native.csv")], "native", 90)
+            "SawbyteNative", str(tape), str(REPORTS / "native.csv"), str(REPORTS / "block-profile.json")], "native", 90)
         (REPORTS / "native-resources.json").write_text(json.dumps(metrics, indent=2) + "\n")
         native = rows(REPORTS / "native.csv")
         verify_motion(native)
