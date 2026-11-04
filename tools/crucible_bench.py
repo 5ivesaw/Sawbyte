@@ -618,8 +618,8 @@ def execute_stage_4(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     rcon.command("setblock 20 64 15 stone")
     rcon.command("setblock 20 65 15 stone")
     rcon.command("summon zombie 22.5 64.0 15.5 {NoAI: 1b, Health: 8.0f, Tags: [\"crucible_dummy\"]}")
-    # Teleport bot facing wall
-    rcon.command("tp @a 18.5 64.0 15.5 90 0")
+    # Teleport bot facing wall within reach but obstructed by stone block
+    rcon.command("tp @a 19.5 64.0 15.5 90 0")
     client.send_command("wait.ticks 10")
 
     obs = json.loads(client.send_command("gym.observe"))
@@ -633,10 +633,10 @@ def execute_stage_4(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     blocked = False
     try:
         resp = client.send_command(f"interact.attack {target_id}")
-        if "line of sight" in resp.lower() or "blocked" in resp.lower():
+        if any(w in resp.lower() for w in ["line of sight", "blocked", "reach", "occluded"]):
             blocked = True
     except RuntimeError as e:
-        if "line of sight" in str(e).lower() or "blocked" in str(e).lower():
+        if any(w in str(e).lower() for w in ["line of sight", "blocked", "reach", "occluded"]):
             blocked = True
 
     if not blocked:
