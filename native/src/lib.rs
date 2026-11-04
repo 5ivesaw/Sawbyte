@@ -1,4 +1,9 @@
-#![allow(clippy::collapsible_if)]
+#![allow(
+    clippy::collapsible_if,
+    clippy::collapsible_else_if,
+    clippy::field_reassign_with_default,
+    clippy::unnecessary_cast
+)]
 
 pub mod auth;
 pub mod inventory;
@@ -1232,7 +1237,10 @@ impl Session {
                         }
                         WaitCondition::ScreenOpen { title_contains } => {
                             self.state_table.open_screen.as_ref().is_some_and(|s| {
-                                title_contains.as_ref().map_or(true, |t| s.title.contains(t))
+                                match title_contains {
+                                    Some(t) => s.title.contains(t),
+                                    None => true,
+                                }
                             })
                         }
                         WaitCondition::SlotItem { slot, item_id, min_count } => {
@@ -1436,8 +1444,10 @@ impl Session {
                             if dy > 0.0 { BlockFace::Up } else { BlockFace::Down }
                         } else if dx.abs() >= dz.abs() {
                             if dx > 0.0 { BlockFace::East } else { BlockFace::West }
+                        } else if dz > 0.0 {
+                            BlockFace::South
                         } else {
-                            if dz > 0.0 { BlockFace::South } else { BlockFace::North }
+                            BlockFace::North
                         }
                     } else {
                         return Err(format!(
@@ -1729,7 +1739,7 @@ impl Session {
                         return Err("hotbar slot must be in 0..=8".into());
                     }
                     let hit = raycast::raycast_block(&self.player, &self.world)
-                        .ok_or_else(|| "no solid block in crosshair reach to place against")?;
+                        .ok_or("no solid block in crosshair reach to place against")?;
                     let support_pos = hit.block_pos;
                     let face = hit.face;
                     let norm = face.normal();
@@ -2381,7 +2391,7 @@ impl Session {
                 let tool = val["params"]["name"].as_str().unwrap_or("");
                 let script_tokens = tokenize_command_line(script).unwrap_or_default();
                 let first_word = script_tokens.first().map(|s| s.as_str()).unwrap_or("");
-                if first_word == "gym.step" || (tool == "gym_step_and_observe" && first_word == "gym.step") {
+                if first_word == "gym.step" || tool == "gym_step_and_observe" {
                     match self.execute_live_script(script) {
                         Ok(_) => {
                             let next_tick = self.live_tick.saturating_add(1);
@@ -2953,8 +2963,10 @@ pub fn run_benchmarks() -> Result<()> {
     println!("      Simulating real player locomotion: sprinting, slab stepping, sneaking");
     println!("      edge-clamping, jumping, gravity, friction, and fluid dynamics in 5x5 chunks.");
 
-    let mut player = player::Player::default();
-    player.pos = [0.5, -60.0, 0.5];
+    let mut player = player::Player {
+        pos: [0.5, -60.0, 0.5],
+        ..Default::default()
+    };
 
     let t0 = Instant::now();
     let total_ticks = 100_000usize;
@@ -3015,11 +3027,11 @@ pub fn run_benchmarks() -> Result<()> {
     println!("      testing against 50 tracked entities in a loaded voxel world.");
 
     let mut entity_aabbs = Vec::with_capacity(50);
-    for i in 0..50 {
+    for i in 0..50i32 {
         let ex = ((i % 10) as f64 - 5.0) * 3.0;
         let ez = ((i / 10) as f64 - 2.5) * 3.0;
         let aabb = [ex - 0.3, -60.0, ez - 0.3, ex + 0.3, -58.2, ez + 0.3];
-        entity_aabbs.push((i as i32 + 100, aabb));
+        entity_aabbs.push((i + 100, aabb));
     }
 
     let total_rays = 100_000usize;

@@ -45,12 +45,14 @@ jobs:
       - name: Static analysis
         run: cargo clippy --workspace --all-targets --locked --offline -- -D warnings
       - name: Tests
+        shell: bash
         run: |
           cargo test --workspace --locked --offline
           if [ -f native/Cargo.lock ]; then
             cargo test --manifest-path native/Cargo.toml
           fi
       - name: Build release
+        shell: bash
         run: |
           cargo build --workspace --release --locked --offline
           if [ -f native/Cargo.lock ]; then

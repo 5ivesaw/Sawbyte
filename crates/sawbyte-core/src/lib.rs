@@ -450,7 +450,8 @@ mod tests {
             vec!["chat.send", "foo 'bar' baz"]
         );
         assert_eq!(
-            tokenize_command_line("\"/home/fivesaw/The Projects/Sawbyte/block-profile.json\"").unwrap(),
+            tokenize_command_line("\"/home/fivesaw/The Projects/Sawbyte/block-profile.json\"")
+                .unwrap(),
             vec!["/home/fivesaw/The Projects/Sawbyte/block-profile.json"]
         );
         assert_eq!(
@@ -460,4 +461,3 @@ mod tests {
         assert!(tokenize_command_line("chat.send \"unterminated").is_err());
     }
 }
-
