@@ -156,6 +156,7 @@ pub enum WaitCondition {
     TaskIdle,
     ScreenOpen { title_contains: Option<String> },
     SlotItem { slot: usize, item_id: String, min_count: u32 },
+    PlayerAlive,
 }
 
 #[derive(Clone, Debug)]
@@ -1380,6 +1381,9 @@ impl Session {
                             self.state_table.inventory_slots.get(*slot).and_then(|it| it.as_ref()).is_some_and(|s| {
                                 s.id.contains(item_id) && s.count >= *min_count
                             })
+                        }
+                        WaitCondition::PlayerAlive => {
+                            !self.is_dead && self.loaded && self.state_table.health > 0.0
                         }
                     };
                     if met {
@@ -2726,6 +2730,24 @@ impl Session {
                             });
                             return;
                         }
+                        "player_alive" | "player_respawn" => {
+                            let timeout_ticks = script_tokens
+                                .get(2)
+                                .and_then(|s| s.parse::<u64>().ok())
+                                .unwrap_or(200);
+                            let deadline_tick = self.live_tick.saturating_add(timeout_ticks);
+                            self.pending_replies.push(PendingReply {
+                                client: reply_chan,
+                                is_json: true,
+                                json_rpc_id: Some(id),
+                                kind: PendingReplyKind::Condition {
+                                    deadline_tick,
+                                    command: "wait.until player_alive".to_string(),
+                                    condition: WaitCondition::PlayerAlive,
+                                },
+                            });
+                            return;
+                        }
                         _ => {}
                     }
                 }
@@ -2848,6 +2870,20 @@ impl Session {
                                 item_id: item_id.trim_matches('"').to_string(),
                                 min_count,
                             },
+                        },
+                    });
+                }
+                ["wait.until", "player_alive", timeout] | ["wait.until", "player_respawn", timeout] => {
+                    let timeout_ticks = timeout.parse::<u64>().unwrap_or(200);
+                    let deadline_tick = self.live_tick.saturating_add(timeout_ticks);
+                    self.pending_replies.push(PendingReply {
+                        client: reply_chan,
+                        is_json: false,
+                        json_rpc_id: None,
+                        kind: PendingReplyKind::Condition {
+                            deadline_tick,
+                            command: "wait.until player_alive".to_string(),
+                            condition: WaitCondition::PlayerAlive,
                         },
                     });
                 }
