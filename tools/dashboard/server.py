@@ -9,6 +9,7 @@ import shutil
 import socketserver
 import subprocess
 import time
+import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -129,6 +130,99 @@ def build_status():
     }
 
 
+def format_status_export(data):
+    now_iso = datetime.datetime.fromtimestamp(data["now"], datetime.timezone.utc).isoformat()
+    ag = data.get("agent", {})
+    last_up = ag.get("last_updated", data["now"])
+    last_up_iso = datetime.datetime.fromtimestamp(last_up, datetime.timezone.utc).isoformat()
+    stale_str = "yes" if data.get("agent_stale") else "no"
+
+    goal = ag.get("goal", "Universal 1:1 zero-graphics vanilla Minecraft 26.3 Rust client")
+    dod_text = ag.get("definition_of_done", "Parity tests & Crucible dual-interface benchmarks passing")
+    dod_done = ag.get("dod_done", 3)
+    dod_total = ag.get("dod_total", 6)
+    dod_summary = f"{dod_done}/{dod_total} done ({dod_text})"
+
+    current_step = ag.get("current_step", "Ready")
+    step_start = ag.get("step_started_at", data["now"])
+    step_start_iso = datetime.datetime.fromtimestamp(step_start, datetime.timezone.utc).isoformat()
+
+    queued = ag.get("queued_steps", [])[:5]
+    queued_lines = "\n".join(f"  - {q}" for q in queued) if queued else "  none"
+
+    blockers = ag.get("blockers", [])
+    blockers_str = "; ".join(b.get("message", str(b)) if isinstance(b, dict) else str(b) for b in blockers) if blockers else "none"
+
+    ci_runs = data.get("ci", [])
+    latest_url = "https://github.com/5ivesaw/Sawbyte/actions"
+    linux_st = "running"
+    macos_st = "running"
+    windows_st = "running"
+    if ci_runs:
+        for r in ci_runs:
+            raw = r.get("raw", "")
+            st = r.get("status", "running")
+            linux_st = st
+            macos_st = st
+            windows_st = st
+            urls = re.findall(r'https://github.com/[^\s]+', raw)
+            if urls:
+                latest_url = urls[0]
+            else:
+                nums = re.findall(r'\b\d{10,12}\b', raw)
+                if nums:
+                    latest_url = f"https://github.com/5ivesaw/Sawbyte/actions/runs/{nums[0]}"
+            break
+
+    ci_str = f"linux {linux_st} | macos {macos_st} | windows {windows_st} | {latest_url}"
+
+    git = data.get("git", {})
+    branch = git.get("branch", "main")
+    commits = "; ".join(git.get("commits", [])[:5])
+    dirty = f"{git.get('dirty_count', 0)} files"
+    git_str = f"{branch} | {commits} | {dirty}"
+
+    cov = data.get("coverage", {})
+    counts = cov.get("counts", {})
+    cov_str = (
+        f"PARITY-TESTED {counts.get('PORTED+PARITY-TESTED', 0)} / "
+        f"PORTED {counts.get('PORTED', 0)} / "
+        f"PARTIAL {counts.get('PARTIAL', 0)} / "
+        f"MISSING {counts.get('MISSING', 0)} / "
+        f"BLOCKED {counts.get('BLOCKED', 0)} | 2026-11-04 milestone"
+    )
+
+    sys_m = data.get("system", {})
+    dl = data.get("downloads", {})
+    ram_str = f"{sys_m.get('ram_used_mb', 0)}MB / {sys_m.get('ram_total_mb', 0)}MB"
+    disk_free = f"{100 - sys_m.get('disk_pct', 0)}% free"
+    dl_total = dl.get("total_mb", 0)
+    dl_budget = dl.get("budget_mb", 3072)
+    load = sys_m.get("cpu_load", 0.0)
+    mach_str = f"{ram_str} | {disk_free} | local DL this run: {dl_total}MB | local DL this month: {dl_total}MB of {dl_budget}MB | load {load}"
+
+    events = ag.get("events", [])
+    last_note = events[-1].get("message", "Status operational") if events else "Ready"
+
+    out = [
+        "SAWBYTE STATUS EXPORT v1",
+        f"generated: {now_iso} | agent-reported fields last updated: {last_up_iso} | stale: {stale_str}",
+        f"GOAL: {goal} | {dod_summary}",
+        f"NOW: {current_step}, started {step_start_iso}",
+        f"NEXT:\n{queued_lines}",
+        f"BLOCKERS / NEEDS USER: {blockers_str}",
+        f"CI: {ci_str}",
+        f"GIT: {git_str}",
+        f"COVERAGE: {cov_str}",
+        f"MACHINE / DATA: {mach_str}",
+        f"LAST NOTE: {last_note}",
+    ]
+    res = "\n".join(out)
+    if len(res) > 7900:
+        res = res[:7900] + "\n..."
+    return res
+
+
 HTML_PAGE = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -167,6 +261,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
     <div style="color:var(--sub);">Local dashboard: 127.0.0.1:8765 &bull; <span id="stale-badge" class="badge badge-green">LIVE</span> &bull; Updated: <span id="last-time">--</span></div>
   </div>
   <div>
+    <button id="copy-btn" onclick="copyStatus()" style="background:#1f6feb; margin-right:6px;">Copy Status</button>
     <button id="sound-btn" onclick="toggleAudio()">Enable Sound</button>
     <button onclick="requestNotif()">Enable Notifications</button>
   </div>
@@ -411,6 +506,33 @@ function render(data) {
   lastAlertCount = alerts.length;
 }
 
+function copyStatus() {
+  fetch('/api/export')
+    .then(r => r.text())
+    .then(text => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          let b = document.getElementById('copy-btn');
+          let old = b.innerText;
+          b.innerText = "Copied! ✓";
+          setTimeout(() => b.innerText = old, 2000);
+        });
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        let b = document.getElementById('copy-btn');
+        let old = b.innerText;
+        b.innerText = "Copied! ✓";
+        setTimeout(() => b.innerText = old, 2000);
+      }
+    })
+    .catch(console.error);
+}
+
 function poll() {
   fetch('/api/status')
     .then(r => r.json())
@@ -439,6 +561,14 @@ class StatusHandler(http.server.BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json.dumps(data).encode("utf-8"))
+        elif self.path == "/api/export":
+            data = build_status()
+            text = format_status_export(data)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(text.encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()

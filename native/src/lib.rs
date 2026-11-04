@@ -312,6 +312,60 @@ impl Session {
         self.world.solid(pos[0], pos[1], pos[2]).map_err(|error| error.to_string())
     }
 
+    fn compute_tool_mining_stats(&self, hardness: f32) -> (f32, bool) {
+        let held_item = self.state_table.main_hand_item();
+        let Some(item) = held_item else {
+            let can_harvest = hardness <= 2.0;
+            return (1.0, can_harvest);
+        };
+        let id = item.id.as_str();
+        let is_pickaxe = id.contains("pickaxe");
+        let is_axe = id.contains("axe") && !is_pickaxe;
+        let is_shovel = id.contains("shovel");
+
+        let material_speed = if id.contains("netherite") {
+            9.0
+        } else if id.contains("diamond") {
+            8.0
+        } else if id.contains("iron") {
+            6.0
+        } else if id.contains("golden") {
+            12.0
+        } else if id.contains("stone") {
+            4.0
+        } else if id.contains("wood") {
+            2.0
+        } else {
+            1.0
+        };
+
+        if hardness <= 0.0 {
+            return (1.0, true);
+        }
+
+        if (hardness - 1.5).abs() < 0.1 || (hardness - 3.0).abs() < 0.1 {
+            if is_pickaxe {
+                (material_speed, true)
+            } else {
+                (1.0, false)
+            }
+        } else if (hardness - 2.0).abs() < 0.1 {
+            if is_axe {
+                (material_speed, true)
+            } else {
+                (1.0, true)
+            }
+        } else if hardness <= 0.8 {
+            if is_shovel {
+                (material_speed, true)
+            } else {
+                (1.0, true)
+            }
+        } else {
+            (1.0, true)
+        }
+    }
+
     fn new(profile: &serde_json::Value, live_mode: bool, policy: DynamicCameraPolicy) -> Result<Self> {
         Ok(Self {
             world: world::World::new(profile)?,
@@ -1580,6 +1634,12 @@ impl Session {
                         ));
                     }
                     let block_center = [pos[0] as f64 + 0.5, pos[1] as f64 + 0.5, pos[2] as f64 + 0.5];
+                    let dx_aim = block_center[0] - eye[0];
+                    let dy_aim = block_center[1] - eye[1];
+                    let dz_aim = block_center[2] - eye[2];
+                    let horiz_dist = (dx_aim * dx_aim + dz_aim * dz_aim).sqrt();
+                    self.player.yaw = (-dx_aim).atan2(dz_aim).to_degrees() as f32;
+                    self.player.pitch = (-dy_aim).atan2(horiz_dist).to_degrees() as f32;
                     let face = if let Some(hit) = raycast::raycast_block(&self.player, &self.world).filter(|h| h.block_pos == pos) {
                         hit.face
                     } else if raycast::has_line_of_sight_excluding(eye, block_center, &self.world, Some(pos)) {
@@ -1616,12 +1676,14 @@ impl Session {
                             pos[0], pos[1], pos[2]
                         ));
                     }
+                    let (tool_speed, can_harvest) = self.compute_tool_mining_stats(hardness);
                     let duration_ticks = if hardness == 0.0 {
                         1
                     } else {
-                        self.player
-                            .compute_break_ticks(hardness, 1.0, true, false)
-                            .unwrap_or_else(|| ((hardness * 30.0).ceil() as u32).max(1))
+                        let base = self.player
+                            .compute_break_ticks(hardness, tool_speed, can_harvest, false)
+                            .unwrap_or_else(|| ((hardness * 30.0 / tool_speed).ceil() as u32).max(1));
+                        base.saturating_add(2)
                     };
                     let seq = self.state_table.next_sequence_n(2);
                     let mut events = ComposableTask::MineBlock {
@@ -1672,12 +1734,14 @@ impl Session {
                             hit.block_pos[0], hit.block_pos[1], hit.block_pos[2]
                         ));
                     }
+                    let (tool_speed, can_harvest) = self.compute_tool_mining_stats(hardness);
                     let duration_ticks = if hardness == 0.0 {
                         1
                     } else {
-                        self.player
-                            .compute_break_ticks(hardness, 1.0, true, false)
-                            .unwrap_or_else(|| ((hardness * 30.0).ceil() as u32).max(1))
+                        let base = self.player
+                            .compute_break_ticks(hardness, tool_speed, can_harvest, false)
+                            .unwrap_or_else(|| ((hardness * 30.0 / tool_speed).ceil() as u32).max(1));
+                        base.saturating_add(2)
                     };
                     let seq = self.state_table.next_sequence_n(2);
                     let mut events = ComposableTask::MineBlock {
@@ -2145,21 +2209,33 @@ impl Session {
                 }
                 ["gui.inspect"] => {
                     if let Some(s) = &self.state_table.open_screen {
-                        let populated = s.slots.iter().filter(|it| it.is_some()).count();
-                        outputs.push(format!(
-                            "open_screen window_id={} state_id={} kind={:?} title=\"{}\" slots={}/{} cursor={} widgets={} fields={}",
-                            s.window_id,
-                            s.state_id,
-                            s.kind,
-                            s.title,
-                            populated,
-                            s.slots.len(),
-                            s.cursor_item.as_ref().map_or("none", |c| c.id.as_str()),
-                            s.widgets.len(),
-                            s.fields.len()
-                        ));
+                        let slots: Vec<serde_json::Value> = s
+                            .slots
+                            .iter()
+                            .enumerate()
+                            .filter_map(|(idx, it)| {
+                                it.as_ref().map(|item| {
+                                    serde_json::json!({
+                                        "slot": idx,
+                                        "id": item.id,
+                                        "count": item.count,
+                                        "display_name": item.display_name,
+                                        "lore": item.lore,
+                                    })
+                                })
+                            })
+                            .collect();
+                        let inspect_obj = serde_json::json!({
+                            "window_id": s.window_id,
+                            "state_id": s.state_id,
+                            "kind": format!("{:?}", s.kind),
+                            "title": s.title,
+                            "slots": slots,
+                            "cursor_item": s.cursor_item.as_ref().map(|c| serde_json::json!({"id": c.id, "count": c.count})),
+                        });
+                        outputs.push(inspect_obj.to_string());
                     } else {
-                        outputs.push("open_screen=none".into());
+                        outputs.push(serde_json::json!({"slots": []}).to_string());
                     }
                 }
                 ["gui.selectors"] => {

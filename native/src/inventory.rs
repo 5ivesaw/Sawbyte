@@ -104,14 +104,14 @@ impl Default for PacketTable {
             sb_interact: 26,               // minecraft:interact
             sb_place_recipe: 39,           // minecraft:place_recipe
             sb_player_action: 41,          // minecraft:player_action
-            sb_player_abilities: 35,       // minecraft:player_abilities
-            sb_player_command: 36,         // minecraft:player_command
+            sb_player_abilities: 40,       // minecraft:player_abilities
+            sb_player_command: 42,         // minecraft:player_command
             sb_rename_item: 49,            // minecraft:rename_item
             sb_select_trade: 52,           // minecraft:select_trade
             sb_set_carried_item: 54,       // minecraft:set_carried_item
             sb_sign_update: 62,            // minecraft:sign_update
-            sb_steer_vehicle: 38,          // minecraft:steer_vehicle
-            sb_swing: 63,                  // minecraft:swing
+            sb_steer_vehicle: 43,          // minecraft:player_input / steer
+            sb_swing: 46,                  // minecraft:punch (swing)
             sb_use_item_on: 66,            // minecraft:use_item_on
             sb_use_item: 67,               // minecraft:use_item
             item_names: HashMap::new(),
@@ -218,9 +218,16 @@ impl PacketTable {
         table.sb_set_carried_item =
             get_id(sb, "minecraft:set_carried_item", table.sb_set_carried_item);
         table.sb_sign_update = get_id(sb, "minecraft:sign_update", table.sb_sign_update);
-        table.sb_steer_vehicle =
-            get_id(sb, "minecraft:steer_vehicle", table.sb_steer_vehicle);
-        table.sb_swing = get_id(sb, "minecraft:swing", table.sb_swing);
+        table.sb_steer_vehicle = get_id(
+            sb,
+            "minecraft:player_input",
+            get_id(sb, "minecraft:steer_vehicle", table.sb_steer_vehicle),
+        );
+        table.sb_swing = get_id(
+            sb,
+            "minecraft:punch",
+            get_id(sb, "minecraft:swing", table.sb_swing),
+        );
         table.sb_use_item_on = get_id(sb, "minecraft:use_item_on", table.sb_use_item_on);
         table.sb_use_item = get_id(sb, "minecraft:use_item", table.sb_use_item);
 
@@ -650,6 +657,11 @@ fn decode_slot_item(
 }
 
 impl PlayerStateTable {
+    pub fn main_hand_item(&self) -> Option<&ItemStack> {
+        let slot = 36 + (self.selected_hotbar as usize).min(8);
+        self.inventory_slots.get(slot).and_then(|opt| opt.as_ref())
+    }
+
     pub fn next_sequence(&mut self) -> i32 {
         self.next_sequence_n(1)
     }

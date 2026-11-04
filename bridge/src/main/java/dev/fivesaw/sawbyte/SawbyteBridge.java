@@ -340,15 +340,51 @@ public final class SawbyteBridge implements ClientModInitializer {
                 int y = Integer.parseInt(parts[2]);
                 int z = Integer.parseInt(parts[3]);
                 BlockPos pos = new BlockPos(x, y, z);
-                if (client.level.getBlockState(pos).is(Blocks.BEDROCK)) {
+                if (client.level != null && client.level.getBlockState(pos).is(Blocks.BEDROCK)) {
                     req.writer.println("error: cannot mine unbreakable block at (" + x + ", " + y + ", " + z + ") hardness=-1");
                     req.writer.flush();
                 } else {
+                    if (client.player != null && client.gameMode != null) {
+                        double eyeX = client.player.getX(), eyeY = client.player.getEyeY(), eyeZ = client.player.getZ();
+                        double dx = (x + 0.5) - eyeX, dy = (y + 0.5) - eyeY, dz = (z + 0.5) - eyeZ;
+                        double hDist = Math.sqrt(dx * dx + dz * dz);
+                        client.player.setYRot((float) Math.toDegrees(-Math.atan2(dx, dz)));
+                        client.player.setXRot((float) Math.toDegrees(-Math.atan2(dy, hDist)));
+
+                        client.gameMode.destroyBlock(pos);
+                        client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+                    }
                     req.writer.println("mine_complete:(" + x + "," + y + "," + z + ")");
                     req.writer.flush();
                 }
             }
             case "interact.place", "interact.place_on" -> {
+                if (client.player != null && client.gameMode != null) {
+                    int x = Integer.parseInt(parts[1]);
+                    int y = Integer.parseInt(parts[2]);
+                    int z = Integer.parseInt(parts[3]);
+                    net.minecraft.core.Direction face = net.minecraft.core.Direction.UP;
+                    if (parts.length > 4) {
+                        try {
+                            int f = Integer.parseInt(parts[4]);
+                            face = switch (f) {
+                                case 0 -> net.minecraft.core.Direction.DOWN;
+                                case 1 -> net.minecraft.core.Direction.UP;
+                                case 2 -> net.minecraft.core.Direction.NORTH;
+                                case 3 -> net.minecraft.core.Direction.SOUTH;
+                                case 4 -> net.minecraft.core.Direction.WEST;
+                                case 5 -> net.minecraft.core.Direction.EAST;
+                                default -> net.minecraft.core.Direction.UP;
+                            };
+                        } catch (NumberFormatException ignored) {}
+                    }
+                    BlockPos targetPos = new BlockPos(x, y, z);
+                    BlockPos supportPos = targetPos.relative(face.getOpposite());
+                    net.minecraft.world.phys.Vec3 hitVec = net.minecraft.world.phys.Vec3.atCenterOf(supportPos);
+                    net.minecraft.world.phys.BlockHitResult hit = new net.minecraft.world.phys.BlockHitResult(hitVec, face, supportPos, false);
+                    client.gameMode.useItemOn(client.player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+                    client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+                }
                 req.writer.println("placed block");
                 req.writer.flush();
             }
@@ -356,6 +392,17 @@ public final class SawbyteBridge implements ClientModInitializer {
                 int x = Integer.parseInt(parts[1]);
                 int y = Integer.parseInt(parts[2]);
                 int z = Integer.parseInt(parts[3]);
+                if (client.player != null && client.gameMode != null) {
+                    BlockPos bp = new BlockPos(x, y, z);
+                    net.minecraft.world.phys.BlockHitResult hit = new net.minecraft.world.phys.BlockHitResult(
+                        net.minecraft.world.phys.Vec3.atCenterOf(bp),
+                        net.minecraft.core.Direction.UP,
+                        bp,
+                        false
+                    );
+                    client.gameMode.useItemOn(client.player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+                    client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+                }
                 req.writer.println("used block at (" + x + ", " + y + ", " + z + ")");
                 req.writer.flush();
             }
@@ -389,10 +436,36 @@ public final class SawbyteBridge implements ClientModInitializer {
                 req.writer.flush();
             }
             case "gui.inspect" -> {
-                req.writer.println("{\"slots\": [{\"slot\": 0, \"display_name\": \"Sawbyte Key Blade\", \"lore\": [\"A legendary weapon\"]}, {\"slot\": 1, \"id\": \"minecraft:oak_planks\", \"count\": 16}, {\"slot\": 53, \"id\": \"minecraft:iron_ingot\", \"count\": 8}]}");
+                if (client.player != null && client.player.containerMenu != null) {
+                    var menu = client.player.containerMenu;
+                    var slotsList = new ArrayList<String>();
+                    for (int i = 0; i < menu.slots.size(); i++) {
+                        var slot = menu.slots.get(i);
+                        var item = slot.getItem();
+                        if (!item.isEmpty()) {
+                            String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item.getItem()).toString();
+                            int count = item.getCount();
+                            String name = item.getHoverName().getString();
+                            slotsList.add(String.format("{\"slot\": %d, \"id\": \"%s\", \"count\": %d, \"display_name\": \"%s\"}", i, id, count, name.replace("\"", "\\\"")));
+                        }
+                    }
+                    req.writer.println("{\"slots\": [" + String.join(", ", slotsList) + "]}");
+                } else {
+                    req.writer.println("{\"slots\": []}");
+                }
                 req.writer.flush();
             }
             case "gui.click_slot" -> {
+                if (client.player != null && client.gameMode != null && client.player.containerMenu != null) {
+                    int slotId = Integer.parseInt(parts[1]);
+                    boolean quick = parts.length > 2 && parts[2].equalsIgnoreCase("quick");
+                    net.minecraft.world.inventory.ContainerInput mode = quick ? net.minecraft.world.inventory.ContainerInput.QUICK_MOVE : net.minecraft.world.inventory.ContainerInput.PICKUP;
+                    int button = 0;
+                    if (!quick && parts.length > 2) {
+                        try { button = Integer.parseInt(parts[2]); } catch (NumberFormatException ignored) {}
+                    }
+                    client.gameMode.handleContainerInput(client.player.containerMenu.containerId, slotId, button, mode, client.player);
+                }
                 req.writer.println("clicked slot");
                 req.writer.flush();
             }
