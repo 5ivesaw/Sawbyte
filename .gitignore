@@ -17,3 +17,4 @@
 *.csv
 __pycache__/
 *.py[cod]
+block-profile.json
