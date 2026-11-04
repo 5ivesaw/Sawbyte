@@ -40,7 +40,9 @@ def _start_mock_live_server():
                             "solid_voxels": 49,
                         })
                     elif cmd.startswith("gym.step"):
-                        reply = "gym.step scheduled"
+                        reply = json.dumps({"tick": 13, "pos": [1.5, -60.0, 1.5], "health": 20})
+                    elif cmd == "inspect.events":
+                        reply = json.dumps({"events": ["first\nsecond"]})
                     else:
                         reply = f"live_executed:{cmd}"
                     conn.sendall((reply + "\n").encode("utf-8"))
@@ -52,6 +54,28 @@ def _start_mock_live_server():
 
 
 class TestSawbytePythonSdk(unittest.TestCase):
+    def test_training_step_rejects_queued_response(self):
+        class QueuedOnlyClient:
+            def send_command(self, _command):
+                return "gym.step scheduled"
+
+        env = SawbyteEnv()
+        env.client = QueuedOnlyClient()
+        with self.assertRaisesRegex(RuntimeError, "did not return an observation"):
+            env.step({})
+        self.assertEqual(env.step_count, 0)
+
+    def test_live_helpers_send_commands(self):
+        endpoint, srv = _start_mock_live_server()
+        try:
+            with SawbyteLiveTcpClient(endpoint) as client:
+                self.assertEqual(client.wait_ticks(3), "live_executed:wait.ticks 3")
+                self.assertEqual(client.gui_click_slot(2), "live_executed:gui.click_slot 2 pickup")
+                self.assertEqual(client.gui_close(), "live_executed:gui.close")
+                self.assertEqual(json.loads(client.send_command("inspect.events"))["events"], ["first\nsecond"])
+        finally:
+            srv.close()
+
     def test_live_tcp_client_and_gym_environment(self):
         endpoint, srv = _start_mock_live_server()
         try:

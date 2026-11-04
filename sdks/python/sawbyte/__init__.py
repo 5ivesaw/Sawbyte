@@ -139,24 +139,26 @@ class SawbyteLiveTcpClient:
         reply = self._reader.readline()
         if not reply:
             raise RuntimeError("sawbyte-play live TCP socket closed")
-        text = reply.rstrip("\r\n").replace("\\n", "\n")
+        text = reply.rstrip("\r\n")
+        if not text.lstrip().startswith(("{", "[")):
+            text = text.replace("\\n", "\n")
         if text.startswith("error: "):
             raise RuntimeError(text)
         return text
 
     def wait_ticks(self, ticks: int) -> str:
-        return self.eval(f"wait.ticks {ticks}")
+        return self.send_command(f"wait.ticks {ticks}")
 
     def wait_until(self, condition: str, timeout_ticks: int = 100, filter_arg: Optional[str] = None) -> str:
         if filter_arg:
-            return self.eval(f"wait.until {condition} {timeout_ticks} \"{filter_arg}\"")
-        return self.eval(f"wait.until {condition} {timeout_ticks}")
+            return self.send_command(f"wait.until {condition} {timeout_ticks} \"{filter_arg}\"")
+        return self.send_command(f"wait.until {condition} {timeout_ticks}")
 
     def gui_click_slot(self, slot: int, mode: str = "pickup") -> str:
-        return self.eval(f"gui.click_slot {slot} {mode}")
+        return self.send_command(f"gui.click_slot {slot} {mode}")
 
     def gui_close(self) -> str:
-        return self.eval("gui.close")
+        return self.send_command("gui.close")
 
 
 class SawbyteMcpClient:
@@ -267,7 +269,6 @@ class SawbyteEnv:
         return json.loads(raw)
 
     def step(self, action: Dict[str, Any]) -> Tuple[Dict[str, Any], float, bool, bool, Dict[str, Any]]:
-        self.step_count += 1
         b = lambda k: 1 if action.get(k, False) else 0
         yaw_d = float(action.get("yaw_delta", 0.0))
         pitch_d = float(action.get("pitch_delta", 0.0))
@@ -278,10 +279,11 @@ class SawbyteEnv:
         resp = self.client.send_command(cmd)
         try:
             obs = json.loads(resp)
-            if not isinstance(obs, dict) or "pos" not in obs:
-                obs = self.observe()
-        except Exception:
-            obs = self.observe()
+        except json.JSONDecodeError as error:
+            raise RuntimeError("training step did not return an observation") from error
+        if not isinstance(obs, dict) or "pos" not in obs:
+            raise RuntimeError("training step returned an invalid observation")
+        self.step_count += 1
         pos = obs.get("pos", [0.0, 0.0, 0.0])
         dist = math.sqrt(sum(( float(a) - float(g) ) ** 2 for a, g in zip(pos, self.goal_pos)))
         dead = float(obs.get("health", 20.0)) <= 0.0

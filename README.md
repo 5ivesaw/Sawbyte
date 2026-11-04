@@ -17,30 +17,15 @@
 
 ---
 
-## Core Capabilities
+## Current capabilities and limits
 
-- **Zero-Graphics Native Client (`sawbyte-play`)**: Connects directly to vanilla Minecraft Java servers over raw TCP with full protocol 777 support (Minecraft 26.3). Features AES-CFB8 stream cipher encryption, zlib compression framing, chunk section palette unpacking, dynamic block updates, entity motion tracking, and authoritative container state machines.
-- **Bit-Exact 20 TPS Physics Simulation**: Replicates client-side movement and collision resolution with zero drift (`0.0` coordinate divergence against the reference vanilla client). Implements single-precision (`f32`) trigonometric yaw lookup tables, sequential `[Y, X, Z]` AABB collision resolution, and complete block bounding boxes (stairs, slabs, fences, walls, climbables, and fluids).
-- **Deterministic Tick-Synchronized Control**: Exposes composable control primitives that wait for real server ticks and event outcomes rather than guessing with sleeps or arbitrary delays. Movement submissions cleanly preempt prior trajectories, preventing queue desynchronization.
-- **Raycast & Interaction Verification**: Verifies line of sight and reach distances for block mining, block placement, and entity attacks. Block mining respects true hardness values and tool speeds across discrete ticks, while combat checks for blocking voxel geometry.
-- **Reinforcement Learning & MCP Interface**: Native Gymnasium stepping (`gym.step`, `gym.observe`) returning un-truncated mathematical observations (sub-voxel positions, velocity vectors, orientation, voxel collision patches, inventory contents, and tracked entity bounding boxes) alongside a Model Context Protocol (`sawbyte mcp`) tool server.
-- **Embedded Out-of-the-Box Profiles**: Runs immediately without external configuration or profile files via an embedded protocol 777 (Minecraft 26.3) block state table.
+Sawbyte includes a standalone Rust client, command-line session control, an optional reference-client bridge, and early Python, TypeScript and MCP integrations. The release goal is broad player-equivalent automation. Many mechanics, state decoders and launcher features still need implementation or independent validation.
 
----
+A Linux CI fixture compared 160 ticks of walking, turning, jumping and stopping on a flat 26.3 world against the normal client. An earlier saved result reported maximum position error of approximately 0.000000341 blocks and no ground-state mismatches. This is evidence for that fixture only. See [coverage](docs/COVERAGE.md) and the [current handoff](docs/NEXT-AGENT.md) for scope and remaining work.
 
-## Performance & Hard Engine Benchmarks
+## Performance measurements
 
-Sawbyte executes all 3D world voxel geometry, collision resolution, entity tracking, and player kinematics purely in native Rust without a graphical engine. Benchmarked directly via `sawbyte benchmark`:
-
-| Subsystem / Workload | Workload Scale | Throughput | Mean Latency | Real-Time Multiplier |
-| :--- | :--- | :--- | :--- | :--- |
-| **3D Minecraft 26.3 Physics & Collision** | 100,000 continuous ticks | **1,145,916 TPS** | **872.7 ns / tick** | **57,295.8x** |
-| **Sub-Voxel Spatial Raycasting & Occlusion** | 100,000 spherical rays (32m) | **137,318 rays / s** | **7.28 µs / ray** | *Sub-millisecond DDA* |
-| **3D A\* Voxel Navigation & Pathfinding** | 500 heuristic obstacle queries | **168 paths / s** | **5.95 ms / path** | *Budgeted 2,048 nodes* |
-| **Binary SBIF Transport Serialization** | 16,000 input frames (100 batches) | **37,300,000 frames / s** | **26.8 ns / frame** | **22.0x faster than JSON** |
-| **JSON-RPC Transport Framing** | 16,000 input frames (100 batches) | **1,700,000 frames / s** | **589.6 ns / frame** | *Standard text bridge* |
-
-> *Benchmark conducted on x86_64 Linux, release profile with LTO. Run `sawbyte benchmark` to reproduce.*
+The `sawbyte benchmark` command measures isolated in-memory operations. It does not measure full-client performance, network load, heavy real-server gameplay, or multi-client capacity. Earlier short CI fixtures sampled about 5 MiB RSS for one native process, without a representative world or full launcher/controller cost. Reliable end-to-end CPU and memory figures are still pending.
 
 ---
 
@@ -48,45 +33,29 @@ Sawbyte executes all 3D world voxel geometry, collision resolution, entity track
 
 ### 1. Launching the Headless Client
 
-Start an interactive session connected to a Minecraft Java 26.3 server (using the embedded profile out-of-the-box):
+Start an experimental interactive session connected to a Minecraft Java 26.3 server with a separately supplied version profile:
 
 ```bash
-# Direct execution (embedded 26.3 profile out-of-the-box):
-sawbyte-play live 127.0.0.1:25565 --offline BotUser --listen 127.0.0.1:25580
+# The built-in profile is a minimal fixture. Supply a compatible block profile.
+sawbyte-play live 127.0.0.1:25565 --offline BotUser block-profile.json --listen 127.0.0.1:25580
 
 # Or managed via the persistent multi-instance launcher:
 sawbyte launcher create bot-01 sawbyte-26.3 native
-sawbyte launcher launch bot-01 127.0.0.1:25565 BotUser --wait
-```
-
-To run a headless scripted routine or reinforcement learning evaluation:
-
-```bash
-sawbyte-play live 127.0.0.1:25565 --offline BotUser \
-  --script "task.navigate 10 -60 12\nwait.ticks 20\ngym.observe" \
-  --ticks 500 \
-  --trace trace.csv
+sawbyte launcher add-account BotUser 00000000000030008000000000000001
+sawbyte launcher launch bot-01 127.0.0.1:25565 BotUser "$PWD/block-profile.json" --wait
 ```
 
 ### 2. Live Interactive Control
 
-Send commands directly over TCP to the active `sawbyte-play` session:
+Connect to the local control port of a running session. The server address and Sawbyte control address are different endpoints.
 
 ```bash
-# 3D A* navigation across loaded server chunks
-sawbyte eval "task.navigate 10 -60 15"
-
-# Tick-driven block mining with hardness-adjusted duration
-sawbyte eval "interact.mine 10 -60 14"
-
-# Container screen inspection, synchronization, and slot clicks
-sawbyte eval "wait.until screen_open 40 \"Chest\""
-sawbyte eval "gui.click_slot 0 pickup"
-sawbyte eval "gui.close"
-
-# Reinforcement learning step (advances exactly 1 tick and observes post-tick state)
-sawbyte eval "gym.step 1 0 false false false 0 0"
+sawbyte eval "inspect.status" --connect 127.0.0.1:25580
+sawbyte eval "inspect.chat" --connect 127.0.0.1:25580
+sawbyte eval "inspect.events" --connect 127.0.0.1:25580
 ```
+
+Action and training interfaces are experimental. Queued actions and observed state changes require separate verification.
 
 ### 3. Model Context Protocol (MCP)
 
@@ -112,35 +81,13 @@ sawbyte benchmark
 
 ### Python SDK (`sdks/python`)
 
+The Python adapter is experimental. Its training environment does not yet reset the server world, and some convenience methods remain incomplete. A basic status query uses the direct TCP client:
+
 ```python
-from sawbyte import SawbyteEnv, SawbyteLiveClient, WorkflowBuilder
+from sawbyte import SawbyteLiveTcpClient
 
-# Gymnasium Reinforcement Learning Loop
-env = SawbyteEnv(endpoint="127.0.0.1:25580")
-obs, info = env.reset()
-
-for _ in range(100):
-    # Action: [forward, strafe, jump, sneak, sprint, yaw_delta, pitch_delta]
-    action = [1, 0, False, False, False, 0.0, 0.0]
-    obs, reward, terminated, truncated, info = env.step(action)
-    if terminated or truncated:
-        obs, info = env.reset()
-
-env.close()
-
-# Declarative Workflow Builder
-wf = (
-    WorkflowBuilder()
-    .navigate(12, -60, 4)
-    .wait_until("screen_open", 100, "Chest")
-    .gui_click_slot(0, "pickup")
-    .wait_ticks(20)
-    .gui_close()
-)
-
-client = SawbyteLiveClient("127.0.0.1:25580")
-client.eval(wf.compile_script())
-client.close()
+with SawbyteLiveTcpClient("127.0.0.1:25580") as client:
+    print(client.send_command("inspect.status"))
 ```
 
 ### TypeScript SDK (`sdks/typescript`)
