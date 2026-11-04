@@ -48,11 +48,15 @@ impl Palette {
 
     fn get(&self, i: usize) -> Result<u32> {
         if self.bits == 0 {
-            return Ok(self.ids[0]);
+            return Ok(self.ids.first().copied().unwrap_or(0));
         }
         let per = 64 / self.bits;
-        let value =
-            ((self.words[i / per] >> ((i % per) * self.bits)) & ((1u64 << self.bits) - 1)) as usize;
+        let word = self
+            .words
+            .get(i / per)
+            .copied()
+            .ok_or_else(|| bad("palette word index out of range"))?;
+        let value = ((word >> ((i % per) * self.bits)) & ((1u64 << self.bits) - 1)) as usize;
         if self.ids.is_empty() {
             Ok(value as u32)
         } else {

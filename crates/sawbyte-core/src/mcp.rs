@@ -32,7 +32,7 @@ impl TcpLiveSessionTransport {
     pub fn new(endpoint: impl Into<String>) -> Self {
         Self {
             endpoint: endpoint.into(),
-            timeout: Duration::from_secs(5),
+            timeout: Duration::from_secs(30),
         }
     }
 }

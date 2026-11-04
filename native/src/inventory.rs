@@ -392,14 +392,17 @@ fn decode_slot_item(
     if count <= 0 {
         return Ok((None, true));
     }
+    if count > 128 {
+        return Err(crate::wire::bad("item count exceeds protocol limit"));
+    }
     let item_id = r.var()?;
     if item_id < 0 {
         return Err(crate::wire::bad("negative item id in slot"));
     }
     let added_components = r.var()?;
     let removed_components = r.var()?;
-    if added_components < 0 || removed_components < 0 {
-        return Err(crate::wire::bad("negative component patch count"));
+    if added_components < 0 || removed_components < 0 || added_components > 256 || removed_components > 256 {
+        return Err(crate::wire::bad("component patch count out of bounds"));
     }
     let name = packets
         .item_names

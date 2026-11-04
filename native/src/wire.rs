@@ -198,13 +198,13 @@ impl Rx {
         Ok(())
     }
     fn length(&mut self) -> Result<usize> {
-        let mut bytes = Vec::with_capacity(5);
-        for _ in 0..5 {
+        let mut bytes = [0u8; 5];
+        for i in 0..5 {
             let mut byte = [0];
             self.exact(&mut byte)?;
-            bytes.push(byte[0]);
+            bytes[i] = byte[0];
             if byte[0] & 128 == 0 {
-                return Reader(&bytes).count(LIMIT);
+                return Reader(&bytes[..=i]).count(LIMIT);
             }
         }
         Err(bad("overlong packet length"))
@@ -274,7 +274,7 @@ impl Tx {
         } else {
             encoded = body;
         }
-        let mut frame = Vec::new();
+        let mut frame = Vec::with_capacity(encoded.len() + 5);
         var(encoded.len() as i32, &mut frame);
         frame.extend(encoded);
         if let Some(cipher) = &mut self.cipher {
