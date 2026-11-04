@@ -432,8 +432,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 2 | 4 = damage (VarInt)
-            2 | 4 => {
+            // 2 | 3 = damage (VarInt) in 26.3 & legacy
+            2 | 3 => {
                 if let Ok(dmg) = r.var() {
                     let max_d = stack.damage.map_or(0, |(_, m)| m);
                     stack.damage = Some((dmg, max_d));
@@ -442,8 +442,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 3 = unbreakable (boolean)
-            3 => {
+            // 4 = unbreakable (26.3 boolean)
+            4 => {
                 if let Ok(b) = r.byte() {
                     stack.components.push(("unbreakable".into(), (b != 0).to_string()));
                 } else {
@@ -451,8 +451,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 5 = custom_name, 8 = item_name (NBT Component)
-            5 | 8 => {
+            // 5 | 6 = custom_name, 8 | 9 = item_name (NBT Component in 26.3 & legacy)
+            5 | 6 | 8 | 9 => {
                 if let Ok(tag) = r.nbt() {
                     let text = nbt_to_plain_text(&tag);
                     if !text.is_empty() {
@@ -463,8 +463,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 6 = minimum_attack_charge (Float)
-            6 => {
+            // 7 = minimum_attack_charge (26.3 Float)
+            7 => {
                 if let Ok(charge) = r.f32() {
                     stack.components.push(("minimum_attack_charge".into(), charge.to_string()));
                 } else {
@@ -472,17 +472,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 7 = damage_type (VarInt)
-            7 => {
-                if let Ok(dt) = r.var() {
-                    stack.components.push(("damage_type".into(), dt.to_string()));
-                } else {
-                    exact_stream = false;
-                    break;
-                }
-            }
-            // 10 = lore (list of NBT text components)
-            10 => {
+            // 10 | 11 = lore (list of NBT text components in 26.3 & legacy)
+            10 | 11 => {
                 if let Ok(line_count) = r.count(256) {
                     let mut lines = Vec::with_capacity(line_count);
                     for _ in 0..line_count {
@@ -499,17 +490,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 11 = rarity (VarInt)
-            11 => {
-                if let Ok(rar) = r.var() {
-                    stack.components.push(("rarity".into(), rar.to_string()));
-                } else {
-                    exact_stream = false;
-                    break;
-                }
-            }
-            // 12 = enchantments, 44 = stored_enchantments (VarInt count of pairs)
-            12 | 44 => {
+            // 12 | 13 = enchantments, 44 | 45 = stored_enchantments (VarInt count of pairs in 26.3 & legacy)
+            12 | 13 | 44 | 45 => {
                 if let Ok(count) = r.count(256) {
                     for _ in 0..count {
                         if let (Ok(ench_id), Ok(lvl)) = (r.var(), r.var()) {
@@ -524,8 +506,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 16 = custom_model_data (VarInt)
-            16 => {
+            // 16 | 17 = custom_model_data (VarInt in 26.3 & legacy)
+            16 | 17 => {
                 if let Ok(cmd) = r.var() {
                     stack.custom_model_data = Some(cmd);
                 } else {
@@ -533,8 +515,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 17 = tooltip_display (hide_tooltip: bool, hidden_components: list<VarInt>)
-            17 => {
+            // 18 = tooltip_display (hide_tooltip: bool, hidden_components: list<VarInt> in 26.3)
+            18 => {
                 if let Ok(hide_tooltip) = r.byte() {
                     stack.components.push(("hide_tooltip".into(), (hide_tooltip != 0).to_string()));
                     if let Ok(count) = r.count(64) {
@@ -547,8 +529,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 18 = repair_cost (VarInt)
-            18 => {
+            // 19 = repair_cost (VarInt in 26.3)
+            19 => {
                 if let Ok(rc) = r.var() {
                     stack.components.push(("repair_cost".into(), rc.to_string()));
                 } else {
@@ -556,12 +538,12 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 19 = creative_slot_lock (Unit)
-            19 => {
+            // 20 = creative_slot_lock (Unit in 26.3)
+            20 => {
                 stack.components.push(("creative_slot_lock".into(), "true".into()));
             }
-            // 20 = enchantment_glint_override (boolean)
-            20 => {
+            // 21 = enchantment_glint_override (boolean in 26.3)
+            21 => {
                 if let Ok(b) = r.byte() {
                     stack.components.push(("enchantment_glint_override".into(), (b != 0).to_string()));
                 } else {
@@ -569,12 +551,12 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 21 = intangible_projectile (Unit)
-            21 => {
+            // 22 = intangible_projectile (Unit in 26.3)
+            22 => {
                 stack.components.push(("intangible_projectile".into(), "true".into()));
             }
-            // 22 = food (nutrition: VarInt, saturation: f32, can_always_eat: bool)
-            22 => {
+            // 23 = food (nutrition: VarInt, saturation: f32, can_always_eat: bool in 26.3)
+            23 => {
                 if let (Ok(nutrition), Ok(sat), Ok(always_eat)) = (r.var(), r.f32(), r.byte()) {
                     stack.components.push(("food_nutrition".into(), nutrition.to_string()));
                     stack.components.push(("food_saturation".into(), sat.to_string()));
@@ -584,8 +566,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 27 = tool (rules)
-            27 => {
+            // 27 | 28 = tool (rules in 26.3 & legacy)
+            27 | 28 => {
                 if let (Ok(default_speed), Ok(dmg_per_block), Ok(rule_count)) = (r.f32(), r.var(), r.count(64)) {
                     for _ in 0..rule_count {
                         let _ = r.var(); // block_set
@@ -607,8 +589,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 52 = potion_contents
-            52 => {
+            // 52 | 53 = potion_contents in 26.3 & legacy
+            52 | 53 => {
                 if let Ok(has_potion) = r.byte() {
                     if has_potion != 0 {
                         let _ = r.var(); // potion_id
@@ -632,8 +614,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 57 = trim (material: VarInt, pattern: VarInt)
-            57 => {
+            // 57 | 58 = trim (material: VarInt, pattern: VarInt in 26.3 & legacy)
+            57 | 58 => {
                 if let (Ok(mat), Ok(pat)) = (r.var(), r.var()) {
                     stack.components.push(("trim_material".into(), mat.to_string()));
                     stack.components.push(("trim_pattern".into(), pat.to_string()));
