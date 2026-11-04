@@ -461,8 +461,8 @@ public final class SawbyteBridge implements ClientModInitializer {
                             var loreLines = new ArrayList<String>();
                             var loreComp = item.get(net.minecraft.core.component.DataComponents.LORE);
                             if (loreComp != null) {
-                                for (var line : loreComp.lines()) {
-                                    loreLines.add("\"" + line.getString().replace("\"", "\\\"") + "\"");
+                                for (var loreLine : loreComp.lines()) {
+                                    loreLines.add("\"" + loreLine.getString().replace("\"", "\\\"") + "\"");
                                 }
                             }
                             slotsList.add(String.format("{\"slot\": %d, \"id\": \"%s\", \"count\": %d, \"display_name\": \"%s\", \"lore\": [%s]}",
