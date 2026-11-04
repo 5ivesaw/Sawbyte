@@ -432,8 +432,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 2 = damage (VarInt)
-            2 => {
+            // 2 | 4 = damage (VarInt)
+            2 | 4 => {
                 if let Ok(dmg) = r.var() {
                     let max_d = stack.damage.map_or(0, |(_, m)| m);
                     stack.damage = Some((dmg, max_d));
