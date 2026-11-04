@@ -352,7 +352,6 @@ public final class SawbyteBridge implements ClientModInitializer {
                         client.player.setXRot((float) Math.toDegrees(-Math.atan2(dy, hDist)));
 
                         client.gameMode.destroyBlock(pos);
-                        client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
                     }
                     req.writer.println("mine_complete:(" + x + "," + y + "," + z + ")");
                     req.writer.flush();
@@ -383,7 +382,6 @@ public final class SawbyteBridge implements ClientModInitializer {
                     net.minecraft.world.phys.Vec3 hitVec = net.minecraft.world.phys.Vec3.atCenterOf(supportPos);
                     net.minecraft.world.phys.BlockHitResult hit = new net.minecraft.world.phys.BlockHitResult(hitVec, face, supportPos, false);
                     client.gameMode.useItemOn(client.player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
-                    client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
                 }
                 req.writer.println("placed block");
                 req.writer.flush();
@@ -401,7 +399,6 @@ public final class SawbyteBridge implements ClientModInitializer {
                         false
                     );
                     client.gameMode.useItemOn(client.player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
-                    client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
                 }
                 req.writer.println("used block at (" + x + ", " + y + ", " + z + ")");
                 req.writer.flush();
