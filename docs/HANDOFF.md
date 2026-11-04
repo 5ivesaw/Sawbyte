@@ -11,12 +11,14 @@ Updated 2026-11-04. Live monitoring dashboard: `http://127.0.0.1:8765`.
 ## Current reviewed baseline
 - Branch: `main`. Primary product: zero-graphics Rust Minecraft 26.3 client (`native/sawbyte-play`) + automation runtime (`crates/sawbyte-core`).
 - Reference bridge: optional Fabric 26.3 client (`bridge/`).
-- Recent commits: hardened crucible benchmark, dual-interface parity, exact packet table alignment (`sb_swing` -> 46 `minecraft:punch`).
-- Verification: GitHub Actions `Build and verify` passed 100% on Linux, Windows, macOS. Real player milestone comparison passed; Crucible Stage 2 mining parity hardening in progress.
+- Recent commits: hardened crucible benchmark, dual-interface parity, exact packet table alignment (`sb_swing` -> 46 `minecraft:punch`), synchronous navigation contract, and native frames bounds guard.
+- Verification:
+  - GitHub Actions `Build and verify` passed 100% on Linux, Windows, macOS.
+  - GitHub Actions `Real player milestone` passed 100% across all jobs including dual-interface Crucible comparison benchmark.
+  - All 6 Crucible benchmark stages passed on both Native (`sawbyte-play`) and Reference Client (`sawbyte-bridge`) against live vanilla Minecraft 26.3 server with server-side RCON verification.
 - Zero-graphics physics parity: 160-tick flat-world error `3.41e-7` blocks, 0 ground mismatches.
 
 ## Next concrete steps
-1. Deploy and run local status dashboard at `tools/dashboard/server.py` on `127.0.0.1:8765`.
-2. Size check and acquire vanilla 26.3 source locally into gitignored `.cache/vanilla/26.3` (< 500 MB).
-3. Port missing client subsystems from decompiled vanilla source according to `docs/COVERAGE.md`.
-4. Fix Crucible Stage 2 native mining with real tool speed & head look; run dual-backend benchmark in CI.
+1. Tag and publish v0.2.1 release with verified multi-platform binaries.
+2. Execute full codebase analysis run for flaws, bugs, bad logic, optimizations, and stress tests.
+3. Iteratively remediate and evaluate with Nemotron daemon until evaluation score >= 9.0/10.
