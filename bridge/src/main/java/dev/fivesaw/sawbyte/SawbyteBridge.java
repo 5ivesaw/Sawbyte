@@ -383,7 +383,6 @@ public final class SawbyteBridge implements ClientModInitializer {
                         req.writer.println("error: line of sight to entity " + entityId + " is blocked by block");
                     } else {
                         client.gameMode.attack(client.player, ent);
-                        client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
                         req.writer.println("attacked entity: " + entityId);
                     }
                 }
