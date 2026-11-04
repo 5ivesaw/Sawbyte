@@ -233,8 +233,17 @@ public final class SawbyteBridge implements ClientModInitializer {
             if (client.level != null && client.level.getBlockState(activeMinePos).isAir()) {
                 activeMinePos = null;
             } else if (client.gameMode != null && client.player != null) {
-                boolean broken = client.gameMode.continueDestroyBlock(activeMinePos, net.minecraft.core.Direction.UP);
-                if (broken) {
+                // Keep looking at target block while mining
+                double eyeX = client.player.getX(), eyeY = client.player.getEyeY(), eyeZ = client.player.getZ();
+                double dx = (activeMinePos.getX() + 0.5) - eyeX;
+                double dy = (activeMinePos.getY() + 0.5) - eyeY;
+                double dz = (activeMinePos.getZ() + 0.5) - eyeZ;
+                double hDist = Math.sqrt(dx * dx + dz * dz);
+                client.player.setYRot((float) Math.toDegrees(-Math.atan2(dx, dz)));
+                client.player.setXRot((float) Math.toDegrees(-Math.atan2(dy, hDist)));
+
+                client.gameMode.continueDestroyBlock(activeMinePos, net.minecraft.core.Direction.UP);
+                if (client.level != null && client.level.getBlockState(activeMinePos).isAir()) {
                     activeMinePos = null;
                 }
             }
@@ -369,8 +378,8 @@ public final class SawbyteBridge implements ClientModInitializer {
                         client.player.setYRot((float) Math.toDegrees(-Math.atan2(dx, dz)));
                         client.player.setXRot((float) Math.toDegrees(-Math.atan2(dy, hDist)));
 
-                        boolean broken = client.gameMode.startDestroyBlock(pos, net.minecraft.core.Direction.UP);
-                        if (!broken && client.level != null && !client.level.getBlockState(pos).isAir()) {
+                        client.gameMode.startDestroyBlock(pos, net.minecraft.core.Direction.UP);
+                        if (client.level != null && !client.level.getBlockState(pos).isAir()) {
                             activeMinePos = pos;
                         } else {
                             activeMinePos = null;
