@@ -2328,59 +2328,72 @@ impl Session {
                     )) {
                         return Err("a training step is already pending".into());
                     }
-                    self.preempt_movement();
-                    let b_on = |s: &str| s == "1" || s == "true";
+                    let b_on = |s: &str| match s {
+                        "1" | "true" => Ok(true),
+                        "0" | "false" => Ok(false),
+                        _ => Err(format!("invalid button value '{s}'")),
+                    };
+                    let buttons = [b_on(fwd)?, b_on(back)?, b_on(left)?, b_on(right)?, b_on(jump)?, b_on(sneak)?, b_on(sprint)?];
                     let yd: f64 = yaw_d.parse().map_err(|_| "bad yaw_delta")?;
                     let pd: f64 = pitch_d.parse().map_err(|_| "bad pitch_delta")?;
+                    if !yd.is_finite() || !pd.is_finite() {
+                        return Err("camera deltas must be finite".into());
+                    }
+                    let hotbar = match rest {
+                        [] => None,
+                        [slot] => Some(slot.parse::<u8>().ok().filter(|slot| *slot < 9).ok_or("hotbar slot must be in 0..=8")?),
+                        _ => return Err("too many gym.step arguments".into()),
+                    };
+                    self.preempt_movement();
                     self.scheduler
                         .submit(&[
                             (
                                 next_tick,
                                 Action::Button {
                                     button: Button::Forward,
-                                    down: b_on(fwd),
+                                    down: buttons[0],
                                 },
                             ),
                             (
                                 next_tick,
                                 Action::Button {
                                     button: Button::Back,
-                                    down: b_on(back),
+                                    down: buttons[1],
                                 },
                             ),
                             (
                                 next_tick,
                                 Action::Button {
                                     button: Button::Left,
-                                    down: b_on(left),
+                                    down: buttons[2],
                                 },
                             ),
                             (
                                 next_tick,
                                 Action::Button {
                                     button: Button::Right,
-                                    down: b_on(right),
+                                    down: buttons[3],
                                 },
                             ),
                             (
                                 next_tick,
                                 Action::Button {
                                     button: Button::Jump,
-                                    down: b_on(jump),
+                                    down: buttons[4],
                                 },
                             ),
                             (
                                 next_tick,
                                 Action::Button {
                                     button: Button::Sneak,
-                                    down: b_on(sneak),
+                                    down: buttons[5],
                                 },
                             ),
                             (
                                 next_tick,
                                 Action::Button {
                                     button: Button::Sprint,
-                                    down: b_on(sprint),
+                                    down: buttons[6],
                                 },
                             ),
                             (
@@ -2392,8 +2405,11 @@ impl Session {
                             ),
                         ])
                         .map_err(|e| format!("scheduler error: {e}"))?;
-                    if let Some(hb) = rest.first().and_then(|s| s.parse::<u8>().ok()) {
-                        let _ = self.event_queue.submit(&[(next_tick, SubTickEvent::SelectHotbar { slot: hb })]);
+                    if let Some(hb) = hotbar {
+                        if let Err(error) = self.event_queue.submit(&[(next_tick, SubTickEvent::SelectHotbar { slot: hb })]) {
+                            let _ = self.scheduler.cancel();
+                            return Err(format!("hotbar scheduling error: {error}"));
+                        }
                     }
                     outputs.push(format!("gym.step scheduled for tick {next_tick} (current_tick={})", self.live_tick));
                 }
@@ -2579,7 +2595,6 @@ impl Session {
                     .or_else(|| val["params"]["script"].as_str())
                     .or_else(|| val["params"]["command"].as_str())
                     .unwrap_or_default();
-                let tool = val["params"]["name"].as_str().unwrap_or("");
                 let script_tokens = tokenize_command_line(script).unwrap_or_default();
                 let first_word = script_tokens.first().map(|s| s.as_str()).unwrap_or("");
                 if first_word == "gym.step" && script.lines().count() == 1 {
@@ -3517,6 +3532,17 @@ mod tests {
         let frame = session.scheduler.advance(4).unwrap();
         assert_eq!(frame.yaw_delta, 45.0);
         assert_eq!(frame.pitch_delta, 10.0);
+    }
+
+    #[test]
+    fn invalid_training_input_does_not_preempt_existing_movement() {
+        let mut session = test_session();
+        session.execute_live_script("player.input true false false false 0 0 10").unwrap();
+        let pending = session.scheduler.pending();
+        assert!(session.execute_live_script("gym.step invalid 0 0 0 false false false 0 0").is_err());
+        assert_eq!(session.scheduler.pending(), pending);
+        assert!(session.execute_live_script("gym.step 0 0 0 0 false false false NaN 0").is_err());
+        assert_eq!(session.scheduler.pending(), pending);
     }
 
     #[test]
