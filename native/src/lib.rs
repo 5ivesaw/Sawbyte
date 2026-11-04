@@ -1372,7 +1372,7 @@ impl Session {
                         WaitCondition::ScreenOpen { title_contains } => {
                             self.state_table.open_screen.as_ref().is_some_and(|s| {
                                 match title_contains {
-                                    Some(t) => s.title.contains(t),
+                                    Some(t) => s.title.to_lowercase().contains(&t.to_lowercase()),
                                     None => true,
                                 }
                             })
@@ -1951,6 +1951,48 @@ impl Session {
                         "queued crosshair block placement on ({}, {}, {}) face={face:?} resulting at ({}, {}, {}) slot={s}",
                         support_pos[0], support_pos[1], support_pos[2], pos[0], pos[1], pos[2]
                     ));
+                }
+                ["interact.use_block", x, y, z] => {
+                    let pos = [
+                        x.parse::<i32>().map_err(|_| "bad x")?,
+                        y.parse::<i32>().map_err(|_| "bad y")?,
+                        z.parse::<i32>().map_err(|_| "bad z")?,
+                    ];
+                    let eye = self.player.eye_position();
+                    let target_center = [pos[0] as f64 + 0.5, pos[1] as f64 + 0.5, pos[2] as f64 + 0.5];
+                    let dist = ((target_center[0] - eye[0]).powi(2)
+                        + (target_center[1] - eye[1]).powi(2)
+                        + (target_center[2] - eye[2]).powi(2))
+                    .sqrt();
+                    let max_reach = self.player.attributes.block_interaction_range;
+                    if dist > max_reach {
+                        return Err(format!(
+                            "block ({}, {}, {}) out of reach ({dist:.2} > {max_reach:.2})",
+                            pos[0], pos[1], pos[2]
+                        ));
+                    }
+                    let seq = self.state_table.next_sequence();
+                    let events = vec![
+                        (
+                            next_tick,
+                            SubTickEvent::UseItemOn {
+                                hand: Hand::MainHand,
+                                pos,
+                                face: BlockFace::Up,
+                                hit: [0.5, 0.5, 0.5],
+                                inside_block: false,
+                                sequence: seq,
+                            },
+                        ),
+                        (
+                            next_tick,
+                            SubTickEvent::SwipeArm { hand: Hand::MainHand },
+                        ),
+                    ];
+                    self.event_queue
+                        .submit(&events)
+                        .map_err(|e| format!("{e:?}"))?;
+                    outputs.push(format!("used block at ({}, {}, {})", pos[0], pos[1], pos[2]));
                 }
                 ["interact.attack", entity_id] => {
                     let id: i32 = entity_id.parse().map_err(|_| "bad entity_id")?;

@@ -118,10 +118,19 @@ class SawbyteLiveTcpClient:
     def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> None:
         self.close()
 
-    def connect(self) -> None:
-        self._sock = socket.create_connection((self.host, self.port), timeout=self.timeout)
-        self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        self._reader = self._sock.makefile("r", encoding="utf-8")
+    def connect(self, retry_timeout: float = 30.0) -> None:
+        start_t = time.time()
+        last_err = None
+        while time.time() - start_t < retry_timeout:
+            try:
+                self._sock = socket.create_connection((self.host, self.port), timeout=self.timeout)
+                self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                self._reader = self._sock.makefile("r", encoding="utf-8")
+                return
+            except (ConnectionRefusedError, OSError) as e:
+                last_err = e
+                time.sleep(0.5)
+        raise RuntimeError(f"Failed to connect to {self.host}:{self.port} within {retry_timeout}s: {last_err}")
 
     def close(self) -> None:
         if self._reader is not None:

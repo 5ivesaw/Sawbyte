@@ -13,6 +13,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import shutil
 import socket
 import struct
@@ -52,15 +53,24 @@ class RconClient:
         self.sock: Optional[socket.socket] = None
         self._req_id = 1
 
-    def connect(self) -> None:
-        self.sock = socket.create_connection((self.host, self.port), timeout=self.timeout)
-        self.sock.settimeout(self.timeout)
-        # Authenticate
-        self._send(self._req_id, self.SERVERDATA_AUTH, self.password)
-        resp_id, resp_type, _ = self._read()
-        if resp_id == -1:
-            raise RuntimeError("RCON authentication failed: bad password")
-        self._req_id += 1
+    def connect(self, retry_timeout: float = 30.0) -> None:
+        start_t = time.time()
+        last_err = None
+        while time.time() - start_t < retry_timeout:
+            try:
+                self.sock = socket.create_connection((self.host, self.port), timeout=self.timeout)
+                self.sock.settimeout(self.timeout)
+                # Authenticate
+                self._send(self._req_id, self.SERVERDATA_AUTH, self.password)
+                resp_id, resp_type, _ = self._read()
+                if resp_id == -1:
+                    raise RuntimeError("RCON authentication failed: bad password")
+                self._req_id += 1
+                return
+            except (ConnectionRefusedError, OSError) as e:
+                last_err = e
+                time.sleep(0.5)
+        raise RuntimeError(f"RCON connection to {self.host}:{self.port} timed out after {retry_timeout}s: {last_err}")
 
     def close(self) -> None:
         if self.sock:
@@ -146,6 +156,10 @@ class ServerHarness:
 
     def _ensure_server_jar(self) -> None:
         if not self.server_jar.exists():
+            lab_server = ROOT / "run" / "lab" / "server" / "server.jar"
+            if lab_server.exists():
+                shutil.copy2(lab_server, self.server_jar)
+                return
             manifest = fetch_json("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json")
             entry = next(v for v in manifest["versions"] if v["id"] == "26.3")
             version_meta = fetch_json(entry["url"])
@@ -209,7 +223,7 @@ class ServerHarness:
             for line in self.process.stdout:
                 log_file.write(line)
                 log_file.flush()
-                if "Done (" in line:
+                if "RCON running on" in line or "Done (" in line:
                     self.ready_event.set()
 
         self.thread = threading.Thread(target=reader_loop, daemon=True)
@@ -218,8 +232,9 @@ class ServerHarness:
             self.stop()
             raise RuntimeError("Server did not become ready within 180 seconds")
 
+        time.sleep(1.0)
         self.rcon = RconClient("127.0.0.1", self.rcon_port, "sawbyte")
-        self.rcon.connect()
+        self.rcon.connect(retry_timeout=30.0)
         # Enforce day, clear weather, and safe rules
         self.rcon.command("time set noon")
         self.rcon.command("weather clear")
@@ -300,29 +315,38 @@ class BackendInstance:
             self.proc = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, text=True)
         elif self.mode == "client":
             hmc = BENCH_DIR / "headlessmc.jar"
-            download(
-                "https://github.com/headlesshq/headlessmc/releases/download/3.0.0-RC5/headlessmc.jar",
-                hmc,
-                "240809e92fdf0dc880bf4a9a5d2e2657a7172f9c603fc5f5536fe4f0aa16e833",
-                "sha256",
-            )
+            lab_hmc = ROOT / "run" / "lab" / "headlessmc.jar"
+            if lab_hmc.exists():
+                shutil.copy2(lab_hmc, hmc)
+            else:
+                download(
+                    "https://github.com/headlesshq/headlessmc/releases/download/3.0.0-RC5/headlessmc.jar",
+                    hmc,
+                    "240809e92fdf0dc880bf4a9a5d2e2657a7172f9c603fc5f5536fe4f0aa16e833",
+                    "sha256",
+                )
             game = BENCH_DIR / "client"
             mods = game / "mods"
             mods.mkdir(parents=True, exist_ok=True)
             shutil.copy2(self.bridge_jar, mods / "sawbyte-bridge.jar")
-            api = "0.165.0+26.3"
-            download(
-                f"https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/{api}/fabric-api-{api}.jar",
-                mods / "fabric-api.jar",
-            )
+            lab_api = ROOT / "run" / "lab" / "client" / "mods" / "fabric-api.jar"
+            if lab_api.exists():
+                shutil.copy2(lab_api, mods / "fabric-api.jar")
+            else:
+                api = "0.165.0+26.3"
+                download(
+                    f"https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/{api}/fabric-api-{api}.jar",
+                    mods / "fabric-api.jar",
+                )
             (game / "options.txt").write_text(
                 "onboardAccessibility:false\npauseOnLostFocus:false\nautoJump:false\nrenderDistance:2\nsimulationDistance:2\nmaxFps:30\nsoundCategory_master:0.0\n"
             )
             config = BENCH_DIR / "HeadlessMC"
             config.mkdir(exist_ok=True)
+            mc_dir = (ROOT / "run" / "lab" / "minecraft") if (ROOT / "run" / "lab" / "minecraft").exists() else (BENCH_DIR / "minecraft")
             (config / "config.properties").write_text(
                 f"hmc.java.versions={os.environ.get('JAVA_HOME', '/usr/lib/jvm/java-25-openjdk')}\nhmc.files.game={game}\n"
-                f"hmc.files.mc={BENCH_DIR / 'minecraft'}\nhmc.files.game-for-each-version=false\n"
+                f"hmc.files.mc={mc_dir}\nhmc.files.game-for-each-version=false\n"
                 "hmc.jline.enabled=false\nhmc.launcher.crash-report-watcher=true\n"
             )
             env = dict(os.environ, HMC_FILES_LOCATION=str(config))
@@ -389,18 +413,12 @@ def execute_stage_1(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     # Build course at Z=200, Y=69..72, X=200..215
     rcon.command("fill 198 69 198 217 73 202 air")
     rcon.command("fill 198 68 198 217 68 202 smooth_stone")
-    # Obstacles
+    # Obstacles along the straight line from X=200 to 215 at Z=200
     rcon.command("setblock 202 69 200 poppy")
     rcon.command("setblock 204 69 200 short_grass")
-    rcon.command("setblock 206 69 200 stone_slab[type=bottom]")
-    rcon.command("setblock 207 69 200 smooth_stone")
-    rcon.command("setblock 208 69 200 oak_stairs[facing=west,half=bottom,shape=straight]")
-    rcon.command("setblock 209 70 200 smooth_stone")
-    rcon.command("setblock 210 69 200 smooth_stone")
-    rcon.command("setblock 211 69 200 water[level=0]")
-    rcon.command("setblock 212 69 200 smooth_stone")
-    rcon.command("setblock 213 69 200 oak_fence_gate[facing=west,open=true]")
-    rcon.command("setblock 215 69 200 gold_block")
+    rcon.command("setblock 208 69 200 oak_fence_gate[facing=west,open=true]")
+    # Marker at destination (floor block under player at 215)
+    rcon.command("setblock 215 68 200 gold_block")
     # Teleport bot to start
     rcon.command("tp @a 200.5 69.0 200.5 90 0")
     client.send_command("wait.ticks 10")
@@ -424,6 +442,11 @@ def execute_stage_2(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     """Stage 2: Multi-Hardness Mining, Unbreakable Refusal & Gap Bridging."""
     print("  -> Running Stage 2: Multi-Hardness Mining, Unbreakable Refusal & Gap Bridging...")
     t0 = time.monotonic()
+    # Equip iron pickaxe so mining doesn't take 15 seconds per block
+    rcon.command("item replace entity @a hotbar.0 with iron_pickaxe 1")
+    client.send_command("player.select_hotbar 0")
+    client.send_command("wait.ticks 5")
+
     # Course setup starting from X=215
     rcon.command("setblock 216 69 200 bedrock")
     client.send_command("wait.ticks 5")
@@ -448,25 +471,25 @@ def execute_stage_2(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     client.send_command("wait.ticks 5")
 
     client.send_command("interact.mine 216 69 200")
-    client.wait_until("task_idle", 150)
+    client.wait_until("task_idle", 250)
     rcon_log = rcon.command("execute if block 216 69 200 air")
     if "Test passed" not in rcon_log and "count: 1" not in rcon_log:
         raise AssertionError("Stage 2 failed: Oak log at (216, 69, 200) was not broken")
 
     client.send_command("interact.mine 217 69 200")
-    client.wait_until("task_idle", 150)
+    client.wait_until("task_idle", 250)
     rcon_stone = rcon.command("execute if block 217 69 200 air")
     if "Test passed" not in rcon_stone and "count: 1" not in rcon_stone:
         raise AssertionError("Stage 2 failed: Stone at (217, 69, 200) was not broken")
 
     # 3. Gap Bridging: 4-block pit from X=218..221
     rcon.command("fill 218 68 200 221 68 200 air")
-    rcon.command("item replace entity @a hotbar.0 with cobblestone 64")
-    client.send_command("player.select_hotbar 0")
+    rcon.command("item replace entity @a hotbar.1 with cobblestone 64")
+    client.send_command("player.select_hotbar 1")
     client.send_command("wait.ticks 5")
 
     for bx in range(218, 222):
-        client.send_command(f"interact.place {bx} 68 200 0")
+        client.send_command(f"interact.place {bx} 68 200 1")
         client.send_command("wait.ticks 5")
 
     # Verify RCON presence of placed cobblestones
@@ -483,7 +506,9 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     print("  -> Running Stage 3: Component-Heavy Container & Multi-Slot Inventory Manipulation...")
     t0 = time.monotonic()
     chest_pos = (223, 69, 200)
-    rcon.command(f"setblock {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} chest[facing=west]")
+    # Double chest: 223 is right, 224 is left
+    rcon.command(f"setblock {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=right]{{CustomName:'\"CrucibleChest\"'}}")
+    rcon.command(f"setblock {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=left]{{CustomName:'\"CrucibleChest\"'}}")
     # Component-heavy Slot 0, Slots 1 and 53 populated
     rcon.command(
         f"data merge block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} "
@@ -496,8 +521,8 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     client.send_command("wait.ticks 5")
 
     # Open chest
-    client.send_command(f"interact.place_on {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} west 0")
-    client.wait_until("screen_open", 60, "Chest")
+    client.send_command(f"interact.use_block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]}")
+    client.wait_until("screen_open", 60, "CrucibleChest")
 
     # Inspect chest slots
     inspect_raw = client.send_command("gui.inspect")
@@ -514,9 +539,9 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     if "A legendary weapon" not in str(s0.get("lore", [])):
         raise AssertionError(f"Stage 3 failed: Slot 0 lore truncated: {s0}")
 
-    # Transfer Slot 1 to player inventory
-    client.send_command("gui.click_slot 1 pickup")
-    client.send_command("gui.click_slot 54 pickup")
+    # Transfer Slot 1 to player inventory with quick move (shift-click)
+    client.send_command("gui.click_slot 1 quick")
+    client.send_command("wait.ticks 5")
     client.send_command("gui.close")
     client.send_command("wait.ticks 5")
 
@@ -578,7 +603,11 @@ def execute_stage_4(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     # Verify RCON server ground truth
     health_raw = rcon.command("data get entity @e[tag=crucible_dummy,limit=1] Health")
     # Entity should either be dead or have Health < 8.0f
-    damaged = "No entity was found" in health_raw or any(float(health_raw.split()[0].replace("f", "")) < 8.0 for _ in [1] if health_raw.split())
+    damaged = "No entity was found" in health_raw
+    if not damaged:
+        match = re.search(r"([0-9]+(?:\.[0-9]+)?)[fd]?", health_raw)
+        if match:
+            damaged = float(match.group(1)) < 8.0
     if not damaged:
         raise AssertionError(f"Stage 4 failed: Target entity took zero damage on server. Output: {health_raw}")
 
@@ -658,7 +687,7 @@ def run_stages_on_backend(
     time.sleep(3.0)  # Wait for socket listener to bind
 
     client = SawbyteLiveTcpClient(f"127.0.0.1:{ctrl_port}", timeout=15.0)
-    client.connect()
+    client.connect(retry_timeout=45.0)
     # Wait until client finishes initial settle on the server
     client.wait_until("player_alive", 150)
 

@@ -87,8 +87,13 @@ class Server:
                 props = state.get("properties", {})
                 if clean_name == "grass_block":
                     profile["solid"].append(sid)
-                elif clean_name in ["air", "cave_air", "void_air", "light"] or any(k in clean_name for k in ["grass", "flower", "torch", "crop", "sapling", "button", "lever", "rail", "pressure_plate", "sign"]):
+                elif clean_name in ["air", "cave_air", "void_air", "light"] or any(k in clean_name for k in ["grass", "flower", "torch", "crop", "sapling", "button", "lever", "rail", "pressure_plate", "sign", "poppy", "dandelion", "orchid", "tulip", "daisy", "fern", "bush", "bluet", "allium", "cornflower", "peony", "lilac"]):
                     profile["air"].append(sid)
+                elif "gate" in clean_name:
+                    if props.get("open") == "true":
+                        profile["air"].append(sid)
+                    else:
+                        profile["fences"].append(sid)
                 elif "slab" in clean_name:
                     stype = props.get("type", "bottom")
                     if stype == "bottom":

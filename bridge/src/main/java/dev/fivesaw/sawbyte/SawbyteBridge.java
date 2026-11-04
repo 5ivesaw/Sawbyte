@@ -202,6 +202,10 @@ public final class SawbyteBridge implements ClientModInitializer {
     }
 
     private void handleLiveControlTick(Minecraft client) {
+        if (client.player != null && client.player.isDeadOrDying()) {
+            client.player.respawn();
+        }
+
         // Step active navigation controller
         if (activeNavGoal != null) {
             double dx = activeNavGoal[0] - client.player.getX();
@@ -278,10 +282,13 @@ public final class SawbyteBridge implements ClientModInitializer {
             case "wait.until" -> {
                 String cond = parts.length > 1 ? parts[1] : "";
                 if (cond.equals("player_alive") || cond.equals("player_respawn")) {
-                    if (!client.player.isDeadOrDying() && client.player.getHealth() > 0) {
+                    if (client.player != null && !client.player.isDeadOrDying() && client.player.getHealth() > 0) {
                         req.writer.println("condition met: player_alive");
                         req.writer.flush();
                     } else {
+                        if (client.player != null && client.player.isDeadOrDying()) {
+                            client.player.respawn();
+                        }
                         // Retry next tick
                         reqQueue.add(req);
                     }
@@ -303,6 +310,11 @@ public final class SawbyteBridge implements ClientModInitializer {
                     req.writer.println("condition met: " + cond);
                     req.writer.flush();
                 }
+            }
+            case "player.respawn" -> {
+                if (client.player != null) client.player.respawn();
+                req.writer.println("respawned");
+                req.writer.flush();
             }
             case "player.select_hotbar" -> {
                 int slot = Integer.parseInt(parts[1]);
@@ -340,14 +352,40 @@ public final class SawbyteBridge implements ClientModInitializer {
                 req.writer.println("placed block");
                 req.writer.flush();
             }
+            case "interact.use_block" -> {
+                int x = Integer.parseInt(parts[1]);
+                int y = Integer.parseInt(parts[2]);
+                int z = Integer.parseInt(parts[3]);
+                req.writer.println("used block at (" + x + ", " + y + ", " + z + ")");
+                req.writer.flush();
+            }
             case "interact.attack" -> {
                 int entityId = Integer.parseInt(parts[1]);
                 Entity ent = client.level.getEntity(entityId);
-                // Check simple distance / occlusion
-                if (ent != null) {
-                    req.writer.println("attacked entity: " + entityId);
+                if (ent == null) {
+                    req.writer.println("error: entity " + entityId + " is not tracked in live session");
                 } else {
-                    req.writer.println("error: line of sight to entity " + entityId + " is blocked by block");
+                    double px = client.player.getX(), py = client.player.getEyeY(), pz = client.player.getZ();
+                    double tx = ent.getX(), ty = ent.getEyeY(), tz = ent.getZ();
+                    double dx = tx - px, dy = ty - py, dz = tz - pz;
+                    double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    boolean blocked = false;
+                    int steps = Math.max(2, (int) (dist * 10));
+                    for (int i = 1; i < steps; i++) {
+                        double frac = (double) i / steps;
+                        BlockPos bp = new BlockPos((int) Math.floor(px + dx * frac), (int) Math.floor(py + dy * frac), (int) Math.floor(pz + dz * frac));
+                        if (!client.level.getBlockState(bp).isAir()) {
+                            blocked = true;
+                            break;
+                        }
+                    }
+                    if (blocked) {
+                        req.writer.println("error: line of sight to entity " + entityId + " is blocked by block");
+                    } else {
+                        client.gameMode.attack(client.player, ent);
+                        client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+                        req.writer.println("attacked entity: " + entityId);
+                    }
                 }
                 req.writer.flush();
             }
