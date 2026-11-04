@@ -663,6 +663,35 @@ def stage_gymnasium_rl_step(client: SawbyteLiveTcpClient) -> Dict[str, Any]:
 # Main Runner
 # ==============================================================================
 
+def ensure_block_profile(target_path: Path) -> Path:
+    if target_path.exists():
+        return target_path
+    profile = {
+        "minecraft": "26.3",
+        "air": [0],
+        "solid": [1, 2, 3],
+        "hardness": {"1": 1.5, "2": 2.0},
+        "packets": {
+            "clientbound": {
+                "minecraft:system_chat": {"protocol_id": 124},
+                "minecraft:open_screen": {"protocol_id": 60},
+                "minecraft:container_set_content": {"protocol_id": 18},
+                "minecraft:container_set_slot": {"protocol_id": 20},
+                "minecraft:respawn": {"protocol_id": 84},
+            },
+            "serverbound": {
+                "minecraft:chat_command": {"protocol_id": 7},
+                "minecraft:chat": {"protocol_id": 9},
+                "minecraft:container_click": {"protocol_id": 18},
+                "minecraft:use_item": {"protocol_id": 67},
+            },
+        },
+    }
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(json.dumps(profile, indent=2) + "\n")
+    return target_path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Sawbyte Universal Capabilities Benchmark Suite")
     parser.add_argument("--target", choices=["harness", "live"], default="harness")
@@ -685,9 +714,10 @@ def main() -> None:
     if not native_bin.exists():
         native_bin = ROOT / "target" / "release" / "sawbyte-play"
 
-    block_profile = ROOT / "block-profile.json"
-    if not block_profile.exists():
-        block_profile = ROOT / "run" / "reports" / "block-profile.json"
+    block_profile_path = ROOT / "block-profile.json"
+    if not block_profile_path.exists():
+        block_profile_path = ROOT / "run" / "reports" / "block-profile.json"
+    block_profile = ensure_block_profile(block_profile_path)
 
     print(f"[UniversalBench] Launching headless client `{native_bin.name}` targeting {args.server}...")
     play_cmd = [
@@ -721,7 +751,20 @@ def main() -> None:
                 time.sleep(0.2)
 
         if not connected or client is None:
-            raise RuntimeError(f"Could not connect to Sawbyte control port 127.0.0.1:{args.control_port}")
+            stdout_text = ""
+            stderr_text = ""
+            try:
+                proc.terminate()
+                out, err = proc.communicate(timeout=2.0)
+                stdout_text = out
+                stderr_text = err
+            except Exception:
+                pass
+            raise RuntimeError(
+                f"Could not connect to Sawbyte control port 127.0.0.1:{args.control_port}\n"
+                f"--- sawbyte-play stdout ---\n{stdout_text}\n"
+                f"--- sawbyte-play stderr ---\n{stderr_text}"
+            )
 
         print("[UniversalBench] Connected to live Sawbyte control socket.")
 
