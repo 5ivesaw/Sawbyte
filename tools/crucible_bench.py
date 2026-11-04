@@ -475,7 +475,13 @@ def execute_stage_2(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
 
     mine_resp = client.send_command("interact.mine 26 64 10")
     idle_resp = client.wait_until("task_idle", 250)
-    rcon_log = rcon.command("execute if block 26 64 10 air")
+    client.send_command("wait.ticks 5")
+    rcon_log = ""
+    for _ in range(5):
+        rcon_log = rcon.command("execute if block 26 64 10 air")
+        if "Test passed" in rcon_log or "count: 1" in rcon_log:
+            break
+        client.send_command("wait.ticks 2")
     if "Test passed" not in rcon_log and "count: 1" not in rcon_log:
         raise AssertionError(f"Stage 2 failed: Oak log at (26, 64, 10) was not broken (mine={mine_resp}, idle={idle_resp}, rcon={rcon_log})")
 
@@ -484,7 +490,13 @@ def execute_stage_2(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     client.send_command("wait.ticks 5")
     mine_stone = client.send_command("interact.mine 27 64 10")
     idle_stone = client.wait_until("task_idle", 250)
-    rcon_stone = rcon.command("execute if block 27 64 10 air")
+    client.send_command("wait.ticks 5")
+    rcon_stone = ""
+    for _ in range(5):
+        rcon_stone = rcon.command("execute if block 27 64 10 air")
+        if "Test passed" in rcon_stone or "count: 1" in rcon_stone:
+            break
+        client.send_command("wait.ticks 2")
     if "Test passed" not in rcon_stone and "count: 1" not in rcon_stone:
         raise AssertionError(f"Stage 2 failed: Stone at (27, 64, 10) was not broken (mine={mine_stone}, idle={idle_stone}, rcon={rcon_stone})")
 
@@ -502,7 +514,12 @@ def execute_stage_2(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
 
     # Verify RCON presence of placed cobblestones
     for bx in range(28, 32):
-        rcon_b = rcon.command(f"execute if block {bx} 63 10 cobblestone")
+        rcon_b = ""
+        for _ in range(5):
+            rcon_b = rcon.command(f"execute if block {bx} 63 10 cobblestone")
+            if "Test passed" in rcon_b or "count: 1" in rcon_b:
+                break
+            client.send_command("wait.ticks 2")
         if "Test passed" not in rcon_b and "count: 1" not in rcon_b:
             raise AssertionError(f"Stage 2 failed: Bridging block at ({bx}, 63, 10) was not placed in server world")
 
