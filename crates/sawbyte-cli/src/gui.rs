@@ -16,6 +16,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+#[allow(dead_code)]
 struct ActiveProcess {
     instance: String,
     pid: u32,
@@ -269,10 +270,7 @@ fn build_api_status(processes: &ProcessMap) -> String {
     // Prune finished processes
     active.retain(|_, p| {
         if let Some(child) = &mut p.child {
-            match child.try_wait() {
-                Ok(None) => true,
-                _ => false,
-            }
+            matches!(child.try_wait(), Ok(None))
         } else {
             false
         }
@@ -390,9 +388,7 @@ fn handle_rollback_instance(body: &str) -> Result<String, String> {
 fn handle_add_account(body: &str) -> Result<String, String> {
     let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
     let username = json.get("username").and_then(|v| v.as_str()).ok_or("missing 'username'")?;
-    let uuid = json.get("uuid").and_then(|v| v.as_str()).unwrap_or_else(|| {
-        "00000000000030008000000000000001"
-    });
+    let uuid = json.get("uuid").and_then(|v| v.as_str()).unwrap_or("00000000000030008000000000000001");
 
     let mut launcher = PersistentLauncher::load_or_init()?;
     launcher.add_account(username, uuid, None)?;
