@@ -613,6 +613,9 @@ def execute_stage_4(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     """Stage 4: Occluded vs. Line-of-Sight Entity Combat."""
     print("  -> Running Stage 4: Occluded vs. Line-of-Sight Entity Combat...")
     t0 = time.monotonic()
+    # Prepare clean arena for Stage 4
+    rcon.command("fill 18 64 12 25 67 17 air")
+    rcon.command("fill 18 63 12 25 63 17 smooth_stone")
     # Spawn dummy entity behind a stone wall
     rcon.command("kill @e[tag=crucible_dummy]")
     rcon.command("setblock 20 64 15 stone")
