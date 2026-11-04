@@ -205,6 +205,7 @@ public final class SawbyteBridge implements ClientModInitializer {
     private void handleLiveControlTick(Minecraft client) {
         if (client.player != null && client.player.isDeadOrDying()) {
             activeMinePos = null;
+            client.options.keyAttack.setDown(false);
             client.player.respawn();
         }
 
@@ -230,8 +231,10 @@ public final class SawbyteBridge implements ClientModInitializer {
 
         // Step active mining controller
         if (activeMinePos != null) {
+            client.options.keyAttack.setDown(true);
             if (client.level != null && client.level.getBlockState(activeMinePos).isAir()) {
                 activeMinePos = null;
+                client.options.keyAttack.setDown(false);
             } else if (client.gameMode != null && client.player != null) {
                 // Keep looking at target block while mining
                 double eyeX = client.player.getX(), eyeY = client.player.getEyeY(), eyeZ = client.player.getZ();
@@ -245,7 +248,12 @@ public final class SawbyteBridge implements ClientModInitializer {
                 client.gameMode.continueDestroyBlock(activeMinePos, net.minecraft.core.Direction.UP);
                 if (client.level != null && client.level.getBlockState(activeMinePos).isAir()) {
                     activeMinePos = null;
+                    client.options.keyAttack.setDown(false);
                 }
+            }
+        } else {
+            if (client.options.keyAttack.isDown()) {
+                client.options.keyAttack.setDown(false);
             }
         }
 
@@ -361,6 +369,7 @@ public final class SawbyteBridge implements ClientModInitializer {
                     client.gameMode.stopDestroyBlock();
                 }
                 activeMinePos = null;
+                client.options.keyAttack.setDown(false);
                 keys(client, 0);
                 req.writer.println("cancelled active navigation and released all scheduled inputs");
                 req.writer.flush();
@@ -381,11 +390,13 @@ public final class SawbyteBridge implements ClientModInitializer {
                         client.player.setYRot((float) Math.toDegrees(-Math.atan2(dx, dz)));
                         client.player.setXRot((float) Math.toDegrees(-Math.atan2(dy, hDist)));
 
+                        client.options.keyAttack.setDown(true);
                         client.gameMode.startDestroyBlock(pos, net.minecraft.core.Direction.UP);
                         if (client.level != null && !client.level.getBlockState(pos).isAir()) {
                             activeMinePos = pos;
                         } else {
                             activeMinePos = null;
+                            client.options.keyAttack.setDown(false);
                         }
                     }
                     req.writer.println("mine_complete:(" + x + "," + y + "," + z + ")");

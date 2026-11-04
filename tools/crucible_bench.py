@@ -444,8 +444,9 @@ def execute_stage_2(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     """Stage 2: Multi-Hardness Mining, Unbreakable Refusal & Gap Bridging."""
     print("  -> Running Stage 2: Multi-Hardness Mining, Unbreakable Refusal & Gap Bridging...")
     t0 = time.monotonic()
-    # Equip iron pickaxe so mining doesn't take 15 seconds per block
-    rcon.command("item replace entity @a hotbar.0 with iron_pickaxe 1")
+    # Equip iron axe for wood and iron pickaxe for stone so tools match materials
+    rcon.command("item replace entity @a hotbar.0 with iron_axe 1")
+    rcon.command("item replace entity @a hotbar.1 with iron_pickaxe 1")
     client.send_command("player.select_hotbar 0")
     client.send_command("wait.ticks 5")
 
@@ -472,28 +473,31 @@ def execute_stage_2(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     rcon.command("setblock 27 64 10 stone")
     client.send_command("wait.ticks 5")
 
-    client.send_command("interact.mine 26 64 10")
-    client.wait_until("task_idle", 250)
+    mine_resp = client.send_command("interact.mine 26 64 10")
+    idle_resp = client.wait_until("task_idle", 250)
     rcon_log = rcon.command("execute if block 26 64 10 air")
     if "Test passed" not in rcon_log and "count: 1" not in rcon_log:
-        raise AssertionError("Stage 2 failed: Oak log at (26, 64, 10) was not broken")
+        raise AssertionError(f"Stage 2 failed: Oak log at (26, 64, 10) was not broken (mine={mine_resp}, idle={idle_resp}, rcon={rcon_log})")
 
-    client.send_command("interact.mine 27 64 10")
-    client.wait_until("task_idle", 250)
+    # Switch to iron pickaxe for stone
+    client.send_command("player.select_hotbar 1")
+    client.send_command("wait.ticks 5")
+    mine_stone = client.send_command("interact.mine 27 64 10")
+    idle_stone = client.wait_until("task_idle", 250)
     rcon_stone = rcon.command("execute if block 27 64 10 air")
     if "Test passed" not in rcon_stone and "count: 1" not in rcon_stone:
-        raise AssertionError("Stage 2 failed: Stone at (27, 64, 10) was not broken")
+        raise AssertionError(f"Stage 2 failed: Stone at (27, 64, 10) was not broken (mine={mine_stone}, idle={idle_stone}, rcon={rcon_stone})")
 
     # 3. Gap Bridging: 4-block pit from X=28..31
     client.send_command("task.navigate 27 64 10 walk")
     client.wait_until("task_idle", 100)
     rcon.command("fill 28 63 10 31 63 10 air")
-    rcon.command("item replace entity @a hotbar.1 with cobblestone 64")
-    client.send_command("player.select_hotbar 1")
+    rcon.command("item replace entity @a hotbar.2 with cobblestone 64")
+    client.send_command("player.select_hotbar 2")
     client.send_command("wait.ticks 5")
 
     for bx in range(28, 32):
-        client.send_command(f"interact.place {bx} 63 10 1")
+        client.send_command(f"interact.place {bx} 63 10 2")
         client.send_command("wait.ticks 5")
 
     # Verify RCON presence of placed cobblestones
