@@ -762,7 +762,10 @@ impl PlayerStateTable {
         let window_id = r.var()?;
         let state_id = r.var()?;
         let slot = i16::from_be_bytes(r.take(2)?.try_into()?);
-        let (mut item, _) = decode_slot_item(r, packets)?;
+        let (mut item, exact) = decode_slot_item(r, packets)?;
+        if !exact {
+            return Err(crate::wire::bad("unrecognized component in container slot"));
+        }
         if let Some(ref mut it) = item {
             if !r.0.is_empty() && it.components_raw.is_empty() {
                 it.components_raw = r.0.to_vec();
@@ -843,48 +846,23 @@ impl PlayerStateTable {
         let state_id = r.var()?;
         let slot_count = r.count(256)?;
         let mut staged_slots = vec![None; slot_count];
-        let mut stream_intact = true;
-        let mut decoded_count = 0;
         for slot_ref in staged_slots.iter_mut() {
             let (stack, exact) = decode_slot_item(r, packets)?;
-            *slot_ref = stack;
             if !exact {
-                stream_intact = false;
-                break;
+                return Err(crate::wire::bad("unrecognized component in container content"));
             }
-            decoded_count += 1;
-        }
-        if !stream_intact {
-            self.record_decode_error(
-                "container_set_content",
-                &*crate::wire::bad("unrecognized component in slot stream; preserved previously decoded slots"),
-            );
-            // If stream stopped mid-packet due to an unknown component, apply only the slots
-            // that were successfully decoded, preserving existing slots for the remainder!
-            if window_id == 0 {
-                for (idx, item) in staged_slots.iter().take(decoded_count).enumerate() {
-                    if idx < self.inventory_slots.len() {
-                        self.inventory_slots[idx] = item.clone();
-                    }
-                }
-            }
-            if let Some(screen) = &mut self.open_screen {
-                if screen.window_id == window_id {
-                    screen.state_id = state_id;
-                    for (idx, item) in staged_slots.into_iter().take(decoded_count).enumerate() {
-                        if idx < screen.slots.len() {
-                            screen.slots[idx] = item;
-                        }
-                    }
-                }
-            }
-            return Ok(());
+            *slot_ref = stack;
         }
         let cursor_item = if !r.0.is_empty() {
-            decode_slot_item(r, packets).ok().and_then(|(it, _)| it)
+            let (item, exact) = decode_slot_item(r, packets)?;
+            if !exact {
+                return Err(crate::wire::bad("unrecognized component in carried item"));
+            }
+            item
         } else {
             None
         };
+        self.cursor_item = cursor_item.clone();
         if window_id == 0 {
             for (idx, item) in staged_slots.iter().enumerate() {
                 if idx < self.inventory_slots.len() {
@@ -1505,13 +1483,12 @@ mod tests {
         var(999, &mut raw); // unknown component id 999
 
         let mut reader = Reader(&raw);
-        table.apply_container_set_content(&mut reader, &packets).unwrap();
+        assert!(table.apply_container_set_content(&mut reader, &packets).is_err());
 
         let screen = table.open_screen.as_ref().unwrap();
-        assert_eq!(screen.state_id, 10);
+        assert_eq!(screen.state_id, 1);
         // Slot 1 must still be diamond x64, preserved!
         assert_eq!(screen.slots[1].as_ref().unwrap().id, "minecraft:diamond");
         assert_eq!(screen.slots[1].as_ref().unwrap().count, 64);
-        assert!(table.decode_errors > 0);
     }
 }

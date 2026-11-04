@@ -556,6 +556,8 @@ impl Session {
                 {
                     self.state_table
                         .record_decode_error("container_set_slot", e.as_ref());
+                    self.state_table.open_screen = None;
+                    self.state_table.push_event("screen_invalidated:slot_decode_error");
                 }
             }
             id if id == self.packets.cb_container_set_content => {
@@ -565,6 +567,8 @@ impl Session {
                 {
                     self.state_table
                         .record_decode_error("container_set_content", e.as_ref());
+                    self.state_table.open_screen = None;
+                    self.state_table.push_event("screen_invalidated:content_decode_error");
                 }
             }
             id if id == self.packets.cb_set_player_inventory => {
@@ -3864,6 +3868,9 @@ mod tests {
 
         // 4. Test explicit wall placement: put solid wall at (1, -60, 1), place on West face
         session.world.set_block(1, -60, 1, 1).unwrap();
+        let res_wall = session.execute_live_script("interact.place_on 1 -60 1 west 0");
+        assert!(res_wall.unwrap_err().contains("placement is already pending"));
+        session.execute_live_script("task.cancel").unwrap();
         let res_wall = session.execute_live_script("interact.place_on 1 -60 1 west 0");
         assert!(res_wall.is_ok());
         let out_wall = res_wall.unwrap();
