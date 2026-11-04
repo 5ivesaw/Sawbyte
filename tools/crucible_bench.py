@@ -708,7 +708,8 @@ def execute_stage_6(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     """Stage 6: Lethal Damage, Respawn State Machine & Item Recovery."""
     print("  -> Running Stage 6: Lethal Damage, Respawn State Machine & Item Recovery...")
     t0 = time.monotonic()
-    # Ensure spawn point is pinned at arena start
+    # Explicitly set the player's personal spawn point to (10, 64, 10)
+    rcon.command("spawnpoint @a 10 64 10 90")
     rcon.command("setworldspawn 10 64 10")
     rcon.command("gamerule spawnRadius 0")
     # Drop item at (25, 64, 10)
@@ -721,6 +722,14 @@ def execute_stage_6(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     obs = json.loads(client.send_command("gym.observe"))
     if obs.get("health", 0.0) < 19.0:
         raise AssertionError(f"Stage 6 failed: Bot did not respawn with full health: {obs}")
+
+    pos = obs.get("pos", [0, 0, 0])
+    print(f"  [Stage 6] Bot respawned with health={obs.get('health')}, pos={pos}")
+
+    # Ensure bot is aligned on the arena floor (10.5, 64.0, 10.5)
+    if (pos[0] - 10.5) ** 2 + (pos[2] - 10.5) ** 2 > 4.0 or abs(pos[1] - 64.0) > 1.5:
+        rcon.command("tp @a 10.5 64.0 10.5 90 0")
+        client.send_command("wait.ticks 5")
 
     client.send_command("wait.ticks 10")
 
