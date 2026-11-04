@@ -433,7 +433,9 @@ impl PersistentLauncher {
         if let Err(error) = file.write_all(instance_name.as_bytes()) {
             drop(file);
             let _ = fs::remove_file(&lock_file);
-            return Err(format!("cannot write account lock for '{username}': {error}"));
+            return Err(format!(
+                "cannot write account lock for '{username}': {error}"
+            ));
         }
         drop(file);
         acc.locked_by_instance = Some(instance_name.to_owned());

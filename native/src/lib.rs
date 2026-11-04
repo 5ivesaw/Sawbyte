@@ -265,6 +265,28 @@ impl WorkflowHost for Session {
 }
 
 impl Session {
+    fn observe_block_update(&mut self, pos: [i32; 3], state: u32) {
+        if self.active_mine.as_ref().is_some_and(|mine| mine.pos == pos && mine.confirmation_deadline.is_some())
+            && self.world.is_air_state(state)
+        {
+            self.active_mine = None;
+            self.state_table.push_event(format!("mine_complete:({},{},{})", pos[0], pos[1], pos[2]));
+        }
+        let mut completed = Vec::new();
+        self.pending_placements.retain(|placement| {
+            let observed = placement.pos == pos
+                && placement.confirmation_deadline.is_some()
+                && placement.original_state != state;
+            if observed {
+                completed.push(placement.sequence);
+            }
+            !observed
+        });
+        for sequence in completed {
+            self.state_table.push_event(format!("placement_state_changed:{sequence}:({},{},{})={state}", pos[0], pos[1], pos[2]));
+        }
+    }
+
     fn observe_container_revision(&mut self) {
         if let (Some((window, revision, Some(_))), Some(screen)) =
             (self.pending_click, self.state_table.open_screen.as_ref())
@@ -522,28 +544,12 @@ impl Session {
             // Live block updates mutate our loaded chunk section palettes in-place.
             id if id == self.packets.cb_block_update => {
                 let (pos, state) = self.world.apply_block_update_packet(&mut r)?;
-                if self.active_mine.as_ref().is_some_and(|mine| mine.pos == pos && mine.confirmation_deadline.is_some())
-                    && self.world.is_air_state(state)
-                {
-                    self.active_mine = None;
-                    self.state_table.push_event(format!("mine_complete:({},{},{})", pos[0], pos[1], pos[2]));
-                }
-                let mut completed = Vec::new();
-                self.pending_placements.retain(|placement| {
-                    let observed = placement.pos == pos
-                        && placement.confirmation_deadline.is_some()
-                        && placement.original_state != state;
-                    if observed {
-                        completed.push(placement.sequence);
-                    }
-                    !observed
-                });
-                for sequence in completed {
-                    self.state_table.push_event(format!("placement_state_changed:{sequence}:({},{},{})={state}", pos[0], pos[1], pos[2]));
-                }
+                self.observe_block_update(pos, state);
             }
             id if id == self.packets.cb_section_blocks_update => {
-                self.world.apply_section_blocks_update_packet(&mut r)?;
+                for (pos, state) in self.world.apply_section_blocks_update_packet(&mut r)? {
+                    self.observe_block_update(pos, state);
+                }
             }
             // Live container, inventory, entity, vitals, and chat packets
             id if id == self.packets.cb_open_screen => {
@@ -3874,6 +3880,18 @@ mod tests {
         session.packet(&placed, &mut tx).unwrap();
         assert!(session.pending_placements.is_empty());
         assert!(session.state_table.received_events.iter().any(|event| event == "placement_state_changed:10:(2,2,3)=1"));
+        session.pending_placements.push(PendingPlacement {
+            pos: [3, 2, 3], sequence: 11, original_state: 0,
+            confirmation_deadline: Some(40),
+        });
+        let mut section_packet = Vec::new();
+        var(session.packets.cb_section_blocks_update, &mut section_packet);
+        section_packet.extend_from_slice(&0u64.to_be_bytes());
+        var(1, &mut section_packet);
+        var((1 << 12) | (3 << 8) | (3 << 4) | 2, &mut section_packet);
+        session.packet(&section_packet, &mut tx).unwrap();
+        assert!(session.pending_placements.is_empty());
+        assert!(session.state_table.received_events.iter().any(|event| event == "placement_state_changed:11:(3,2,3)=1"));
     }
 
     #[test]

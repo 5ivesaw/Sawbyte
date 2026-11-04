@@ -310,12 +310,13 @@ impl World {
     }
 
     /// Decodes packet 86 (`SectionBlocksUpdate`) and applies all local block state changes.
-    pub fn apply_section_blocks_update_packet(&mut self, r: &mut Reader<'_>) -> Result<()> {
+    pub fn apply_section_blocks_update_packet(&mut self, r: &mut Reader<'_>) -> Result<Vec<([i32; 3], u32)>> {
         let section_pos = r.u64()? as i64;
         let sec_x = (section_pos >> 42) as i32;
         let sec_z = ((section_pos << 22) >> 42) as i32;
         let sec_y = ((section_pos << 44) >> 44) as i32;
         let count = r.count(4096)?;
+        let mut updates = Vec::with_capacity(count);
         for _ in 0..count {
             let mut val = 0u64;
             for shift in 0..10 {
@@ -330,9 +331,11 @@ impl World {
             let lx = (local >> 8) & 15;
             let lz = (local >> 4) & 15;
             let ly = local & 15;
-            self.set_block(sec_x * 16 + lx, sec_y * 16 + ly, sec_z * 16 + lz, state_id)?;
+            let pos = [sec_x * 16 + lx, sec_y * 16 + ly, sec_z * 16 + lz];
+            self.set_block(pos[0], pos[1], pos[2], state_id)?;
+            updates.push((pos, state_id));
         }
-        Ok(())
+        Ok(updates)
     }
 
     pub fn is_known_state(&self, id: u32) -> bool {
