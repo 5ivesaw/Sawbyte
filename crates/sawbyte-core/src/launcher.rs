@@ -416,29 +416,35 @@ impl PersistentLauncher {
     ) -> Result<(), String> {
         Self::validate_username(username)?;
         let lock_file = self.root_dir.join("locks").join(format!("{username}.lock"));
-        if lock_file.exists() {
-            let existing_holder = fs::read_to_string(&lock_file).unwrap_or_default();
-            if !existing_holder.trim().is_empty() && existing_holder.trim() != instance_name {
-                return Err(format!(
-                    "account '{username}' is already locked on disk by instance '{}'",
-                    existing_holder.trim()
-                ));
-            }
-        }
         let acc = self
             .accounts
             .get_mut(username)
             .ok_or_else(|| format!("account '{username}' not found"))?;
         if let Some(holder) = &acc.locked_by_instance {
-            if holder != instance_name {
-                return Err(format!(
-                    "account '{username}' is already locked on disk by instance '{holder}'"
-                ));
-            }
+            return Err(format!(
+                "account '{username}' is already locked by instance '{holder}'"
+            ));
         }
-        fs::write(&lock_file, instance_name.as_bytes()).map_err(|e| e.to_string())?;
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&lock_file)
+            .map_err(|e| format!("cannot acquire account lock for '{username}': {e}"))?;
+        if let Err(error) = file.write_all(instance_name.as_bytes()) {
+            drop(file);
+            let _ = fs::remove_file(&lock_file);
+            return Err(format!("cannot write account lock for '{username}': {error}"));
+        }
+        drop(file);
         acc.locked_by_instance = Some(instance_name.to_owned());
-        self.save()
+        if let Err(error) = self.save() {
+            if let Some(acc) = self.accounts.get_mut(username) {
+                acc.locked_by_instance = None;
+            }
+            let _ = fs::remove_file(&lock_file);
+            return Err(error);
+        }
+        Ok(())
     }
 
     pub fn release_account_lock(&mut self, username: &str) -> Result<(), String> {
@@ -516,11 +522,14 @@ impl PersistentLauncher {
         let rpc_bind = inst.rpc_bind.clone();
 
         let bin = Self::locate_sawbyte_play_binary()?;
-        self.acquire_account_lock(account_name, instance_name)?;
         let dir = self.instance_dir(instance_name);
         fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
         let log_path = dir.join("session.log");
-        let log_file = fs::File::create(&log_path).map_err(|e| e.to_string())?;
+        let log_file = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_path)
+            .map_err(|e| e.to_string())?;
         let err_file = log_file.try_clone().map_err(|e| e.to_string())?;
 
         let acc = self
@@ -542,17 +551,33 @@ impl PersistentLauncher {
         cmd.stdout(Stdio::from(log_file))
             .stderr(Stdio::from(err_file));
 
-        let child = cmd.spawn().map_err(|e| {
+        self.acquire_account_lock(account_name, instance_name)?;
+        let mut child = cmd.spawn().map_err(|e| {
             let _ = self.release_account_lock(account_name);
             format!("failed to spawn {}: {e}", bin.display())
         })?;
         let pid = child.id();
-        let mut pid_file = fs::File::create(dir.join("session.pid")).map_err(|e| e.to_string())?;
-        let _ = writeln!(pid_file, "{pid}");
+        let pid_path = dir.join("session.pid");
+        let persisted = fs::write(&pid_path, format!("{pid}\n"));
+        if let Err(error) = persisted {
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = self.release_account_lock(account_name);
+            return Err(format!("failed to persist session PID: {error}"));
+        }
         if let Some(inst_mut) = self.instances.get_mut(instance_name) {
             inst_mut.last_pid = Some(pid);
         }
-        self.save()?;
+        if let Err(error) = self.save() {
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = fs::remove_file(pid_path);
+            if let Some(inst_mut) = self.instances.get_mut(instance_name) {
+                inst_mut.last_pid = None;
+            }
+            let _ = self.release_account_lock(account_name);
+            return Err(error);
+        }
         Ok((child, log_path))
     }
 }
@@ -601,6 +626,7 @@ mod tests {
 
         {
             let mut l1 = PersistentLauncher::load_from(temp_root.clone()).unwrap();
+            let mut competing = PersistentLauncher::load_from(temp_root.clone()).unwrap();
             l1.create_instance("bot-alpha", "sawbyte-26.3", RuntimeMode::NativeStandalone)
                 .unwrap();
             l1.set_setting("bot-alpha", "fov", "95").unwrap();
@@ -609,6 +635,9 @@ mod tests {
             l1.set_setting("bot-alpha", "fov", "110").unwrap();
             l1.acquire_account_lock("SawbyteNative", "bot-alpha")
                 .unwrap();
+            assert!(competing
+                .acquire_account_lock("SawbyteNative", "bot-alpha")
+                .is_err());
         }
 
         // Reload from disk in a fresh struct instance and verify nothing was lost

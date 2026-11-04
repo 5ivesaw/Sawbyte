@@ -160,7 +160,7 @@ jobs:
   release:
     name: Publish player release assets
     needs: [comparison, bridge, native]
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     permissions:
       contents: write

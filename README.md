@@ -4,6 +4,8 @@
 
 # Sawbyte
 
+> **Development status:** Sawbyte is an experimental client. The built-in block profile currently contains only two block states. Supply a suitable 26.3 profile for live worlds. Gameplay, automation and benchmark coverage remain incomplete.
+
 **Sawbyte** is a zero-graphics native Rust Minecraft client (`sawbyte-play`) and deterministic, tick-synchronized automation and reinforcement learning runtime (`sawbyte`). Designed for high-performance programmatic botting, automated multi-step interaction, and neural network training, it operates directly on raw protocol wire frames and sub-voxel physics simulation without rendering a window.
 
 <p align="center">

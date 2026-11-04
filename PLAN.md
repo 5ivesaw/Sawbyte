@@ -1,6 +1,6 @@
 # Sawbyte — first full release plan
 
-**Status: Fully implemented, verified across Phase 1–4, and production release validated via the 8-round hyper-analysis loop on 2026-11-04.** Reviewed against commit `aa7053bffcd3aad43c16688a492fc65e6d386e60` with verified ground-truth evidence in `docs/REFLEXION.md`.
+**Status: In development.** The release gates below remain open until the current candidate has complete, independent evidence. Earlier completion claims in `docs/REFLEXION.md` are historical and do not establish current release readiness.
 
 This is the canonical engineering plan. It replaces the previous Phase 1–4 blueprint and its completion claims. The previous text is preserved verbatim in [the historical archive](docs/archive/PLAN-before-release-replan-2026-11-03.md); that archive is evidence of an earlier plan, not current instructions. [The new review](docs/REPLAN-REVIEW-2026-11-03.md) explains the findings, and [the baseline inventory](docs/REPLAN-BASELINE-2026-11-03.json) records every reviewed file and its hash. User instructions and [VISION](docs/VISION.md) govern the product goal.
 

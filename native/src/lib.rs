@@ -549,12 +549,22 @@ impl Session {
             id if id == self.packets.cb_open_screen => {
                 if let Err(e) = self.state_table.apply_open_screen(&mut r) {
                     self.state_table.record_decode_error("open_screen", e.as_ref());
+                } else if let Some((window, _, Some(_))) = self.pending_click {
+                    if self.state_table.open_screen.as_ref().is_some_and(|screen| screen.window_id != window) {
+                        self.pending_click = None;
+                        self.state_table.push_event(format!("container_screen_changed:{window}"));
+                    }
                 }
             }
             id if id == self.packets.cb_container_close => {
                 if let Err(e) = self.state_table.apply_container_close(&mut r) {
                     self.state_table
                         .record_decode_error("container_close", e.as_ref());
+                } else if let Some((window, _, Some(_))) = self.pending_click {
+                    if self.state_table.open_screen.as_ref().is_none_or(|screen| screen.window_id != window) {
+                        self.pending_click = None;
+                        self.state_table.push_event(format!("container_screen_closed:{window}"));
+                    }
                 }
             }
             id if id == self.packets.cb_container_set_data => {
@@ -2839,6 +2849,11 @@ fn run_live(args: &[String]) -> Result<()> {
         "--account" => auth::Account::token_file(std::path::Path::new(&args[2]))?,
         _ => return Err(bad("choose --offline or --account")),
     };
+    if args.len() > 3 && !args[3].starts_with("--") && args[3] != "default"
+        && !std::path::Path::new(&args[3]).exists()
+    {
+        return Err(bad(&format!("block profile does not exist: {}", args[3])));
+    }
     let (profile, mut idx) = if args.len() > 3
         && !args[3].starts_with("--")
         && args[3] != "default"
@@ -3767,6 +3782,14 @@ mod tests {
 
         // Movement was NOT cancelled!
         assert!(session.scheduler.pending() >= pending_before);
+    }
+
+    #[test]
+    fn missing_explicit_block_profile_is_not_silently_replaced() {
+        let args = ["127.0.0.1:1", "--offline", "TestPlayer", "missing-profile.json"]
+            .map(str::to_owned);
+        let error = run_live(&args).unwrap_err().to_string();
+        assert!(error.contains("block profile does not exist"));
     }
 
     #[test]

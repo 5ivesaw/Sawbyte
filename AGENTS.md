@@ -1,6 +1,6 @@
 # Sawbyte development instructions
 
-Read [docs/VISION.md](docs/VISION.md) for the user's product requirements, then [docs/HANDOFF.md](docs/HANDOFF.md) for the current engineering state. [docs/COVERAGE.md](docs/COVERAGE.md) records evidence; it does not reduce the intended scope. User instructions take precedence over these files.
+Read [docs/VISION.md](docs/VISION.md) for the user's product requirements, then [docs/HANDOFF.md](docs/HANDOFF.md) for the current engineering state. Read [docs/NEXT-AGENT.md](docs/NEXT-AGENT.md) for the current continuation and available user resources. [docs/COVERAGE.md](docs/COVERAGE.md) records evidence; it does not reduce the intended scope. User instructions take precedence over these files.
 
 ## Governing requirement
 

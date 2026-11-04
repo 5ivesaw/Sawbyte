@@ -161,7 +161,7 @@ pub struct World {
     pub last_unknown_state: Option<(i32, i32, i32, u32)>,
 }
 
-/// Returns a complete, built-in 26.3 (`protocol 777`) default block profile with standard air and solid states.
+/// Minimal fixture profile. Production use requires a complete version-specific profile.
 pub fn default_26_3_profile() -> serde_json::Value {
     serde_json::json!({
         "minecraft": "26.3",

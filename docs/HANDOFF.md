@@ -1,5 +1,7 @@
 # Sawbyte engineering handoff
 
+> The current continuation, resource notes and evidence are in [NEXT-AGENT.md](NEXT-AGENT.md). This older handoff contains historical claims that require revalidation.
+
 Read [AGENTS.md](../AGENTS.md), [the product vision](VISION.md), [the capability ledger](COVERAGE.md), and [the whole-repository audit](AUDIT-2026-11-03.md) before implementation. User examples are illustrations of general programmability; do not turn them into special product features or reduce the intended scope to a short list of current commands.
 
 ## Current reviewed baseline
