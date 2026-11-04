@@ -4,6 +4,8 @@ Updated 2026-11-04. Read [VISION.md](VISION.md), [PLAN.md](../PLAN.md), [AGENTS.
 
 ## Current work and evidence
 
+**Handoff at 10% weekly Codex allowance:** the latest code commit is `855b541`. Its [Build and verify workflow](https://github.com/5ivesaw/Sawbyte/actions/runs/41799744930) and [real-player workflow](https://github.com/5ivesaw/Sawbyte/actions/runs/41799744962) were pending when checked. The following handoff-only commit may cause newer Actions runs to supersede them. Check the newest run for its exact SHA, investigate failures, and do not claim release readiness. The working tree contained only untracked `block-profile.json` and `sawbyte icon.png`; preserve both.
+
 Latest code before the handoff commit is `ea80154`. A follow-up changes the `gym.step` deferred reply to wait until the scheduled input tick has been applied. Verify that change and its tests in the newest Actions runs. The latest available real-player comparison succeeded for `58d01b1`; later runs must be inspected at their own exact commits.
 
 The code baseline immediately before this handoff update is `c0ac4a9`. Its [Build and verify run](https://github.com/5ivesaw/Sawbyte/actions/runs/41799438455) and [real-player run](https://github.com/5ivesaw/Sawbyte/actions/runs/41799438739) are pending as of this update. Previous commit `8269749` failed Linux formatting only; `c0ac4a9` applies the exact CI formatting patch and adds batched block-update tracking. The earlier [cross-platform build](https://github.com/5ivesaw/Sawbyte/actions/runs/41798534414) passed for `58d01b1`. Check all actual results and use current `git status`, commit and workflow runs as authoritative.
