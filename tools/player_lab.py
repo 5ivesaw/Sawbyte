@@ -49,16 +49,16 @@ class Server:
                 "--reports", "--output", "generated"], cwd=self.directory, stdout=log,
                 stderr=subprocess.STDOUT, check=True, timeout=150)
         def lookup_block_hardness(name: str) -> float:
+            if name == "grass_block":
+                return 0.6
             if name in ["bedrock", "barrier", "end_portal_frame", "command_block", "structure_block", "jigsaw", "reinforced_deepslate"]:
                 return -1.0
-            if any(k in name for k in ["air", "water", "lava", "grass", "flower", "torch", "crop", "sapling", "wheat", "carpet"]):
+            if any(k in name for k in ["air", "water", "lava", "flower", "torch", "crop", "sapling", "wheat", "carpet"]) or "grass" in name:
                 return 0.0
             if "leaves" in name:
                 return 0.2
             if any(k in name for k in ["dirt", "sand", "gravel", "snow"]):
                 return 0.5
-            if name == "grass_block":
-                return 0.6
             if any(k in name for k in ["stone", "andesite", "diorite", "granite"]):
                 return 1.5
             if any(k in name for k in ["cobblestone", "planks", "log", "wood", "fence"]):
@@ -85,7 +85,9 @@ class Server:
                 sid = state["id"]
                 profile["hardness"][str(sid)] = lookup_block_hardness(clean_name)
                 props = state.get("properties", {})
-                if clean_name in ["air", "cave_air", "void_air", "light"] or any(k in clean_name for k in ["grass", "flower", "torch", "crop", "sapling", "button", "lever", "rail", "pressure_plate", "sign"]):
+                if clean_name == "grass_block":
+                    profile["solid"].append(sid)
+                elif clean_name in ["air", "cave_air", "void_air", "light"] or any(k in clean_name for k in ["grass", "flower", "torch", "crop", "sapling", "button", "lever", "rail", "pressure_plate", "sign"]):
                     profile["air"].append(sid)
                 elif "slab" in clean_name:
                     stype = props.get("type", "bottom")

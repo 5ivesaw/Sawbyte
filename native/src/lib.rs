@@ -455,9 +455,11 @@ impl Session {
                 // Since 26.3 the acknowledgement includes the accepted position and view.
                 ack.extend(self.position_payload());
                 tx.packet(0, &ack)?;
-                self.positioned = true;
-                if self.index == 0 && self.live_tick == 0 {
-                    self.settle = if self.live_mode { 20 } else { 100 };
+                if !self.positioned {
+                    self.positioned = true;
+                    if self.index == 0 && self.live_tick == 0 {
+                        self.settle = if self.live_mode { 20 } else { 100 };
+                    }
                 }
             }
             82 => {
@@ -3165,7 +3167,7 @@ pub fn run() -> Result<()> {
                 }
                 next += Duration::from_millis(50);
                 if Instant::now().saturating_duration_since(next) > Duration::from_secs(1) {
-                    return Err(bad("tick budget exceeded"));
+                    next = Instant::now();
                 }
             }
         }
