@@ -169,6 +169,14 @@ pub struct ActiveMine {
 }
 
 #[derive(Clone, Debug)]
+pub struct PendingPlacement {
+    pub pos: [i32; 3],
+    pub sequence: i32,
+    pub original_state: u32,
+    pub confirmation_deadline: Option<u64>,
+}
+
+#[derive(Clone, Debug)]
 pub enum PendingReplyKind {
     Tick {
         target_tick: u64,
@@ -196,6 +204,7 @@ pub struct Session {
     pub scheduler: Scheduler<LiveInputBackend, DynamicCameraPolicy>,
     pub event_queue: DiscreteEventQueue,
     pub active_mine: Option<ActiveMine>,
+    pub pending_placements: Vec<PendingPlacement>,
     pub voxel_patch_buf: Vec<u8>,
     pub custom_modules: Vec<Box<dyn LiveModule>>,
     pub active_nav_path: Vec<[i32; 3]>,
@@ -255,6 +264,18 @@ impl WorkflowHost for Session {
 }
 
 impl Session {
+    fn placement_target_is_solid(&self, pos: [i32; 3]) -> std::result::Result<bool, String> {
+        if self.pending_placements.iter().any(|placement| placement.pos == pos) {
+            return Err("placement is already pending at this position".to_owned());
+        }
+        let state = self.world.block_state(pos[0], pos[1], pos[2])
+            .map_err(|error| format!("placement target is not available: {error}"))?;
+        if !self.world.is_known_state(state) {
+            return Err(format!("unknown placement target state {state}"));
+        }
+        self.world.solid(pos[0], pos[1], pos[2]).map_err(|error| error.to_string())
+    }
+
     fn new(profile: &serde_json::Value, live_mode: bool, policy: DynamicCameraPolicy) -> Result<Self> {
         Ok(Self {
             world: world::World::new(profile)?,
@@ -264,6 +285,7 @@ impl Session {
             scheduler: Scheduler::new(LiveInputBackend::default(), policy, 4096),
             event_queue: DiscreteEventQueue::new(4096),
             active_mine: None,
+            pending_placements: Vec::new(),
             voxel_patch_buf: Vec::with_capacity(245),
             custom_modules: Vec::new(),
             active_nav_path: Vec::new(),
@@ -491,6 +513,19 @@ impl Session {
                 {
                     self.active_mine = None;
                     self.state_table.push_event(format!("mine_complete:({},{},{})", pos[0], pos[1], pos[2]));
+                }
+                let mut completed = Vec::new();
+                self.pending_placements.retain(|placement| {
+                    let observed = placement.pos == pos
+                        && placement.confirmation_deadline.is_some()
+                        && placement.original_state != state;
+                    if observed {
+                        completed.push(placement.sequence);
+                    }
+                    !observed
+                });
+                for sequence in completed {
+                    self.state_table.push_event(format!("placement_state_changed:{sequence}:({},{},{})={state}", pos[0], pos[1], pos[2]));
                 }
             }
             id if id == self.packets.cb_section_blocks_update => {
@@ -986,6 +1021,11 @@ impl Session {
             .drain_tick(self.live_tick)
             .map_err(|e| bad(&format!("event queue error: {e}")))?;
         for ev in drained {
+            if let SubTickEvent::UseItemOn { sequence, .. } = &ev {
+                if let Some(placement) = self.pending_placements.iter_mut().find(|placement| placement.sequence == *sequence) {
+                    placement.confirmation_deadline = Some(self.live_tick.saturating_add(40));
+                }
+            }
             if let SubTickEvent::SelectHotbar { slot } = &ev {
                 self.state_table.selected_hotbar = *slot;
             } else if let SubTickEvent::StopDestroyBlock { pos, .. } = &ev {
@@ -1023,6 +1063,18 @@ impl Session {
             if let Some(mine) = self.active_mine.take() {
                 self.state_table.push_event(format!("mine_failed:confirmation_timeout:({},{},{})", mine.pos[0], mine.pos[1], mine.pos[2]));
             }
+        }
+
+        let mut timed_out = Vec::new();
+        self.pending_placements.retain(|placement| {
+            let expired = placement.confirmation_deadline.is_some_and(|deadline| self.live_tick >= deadline);
+            if expired {
+                timed_out.push(placement.sequence);
+            }
+            !expired
+        });
+        for sequence in timed_out {
+            self.state_table.push_event(format!("placement_confirmation_timeout:{sequence}"));
         }
 
         let buttons = frame.buttons.bits();
@@ -1259,6 +1311,7 @@ impl Session {
                                 && self.scheduler.pending() == 0
                                 && self.active_mine.is_none()
                                 && self.event_queue.pending() == 0
+                                && self.pending_placements.is_empty()
                         }
                         WaitCondition::ScreenOpen { title_contains } => {
                             self.state_table.open_screen.as_ref().is_some_and(|s| {
@@ -1410,6 +1463,9 @@ impl Session {
                 ["task.cancel"] => {
                     self.event_queue.clear();
                     self.preempt_movement();
+                    for placement in self.pending_placements.drain(..) {
+                        self.state_table.push_event(format!("placement_observation_cancelled:{}", placement.sequence));
+                    }
                     outputs.push("cancelled active navigation and released all scheduled inputs".into());
                 }
                 ["interact.raycast_block"] => {
@@ -1441,6 +1497,9 @@ impl Session {
                     }
                 }
                 ["interact.mine", x, y, z] => {
+                    if self.active_mine.is_some() {
+                        return Err("a block mining operation is already active".into());
+                    }
                     let pos = [
                         x.parse::<i32>().map_err(|_| "bad x")?,
                         y.parse::<i32>().map_err(|_| "bad y")?,
@@ -1531,6 +1590,9 @@ impl Session {
                     ));
                 }
                 ["interact.mine_look"] => {
+                    if self.active_mine.is_some() {
+                        return Err("a block mining operation is already active".into());
+                    }
                     let hit = raycast::raycast_block(&self.player, &self.world)
                         .ok_or_else(|| "no block in line of sight within reach".to_owned())?;
                     let hardness = self
@@ -1593,7 +1655,7 @@ impl Session {
                     if s >= 9 {
                         return Err("hotbar slot must be in 0..=8".into());
                     }
-                    if self.world.solid(pos[0], pos[1], pos[2]).unwrap_or(false) {
+                    if self.placement_target_is_solid(pos)? {
                         return Err(format!(
                             "cannot place block at ({}, {}, {}): target voxel is already solid",
                             pos[0], pos[1], pos[2]
@@ -1667,6 +1729,11 @@ impl Session {
                     self.event_queue
                         .submit(&events)
                         .map_err(|e| format!("{e:?}"))?;
+                    self.pending_placements.push(PendingPlacement {
+                        pos, sequence: seq,
+                        original_state: self.world.block_state(pos[0], pos[1], pos[2]).map_err(|e| e.to_string())?,
+                        confirmation_deadline: None,
+                    });
                     outputs.push(format!(
                         "queued validated block placement at ({}, {}, {}) on support ({}, {}, {}) face={:?} slot={s}",
                         pos[0], pos[1], pos[2], support_pos[0], support_pos[1], support_pos[2], face
@@ -1699,7 +1766,7 @@ impl Session {
                     }
                     let norm = face.normal();
                     let pos = [support_pos[0] + norm[0], support_pos[1] + norm[1], support_pos[2] + norm[2]];
-                    if self.world.solid(pos[0], pos[1], pos[2]).unwrap_or(false) {
+                    if self.placement_target_is_solid(pos)? {
                         return Err(format!(
                             "cannot place block at ({}, {}, {}): target voxel is already solid",
                             pos[0], pos[1], pos[2]
@@ -1755,6 +1822,11 @@ impl Session {
                     self.event_queue
                         .submit(&events)
                         .map_err(|e| format!("{e:?}"))?;
+                    self.pending_placements.push(PendingPlacement {
+                        pos, sequence: seq,
+                        original_state: self.world.block_state(pos[0], pos[1], pos[2]).map_err(|e| e.to_string())?,
+                        confirmation_deadline: None,
+                    });
                     outputs.push(format!(
                         "queued explicit block placement on ({}, {}, {}) face={face:?} resulting at ({}, {}, {}) slot={s}",
                         support_pos[0], support_pos[1], support_pos[2], pos[0], pos[1], pos[2]
@@ -1771,7 +1843,7 @@ impl Session {
                     let face = hit.face;
                     let norm = face.normal();
                     let pos = [support_pos[0] + norm[0], support_pos[1] + norm[1], support_pos[2] + norm[2]];
-                    if self.world.solid(pos[0], pos[1], pos[2]).unwrap_or(false) {
+                    if self.placement_target_is_solid(pos)? {
                         return Err(format!(
                             "cannot place block at ({}, {}, {}): target voxel is already solid",
                             pos[0], pos[1], pos[2]
@@ -1808,6 +1880,11 @@ impl Session {
                     self.event_queue
                         .submit(&events)
                         .map_err(|e| format!("{e:?}"))?;
+                    self.pending_placements.push(PendingPlacement {
+                        pos, sequence: seq,
+                        original_state: self.world.block_state(pos[0], pos[1], pos[2]).map_err(|e| e.to_string())?,
+                        confirmation_deadline: None,
+                    });
                     outputs.push(format!(
                         "queued crosshair block placement on ({}, {}, {}) face={face:?} resulting at ({}, {}, {}) slot={s}",
                         support_pos[0], support_pos[1], support_pos[2], pos[0], pos[1], pos[2]
@@ -2122,6 +2199,12 @@ impl Session {
                     outputs.push(serde_json::json!({
                         "messages": self.state_table.chat_log,
                         "history_limit": 128,
+                    }).to_string());
+                }
+                ["inspect.events"] => {
+                    outputs.push(serde_json::json!({
+                        "events": self.state_table.received_events,
+                        "history_limit": 256,
                     }).to_string());
                 }
                 ["inspect.map"] | ["inspect.map", _] => {
@@ -2922,6 +3005,7 @@ fn run_live(args: &[String]) -> Result<()> {
                         && state.scheduler.pending() == 0
                         && state.active_mine.is_none()
                         && state.event_queue.pending() == 0
+                        && state.pending_placements.is_empty()
                     {
                         if let Some(script_line) = state.script_queue.pop_front() {
                             state.handle_control_request_with_channel(&script_line, None);
@@ -3632,6 +3716,18 @@ mod tests {
     }
 
     #[test]
+    fn placement_requires_known_loaded_target_state() {
+        let mut session = test_session();
+        session.world.min_y = -64;
+        session.world.height = 16;
+        assert!(session.placement_target_is_solid([0, -60, 0]).is_err());
+        session.world.chunks.insert((0, 0), vec![world::Palette::single(0)]);
+        assert!(!session.placement_target_is_solid([0, -60, 0]).unwrap());
+        session.world.set_block(0, -60, 0, 999).unwrap();
+        assert!(session.placement_target_is_solid([0, -60, 0]).is_err());
+    }
+
+    #[test]
     fn inspect_chat_returns_recorded_messages_as_json() {
         let mut session = test_session();
         session.state_table.chat_log.push("Hello \"player\"".to_owned());
@@ -3639,6 +3735,11 @@ mod tests {
         let value: serde_json::Value = serde_json::from_str(&output[0]).unwrap();
         assert_eq!(value["messages"][0], "Hello \"player\"");
         assert_eq!(value["history_limit"], 128);
+        session.state_table.push_event("mine_complete:(1,2,3)");
+        let output = session.execute_live_script("inspect.events").unwrap();
+        let value: serde_json::Value = serde_json::from_str(&output[0]).unwrap();
+        assert_eq!(value["events"][0], "mine_complete:(1,2,3)");
+        assert_eq!(value["history_limit"], 256);
     }
 
     #[test]
@@ -3656,9 +3757,10 @@ mod tests {
         let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
         let mut tx = wire::Tx::new(client);
 
+        let block_update_id = session.packets.cb_block_update;
         let update = |pos: [u64; 3], state: i32| {
             let mut packet = Vec::new();
-            var(session.packets.cb_block_update, &mut packet);
+            var(block_update_id, &mut packet);
             let packed = (pos[0] << 38) | (pos[2] << 12) | pos[1];
             packet.extend_from_slice(&packed.to_be_bytes());
             var(state, &mut packet);
@@ -3667,12 +3769,21 @@ mod tests {
         let other = update([2, 2, 3], 0);
         let solid = update([1, 2, 3], 1);
         let destroyed = update([1, 2, 3], 0);
+        session.pending_placements.push(PendingPlacement {
+            pos: [2, 2, 3], sequence: 10, original_state: 0,
+            confirmation_deadline: Some(40),
+        });
         session.packet(&other, &mut tx).unwrap();
         session.packet(&solid, &mut tx).unwrap();
         assert!(session.active_mine.is_some());
+        assert_eq!(session.pending_placements.len(), 1);
         session.packet(&destroyed, &mut tx).unwrap();
         assert!(session.active_mine.is_none());
         assert!(session.state_table.received_events.iter().any(|event| event == "mine_complete:(1,2,3)"));
+        let placed = update([2, 2, 3], 1);
+        session.packet(&placed, &mut tx).unwrap();
+        assert!(session.pending_placements.is_empty());
+        assert!(session.state_table.received_events.iter().any(|event| event == "placement_state_changed:10:(2,2,3)=1"));
     }
 
     #[test]
