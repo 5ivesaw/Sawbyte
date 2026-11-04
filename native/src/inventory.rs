@@ -432,8 +432,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 2 | 4 = damage (VarInt)
-            2 | 4 => {
+            // 2 = damage (VarInt)
+            2 => {
                 if let Ok(dmg) = r.var() {
                     let max_d = stack.damage.map_or(0, |(_, m)| m);
                     stack.damage = Some((dmg, max_d));
@@ -451,8 +451,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 5 | 6 | 8 = custom_name / item_name (NBT Component)
-            5 | 6 | 8 => {
+            // 5 = custom_name, 8 = item_name (NBT Component)
+            5 | 8 => {
                 if let Ok(tag) = r.nbt() {
                     let text = nbt_to_plain_text(&tag);
                     if !text.is_empty() {
@@ -463,8 +463,26 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 7 | 10 = lore (list of NBT text components)
-            7 | 10 => {
+            // 6 = minimum_attack_charge (Float)
+            6 => {
+                if let Ok(charge) = r.f32() {
+                    stack.components.push(("minimum_attack_charge".into(), charge.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 7 = damage_type (VarInt)
+            7 => {
+                if let Ok(dt) = r.var() {
+                    stack.components.push(("damage_type".into(), dt.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 10 = lore (list of NBT text components)
+            10 => {
                 if let Ok(line_count) = r.count(256) {
                     let mut lines = Vec::with_capacity(line_count);
                     for _ in 0..line_count {
@@ -481,8 +499,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 8 | 11 = rarity (VarInt)
-            8 | 11 => {
+            // 11 = rarity (VarInt)
+            11 => {
                 if let Ok(rar) = r.var() {
                     stack.components.push(("rarity".into(), rar.to_string()));
                 } else {
@@ -490,8 +508,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 9 | 12 | 44 = enchantments / stored_enchantments (VarInt count of pairs)
-            9 | 12 | 44 => {
+            // 12 = enchantments, 44 = stored_enchantments (VarInt count of pairs)
+            12 | 44 => {
                 if let Ok(count) = r.count(256) {
                     for _ in 0..count {
                         if let (Ok(ench_id), Ok(lvl)) = (r.var(), r.var()) {
@@ -506,8 +524,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 13 | 16 = custom_model_data (VarInt)
-            13 | 16 => {
+            // 16 = custom_model_data (VarInt)
+            16 => {
                 if let Ok(cmd) = r.var() {
                     stack.custom_model_data = Some(cmd);
                 } else {
@@ -515,12 +533,19 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 14 = hide_additional_tooltip, 15 = hide_tooltip (Unit)
-            14 => {
-                stack.components.push(("hide_additional_tooltip".into(), "true".into()));
-            }
-            15 => {
-                stack.components.push(("hide_tooltip".into(), "true".into()));
+            // 17 = tooltip_display (hide_tooltip: bool, hidden_components: list<VarInt>)
+            17 => {
+                if let Ok(hide_tooltip) = r.byte() {
+                    stack.components.push(("hide_tooltip".into(), (hide_tooltip != 0).to_string()));
+                    if let Ok(count) = r.count(64) {
+                        for _ in 0..count {
+                            let _ = r.var();
+                        }
+                    }
+                } else {
+                    exact_stream = false;
+                    break;
+                }
             }
             // 18 = repair_cost (VarInt)
             18 => {
@@ -531,6 +556,10 @@ fn decode_slot_item(
                     break;
                 }
             }
+            // 19 = creative_slot_lock (Unit)
+            19 => {
+                stack.components.push(("creative_slot_lock".into(), "true".into()));
+            }
             // 20 = enchantment_glint_override (boolean)
             20 => {
                 if let Ok(b) = r.byte() {
@@ -540,21 +569,12 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 17 = creative_slot_lock (Unit)
-            17 => {
-                stack.components.push(("creative_slot_lock".into(), "true".into()));
+            // 21 = intangible_projectile (Unit)
+            21 => {
+                stack.components.push(("intangible_projectile".into(), "true".into()));
             }
-            // 18 = glint_override, 27 = enchantment_glint_override (boolean)
-            18 | 27 => {
-                if let Ok(b) = r.take(1) {
-                    stack.components.push(("glint_override".into(), (b[0] != 0).to_string()));
-                } else {
-                    exact_stream = false;
-                    break;
-                }
-            }
-            // 10 = food (nutrition: VarInt, saturation: f32, can_always_eat: bool)
-            10 => {
+            // 22 = food (nutrition: VarInt, saturation: f32, can_always_eat: bool)
+            22 => {
                 if let (Ok(nutrition), Ok(sat), Ok(always_eat)) = (r.var(), r.f32(), r.byte()) {
                     stack.components.push(("food_nutrition".into(), nutrition.to_string()));
                     stack.components.push(("food_saturation".into(), sat.to_string()));
@@ -564,8 +584,31 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 11 = potion_contents
-            11 => {
+            // 27 = tool (rules)
+            27 => {
+                if let (Ok(default_speed), Ok(dmg_per_block), Ok(rule_count)) = (r.f32(), r.var(), r.count(64)) {
+                    for _ in 0..rule_count {
+                        let _ = r.var(); // block_set
+                        if let Ok(has_speed) = r.byte() {
+                            if has_speed != 0 {
+                                let _ = r.f32();
+                            }
+                        }
+                        if let Ok(has_correct) = r.byte() {
+                            if has_correct != 0 {
+                                let _ = r.byte();
+                            }
+                        }
+                    }
+                    stack.components.push(("tool_speed".into(), default_speed.to_string()));
+                    stack.components.push(("tool_damage".into(), dmg_per_block.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 52 = potion_contents
+            52 => {
                 if let Ok(has_potion) = r.byte() {
                     if has_potion != 0 {
                         let _ = r.var(); // potion_id
@@ -589,44 +632,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 19 = intangible_projectile (Unit)
-            19 => {
-                stack.components.push(("intangible_projectile".into(), "true".into()));
-            }
-            // 20 = fire_resistant (Unit)
-            20 => {
-                stack.components.push(("fire_resistant".into(), "true".into()));
-            }
-            // 23 = tool (rules)
-            23 => {
-                if let (Ok(default_speed), Ok(dmg_per_block), Ok(rule_count)) = (r.f32(), r.var(), r.count(64)) {
-                    for _ in 0..rule_count {
-                        let _ = r.var(); // block_set
-                        if let Ok(has_speed) = r.byte() {
-                            if has_speed != 0 {
-                                let _ = r.f32();
-                            }
-                        }
-                        if let Ok(has_correct) = r.byte() {
-                            if has_correct != 0 {
-                                let _ = r.byte();
-                            }
-                        }
-                    }
-                    stack.components.push(("tool_speed".into(), default_speed.to_string()));
-                    stack.components.push(("tool_damage".into(), dmg_per_block.to_string()));
-                } else {
-                    exact_stream = false;
-                    break;
-                }
-            }
-            // 24 | 44 = unbreakable (show_in_tooltip: bool)
-            24 | 44 => {
-                let show = r.byte().unwrap_or(0) != 0;
-                stack.components.push(("unbreakable".into(), show.to_string()));
-            }
-            // 32 = trim (material: VarInt, pattern: VarInt)
-            32 => {
+            // 57 = trim (material: VarInt, pattern: VarInt)
+            57 => {
                 if let (Ok(mat), Ok(pat)) = (r.var(), r.var()) {
                     stack.components.push(("trim_material".into(), mat.to_string()));
                     stack.components.push(("trim_pattern".into(), pat.to_string()));
