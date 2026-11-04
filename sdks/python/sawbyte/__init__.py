@@ -104,7 +104,7 @@ class WorkflowBuilder:
 class SawbyteLiveTcpClient:
     """Direct low-latency TCP client for a running `sawbyte-play live --listen <host:port>` instance."""
 
-    def __init__(self, endpoint: str = "127.0.0.1:25580", timeout: float = 5.0) -> None:
+    def __init__(self, endpoint: str = "127.0.0.1:25580", timeout: float = 30.0) -> None:
         host, port_str = endpoint.rsplit(":", 1)
         self.host = host
         self.port = int(port_str)
@@ -141,28 +141,36 @@ class SawbyteLiveTcpClient:
             self._sock.close()
             self._sock = None
 
-    def send_command(self, line: str) -> str:
+    def send_command(self, line: str, timeout: Optional[float] = None) -> str:
         if self._sock is None or self._reader is None:
             self.connect()
         assert self._sock is not None and self._reader is not None
-        self._sock.sendall((line.strip() + "\n").encode("utf-8"))
-        reply = self._reader.readline()
-        if not reply:
-            raise RuntimeError("sawbyte-play live TCP socket closed")
-        text = reply.rstrip("\r\n")
-        if not text.lstrip().startswith(("{", "[")):
-            text = text.replace("\\n", "\n")
-        if text.startswith("error: "):
-            raise RuntimeError(text)
-        return text
+        old_timeout = self._sock.gettimeout()
+        if timeout is not None:
+            self._sock.settimeout(timeout)
+        try:
+            self._sock.sendall((line.strip() + "\n").encode("utf-8"))
+            reply = self._reader.readline()
+            if not reply:
+                raise RuntimeError("sawbyte-play live TCP socket closed")
+            text = reply.rstrip("\r\n")
+            if not text.lstrip().startswith(("{", "[")):
+                text = text.replace("\\n", "\n")
+            if text.startswith("error: "):
+                raise RuntimeError(text)
+            return text
+        finally:
+            if timeout is not None:
+                self._sock.settimeout(old_timeout)
 
     def wait_ticks(self, ticks: int) -> str:
-        return self.send_command(f"wait.ticks {ticks}")
+        req_timeout = max(self.timeout, (ticks * 0.05) + 10.0)
+        return self.send_command(f"wait.ticks {ticks}", timeout=req_timeout)
 
     def wait_until(self, condition: str, timeout_ticks: int = 100, filter_arg: Optional[str] = None) -> str:
-        if filter_arg:
-            return self.send_command(f"wait.until {condition} {timeout_ticks} \"{filter_arg}\"")
-        return self.send_command(f"wait.until {condition} {timeout_ticks}")
+        req_timeout = max(self.timeout, (timeout_ticks * 0.05) + 10.0)
+        cmd = f"wait.until {condition} {timeout_ticks} \"{filter_arg}\"" if filter_arg else f"wait.until {condition} {timeout_ticks}"
+        return self.send_command(cmd, timeout=req_timeout)
 
     def gui_click_slot(self, slot: int, mode: str = "pickup") -> str:
         return self.send_command(f"gui.click_slot {slot} {mode}")

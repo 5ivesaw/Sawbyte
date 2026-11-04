@@ -259,10 +259,13 @@ public final class SawbyteBridge implements ClientModInitializer {
             }
         }
 
-        // Drain incoming requests
-        ClientReq req;
-        while ((req = reqQueue.poll()) != null) {
-            processCommand(client, req);
+        // Drain incoming requests for this tick only
+        int count = reqQueue.size();
+        for (int i = 0; i < count; i++) {
+            ClientReq req = reqQueue.poll();
+            if (req != null) {
+                processCommand(client, req);
+            }
         }
     }
 
