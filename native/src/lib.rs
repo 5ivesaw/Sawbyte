@@ -2911,7 +2911,7 @@ impl Session {
                                 is_json: true,
                                 json_rpc_id: Some(id),
                                 kind: PendingReplyKind::Tick {
-                                    target_tick: next_tick.saturating_add(1),
+                                    target_tick: next_tick,
                                     command: "gym.step".to_string(),
                                 },
                             });
@@ -3083,7 +3083,7 @@ impl Session {
                                 is_json: false,
                                 json_rpc_id: None,
                                 kind: PendingReplyKind::Tick {
-                                    target_tick: next_tick.saturating_add(1),
+                                    target_tick: next_tick,
                                     command: "gym.step".to_string(),
                                 },
                             });

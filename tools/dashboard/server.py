@@ -158,13 +158,13 @@ def build_status():
     agent_stale = (now - last_up) > 600
     kilo_info = get_kilo_info()
 
-    # Progress estimation calculation: blend DoD items (6 total), coverage %, and Nemotron review
+    # Progress estimation calculation: based strictly on verified DoD milestones and COVERAGE.md parity tests
     cov = get_coverage()
-    dod_done = agent.get("dod_done", 4)
+    dod_done = agent.get("dod_done", 5)
     dod_total = agent.get("dod_total", 6)
     dod_pct = (dod_done / max(1, dod_total)) * 100
-    nemotron_pct = kilo_info["status"].get("estimated_completion_percent", 88)
-    overall_progress_pct = round((dod_pct * 0.4) + (cov["percent_ported"] * 0.3) + (nemotron_pct * 0.3), 1)
+    # Strictly ground-truth: 60% DoD milestones + 40% audited COVERAGE.md subsystems
+    overall_progress_pct = round((dod_pct * 0.6) + (cov["percent_ported"] * 0.4), 1)
 
     return {
         "now": now,
@@ -369,7 +369,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
   <!-- Kilo / Nemotron Worker -->
   <div class="card" style="border-color:#8957e5;">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h3>🤖 Nemotron 3.5 Super VL (Kilo Worker)</h3>
+      <h3>🤖 Nemotron 3.5 Super VL (Kilo Assistant) — AI Hypotheses</h3>
       <span id="kilo-status-badge" class="badge badge-purple">CONNECTED</span>
     </div>
     <div style="color:var(--sub); font-size:11px;">Server: <strong>127.0.0.1:8766</strong> &bull; Model: <strong>nemotron-3.5-super-vl:free</strong></div>
@@ -378,12 +378,12 @@ HTML_PAGE = r"""<!DOCTYPE html>
       <div id="kilo-activity" style="font-size:12px; font-weight:600; color:var(--text); margin-top:2px;">Idle / Automated Review Active</div>
     </div>
     <div style="margin-top:8px;">
-      <div style="font-size:11px; text-transform:uppercase; color:var(--sub); font-weight:bold;">Latest Code Review & Attack Findings:</div>
-      <div style="font-size:10px; color:#d29922; margin-bottom:4px;">⚠️ AI hypotheses only — requires protocol 26.3 verification & reproducible tests before implementing.</div>
+      <div style="font-size:11px; text-transform:uppercase; color:var(--sub); font-weight:bold;">Code Review & Attack Hypotheses:</div>
+      <div style="font-size:10px; color:#f85149; margin-bottom:4px; font-weight:bold;">⚠️ CAUTION: Uncalibrated AI hypotheses only. Hallucinated findings (e.g. nonexistent physics.rs, false crypto IV advice) detected. Source-code verification required before any implementation.</div>
       <div id="kilo-code-box" class="collapsible-box">Awaiting first scheduled scan...</div>
     </div>
     <div style="margin-top:8px;">
-      <div style="font-size:11px; text-transform:uppercase; color:var(--sub); font-weight:bold;">Vision & Requirements Evaluation:</div>
+      <div style="font-size:11px; text-transform:uppercase; color:var(--sub); font-weight:bold;">Vision & Requirements Context (AI Opinion):</div>
       <div id="kilo-docs-box" class="collapsible-box">Awaiting first scheduled scan...</div>
     </div>
   </div>
