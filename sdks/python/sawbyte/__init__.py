@@ -252,14 +252,19 @@ class SawbyteEnv:
         goal_pos: Tuple[float, float, float] = (4.5, -60.0, 4.5),
         max_steps: int = 160,
         reward_fn: Optional[Callable[[Dict[str, Any], bool, float], float]] = None,
+        reset_provider: Optional[Callable[[Optional[int]], None]] = None,
     ) -> None:
         self.client = SawbyteLiveTcpClient(live_endpoint)
         self.goal_pos = goal_pos
         self.max_steps = max_steps
         self.reward_fn = reward_fn
+        self.reset_provider = reset_provider
         self.step_count = 0
 
     def reset(self, seed: Optional[int] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        if self.reset_provider is None:
+            raise RuntimeError("reset requires a controlled-server reset provider")
+        self.reset_provider(seed)
         self.step_count = 0
         obs = self.observe()
         return obs, {"seed": seed}

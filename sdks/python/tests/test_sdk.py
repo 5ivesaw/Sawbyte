@@ -54,6 +54,11 @@ def _start_mock_live_server():
 
 
 class TestSawbytePythonSdk(unittest.TestCase):
+    def test_training_reset_requires_real_provider(self):
+        env = SawbyteEnv()
+        with self.assertRaisesRegex(RuntimeError, "reset provider"):
+            env.reset(seed=42)
+
     def test_training_step_rejects_queued_response(self):
         class QueuedOnlyClient:
             def send_command(self, _command):
@@ -79,8 +84,10 @@ class TestSawbytePythonSdk(unittest.TestCase):
     def test_live_tcp_client_and_gym_environment(self):
         endpoint, srv = _start_mock_live_server()
         try:
-            env = SawbyteEnv(live_endpoint=endpoint, goal_pos=(4.5, -60.0, 4.5))
+            seeds = []
+            env = SawbyteEnv(live_endpoint=endpoint, goal_pos=(4.5, -60.0, 4.5), reset_provider=seeds.append)
             obs, info = env.reset(seed=42)
+            self.assertEqual(seeds, [42])
             self.assertEqual(info["seed"], 42)
             self.assertEqual(obs["voxel_patch_len"], 147)
             obs2, reward, terminated, truncated, step_info = env.step({"forward": True, "sprint": True, "yaw_delta": 5.0})
