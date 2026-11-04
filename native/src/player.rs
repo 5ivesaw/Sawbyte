@@ -96,6 +96,17 @@ impl Player {
         [self.pos[0], self.pos[1] + self.eye_height(), self.pos[2]]
     }
 
+    /// Computes the maximum geometric reach to a block center, allowing for diagonal block extent
+    /// and user-configurable custom interaction range.
+    pub fn max_block_reach(&self) -> f64 {
+        (self.attributes.block_interaction_range + 1.5).max(6.0)
+    }
+
+    /// Computes the maximum geometric reach to an entity bounding box.
+    pub fn max_entity_reach(&self) -> f64 {
+        self.attributes.entity_interaction_range + 0.5
+    }
+
     pub fn compute_break_ticks(
         &self,
         block_hardness: f32,

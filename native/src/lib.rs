@@ -1552,7 +1552,12 @@ impl Session {
             // 2. Built-in modular live session handlers
             let next_tick = self.live_tick.saturating_add(1);
             match parts.as_slice() {
-                ["task.navigate", x, y, z] | ["task.navigate", x, y, z, _] => {
+                ["task.navigate", x, y, z]
+                | ["task.navigate", x, y, z, _]
+                | ["nav.goto", x, y, z]
+                | ["nav.goto", x, y, z, _]
+                | ["nav.to", x, y, z]
+                | ["nav.to", x, y, z, _] => {
                     let goal = [
                         x.parse::<i32>().map_err(|_| "bad x")?,
                         y.parse::<i32>().map_err(|_| "bad y")?,
@@ -1591,6 +1596,31 @@ impl Session {
                         self.state_table.push_event(format!("placement_observation_cancelled:{}", placement.sequence));
                     }
                     outputs.push("cancelled active navigation and released all scheduled inputs".into());
+                }
+                ["interact.raycast"] => {
+                    let b_hit = raycast::raycast_block(&self.player, &self.world);
+                    let candidates: Vec<(i32, [f64; 6])> = self
+                        .state_table
+                        .entities
+                        .values()
+                        .map(|e| (e.entity_id, e.aabb()))
+                        .collect();
+                    let e_hit = raycast::raycast_entity(&self.player, &self.world, &candidates);
+                    match (b_hit, e_hit) {
+                        (Some(b), Some(e)) if e.distance < b.distance => outputs.push(format!(
+                            "raycast_entity id={} dist={:.3}",
+                            e.entity_id, e.distance
+                        )),
+                        (Some(b), _) => outputs.push(format!(
+                            "raycast_block pos=({},{},{}) face={:?} dist={:.3}",
+                            b.block_pos[0], b.block_pos[1], b.block_pos[2], b.face, b.distance
+                        )),
+                        (None, Some(e)) => outputs.push(format!(
+                            "raycast_entity id={} dist={:.3}",
+                            e.entity_id, e.distance
+                        )),
+                        (None, None) => outputs.push("raycast hit=none".into()),
+                    }
                 }
                 ["interact.raycast_block"] => {
                     match raycast::raycast_block(&self.player, &self.world) {
@@ -1634,7 +1664,7 @@ impl Session {
                         + (pos[1] as f64 + 0.5 - eye[1]).powi(2)
                         + (pos[2] as f64 + 0.5 - eye[2]).powi(2))
                     .sqrt();
-                    let max_reach = self.player.attributes.block_interaction_range.max(6.0);
+                    let max_reach = self.player.max_block_reach();
                     if dist > max_reach {
                         return Err(format!(
                             "block ({}, {}, {}) out of player reach ({dist:.2} > {max_reach:.2})",
@@ -1779,13 +1809,17 @@ impl Session {
                         hit.block_pos[0], hit.block_pos[1], hit.block_pos[2], hit.face
                     ));
                 }
-                ["interact.place", x, y, z, slot] => {
+                ["interact.place", x, y, z] | ["interact.place", x, y, z, _] => {
                     let pos = [
                         x.parse::<i32>().map_err(|_| "bad x")?,
                         y.parse::<i32>().map_err(|_| "bad y")?,
                         z.parse::<i32>().map_err(|_| "bad z")?,
                     ];
-                    let s: u8 = slot.parse().map_err(|_| "bad slot")?;
+                    let s: u8 = if parts.len() > 4 {
+                        parts[4].parse().map_err(|_| "bad slot")?
+                    } else {
+                        self.state_table.selected_hotbar
+                    };
                     if s >= 9 {
                         return Err("hotbar slot must be in 0..=8".into());
                     }
@@ -1825,7 +1859,7 @@ impl Session {
                         ([pos[0] + 1, pos[1], pos[2]], BlockFace::West),
                     ];
                     let eye = self.player.eye_position();
-                    let max_reach = self.player.attributes.block_interaction_range.max(6.0);
+                    let max_reach = self.player.max_block_reach();
                     let mut best_support = None;
                     let mut best_dist = f64::MAX;
                     for (sp, face) in candidates {
@@ -1933,7 +1967,7 @@ impl Session {
                         + (sp_center[1] - eye[1]).powi(2)
                         + (sp_center[2] - eye[2]).powi(2))
                     .sqrt();
-                    let max_reach = self.player.attributes.block_interaction_range.max(6.0);
+                    let max_reach = self.player.max_block_reach();
                     if dist > max_reach {
                         return Err(format!(
                             "placement support ({}, {}, {}) out of reach ({dist:.2} > {max_reach:.2})",
@@ -1966,8 +2000,12 @@ impl Session {
                         support_pos[0], support_pos[1], support_pos[2], pos[0], pos[1], pos[2]
                     ));
                 }
-                ["interact.place_look", slot] => {
-                    let s: u8 = slot.parse().map_err(|_| "bad slot")?;
+                ["interact.place"] | ["interact.place_look"] | ["interact.place_look", _] => {
+                    let s: u8 = if parts.len() > 1 && parts[0] == "interact.place_look" {
+                        parts[1].parse().map_err(|_| "bad slot")?
+                    } else {
+                        self.state_table.selected_hotbar
+                    };
                     if s >= 9 {
                         return Err("hotbar slot must be in 0..=8".into());
                     }
@@ -2036,7 +2074,7 @@ impl Session {
                         + (target_center[1] - eye[1]).powi(2)
                         + (target_center[2] - eye[2]).powi(2))
                     .sqrt();
-                    let max_reach = self.player.attributes.block_interaction_range.max(6.0);
+                    let max_reach = self.player.max_block_reach();
                     if dist > max_reach {
                         return Err(format!(
                             "block ({}, {}, {}) out of reach ({dist:.2} > {max_reach:.2})",
@@ -2079,7 +2117,7 @@ impl Session {
                         + (target_point[1] - eye[1]).powi(2)
                         + (target_point[2] - eye[2]).powi(2))
                     .sqrt();
-                    let max_reach = self.player.attributes.entity_interaction_range + 0.5;
+                    let max_reach = self.player.max_entity_reach();
                     if dist > max_reach {
                         return Err(format!(
                             "entity {id} out of attack reach ({dist:.2} > {max_reach:.2})"
@@ -2127,7 +2165,77 @@ impl Session {
                         .map_err(|e| format!("{e:?}"))?;
                     outputs.push("queued live player respawn action".into());
                 }
-                ["player.look", yaw_d, pitch_d] => {
+                ["player.attribute", attr, val] => {
+                    let v: f64 = val.parse().map_err(|_| "bad attribute value")?;
+                    match *attr {
+                        "reach" | "block_reach" | "block_interaction_range" => {
+                            self.player.attributes.block_interaction_range = v;
+                            outputs.push(format!("set block_interaction_range={v:.2}"));
+                        }
+                        "attack_reach" | "entity_reach" | "entity_interaction_range" => {
+                            self.player.attributes.entity_interaction_range = v;
+                            outputs.push(format!("set entity_interaction_range={v:.2}"));
+                        }
+                        "speed" | "movement_speed" => {
+                            self.player.attributes.movement_speed = v as f32;
+                            outputs.push(format!("set movement_speed={v:.3}"));
+                        }
+                        "step_height" => {
+                            self.player.attributes.step_height = v;
+                            outputs.push(format!("set step_height={v:.2}"));
+                        }
+                        "jump_strength" => {
+                            self.player.attributes.jump_strength = v as f32;
+                            outputs.push(format!("set jump_strength={v:.3}"));
+                        }
+                        "break_speed" | "block_break_speed" => {
+                            self.player.attributes.block_break_speed = v as f32;
+                            outputs.push(format!("set block_break_speed={v:.2}"));
+                        }
+                        other => {
+                            return Err(format!("unknown player attribute '{other}', supported: reach, attack_reach, speed, step_height, jump_strength, break_speed"));
+                        }
+                    }
+                }
+                ["player.reach", val] => {
+                    let v: f64 = val.parse().map_err(|_| "bad reach value")?;
+                    self.player.attributes.block_interaction_range = v;
+                    self.player.attributes.entity_interaction_range = v.min(3.0 * (v / 4.5));
+                    outputs.push(format!("set player reach={v:.2}"));
+                }
+                ["walk", ticks] | ["walk", "forward", ticks] => {
+                    let dur: u64 = ticks.parse::<u64>().map_err(|_| "bad ticks")?.clamp(1, 200);
+                    self.preempt_movement();
+                    let mut batch = vec![
+                        (next_tick, Action::Button { button: Button::Forward, down: true }),
+                    ];
+                    for t in 1..dur {
+                        batch.push((next_tick + t, Action::Button { button: Button::Forward, down: true }));
+                    }
+                    batch.push((next_tick + dur, Action::Button { button: Button::Forward, down: false }));
+                    self.scheduler.submit(&batch).map_err(|e| format!("{e:?}"))?;
+                    outputs.push(format!("queued walk forward for {dur} ticks"));
+                }
+                ["jump"] => {
+                    self.scheduler.submit(&[
+                        (next_tick, Action::Button { button: Button::Jump, down: true }),
+                        (next_tick + 2, Action::Button { button: Button::Jump, down: false }),
+                    ]).map_err(|e| format!("{e:?}"))?;
+                    outputs.push("queued jump action".into());
+                }
+                ["sneak"] | ["sneak", "on"] => {
+                    self.scheduler.submit(&[
+                        (next_tick, Action::Button { button: Button::Sneak, down: true }),
+                    ]).map_err(|e| format!("{e:?}"))?;
+                    outputs.push("queued sneak on".into());
+                }
+                ["sneak", "off"] => {
+                    self.scheduler.submit(&[
+                        (next_tick, Action::Button { button: Button::Sneak, down: false }),
+                    ]).map_err(|e| format!("{e:?}"))?;
+                    outputs.push("queued sneak off".into());
+                }
+                ["player.look", yaw_d, pitch_d] | ["interact.look", yaw_d, pitch_d] => {
                     let yd: f64 = yaw_d.parse().map_err(|_| "bad yaw_delta")?;
                     let pd: f64 = pitch_d.parse().map_err(|_| "bad pitch_delta")?;
                     self.scheduler
@@ -2141,15 +2249,23 @@ impl Session {
                         .map_err(|e| format!("{e:?}"))?;
                     outputs.push(format!("queued camera look yaw_delta={yd:.2} pitch_delta={pd:.2}"));
                 }
-                ["player.input", fwd, jump, sneak, sprint, yaw_d, pitch_d, ticks] => {
+                ["player.input", rest @ ..] => {
                     self.preempt_movement();
-                    let f_down = *fwd == "true" || *fwd == "1";
-                    let j_down = *jump == "true" || *jump == "1";
-                    let sn_down = *sneak == "true" || *sneak == "1";
-                    let sp_down = *sprint == "true" || *sprint == "1";
-                    let yd: f64 = yaw_d.parse().map_err(|_| "bad yaw_delta")?;
-                    let pd: f64 = pitch_d.parse().map_err(|_| "bad pitch_delta")?;
-                    let dur: u64 = ticks.parse::<u64>().map_err(|_| "bad ticks")?.clamp(1, 200);
+                    let (f_down, j_down, sn_down, sp_down, yd, pd, dur) = if rest.len() >= 7 {
+                        let f = rest[0] == "true" || rest[0] == "1";
+                        let j = rest[1] == "true" || rest[1] == "1";
+                        let sn = rest[2] == "true" || rest[2] == "1";
+                        let sp = rest[3] == "true" || rest[3] == "1";
+                        let y: f64 = rest[4].parse().map_err(|_| "bad yaw_delta")?;
+                        let p: f64 = rest[5].parse().map_err(|_| "bad pitch_delta")?;
+                        let d: u64 = rest[6].parse::<u64>().map_err(|_| "bad ticks")?.clamp(1, 200);
+                        (f, j, sn, sp, y, p, d)
+                    } else if rest.len() == 1 {
+                        let d: u64 = rest[0].parse::<u64>().unwrap_or(1).clamp(1, 200);
+                        (true, false, false, false, 0.0, 0.0, d)
+                    } else {
+                        (true, false, false, false, 0.0, 0.0, 1)
+                    };
                     let mut batch = vec![
                         (
                             next_tick,
@@ -2271,6 +2387,50 @@ impl Session {
                     } else {
                         outputs.push("open_screen=none".into());
                     }
+                }
+                ["gui.click", target] => {
+                    if self.pending_click.is_some() {
+                        return Err("a container click is already pending".into());
+                    }
+                    let screen = self
+                        .state_table
+                        .open_screen
+                        .as_mut()
+                        .ok_or_else(|| "no open container screen on server".to_owned())?;
+                    let s_idx = if let Ok(s) = target.parse::<i16>() {
+                        s
+                    } else {
+                        let q = target.to_lowercase();
+                        let found = screen.slots.iter().enumerate().find_map(|(idx, opt)| {
+                            let item = opt.as_ref()?;
+                            let id_match = item.id.to_lowercase().contains(&q);
+                            let name_match = item
+                                .display_name
+                                .as_deref()
+                                .map(|n| n.to_lowercase().contains(&q))
+                                .unwrap_or(false);
+                            if id_match || name_match {
+                                Some(idx as i16)
+                            } else {
+                                None
+                            }
+                        });
+                        found.ok_or_else(|| format!("no item matching '{target}' found in open container"))?
+                    };
+                    let window_id = screen.window_id;
+                    let state_id = screen.state_id;
+                    let ev = SubTickEvent::ContainerClick {
+                        window_id,
+                        state_id,
+                        slot: s_idx,
+                        button: 0,
+                        mode: ClickMode::Pickup,
+                    };
+                    self.event_queue
+                        .submit(&[(next_tick, ev)])
+                        .map_err(|e| format!("{e:?}"))?;
+                    self.pending_click = Some((window_id, state_id, None));
+                    outputs.push(format!("queued live container click slot={s_idx}"));
                 }
                 ["gui.click_slot", slot] | ["gui.click_slot", slot, _] => {
                     if self.pending_click.is_some() {
@@ -2457,7 +2617,7 @@ impl Session {
                 ["gym.observe"] => {
                     outputs.push(self.gym_observation_json("gym.observe"));
                 }
-                ["gym.step", fwd, back, left, right, jump, sneak, sprint, yaw_d, pitch_d, rest @ ..] => {
+                ["gym.step", rest @ ..] => {
                     if self.pending_replies.iter().any(|reply| matches!(
                         &reply.kind,
                         PendingReplyKind::Tick { command, .. } if command == "gym.step"
@@ -2469,16 +2629,25 @@ impl Session {
                         "0" | "false" => Ok(false),
                         _ => Err(format!("invalid button value '{s}'")),
                     };
+                    let fwd = rest.first().copied().unwrap_or("0");
+                    let back = rest.get(1).copied().unwrap_or("0");
+                    let left = rest.get(2).copied().unwrap_or("0");
+                    let right = rest.get(3).copied().unwrap_or("0");
+                    let jump = rest.get(4).copied().unwrap_or("0");
+                    let sneak = rest.get(5).copied().unwrap_or("0");
+                    let sprint = rest.get(6).copied().unwrap_or("0");
+                    let yd_str = rest.get(7).copied().unwrap_or("0.0");
+                    let pd_str = rest.get(8).copied().unwrap_or("0.0");
                     let buttons = [b_on(fwd)?, b_on(back)?, b_on(left)?, b_on(right)?, b_on(jump)?, b_on(sneak)?, b_on(sprint)?];
-                    let yd: f64 = yaw_d.parse().map_err(|_| "bad yaw_delta")?;
-                    let pd: f64 = pitch_d.parse().map_err(|_| "bad pitch_delta")?;
+                    let yd: f64 = yd_str.parse().map_err(|_| "bad yaw_delta")?;
+                    let pd: f64 = pd_str.parse().map_err(|_| "bad pitch_delta")?;
                     if !yd.is_finite() || !pd.is_finite() {
                         return Err("camera deltas must be finite".into());
                     }
-                    let hotbar = match rest {
-                        [] => None,
-                        [slot] => Some(slot.parse::<u8>().ok().filter(|slot| *slot < 9).ok_or("hotbar slot must be in 0..=8")?),
-                        _ => return Err("too many gym.step arguments".into()),
+                    let hotbar = if rest.len() > 9 {
+                        Some(rest[9].parse::<u8>().ok().filter(|slot| *slot < 9).ok_or("hotbar slot must be in 0..=8")?)
+                    } else {
+                        None
                     };
                     self.preempt_movement();
                     self.scheduler

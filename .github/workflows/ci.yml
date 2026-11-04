@@ -96,6 +96,11 @@ jobs:
           cp assets/sawbyte.png dist/sawbyte.png
           cp packaging/generated/sawbyte.ico packaging/generated/sawbyte.icns dist/
           if [ "$RUNNER_OS" = "Linux" ]; then cp packaging/sawbyte.desktop dist/; fi
+          if [ -f run/reports/block-profile.json ]; then
+            cp run/reports/block-profile.json dist/
+          elif [ -f block-profile.json ]; then
+            cp block-profile.json dist/
+          fi
           python - <<'PY'
           import hashlib, pathlib
           root = pathlib.Path('dist')

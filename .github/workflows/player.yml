@@ -144,6 +144,11 @@ jobs:
           cp README.md LICENSE docs/COVERAGE.md assets/sawbyte.png run/player/
           cp docs/PLAYER.md run/player/
           cp packaging/generated/sawbyte.ico packaging/generated/sawbyte.icns run/player/
+          if [ -f run/reports/block-profile.json ]; then
+            cp run/reports/block-profile.json run/player/
+          elif [ -f block-profile.json ]; then
+            cp block-profile.json run/player/
+          fi
           python - <<'PY'
           import hashlib, pathlib
           root = pathlib.Path('run/player')

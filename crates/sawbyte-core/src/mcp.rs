@@ -293,6 +293,20 @@ impl SawbyteControlBridge {
                     self.launcher.add_account(username, uuid_hex, None)?;
                     outputs.push(format!("persisted offline account '{username}'"));
                 }
+                ["launcher.list"]
+                | ["launcher.list_instances"]
+                | ["launcher_control", "list"]
+                | ["launcher.instances"]
+                | ["list"] => {
+                    let mut inst_names: Vec<String> = self.launcher.instances.keys().cloned().collect();
+                    inst_names.sort();
+                    outputs.push(format!("instances: {}", inst_names.join(", ")));
+                }
+                ["launcher.accounts"] | ["launcher.list_accounts"] => {
+                    let mut accs: Vec<String> = self.launcher.accounts.keys().cloned().collect();
+                    accs.sort();
+                    outputs.push(format!("accounts: {}", accs.join(", ")));
+                }
                 ["launcher.connect_live", endpoint] => {
                     self.live_endpoint = Some((*endpoint).to_owned());
                     outputs.push(format!(

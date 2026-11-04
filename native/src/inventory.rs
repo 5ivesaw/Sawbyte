@@ -1416,13 +1416,13 @@ mod tests {
         assert_eq!(slot_36.id, "minecraft:stone");
         assert_eq!(slot_36.count, 64);
 
-        // Test SetCursorItem with components (iron_sword x1, damage component 4 with dmg=15)
+        // Test SetCursorItem with components (iron_sword x1, damage component 3 with dmg=15)
         let mut raw_cursor = Vec::new();
         var(1, &mut raw_cursor);   // count 1
         var(250, &mut raw_cursor); // item_id 250 (iron sword)
         var(1, &mut raw_cursor);   // 1 added component
         var(0, &mut raw_cursor);   // 0 removed components
-        var(4, &mut raw_cursor);   // component id 4 = damage
+        var(3, &mut raw_cursor);   // component id 3 = damage in 26.3
         var(15, &mut raw_cursor);  // damage value 15
         let mut r2 = Reader(&raw_cursor);
         table.apply_set_cursor_item(&mut r2, &packets).unwrap();
