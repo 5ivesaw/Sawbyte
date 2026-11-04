@@ -18,3 +18,5 @@
 __pycache__/
 *.py[cod]
 block-profile.json
+/.cache/
+/decompiled/

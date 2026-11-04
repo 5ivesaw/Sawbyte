@@ -18,7 +18,7 @@ Codex can use `mcp__codex_app__get_usage_limits` when available. Check **both** 
 
 Gemini does not automatically see this Codex chat. The user can direct it to this file, the Git history and the current Actions runs. No automatic Gemini handoff integration is configured. Never declare the goal complete because an allowance is nearly exhausted.
 
-Build, test, format, run Minecraft clients/servers and benchmark exclusively in GitHub Actions. Preserve `assets/sawbyte.png`. Never put credentials or tokens in repository files. User examples illustrate general capabilities and do not define the product scope.
+Execution follows the tiered local/CI policy defined in [AGENTS.md](../AGENTS.md): lightweight cargo check/test, formatting, local dashboard and downloads < 100 MB are allowed locally; vanilla 26.3 source acquisition requires prior size check (< 500 MB); heavy builds, full Gradle, game server runs, and benchmarks run exclusively in GitHub Actions with a 3 GB monthly local download budget. Preserve `assets/sawbyte.png`. Never put credentials or tokens in repository files. User examples illustrate general capabilities and do not define the product scope.
 
 ## Potential resources available from the user
 

@@ -28,10 +28,29 @@ Build a self-sufficient, zero-graphics Rust Minecraft Java client and reusable a
 - Keep limitations, version/backend coverage and remaining work explicit. Do not check off entire phases because representative types/functions compile.
 - Update documentation when evidence changes. The audit at [docs/AUDIT-2026-11-03.md](docs/AUDIT-2026-11-03.md) identifies known gaps in commit d70a744; these remain open until implemented and verified.
 
-## GitHub workflow and branding
+## GitHub workflow, local policy, and branding
 
-- Build, compile, test, validate, format and package exclusively through GitHub Actions. Do not install toolchains or run compilers, applications, servers or automated checks locally without an explicit user exception.
-- Local work is source/document editing and review, lightweight git operations, and inspection of remote CI evidence.
+### Machine and data execution policy
+
+**LOCAL (allowed):**
+- Editing, git, reading CI logs.
+- `cargo fmt`, `cargo check`, `cargo clippy`, `cargo test` for the Rust workspace and the Python/Node unit tests, if the toolchain is already installed. Prefer `-p <crate>` and `--jobs 2`.
+- Single downloads under 100 MB.
+- The live status dashboard (localhost only, port 8765).
+
+**LOCAL, ONLY AFTER A SIZE CHECK:**
+- The one-time vanilla 26.3 source acquisition. Pick the lightest route (for example the client jar from Mojang's metadata plus a standalone decompiler jar, or Loom/genSources only if it is lighter overall). Before downloading, announce what will be fetched and the estimated total on the dashboard. If the estimate is over 500 MB, do not start; record the options and stop that step. Use `--no-daemon`, cap heap at 3 GB, never run it twice, reuse caches, stop any daemon afterwards. Keep the output in a gitignored folder; never commit it or upload it as a CI artifact (the repo is public). Record the exact command and path in `docs/HANDOFF.md`.
+
+**GITHUB ACTIONS ONLY:**
+- Anything that needs installing a toolchain or SDK (MSVC / Visual Studio Build Tools, Android SDKs, full Java/Gradle toolchains if not already here).
+- Full Gradle bridge builds, running Minecraft clients or servers, benchmarks, cross-platform builds, the data generator, anything that downloads game assets.
+- Any single download over 500 MB, and anything needing more than about 4 GB of RAM.
+
+**BUDGET:**
+- Log every local download with its size in `run/status/downloads.jsonl`.
+- Keep total local downloads under 3 GB per month unless explicitly raised by the user.
+- If a command runs over 15 minutes, uses heavy swap, or downloads more than estimated, kill it, record what happened, and move the work to CI.
+
 - Keep source, workflows and downloadable artifacts in https://github.com/5ivesaw/Sawbyte.
 - Use assets/sawbyte.png as the supplied brand icon. Preserve the original untracked "sawbyte icon.png".
 - Complete substantive authorized work without arbitrary tiny batches. Do not substitute breadth of scaffolding or inflated completion claims for working behaviour.
