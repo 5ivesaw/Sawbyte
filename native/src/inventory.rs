@@ -1187,9 +1187,8 @@ pub fn encode_serverbound_event_with_pose(
             out.extend(player_pitch.to_be_bytes());
             Some((packets.sb_use_item, out))
         }
-        SubTickEvent::SwipeArm { hand } => {
-            var(if *hand == Hand::MainHand { 0 } else { 1 }, &mut out);
-            Some((packets.sb_swing, out))
+        SubTickEvent::SwipeArm { .. } => {
+            Some((packets.sb_swing, Vec::new()))
         }
         SubTickEvent::InteractEntity {
             entity_id,
