@@ -1,0 +1,9 @@
+#!/bin/sh
+# Sawbyte Launcher Runner for Linux & Unix
+DIR="$(cd "$(dirname "$0")" && pwd)"
+export PATH="$DIR:$PATH"
+if [ -x "$DIR/sawbyte" ]; then
+    exec "$DIR/sawbyte" launcher gui "$@"
+else
+    exec sawbyte launcher gui "$@"
+fi

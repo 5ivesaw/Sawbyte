@@ -76,44 +76,84 @@ jobs:
       - name: Package preview
         shell: bash
         run: |
-          mkdir -p dist
+          mkdir -p dist dist-launcher
           if [ "$RUNNER_OS" = "Windows" ]; then
             cp target/release/sawbyte.exe dist/
+            cp target/release/sawbyte.exe dist-launcher/
             if [ -f native/target/release/sawbyte-play.exe ]; then
               cp native/target/release/sawbyte-play.exe dist/
+              cp native/target/release/sawbyte-play.exe dist-launcher/
             elif [ -f target/release/sawbyte-play.exe ]; then
               cp target/release/sawbyte-play.exe dist/
+              cp target/release/sawbyte-play.exe dist-launcher/
             fi
-          else
+            cp "packaging/Sawbyte Launcher.bat" dist/
+            cp "packaging/Sawbyte Launcher.bat" dist-launcher/
+          elif [ "$RUNNER_OS" = "macOS" ]; then
             cp target/release/sawbyte dist/
+            cp target/release/sawbyte dist-launcher/
             if [ -f native/target/release/sawbyte-play ]; then
               cp native/target/release/sawbyte-play dist/
+              cp native/target/release/sawbyte-play dist-launcher/
             elif [ -f target/release/sawbyte-play ]; then
               cp target/release/sawbyte-play dist/
+              cp target/release/sawbyte-play dist-launcher/
             fi
+            cp "packaging/Sawbyte Launcher.command" dist/
+            cp "packaging/Sawbyte Launcher.command" dist-launcher/
+            chmod +x "dist/Sawbyte Launcher.command" "dist-launcher/Sawbyte Launcher.command"
+          else
+            cp target/release/sawbyte dist/
+            cp target/release/sawbyte dist-launcher/
+            if [ -f native/target/release/sawbyte-play ]; then
+              cp native/target/release/sawbyte-play dist/
+              cp native/target/release/sawbyte-play dist-launcher/
+            elif [ -f target/release/sawbyte-play ]; then
+              cp target/release/sawbyte-play dist/
+              cp target/release/sawbyte-play dist-launcher/
+            fi
+            cp packaging/sawbyte-launcher dist/
+            cp packaging/sawbyte-launcher dist-launcher/
+            chmod +x dist/sawbyte-launcher dist-launcher/sawbyte-launcher
+            cp packaging/sawbyte.desktop dist/
+            cp packaging/sawbyte.desktop dist-launcher/
           fi
           cp README.md LICENSE dist/
+          cp README.md LICENSE dist-launcher/
           cp assets/sawbyte.png dist/sawbyte.png
-          cp packaging/generated/sawbyte.ico packaging/generated/sawbyte.icns dist/
-          if [ "$RUNNER_OS" = "Linux" ]; then cp packaging/sawbyte.desktop dist/; fi
+          cp assets/sawbyte.png dist-launcher/sawbyte.png
+          if [ -d packaging/generated ]; then
+            cp packaging/generated/sawbyte.ico packaging/generated/sawbyte.icns dist/ 2>/dev/null || true
+            cp packaging/generated/sawbyte.ico packaging/generated/sawbyte.icns dist-launcher/ 2>/dev/null || true
+          fi
           if [ -f run/reports/block-profile.json ]; then
             cp run/reports/block-profile.json dist/
+            cp run/reports/block-profile.json dist-launcher/
           elif [ -f block-profile.json ]; then
             cp block-profile.json dist/
+            cp block-profile.json dist-launcher/
           fi
           python - <<'PY'
           import hashlib, pathlib
-          root = pathlib.Path('dist')
-          files = sorted(p for p in root.iterdir() if p.is_file())
-          (root / 'SHA256SUMS').write_text(''.join(
-              f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in files
-          ))
+          for folder in ['dist', 'dist-launcher']:
+              root = pathlib.Path(folder)
+              files = sorted(p for p in root.iterdir() if p.is_file() and p.name != 'SHA256SUMS')
+              (root / 'SHA256SUMS').write_text(''.join(
+                  f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in files
+              ))
           PY
       - name: Upload preview binary
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sawbyte-${{ matrix.os }}-${{ runner.arch }}
           path: dist/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload launcher bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sawbyte-launcher-${{ matrix.os }}-${{ runner.arch }}
+          path: dist-launcher/
           if-no-files-found: error
           retention-days: 14
 
@@ -154,7 +194,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           if [[ "$TAG" == "main" || "$TAG" == "" ]]; then
-            TAG="v0.2.1"
+            TAG="v0.3.0"
           fi
           echo "Publishing release for $TAG"
           if gh release view "$TAG" >/dev/null 2>&1; then

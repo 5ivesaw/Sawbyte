@@ -1,3 +1,5 @@
+mod gui;
+
 use sawbyte_core::mcp::{
     benchmark_transports, PersistentLauncher, RuntimeMode, SawbyteControlBridge,
 };
@@ -8,11 +10,13 @@ use std::io::{self, BufRead, Write};
 use std::path::Path;
 use std::time::Duration;
 
-const HELP: &str = "Sawbyte 0.2.1 — standalone headless Rust client launcher & MCP control bridge
+const HELP: &str = "Sawbyte 0.3.0 — standalone headless Rust client launcher & MCP control bridge
 
 Usage:
   sawbyte --help
   sawbyte --version
+  sawbyte gui [--port <port>]
+  sawbyte launcher gui [--port <port>]
   sawbyte capabilities
   sawbyte demo [--direct]
   sawbyte tape <output.sbif> [--direct]
@@ -28,11 +32,12 @@ Usage:
   sawbyte eval <script> [--connect <ip:port>]
   sawbyte benchmark
 
+gui          Launch the cross-platform interactive graphical desktop launcher in your browser.
+launcher     Persistently manage instances, options.txt, snapshots, accounts, and launch sawbyte-play.
 demo         Print a scheduled input trace; does not connect to Minecraft.
 tape         Write the movement fixture shared by native/reference player tests.
 status       Query a Java server's status and ping, with a 5-second deadline.
 mcp          Start the Model Context Protocol (MCP) JSON-RPC 2.0 bridge over stdio.
-launcher     Persistently manage instances, options.txt, snapshots, accounts, and launch sawbyte-play.
 eval         Execute SawbyteScript against persistent launcher state and a live sawbyte-play session.
 benchmark    Run local IPC/RPC framing throughput benchmarks.";
 
@@ -172,9 +177,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             run_mcp_stdio(endpoint)?;
         }
+        Some("gui") => {
+            gui::run_launcher_gui(args.get(1).and_then(|p| p.parse().ok()))?;
+        }
         Some("launcher") => {
             let mut launcher = PersistentLauncher::load_or_init()?;
             match args.get(1).map(String::as_str) {
+                Some("gui") | Some("ui") => {
+                    gui::run_launcher_gui(args.get(2).and_then(|p| p.parse().ok()))?;
+                }
                 None | Some("list") if args.len() <= 2 => {
                     println!(
                         "Sawbyte Persistent Launcher (root={}):",

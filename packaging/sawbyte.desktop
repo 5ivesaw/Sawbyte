@@ -1,8 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Sawbyte
-Comment=Minecraft automation framework — development preview
-Exec=sawbyte --help
+Name=Sawbyte Launcher
+Comment=Sawbyte Zero-Graphics Minecraft Automation & Headless Client Launcher
+Exec=sawbyte launcher gui
 Icon=sawbyte
-Terminal=true
-Categories=Development;Game;
+Terminal=false
+Categories=Game;Development;Utility;
+StartupNotify=true

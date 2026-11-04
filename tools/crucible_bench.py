@@ -817,13 +817,18 @@ def main() -> None:
     parser.add_argument("--backend", choices=["native", "client", "both"], default="native")
     parser.add_argument("--native-bin", type=Path, default=ROOT / "target" / "release" / "sawbyte-play")
     parser.add_argument("--cli-bin", type=Path, default=ROOT / "target" / "release" / "sawbyte")
-    parser.add_argument("--bridge-jar", type=Path, default=ROOT / "run" / "mods" / "sawbyte-bridge-0.2.1.jar")
+    parser.add_argument("--bridge-jar", type=Path, default=ROOT / "run" / "mods" / "sawbyte-bridge-0.3.0.jar")
     parser.add_argument("--block-profile", type=Path, default=ROOT / "run" / "reports" / "block-profile.json")
     parser.add_argument("--server-port", type=int, default=25565)
     parser.add_argument("--rcon-port", type=int, default=25575)
     parser.add_argument("--ctrl-port", type=int, default=25580)
     parser.add_argument("--report", type=Path, default=REPORTS_DIR / "crucible_report.json")
     args = parser.parse_args()
+
+    if not args.bridge_jar.exists():
+        found = sorted((ROOT / "run" / "mods").glob("sawbyte-bridge-*.jar"))
+        if found:
+            args.bridge_jar = found[-1]
 
     BENCH_DIR.mkdir(parents=True, exist_ok=True)
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)

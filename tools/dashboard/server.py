@@ -178,7 +178,7 @@ def build_status():
         "kilo": kilo_info,
         "estimation": {
             "overall_progress_pct": overall_progress_pct,
-            "estimated_time_remaining": "Complete (v0.2.1 DoD, 6/6 complete)",
+            "estimated_time_remaining": "Complete (v0.3.0 Release Ready)",
             "dod_done": dod_done,
             "dod_total": dod_total,
             "vision_fidelity": "EXCELLENT (1:1 Vanilla Parity)",
@@ -349,7 +349,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
   </div>
   <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--sub); margin-top:4px;">
     <span>Definition of Done Items: <strong id="dod-progress" style="color:var(--text);">4 / 6 Completed</strong></span>
-    <span>Target Release: <strong style="color:var(--text);">v0.2.1 Milestone</strong></span>
+    <span>Target Release: <strong style="color:var(--text);">v0.3.0 Milestone</strong></span>
   </div>
 </div>
 

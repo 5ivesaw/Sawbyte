@@ -22,7 +22,7 @@ def load_status() -> dict:
             pass
     return {
         "goal": "Build zero-graphics 1:1 vanilla Minecraft 26.3 Rust client + reusable automation engine",
-        "definition_of_done": "Every vanilla client behavior ported & parity-tested; Crucible dual-backend benchmark passes; CI green across Linux, Windows, macOS; published v0.2.1",
+        "definition_of_done": "Every vanilla client behavior ported & parity-tested; Crucible dual-backend benchmark passes; CI green across Linux, Windows, macOS; published v0.3.0",
         "current_step": "Initializing status dashboard and vanilla 26.3 source acquisition",
         "step_started_at": time.time(),
         "queued_steps": [

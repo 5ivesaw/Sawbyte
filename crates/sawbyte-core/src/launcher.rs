@@ -268,6 +268,24 @@ impl PersistentLauncher {
         self.save()
     }
 
+    pub fn delete_instance(&mut self, name: &str) -> Result<(), String> {
+        if self.instances.remove(name).is_none() {
+            return Err(format!("instance '{name}' not found"));
+        }
+        let dir = self.instance_dir(name);
+        if dir.exists() {
+            let _ = fs::remove_dir_all(&dir);
+        }
+        self.save()
+    }
+
+    pub fn delete_account(&mut self, username: &str) -> Result<(), String> {
+        if self.accounts.remove(username).is_none() {
+            return Err(format!("account '{username}' not found"));
+        }
+        self.save()
+    }
+
     pub fn set_setting(
         &mut self,
         instance_name: &str,

@@ -2770,7 +2770,7 @@ impl Session {
                     "id": id,
                     "result": {
                         "protocolVersion": "2025-06-18",
-                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.2.1" },
+                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.3.0" },
                         "capabilities": { "tools": { "listChanged": false }, "resources": { "listChanged": false } }
                     }
                 })
@@ -3654,6 +3654,10 @@ pub fn run() -> Result<()> {
             Zero-graphics 20 TPS client with 26.3 chunk palettes, dynamic block updates, slabs/stairs/climbables/fluids,\n\
             sprinting/sneaking/stepping, live 3D A* pathfinding, eye raycasting, container screens, and RL/MCP control."
         );
+        return Ok(());
+    }
+    if args == ["--version"] || args == ["-v"] {
+        println!("sawbyte-play {}", env!("CARGO_PKG_VERSION"));
         return Ok(());
     }
     if args.first().map(String::as_str) == Some("benchmark") {
