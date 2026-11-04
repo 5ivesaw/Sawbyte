@@ -84,7 +84,10 @@ fn open_in_browser(url: &str) {
     }
 }
 
-fn handle_http_client(mut stream: TcpStream, processes: ProcessMap) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_http_client(
+    mut stream: TcpStream,
+    processes: ProcessMap,
+) -> Result<(), Box<dyn std::error::Error>> {
     let _ = stream.set_read_timeout(Some(Duration::from_secs(10)));
     let _ = stream.set_write_timeout(Some(Duration::from_secs(10)));
 
@@ -131,7 +134,12 @@ fn handle_http_client(mut stream: TcpStream, processes: ProcessMap) -> Result<()
     match (method, path) {
         ("GET", "/") | ("GET", "/index.html") => {
             let html = get_launcher_html();
-            send_response(&mut stream, 200, "text/html; charset=utf-8", html.as_bytes())?;
+            send_response(
+                &mut stream,
+                200,
+                "text/html; charset=utf-8",
+                html.as_bytes(),
+            )?;
         }
         ("GET", "/sawbyte.png") | ("GET", "/assets/sawbyte.png") => {
             if let Ok(bytes) = fs::read("assets/sawbyte.png") {
@@ -185,12 +193,16 @@ fn handle_http_client(mut stream: TcpStream, processes: ProcessMap) -> Result<()
             send_json_result(&mut stream, res)?;
         }
         ("GET", "/api/logs") => {
-            let instance = query.split('&')
+            let instance = query
+                .split('&')
                 .find(|p| p.starts_with("instance="))
                 .and_then(|p| p.split('=').nth(1))
                 .unwrap_or("");
             let logs = read_instance_logs(instance);
-            let payload = format!("{{\"instance\":\"{instance}\",\"logs\":{}}}", escape_json(&logs));
+            let payload = format!(
+                "{{\"instance\":\"{instance}\",\"logs\":{}}}",
+                escape_json(&logs)
+            );
             send_response(&mut stream, 200, "application/json", payload.as_bytes())?;
         }
         _ => {
@@ -201,7 +213,12 @@ fn handle_http_client(mut stream: TcpStream, processes: ProcessMap) -> Result<()
     Ok(())
 }
 
-fn send_response(stream: &mut TcpStream, code: u16, content_type: &str, body: &[u8]) -> std::io::Result<()> {
+fn send_response(
+    stream: &mut TcpStream,
+    code: u16,
+    content_type: &str,
+    body: &[u8],
+) -> std::io::Result<()> {
     let status_line = match code {
         200 => "HTTP/1.1 200 OK",
         400 => "HTTP/1.1 400 Bad Request",
@@ -251,16 +268,25 @@ fn build_api_status(processes: &ProcessMap) -> String {
     };
 
     let mut json = String::from("{\"ok\":true,");
-    json.push_str(&format!("\"root_dir\":{},", escape_json(&launcher.root_dir.to_string_lossy())));
+    json.push_str(&format!(
+        "\"root_dir\":{},",
+        escape_json(&launcher.root_dir.to_string_lossy())
+    ));
     json.push_str("\"version\":\"0.3.0\",");
 
     // Version profiles
     json.push_str("\"version_profiles\":[");
     for (i, vp) in launcher.version_profiles.iter().enumerate() {
-        if i > 0 { json.push(','); }
+        if i > 0 {
+            json.push(',');
+        }
         json.push_str(&format!(
             "{{\"id\":\"{}\",\"version\":\"{}\",\"protocol\":{},\"native\":{},\"bridge\":{}}}",
-            vp.profile_id, vp.minecraft_version, vp.protocol_version, vp.native_verified_parity, vp.bridge_supported
+            vp.profile_id,
+            vp.minecraft_version,
+            vp.protocol_version,
+            vp.native_verified_parity,
+            vp.bridge_supported
         ));
     }
     json.push_str("],");
@@ -280,7 +306,9 @@ fn build_api_status(processes: &ProcessMap) -> String {
     json.push_str("\"instances\":[");
     let mut first = true;
     for inst in launcher.instances.values() {
-        if !first { json.push(','); }
+        if !first {
+            json.push(',');
+        }
         first = false;
         let running = active.contains_key(&inst.name);
         let pid = if running {
@@ -299,7 +327,9 @@ fn build_api_status(processes: &ProcessMap) -> String {
     json.push_str("\"accounts\":[");
     first = true;
     for acc in launcher.accounts.values() {
-        if !first { json.push(','); }
+        if !first {
+            json.push(',');
+        }
         first = false;
         let locked = acc.locked_by_instance.as_deref().unwrap_or("");
         json.push_str(&format!(
@@ -314,9 +344,18 @@ fn build_api_status(processes: &ProcessMap) -> String {
 
 fn handle_create_instance(body: &str) -> Result<String, String> {
     let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
-    let name = json.get("name").and_then(|v| v.as_str()).ok_or("missing 'name'")?;
-    let profile = json.get("profile").and_then(|v| v.as_str()).unwrap_or("sawbyte-26.3");
-    let mode_str = json.get("mode").and_then(|v| v.as_str()).unwrap_or("native");
+    let name = json
+        .get("name")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'name'")?;
+    let profile = json
+        .get("profile")
+        .and_then(|v| v.as_str())
+        .unwrap_or("sawbyte-26.3");
+    let mode_str = json
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .unwrap_or("native");
     let mode = RuntimeMode::parse(mode_str)?;
 
     let mut launcher = PersistentLauncher::load_or_init()?;
@@ -335,12 +374,17 @@ fn handle_create_instance(body: &str) -> Result<String, String> {
         let _ = launcher.save();
     }
 
-    Ok(format!("{{\"ok\":true,\"message\":\"Instance '{name}' created successfully\"}}"))
+    Ok(format!(
+        "{{\"ok\":true,\"message\":\"Instance '{name}' created successfully\"}}"
+    ))
 }
 
 fn handle_delete_instance(body: &str, processes: &ProcessMap) -> Result<String, String> {
     let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
-    let name = json.get("name").and_then(|v| v.as_str()).ok_or("missing 'name'")?;
+    let name = json
+        .get("name")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'name'")?;
 
     // Stop process if running
     let mut procs = processes.lock().unwrap();
@@ -352,64 +396,115 @@ fn handle_delete_instance(body: &str, processes: &ProcessMap) -> Result<String, 
 
     let mut launcher = PersistentLauncher::load_or_init()?;
     launcher.delete_instance(name)?;
-    Ok(format!("{{\"ok\":true,\"message\":\"Instance '{name}' deleted\"}}"))
+    Ok(format!(
+        "{{\"ok\":true,\"message\":\"Instance '{name}' deleted\"}}"
+    ))
 }
 
 fn handle_set_setting(body: &str) -> Result<String, String> {
     let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
-    let instance = json.get("instance").and_then(|v| v.as_str()).ok_or("missing 'instance'")?;
-    let key = json.get("key").and_then(|v| v.as_str()).ok_or("missing 'key'")?;
-    let value = json.get("value").and_then(|v| v.as_str()).ok_or("missing 'value'")?;
+    let instance = json
+        .get("instance")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'instance'")?;
+    let key = json
+        .get("key")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'key'")?;
+    let value = json
+        .get("value")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'value'")?;
 
     let mut launcher = PersistentLauncher::load_or_init()?;
     launcher.set_setting(instance, key, value)?;
-    Ok(format!("{{\"ok\":true,\"message\":\"Setting '{key}={value}' saved\"}}"))
+    Ok(format!(
+        "{{\"ok\":true,\"message\":\"Setting '{key}={value}' saved\"}}"
+    ))
 }
 
 fn handle_backup_instance(body: &str) -> Result<String, String> {
     let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
-    let instance = json.get("instance").and_then(|v| v.as_str()).ok_or("missing 'instance'")?;
+    let instance = json
+        .get("instance")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'instance'")?;
 
     let mut launcher = PersistentLauncher::load_or_init()?;
     let id = launcher.backup_instance(instance)?;
-    Ok(format!("{{\"ok\":true,\"snapshot_id\":{id},\"message\":\"Snapshot #{id} created\"}}"))
+    Ok(format!(
+        "{{\"ok\":true,\"snapshot_id\":{id},\"message\":\"Snapshot #{id} created\"}}"
+    ))
 }
 
 fn handle_rollback_instance(body: &str) -> Result<String, String> {
     let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
-    let instance = json.get("instance").and_then(|v| v.as_str()).ok_or("missing 'instance'")?;
-    let id = json.get("id").and_then(|v| v.as_i64()).ok_or("missing 'id'")? as u32;
+    let instance = json
+        .get("instance")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'instance'")?;
+    let id = json
+        .get("id")
+        .and_then(|v| v.as_i64())
+        .ok_or("missing 'id'")? as u32;
 
     let mut launcher = PersistentLauncher::load_or_init()?;
     launcher.rollback_instance(instance, id)?;
-    Ok(format!("{{\"ok\":true,\"message\":\"Rolled back to snapshot #{id}\"}}"))
+    Ok(format!(
+        "{{\"ok\":true,\"message\":\"Rolled back to snapshot #{id}\"}}"
+    ))
 }
 
 fn handle_add_account(body: &str) -> Result<String, String> {
     let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
-    let username = json.get("username").and_then(|v| v.as_str()).ok_or("missing 'username'")?;
-    let uuid = json.get("uuid").and_then(|v| v.as_str()).unwrap_or("00000000000030008000000000000001");
+    let username = json
+        .get("username")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'username'")?;
+    let uuid = json
+        .get("uuid")
+        .and_then(|v| v.as_str())
+        .unwrap_or("00000000000030008000000000000001");
 
     let mut launcher = PersistentLauncher::load_or_init()?;
     launcher.add_account(username, uuid, None)?;
-    Ok(format!("{{\"ok\":true,\"message\":\"Account '{username}' added\"}}"))
+    Ok(format!(
+        "{{\"ok\":true,\"message\":\"Account '{username}' added\"}}"
+    ))
 }
 
 fn handle_delete_account(body: &str) -> Result<String, String> {
     let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
-    let username = json.get("username").and_then(|v| v.as_str()).ok_or("missing 'username'")?;
+    let username = json
+        .get("username")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'username'")?;
 
     let mut launcher = PersistentLauncher::load_or_init()?;
     launcher.delete_account(username)?;
-    Ok(format!("{{\"ok\":true,\"message\":\"Account '{username}' removed\"}}"))
+    Ok(format!(
+        "{{\"ok\":true,\"message\":\"Account '{username}' removed\"}}"
+    ))
 }
 
 fn handle_launch_process(body: &str, processes: &ProcessMap) -> Result<String, String> {
     let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
-    let instance = json.get("instance").and_then(|v| v.as_str()).ok_or("missing 'instance'")?;
-    let server = json.get("server").and_then(|v| v.as_str()).unwrap_or("127.0.0.1:25565");
-    let account = json.get("account").and_then(|v| v.as_str()).unwrap_or("SawbyteNative");
-    let blocks_path = json.get("blocks_json").and_then(|v| v.as_str()).unwrap_or("block-profile.json");
+    let instance = json
+        .get("instance")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'instance'")?;
+    let server = json
+        .get("server")
+        .and_then(|v| v.as_str())
+        .unwrap_or("127.0.0.1:25565");
+    let account = json
+        .get("account")
+        .and_then(|v| v.as_str())
+        .unwrap_or("SawbyteNative");
+    let blocks_path = json
+        .get("blocks_json")
+        .and_then(|v| v.as_str())
+        .unwrap_or("block-profile.json");
 
     let mut procs = processes.lock().unwrap();
     if procs.contains_key(instance) {
@@ -418,26 +513,28 @@ fn handle_launch_process(body: &str, processes: &ProcessMap) -> Result<String, S
 
     let mut launcher = PersistentLauncher::load_or_init()?;
     let blocks_file = Path::new(blocks_path);
-    let (child, log_path) = launcher.spawn_live_process(
-        instance,
-        Some(server),
-        account,
-        blocks_file,
-        &[],
-    )?;
+    let (child, log_path) =
+        launcher.spawn_live_process(instance, Some(server), account, blocks_file, &[])?;
 
     let pid = child.id();
-    let rpc_bind = launcher.instances.get(instance).map(|i| i.rpc_bind.clone()).unwrap_or_else(|| "127.0.0.1:25580".into());
+    let rpc_bind = launcher
+        .instances
+        .get(instance)
+        .map(|i| i.rpc_bind.clone())
+        .unwrap_or_else(|| "127.0.0.1:25580".into());
 
-    procs.insert(instance.to_owned(), ActiveProcess {
-        instance: instance.to_owned(),
-        pid,
-        server: server.to_owned(),
-        rpc_bind: rpc_bind.clone(),
-        account: account.to_owned(),
-        log_path: log_path.clone(),
-        child: Some(child),
-    });
+    procs.insert(
+        instance.to_owned(),
+        ActiveProcess {
+            instance: instance.to_owned(),
+            pid,
+            server: server.to_owned(),
+            rpc_bind: rpc_bind.clone(),
+            account: account.to_owned(),
+            log_path: log_path.clone(),
+            child: Some(child),
+        },
+    );
 
     Ok(format!(
         "{{\"ok\":true,\"pid\":{pid},\"server\":\"{server}\",\"rpc_bind\":\"{rpc_bind}\",\"log\":\"{}\"}}",
@@ -447,7 +544,10 @@ fn handle_launch_process(body: &str, processes: &ProcessMap) -> Result<String, S
 
 fn handle_stop_process(body: &str, processes: &ProcessMap) -> Result<String, String> {
     let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
-    let instance = json.get("instance").and_then(|v| v.as_str()).ok_or("missing 'instance'")?;
+    let instance = json
+        .get("instance")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'instance'")?;
 
     let mut procs = processes.lock().unwrap();
     if let Some(mut p) = procs.remove(instance) {
@@ -456,7 +556,9 @@ fn handle_stop_process(body: &str, processes: &ProcessMap) -> Result<String, Str
         }
         let mut launcher = PersistentLauncher::load_or_init()?;
         let _ = launcher.release_account_lock(&p.account);
-        Ok(format!("{{\"ok\":true,\"message\":\"Instance '{instance}' stopped\"}}"))
+        Ok(format!(
+            "{{\"ok\":true,\"message\":\"Instance '{instance}' stopped\"}}"
+        ))
     } else {
         Err(format!("instance '{instance}' was not running"))
     }
@@ -464,13 +566,20 @@ fn handle_stop_process(body: &str, processes: &ProcessMap) -> Result<String, Str
 
 fn handle_send_live_command(body: &str) -> Result<String, String> {
     let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
-    let connect = json.get("connect").and_then(|v| v.as_str()).unwrap_or("127.0.0.1:25580");
-    let cmd = json.get("command").and_then(|v| v.as_str()).ok_or("missing 'command'")?;
+    let connect = json
+        .get("connect")
+        .and_then(|v| v.as_str())
+        .unwrap_or("127.0.0.1:25580");
+    let cmd = json
+        .get("command")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'command'")?;
 
     let mut stream = TcpStream::connect_timeout(
         &connect.parse().map_err(|e| format!("bad address: {e}"))?,
         Duration::from_secs(5),
-    ).map_err(|e| format!("could not connect to live session at {connect}: {e}"))?;
+    )
+    .map_err(|e| format!("could not connect to live session at {connect}: {e}"))?;
 
     let _ = stream.set_read_timeout(Some(Duration::from_secs(10)));
     let _ = stream.set_write_timeout(Some(Duration::from_secs(10)));
@@ -482,20 +591,33 @@ fn handle_send_live_command(body: &str) -> Result<String, String> {
     let mut reply = String::new();
     reader.read_line(&mut reply).map_err(|e| e.to_string())?;
 
-    Ok(format!("{{\"ok\":true,\"reply\":{}}}", escape_json(reply.trim())))
+    Ok(format!(
+        "{{\"ok\":true,\"reply\":{}}}",
+        escape_json(reply.trim())
+    ))
 }
 
 fn read_instance_logs(instance: &str) -> String {
-    if instance.is_empty() { return String::new(); }
+    if instance.is_empty() {
+        return String::new();
+    }
     let root = PersistentLauncher::resolve_home();
-    let log_file = root.join("instances").join(instance).join("logs").join("latest.log");
+    let log_file = root
+        .join("instances")
+        .join(instance)
+        .join("logs")
+        .join("latest.log");
     if !log_file.exists() {
         return "No log file found for this instance yet.".into();
     }
     match fs::read_to_string(&log_file) {
         Ok(text) => {
             let lines: Vec<&str> = text.lines().collect();
-            let start = if lines.len() > 80 { lines.len() - 80 } else { 0 };
+            let start = if lines.len() > 80 {
+                lines.len() - 80
+            } else {
+                0
+            };
             lines[start..].join("\n")
         }
         Err(e) => format!("Could not read log file: {e}"),
