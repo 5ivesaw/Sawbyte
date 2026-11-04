@@ -511,26 +511,20 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     # Double chest facing north: West (33) is left, East (34) is right
     rcon.command(f"setblock {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=left]{{CustomName:'\"CrucibleChest\"'}}")
     rcon.command(f"setblock {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=right]{{CustomName:'\"CrucibleChest\"'}}")
-    # Populate items using item replace and data merge on both chest halves
-    # Populating both halves guarantees Slots 0, 1 and 53 exist regardless of container mapping order
-    for x in (chest_pos[0], chest_pos[0] + 1):
-        rcon.command(
-            f'item replace block {x} {chest_pos[1]} {chest_pos[2]} container.0 with diamond_sword[custom_name=\'{{"text":"Sawbyte Key Blade"}}\',lore=[\'{{"text":"A legendary weapon"}}\'],enchantments={{"minecraft:sharpness":5}}] 1'
-        )
-        rcon.command(
-            f"item replace block {x} {chest_pos[1]} {chest_pos[2]} container.1 with oak_planks 16"
-        )
-        rcon.command(
-            f"item replace block {x} {chest_pos[1]} {chest_pos[2]} container.26 with iron_ingot 8"
-        )
-        rcon.command(
-            f"data merge block {x} {chest_pos[1]} {chest_pos[2]} "
-            r'{Items: ['
-            r'{Slot: 0b, id: "minecraft:diamond_sword", count: 1b, components: {"minecraft:custom_name": \'{"text":"Sawbyte Key Blade"}\', "minecraft:lore": [\'{"text":"A legendary weapon"}\'], "minecraft:enchantments": {"minecraft:sharpness": 5}}}, '
-            r'{Slot: 1b, id: "minecraft:oak_planks", count: 16b}, '
-            r'{Slot: 26b, id: "minecraft:iron_ingot", count: 8b}'
-            r']}'
-        )
+    # In Minecraft DoubleInventory (facing north):
+    # East block (34, type=right) contains container slots 0..26
+    # West block (33, type=left) contains container slots 27..53
+    # Populate East block: Slot 0 (diamond_sword with components), Slot 1 (oak_planks)
+    rcon.command(
+        f'item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.0 with diamond_sword[custom_name=\'{{"text":"Sawbyte Key Blade"}}\',lore=[\'{{"text":"A legendary weapon"}}\'],enchantments={{levels:{{"minecraft:sharpness":5}}}}] 1'
+    )
+    rcon.command(
+        f"item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.1 with oak_planks 16"
+    )
+    # Populate West block: Slot 53 (container.26: iron_ingot)
+    rcon.command(
+        f"item replace block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} container.26 with iron_ingot 8"
+    )
     client.send_command("wait.ticks 5")
 
     # Navigate across bridged pit to chest
@@ -541,14 +535,24 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     client.send_command(f"interact.use_block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]}")
     client.wait_until("screen_open", 60, "CrucibleChest")
 
-    # Inspect chest slots
-    inspect_raw = client.send_command("gui.inspect")
-    data = json.loads(inspect_raw)
-    slots = data.get("slots", [])
-    # Find Slot 0, 1, 53
-    slot_map = {s["slot"]: s for s in slots if "slot" in s}
+    # Polling wait for container slots to be populated by server packets
+    slot_map = {}
+    last_inspect = {}
+    for attempt in range(12):
+        client.send_command("wait.ticks 3")
+        inspect_raw = client.send_command("gui.inspect")
+        try:
+            last_inspect = json.loads(inspect_raw)
+            slots = last_inspect.get("slots", [])
+            slot_map = {s["slot"]: s for s in slots if "slot" in s}
+            if 0 in slot_map and 1 in slot_map and 53 in slot_map:
+                break
+        except Exception:
+            pass
+        print(f"  [Stage 3] Waiting for container slots to populate (attempt {attempt + 1}/12, observed slots: {list(slot_map.keys())})...")
+
     if 0 not in slot_map or 1 not in slot_map or 53 not in slot_map:
-        raise AssertionError(f"Stage 3 failed: Container slots truncated or missing. Observed slots: {list(slot_map.keys())}")
+        raise AssertionError(f"Stage 3 failed: Container slots truncated or missing. Observed slots: {list(slot_map.keys())}. Inspect payload: {last_inspect}")
 
     s0 = slot_map[0]
     if "Sawbyte Key Blade" not in str(s0.get("display_name", "")):
@@ -562,12 +566,15 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     client.send_command("gui.close")
     client.send_command("wait.ticks 5")
 
-    # Verify RCON server ground truth
-    chest_data = rcon.command(f"data get block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} Items")
-    if "oak_planks" in chest_data:
-        raise AssertionError("Stage 3 failed: Slot 1 (oak_planks) still present in chest after transfer")
-    if "Sawbyte Key Blade" not in chest_data:
-        raise AssertionError("Stage 3 failed: Slot 0 was unexpectedly disturbed")
+    # Verify RCON server ground truth across both chest blocks
+    chest_data_34 = rcon.command(f"data get block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} Items")
+    chest_data_33 = rcon.command(f"data get block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} Items")
+    if "oak_planks" in chest_data_34 or "oak_planks" in chest_data_33:
+        raise AssertionError(f"Stage 3 failed: Slot 1 (oak_planks) still present in chest after transfer. East: {chest_data_34}, West: {chest_data_33}")
+    if "Sawbyte Key Blade" not in chest_data_34:
+        raise AssertionError(f"Stage 3 failed: Slot 0 was unexpectedly disturbed. East: {chest_data_34}")
+    if "iron_ingot" not in chest_data_33:
+        raise AssertionError(f"Stage 3 failed: Slot 53 was unexpectedly disturbed. West: {chest_data_33}")
 
     return {"stage": 3, "name": "component_heavy_container_transfer", "passed": True, "elapsed": time.monotonic() - t0}
 
