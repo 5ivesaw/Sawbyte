@@ -432,27 +432,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 2 = max_damage (VarInt)
-            2 => {
-                if let Ok(max_dmg) = r.var() {
-                    let cur = stack.damage.map_or(0, |(d, _)| d);
-                    stack.damage = Some((cur, max_dmg));
-                } else {
-                    exact_stream = false;
-                    break;
-                }
-            }
-            // 3 = max_damage (VarInt, legacy/alt), 4 = damage (VarInt) in 26.3 data_component_type
-            3 => {
-                if let Ok(max_dmg) = r.var() {
-                    let cur = stack.damage.map_or(0, |(d, _)| d);
-                    stack.damage = Some((cur, max_dmg));
-                } else {
-                    exact_stream = false;
-                    break;
-                }
-            }
-            4 => {
+            // 2 | 4 = damage (VarInt)
+            2 | 4 => {
                 if let Ok(dmg) = r.var() {
                     let max_d = stack.damage.map_or(0, |(_, m)| m);
                     stack.damage = Some((dmg, max_d));
@@ -461,8 +442,17 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 5 = custom_name (NBT), 6 = item_name (NBT)
-            5 | 6 => {
+            // 3 = unbreakable (boolean)
+            3 => {
+                if let Ok(b) = r.byte() {
+                    stack.components.push(("unbreakable".into(), (b != 0).to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 5 | 6 | 8 = custom_name / item_name (NBT Component)
+            5 | 6 | 8 => {
                 if let Ok(tag) = r.nbt() {
                     let text = nbt_to_plain_text(&tag);
                     if !text.is_empty() {
@@ -473,8 +463,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 7 = lore (list of NBT text components)
-            7 => {
+            // 7 | 10 = lore (list of NBT text components)
+            7 | 10 => {
                 if let Ok(line_count) = r.count(256) {
                     let mut lines = Vec::with_capacity(line_count);
                     for _ in 0..line_count {
@@ -491,8 +481,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 8 = rarity (VarInt)
-            8 => {
+            // 8 | 11 = rarity (VarInt)
+            8 | 11 => {
                 if let Ok(rar) = r.var() {
                     stack.components.push(("rarity".into(), rar.to_string()));
                 } else {
@@ -500,8 +490,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 9 = enchantments (VarInt count of pairs)
-            9 => {
+            // 9 | 12 | 44 = enchantments / stored_enchantments (VarInt count of pairs)
+            9 | 12 | 44 => {
                 if let Ok(count) = r.count(256) {
                     for _ in 0..count {
                         if let (Ok(ench_id), Ok(lvl)) = (r.var(), r.var()) {
@@ -516,8 +506,8 @@ fn decode_slot_item(
                     break;
                 }
             }
-            // 13 = custom_model_data (VarInt)
-            13 => {
+            // 13 | 16 = custom_model_data (VarInt)
+            13 | 16 => {
                 if let Ok(cmd) = r.var() {
                     stack.custom_model_data = Some(cmd);
                 } else {
@@ -532,10 +522,19 @@ fn decode_slot_item(
             15 => {
                 stack.components.push(("hide_tooltip".into(), "true".into()));
             }
-            // 16 = repair_cost (VarInt)
-            16 => {
+            // 18 = repair_cost (VarInt)
+            18 => {
                 if let Ok(rc) = r.var() {
                     stack.components.push(("repair_cost".into(), rc.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 20 = enchantment_glint_override (boolean)
+            20 => {
+                if let Ok(b) = r.byte() {
+                    stack.components.push(("enchantment_glint_override".into(), (b != 0).to_string()));
                 } else {
                     exact_stream = false;
                     break;
@@ -1498,5 +1497,54 @@ mod tests {
         // Slot 1 must still be diamond x64, preserved!
         assert_eq!(screen.slots[1].as_ref().unwrap().id, "minecraft:diamond");
         assert_eq!(screen.slots[1].as_ref().unwrap().count, 64);
+    }
+
+    #[test]
+    fn component_heavy_item_decodes_custom_name_lore_and_enchantments() {
+        let mut packets = PacketTable::default();
+        packets.item_names.insert(500, "minecraft:diamond_sword".to_string());
+
+        // Count: 1, Item: 500, Added: 3, Removed: 0
+        let mut raw = Vec::new();
+        var(1, &mut raw);
+        var(500, &mut raw);
+        var(3, &mut raw); // 3 components
+        var(0, &mut raw); // 0 removed
+
+        // 1. Component 5 (custom_name) -> NBT {"text":"Sawbyte Key Blade"}
+        var(5, &mut raw);
+        raw.push(10); // TAG_Compound
+        raw.push(8);
+        raw.extend(4u16.to_be_bytes());
+        raw.extend_from_slice(b"text");
+        raw.extend(17u16.to_be_bytes());
+        raw.extend_from_slice(b"Sawbyte Key Blade");
+        raw.push(0); // TAG_End
+
+        // 2. Component 10 (lore) -> 1 line of NBT {"text":"A legendary weapon"}
+        var(10, &mut raw);
+        var(1, &mut raw); // 1 line
+        raw.push(10); // TAG_Compound
+        raw.push(8);
+        raw.extend(4u16.to_be_bytes());
+        raw.extend_from_slice(b"text");
+        raw.extend(18u16.to_be_bytes());
+        raw.extend_from_slice(b"A legendary weapon");
+        raw.push(0); // TAG_End
+
+        // 3. Component 12 (enchantments) -> 1 pair: ench_id 1 (sharpness), level 5
+        var(12, &mut raw);
+        var(1, &mut raw); // 1 pair
+        var(1, &mut raw); // ench_id
+        var(5, &mut raw); // level
+
+        let mut r = Reader(&raw);
+        let (stack_opt, exact) = decode_slot_item(&mut r, &packets).unwrap();
+        assert!(exact);
+        let stack = stack_opt.unwrap();
+        assert_eq!(stack.id, "minecraft:diamond_sword");
+        assert_eq!(stack.display_name.as_deref(), Some("Sawbyte Key Blade"));
+        assert_eq!(stack.lore, vec!["A legendary weapon"]);
+        assert_eq!(stack.enchantments, vec![("enchantment_1".to_string(), 5)]);
     }
 }
