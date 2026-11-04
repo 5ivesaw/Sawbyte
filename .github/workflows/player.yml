@@ -45,6 +45,9 @@ jobs:
         run: |
           BRIDGE_JAR=$(ls run/mods/sawbyte-bridge-*.jar | head -n 1)
           python tools/crucible_bench.py --backend both --native run/bin/sawbyte-play --cli target/release/sawbyte --bridge "$BRIDGE_JAR"
+      - name: Run universal capabilities benchmark
+        run: |
+          python tools/universal_bench.py --target harness
       - name: Upload evidence (no game binaries or credentials)
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

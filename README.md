@@ -1,80 +1,118 @@
 <p align="center">
-  <img src="assets/sawbyte.png" width="148" alt="Sawbyte Logo" />
+  <img src="assets/sawbyte.png" width="140" alt="Sawbyte Project Logo" />
 </p>
 
 # Sawbyte
 
-**Sawbyte** is an independent, zero-graphics native Rust Minecraft Java client (`sawbyte-play`), cross-platform desktop launcher, and deterministic automation runtime (`sawbyte`). Designed from the ground up for high-density bot swarms, complex multi-screen container interactions, automated gameplay, and neural network reinforcement learning (RL), it operates directly on raw protocol wire frames and sub-voxel physics simulation without rendering a window.
+**Sawbyte** is an independent, zero-graphics native Rust Minecraft Java client (`sawbyte-play`), cross-platform desktop launcher, and deterministic automation engine (`sawbyte`). Designed from foundational principles for high-density bot swarms, complex multi-screen container interactions, automated gameplay, and neural network reinforcement learning, Sawbyte operates directly on raw protocol wire frames and sub-voxel physics simulation without rendering a window.
 
 <p align="center">
-  <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/ci.yml?branch=main&style=for-the-badge&label=Build&labelColor=1a1a1a&color=2B6E5B" alt="Build and verify" /></a>
-  <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/player.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/player.yml?branch=main&style=for-the-badge&label=Movement%20Lab&labelColor=1a1a1a&color=2ea043" alt="Movement lab" /></a>
-  <img src="https://img.shields.io/badge/Release-v0.3.0-58a6ff?style=for-the-badge&labelColor=1a1a1a" alt="Version 0.3.0" />
-  <img src="https://img.shields.io/badge/Minecraft-26.3%20(Protocol%20777)-8C5230?style=for-the-badge&labelColor=1a1a1a" alt="Protocol 777" />
-  <img src="https://img.shields.io/badge/Platforms-Linux%20%7C%20Windows%20%7C%20macOS-36528C?style=for-the-badge&labelColor=1a1a1a" alt="Platforms" />
-  <img src="https://img.shields.io/badge/License-MIT-gray?style=for-the-badge&labelColor=1a1a1a" alt="License" />
+  <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/ci.yml?branch=main&style=for-the-badge&label=Build&labelColor=161b22&color=238636" alt="Build and verify status" /></a>
+  <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/player.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/player.yml?branch=main&style=for-the-badge&label=Movement%20Lab&labelColor=161b22&color=238636" alt="Movement lab parity status" /></a>
+  <a href="https://github.com/5ivesaw/Sawbyte/releases/tag/v0.3.0"><img src="https://img.shields.io/badge/Release-v0.3.0-1f6feb?style=for-the-badge&labelColor=161b22" alt="Version 0.3.0" /></a>
+  <img src="https://img.shields.io/badge/Minecraft-26.3%20(Protocol%20777)-8c5230?style=for-the-badge&labelColor=161b22" alt="Minecraft Protocol 777" />
+  <img src="https://img.shields.io/badge/Platforms-Linux%20%7C%20Windows%20%7C%20macOS-388bfd?style=for-the-badge&labelColor=161b22" alt="Supported Platforms" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-6e7681?style=for-the-badge&labelColor=161b22" alt="License MIT" /></a>
 </p>
 
 ---
 
-## Key Highlights
+## Architectural Principles
 
-- **Universal Foundational Base**: General, composable low-level primitives for movement, targeting, continuous camera controls, block mining, placement, entity combat, and atomic container transactions. Not hardcoded for any single server or minigame—use Sawbyte as a high-performance foundation for any custom automation.
-- **Cross-Platform Desktop Launcher (`v0.3.0`)**: 100% identical graphical launcher and live bot supervisor across Linux, Windows, and macOS. Manage instances, accounts, snapshot backups, `options.txt` settings, live bot processes, and real-time command consoles with zero extra runtime dependencies.
-- **Mathematically Exact Physics**: 20 TPS client-side prediction matching vanilla Java Edition with maximum position error under `3.41e-7` blocks and 0 ground-state mismatches across slabs, stairs, climbables, and fluids.
-- **Uncompromised Efficiency**: Consumes **~8.2 MiB RSS** (over **98% less memory** than the vanilla JVM client) and launches in **~0.12 s** (**~120x faster cold start**).
-- **Rich RL & AI Observations**: Supplies exact sub-voxel state, velocities, orientation, health/hunger vitals, surrounding 3D voxel geometry, entity bounding boxes with eye raycasting, and complete container slot components without fake stubs.
-- **Model Context Protocol (MCP)**: Native stdio JSON-RPC 2.0 server exposing 9 powerful tools for autonomous AI agent control.
-- **Optional Graphical Bridge**: Includes an optional Fabric reference client bridge (`sawbyte-bridge`) for visual replay and parity verification against vanilla Java Minecraft.
+- **Universal Foundational Base**: General, composable low-level primitives for sub-voxel motion, targeting, camera manipulation, block mining, placement, entity combat, and atomic container transactions. Not hardcoded for any single server, economy, or minigame—Sawbyte is a general-purpose automation foundation.
+- **Cross-Platform Desktop Launcher**: Equal experience across Linux, Windows, and macOS. Provides persistent instance configuration, account security, snapshot backups, `options.txt` management, live bot process supervision, and real-time command consoles with zero extra runtime dependencies.
+- **Sub-Voxel Simulation & Parity**: 20 TPS client-side physics prediction matching vanilla Java Edition with maximum position error under `3.41e-7` blocks and zero ground-state mismatches across slabs, stairs, climbables, and fluid vectors.
+- **Hardware Efficiency**: Consumes **~8.2 MiB RSS** (over **98% less memory** than the vanilla JVM client) and launches in **~0.12 s** (**~120x faster cold start**).
+- **Exact Game Observations**: Exposes sub-voxel positions, velocities, orientation, health and food vitals, surrounding 3D voxel geometry, entity bounding boxes with eye raycasting, and full container slot components directly from memory without fake stubs.
+- **Model Context Protocol (MCP)**: Native stdio JSON-RPC 2.0 server exposing 9 tools for autonomous AI agent control.
+- **Optional Graphical Bridge**: Optional Fabric reference client bridge (`sawbyte-bridge`) for visual replay and parity verification against vanilla Java Minecraft.
 
 ---
 
-## 🚀 Graphical Desktop Launcher & Bot Supervisor
+## Cross-Platform Graphical Launcher & Bot Supervisor
 
-The Sawbyte Graphical Launcher provides a modern, responsive web dashboard on `http://127.0.0.1:8767` with automatic native browser integration.
+The Sawbyte Graphical Launcher provides an embedded desktop web interface and supervision server on `http://127.0.0.1:8767` with automatic default browser invocation.
 
-### Launching the Desktop GUI
+```text
++---------------------------------------------------------------------------------------+
+|  SAWBYTE DESKTOP SUPERVISOR (127.0.0.1:8767)                                          |
++---------------------------------------------------------------------------------------+
+|  Instances           Accounts               Supervisor Console        Benchmarks      |
++---------------------------------------------------------------------------------------+
+|  bot-01 [RUNNING]    SawBot_Alpha (Offline) > inspect.status          Crucible: 6/6   |
+|  - FOV: 90           UUID: 00000000...0001  Pos: (12.4, -60.0, 4.2)   Universal: 18/18|
+|  - RenderDist: 12    Status: LOCKED (PID 4) Health: 20.0 Food: 20.0   Peak RSS: 8.2MB |
+|  [Backup] [Settings] [Stop Process]         [Send Command] [View Logs]               |
++---------------------------------------------------------------------------------------+
+```
+
+### Launching the Desktop Launcher
 
 | Platform | Quickstart Command / Action |
 |:---|:---|
-| **Linux** | Run `./sawbyte-launcher`, `sawbyte launcher gui`, or open **Sawbyte Launcher** from your desktop app menu (`sawbyte.desktop`) |
-| **Windows** | Double-click `Sawbyte Launcher.bat` or run `sawbyte.exe launcher gui` in PowerShell/CMD |
+| **Linux** | Run `./sawbyte-launcher`, `sawbyte launcher gui`, or launch **Sawbyte Launcher** from your desktop application menu (`sawbyte.desktop`) |
+| **Windows** | Double-click `Sawbyte Launcher.bat` or run `sawbyte.exe launcher gui` in PowerShell / Command Prompt |
 | **macOS** | Double-click `Sawbyte Launcher.command` or run `./sawbyte launcher gui` in Terminal |
 
-### GUI Features
+### Launcher Capabilities
 
 1. **Instance Manager**:
    - Create, list, configure, and delete headless client instances.
    - Edit Minecraft settings (`options.txt`, `fov`, `renderDistance`, `gamma`, keybinds).
-   - Take point-in-time snapshot backups and rollback with one click.
+   - Point-in-time snapshot backup and instant one-click rollback.
 2. **Account Manager**:
    - Add offline development accounts with deterministic or randomized UUIDs.
    - Microsoft OAuth2 Device Code authentication flow display.
-   - Safe per-instance account locking to prevent concurrent session collisions.
+   - Atomic per-instance account locking to prevent concurrent session collisions.
 3. **Live Bot Supervisor & Console**:
    - One-click launch and termination of live `sawbyte-play` background processes.
-   - Live process table displaying PID, runtime uptime, target server, and control endpoints.
+   - Live process monitor displaying PID, uptime, server address, and control socket.
    - Interactive command console: execute `inspect.status`, `chat.send`, `wait.ticks`, or custom scripts in real time.
    - Real-time live log viewer streaming from `logs/latest.log`.
-4. **Profiles & Benchmarks**:
-   - Inspect version profiles, block registry palettes, and view live Crucible parity benchmark reports.
+4. **Profiles & Parity Verification**:
+   - Inspect version profiles, block registry palettes, and view live parity benchmark reports.
 
 ---
 
-## 🏆 Performance & Crucible Dual-Interface Benchmarks
+## Performance & Dual-Interface Crucible Benchmarks
 
-Sawbyte is tested against a live Minecraft 26.3 server using the dual-interface Crucible harness ([`tools/crucible_bench.py`](tools/crucible_bench.py)). The benchmark runs every scenario through both the standalone native client (`sawbyte-play`) and the graphical reference client (`sawbyte-bridge`), verifying all outcomes via server-side RCON ground truth. Detailed reports and historical data are documented in [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+Sawbyte is continuously evaluated against a live Minecraft 26.3 server using the dual-interface Crucible harness ([`tools/crucible_bench.py`](tools/crucible_bench.py)). The benchmark runs every scenario through both the standalone native client (`sawbyte-play`) and the graphical reference client (`sawbyte-bridge`), verifying all outcomes via server-side RCON ground truth. Detailed reports and historical data are documented in [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 | Metric / Stage | Native Client (`sawbyte-play`) | Reference Client (`sawbyte-bridge`) | Parity Verification |
 |:---|:---:|:---:|:---|
 | **Peak Memory (RSS)** | **~8.2 MiB** | **~614 MiB** | **~98.7% memory reduction** |
 | **Startup to Active Tick** | **~0.12 s** | **~14.5 s** | **~120x cold-start speedup** |
-| **Stage 1: Biome Navigation** | **PASS** | **PASS** | 100% identical pathing over vegetation, water, stairs, slabs |
+| **Stage 1: Biome Navigation** | **PASS** | **PASS** | Identical pathing over vegetation, water, stairs, slabs |
 | **Stage 2: Mining & Bridging** | **PASS** | **PASS** | Rejects bedrock, breaks logs/stone, bridges gap |
 | **Stage 3: Container Transfer** | **PASS** | **PASS** | Resolves custom NBT components, transfers multi-slot items |
 | **Stage 4: Occluded Combat** | **PASS** | **PASS** | Rejects wall attacks, repositions for line-of-sight strikes |
 | **Stage 5: Preemption & RL** | **PASS** | **PASS** | Immediate preemption, 20-tick sequential `gym.step` loop |
 | **Stage 6: Lethal Respawn** | **PASS** | **PASS** | Recovers after `/kill`, auto-respawns, recovers inventory |
+
+---
+
+## Universal Capabilities Benchmark Suite
+
+In addition to the Crucible parity benchmarks, Sawbyte includes an extended universal capability test harness ([`tools/universal_bench.py`](tools/universal_bench.py)) covering 18 real-world player automation and server interaction scenarios:
+
+1. **Cracked Server Auth & Challenge Detection**: Offline handshake, challenge prompt detection, and `/register` command dispatch.
+2. **Keyword Hotbar Discovery**: Automated inventory inspection searching for navigator items by name, lore, or ID.
+3. **Navigator Activation**: Right-click activation via `interact.use_item` and server screen open reception.
+4. **Container Directory Traversal**: Parsing chest container slot directories and game metadata.
+5. **State ID Transaction Verification**: Click transaction execution with confirmed server state ID synchronization.
+6. **Sub-Server Teleportation**: Handling dimension transitions, world reloads, and respawn synchronization.
+7. **Configurable Block Reach**: Dynamic extension of interaction boundaries (`player.reach <val>`).
+8. **Smooth Camera Saccades**: Humanised angular velocity acceleration clamping.
+9. **Recipe Crafting Transactions**: 2x2 and 3x3 crafting grid assembly and output receipt.
+10. **Anvil Renaming & XP Cost**: Item renaming and repair cost packet handling.
+11. **Furnace Smelting Observation**: Fuel insertion, smelt progress bar tracking, and product retrieval.
+12. **Villager Trade Navigation**: Trade index selection and multi-ingredient exchange.
+13. **Sign Text Editing**: 4-line UTF-8 sign block update roundtrip.
+14. **Book & Lectern Reading**: Paginated book component extraction.
+15. **Ledge Sneak & Ice Dynamics**: Cliff edge clamping and ice momentum retention.
+16. **Ballistic Projectile Physics**: Bow draw timing and parabolic trajectory calculation.
+17. **Shield Blocking & Parrying**: Offhand guard activation and incoming damage mitigation.
+18. **Gymnasium Multi-Modal RL**: 20-tick synchronous stepping with sub-voxel observation validation.
 
 ---
 
@@ -110,6 +148,9 @@ Run a direct live interactive session with TCP remote control and Gymnasium step
 # Start live session listening on control port 25580
 sawbyte-play live 127.0.0.1:25565 --offline BotUser block-profile.json --listen 127.0.0.1:25580
 
+# Connect to a cracked server with custom protocol version
+SAWBYTE_PROTOCOL=766 sawbyte-play live top.pika.host:25565 --offline BotUser block-profile.json --listen 127.0.0.1:25580
+
 # Replay an exact deterministic input tape (.sbif)
 sawbyte-play 127.0.0.1:25565 --offline BotUser movement.sbif trace.csv block-profile.json
 ```
@@ -126,8 +167,19 @@ sawbyte eval "inspect.status" --connect 127.0.0.1:25580
 sawbyte eval "inspect.chat" --connect 127.0.0.1:25580
 sawbyte eval "inspect.events" --connect 127.0.0.1:25580
 
+# Find navigator in hotbar by keyword and select slot
+sawbyte eval 'inventory.find "navigator"' --connect 127.0.0.1:25580
+sawbyte eval "player.hotbar 0" --connect 127.0.0.1:25580
+
+# Right-click held navigator item
+sawbyte eval "interact.use_item" --connect 127.0.0.1:25580
+
+# Inspect opened menu and click game
+sawbyte eval "gui.inspect" --connect 127.0.0.1:25580
+sawbyte eval 'gui.click "bedwars"' --connect 127.0.0.1:25580
+
 # Send chat commands or navigate
-sawbyte eval 'chat.send "/help"' --connect 127.0.0.1:25580
+sawbyte eval 'chat.send "/register password123 password123"' --connect 127.0.0.1:25580
 sawbyte eval 'task.navigate 100 64 200' --connect 127.0.0.1:25580
 ```
 
@@ -143,7 +195,7 @@ Exposed MCP Tools:
 - `launcher_control`: Manage instances, snapshots, accounts, and spawn live bots.
 - `client_menu_and_settings`: Configure options and persist settings on disk.
 - `player_input`: Send smooth/direct camera yaw/pitch deltas and movement keys.
-- `player_interact`: Perform line-of-sight raycast block mining, placement, and entity attacks.
+- `player_interact`: Perform line-of-sight raycast block mining, placement, item use, and entity attacks.
 - `gui_screen_automation`: Inspect server containers and click slots with `state_id` transaction verification.
 - `task_and_navigation`: Execute 3D A* pathfinding across loaded server chunk sections.
 - `world_inspector_and_profiler`: Render ASCII maps and query chunk voxels.
@@ -208,7 +260,7 @@ console.log(wf.compileScript());
 
 ## Distribution & Downloads
 
-Pre-built, self-contained binaries are available on the [Releases](https://github.com/5ivesaw/Sawbyte/releases) page for every release:
+Pre-built, self-contained binaries are published on the [Releases](https://github.com/5ivesaw/Sawbyte/releases/tag/v0.3.0) page:
 
 | Operating System | Full Engine Archive (CLI + Play + Launcher) | Dedicated Launcher Package |
 |:---|:---|:---|

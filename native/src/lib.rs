@@ -50,7 +50,11 @@ fn connect(server: &str, account: &auth::Account) -> Result<(wire::Rx, wire::Tx)
     socket.set_write_timeout(Some(Duration::from_secs(10)))?;
     let (mut rx, mut tx) = wire::connection(socket)?;
     let mut hello = Vec::new();
-    var(777, &mut hello);
+    let proto: i32 = std::env::var("SAWBYTE_PROTOCOL")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(777);
+    var(proto, &mut hello);
     let host = server
         .rsplit_once(':')
         .map(|p| p.0)
@@ -2108,6 +2112,31 @@ impl Session {
                         .map_err(|e| format!("{e:?}"))?;
                     outputs.push(format!("used block at ({}, {}, {})", pos[0], pos[1], pos[2]));
                 }
+                ["interact.use_item"] | ["interact.use_item", _] => {
+                    let hand = if parts.len() > 1 && parts[1] == "offhand" {
+                        Hand::OffHand
+                    } else {
+                        Hand::MainHand
+                    };
+                    let seq = self.state_table.next_sequence();
+                    let events = vec![
+                        (
+                            next_tick,
+                            SubTickEvent::UseItem {
+                                hand,
+                                sequence: seq,
+                            },
+                        ),
+                        (
+                            next_tick,
+                            SubTickEvent::SwipeArm { hand },
+                        ),
+                    ];
+                    self.event_queue
+                        .submit(&events)
+                        .map_err(|e| format!("{e:?}"))?;
+                    outputs.push(format!("used held item in {hand:?}"));
+                }
                 ["interact.attack", entity_id] => {
                     let id: i32 = entity_id.parse().map_err(|_| "bad entity_id")?;
                     let ent = self
@@ -2526,6 +2555,46 @@ impl Session {
                         populated.join(", ")
                     ));
                 }
+                ["inventory.find", query] | ["inventory.query", query] => {
+                    let q = query.to_lowercase();
+                    let mut found_opt = None;
+                    for (slot_idx, item_opt) in self.state_table.inventory_slots.iter().enumerate() {
+                        if let Some(stack) = item_opt {
+                            let id_match = stack.id.to_lowercase().contains(&q);
+                            let name_match = stack
+                                .display_name
+                                .as_deref()
+                                .map(|n| n.to_lowercase().contains(&q))
+                                .unwrap_or(false);
+                            let lore_match = stack
+                                .lore
+                                .iter()
+                                .any(|l| l.to_lowercase().contains(&q));
+                            if id_match || name_match || lore_match {
+                                let hotbar_slot = if (36..=44).contains(&slot_idx) {
+                                    Some(slot_idx - 36)
+                                } else {
+                                    None
+                                };
+                                found_opt = Some(serde_json::json!({
+                                    "found": true,
+                                    "slot": slot_idx,
+                                    "hotbar_slot": hotbar_slot,
+                                    "id": stack.id,
+                                    "count": stack.count,
+                                    "display_name": stack.display_name,
+                                    "lore": stack.lore,
+                                }));
+                                break;
+                            }
+                        }
+                    }
+                    if let Some(found) = found_opt {
+                        outputs.push(found.to_string());
+                    } else {
+                        outputs.push(serde_json::json!({ "found": false, "query": query }).to_string());
+                    }
+                }
                 ["entities.inspect"] => {
                     let ents: Vec<String> = self
                         .state_table
@@ -2546,13 +2615,19 @@ impl Session {
                 }
                 ["chat.send", rest @ ..] if !rest.is_empty() => {
                     let msg = rest.join(" ");
-                    let ev = SubTickEvent::SendChat {
-                        message: msg.clone(),
+                    let ev = if let Some(cmd) = msg.strip_prefix('/') {
+                        SubTickEvent::SendCommand {
+                            command: cmd.to_string(),
+                        }
+                    } else {
+                        SubTickEvent::SendChat {
+                            message: msg.clone(),
+                        }
                     };
                     self.event_queue
                         .submit(&[(next_tick, ev)])
                         .map_err(|e| format!("{e:?}"))?;
-                    outputs.push(format!("queued live chat: {msg}"));
+                    outputs.push(format!("queued live chat/command: {msg}"));
                 }
                 ["cmd.run", rest @ ..] if !rest.is_empty() => {
                     let cmd = rest.join(" ");

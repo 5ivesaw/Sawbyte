@@ -73,6 +73,9 @@ jobs:
           ./target/release/sawbyte benchmark
           SAWBYTE_BIN=./target/release/sawbyte python sdks/python/tests/test_sdk.py
           node --test sdks/typescript/test/sdk.test.mjs
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            python tools/universal_bench.py --target harness
+          fi
       - name: Package preview
         shell: bash
         run: |

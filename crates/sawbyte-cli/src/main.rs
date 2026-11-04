@@ -7,6 +7,7 @@ use sawbyte_core::{
     Action, Backend, Button, Capability, Direct, Humanised, InputFrame, InputPolicy, Scheduler,
 };
 use std::io::{self, BufRead, Write};
+use std::net::ToSocketAddrs;
 use std::path::Path;
 use std::time::Duration;
 
@@ -140,11 +141,26 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             println!("Wrote {} input frames to {}", frames.len(), args[1]);
         }
         Some("status") if (2..=4).contains(&args.len()) => {
-            let endpoint: std::net::SocketAddr = args[1].parse()?;
-            let hostname = args
-                .get(2)
-                .cloned()
-                .unwrap_or_else(|| endpoint.ip().to_string());
+            let (endpoint, hostname) = if let Ok(sock) = args[1].parse::<std::net::SocketAddr>() {
+                (
+                    sock,
+                    args.get(2)
+                        .cloned()
+                        .unwrap_or_else(|| sock.ip().to_string()),
+                )
+            } else {
+                let s = &args[1];
+                let (host, port) = s.rsplit_once(':').unwrap_or((s.as_str(), "25565"));
+                let p: u16 = port.parse().unwrap_or(25565);
+                let resolved = (host, p)
+                    .to_socket_addrs()?
+                    .next()
+                    .ok_or_else(|| format!("unable to resolve hostname '{host}'"))?;
+                (
+                    resolved,
+                    args.get(2).cloned().unwrap_or_else(|| host.to_string()),
+                )
+            };
             let protocol = args
                 .get(3)
                 .map(|s| s.parse::<i32>())
