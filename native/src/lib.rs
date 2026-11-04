@@ -2322,6 +2322,12 @@ impl Session {
                     outputs.push(self.gym_observation_json("gym.observe"));
                 }
                 ["gym.step", fwd, back, left, right, jump, sneak, sprint, yaw_d, pitch_d, rest @ ..] => {
+                    if self.pending_replies.iter().any(|reply| matches!(
+                        &reply.kind,
+                        PendingReplyKind::Tick { command, .. } if command == "gym.step"
+                    )) {
+                        return Err("a training step is already pending".into());
+                    }
                     self.preempt_movement();
                     let b_on = |s: &str| s == "1" || s == "true";
                     let yd: f64 = yaw_d.parse().map_err(|_| "bad yaw_delta")?;
@@ -3546,6 +3552,10 @@ mod tests {
         let (gym_tx, gym_rx) = mpsc::channel();
         session.handle_control_request_with_channel("gym.step 1 0 0 0 false false false 90 0 3", Some(gym_tx));
         assert!(gym_rx.try_recv().is_err());
+        assert_eq!(session.pending_replies.len(), 1);
+        let (other_tx, other_rx) = mpsc::channel();
+        session.handle_control_request_with_channel("gym.step 0 0 0 0 false false false 0 0", Some(other_tx));
+        assert!(other_rx.recv_timeout(Duration::from_secs(1)).unwrap().contains("already pending"));
         assert_eq!(session.pending_replies.len(), 1);
 
         session.live_tick = 2;
