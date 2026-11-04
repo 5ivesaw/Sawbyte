@@ -515,16 +515,45 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     # East block (34, type=right) contains container slots 0..26
     # West block (33, type=left) contains container slots 27..53
     # Populate East block: Slot 0 (diamond_sword with components), Slot 1 (oak_planks)
-    rcon.command(
-        f'item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.0 with diamond_sword[custom_name=\'{{"text":"Sawbyte Key Blade"}}\',lore=[\'{{"text":"A legendary weapon"}}\'],enchantments={{levels:{{"minecraft:sharpness":5}}}}] 1'
+    res_sword = rcon.command(
+        f'item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.0 with minecraft:diamond_sword[minecraft:custom_name=\'{{"text":"Sawbyte Key Blade"}}\',minecraft:lore=[\'{{"text":"A legendary weapon"}}\'],minecraft:enchantments={{levels:{{"minecraft:sharpness":5}}}}] 1'
     )
-    rcon.command(
+    print(f"  [Stage 3] RCON item replace slot 0: {res_sword.strip()}")
+    if "Sawbyte Key Blade" not in res_sword and "diamond_sword" not in res_sword:
+        res_sword_plain = rcon.command(
+            f'item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.0 with diamond_sword[custom_name=\'{{"text":"Sawbyte Key Blade"}}\',lore=[\'{{"text":"A legendary weapon"}}\'],enchantments={{levels:{{"minecraft:sharpness":5}}}}] 1'
+        )
+        print(f"  [Stage 3] RCON fallback item replace slot 0: {res_sword_plain.strip()}")
+
+    res_planks = rcon.command(
         f"item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.1 with oak_planks 16"
     )
+    print(f"  [Stage 3] RCON item replace slot 1: {res_planks.strip()}")
+
     # Populate West block: Slot 53 (container.26: iron_ingot)
-    rcon.command(
+    res_iron = rcon.command(
         f"item replace block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} container.26 with iron_ingot 8"
     )
+    print(f"  [Stage 3] RCON item replace slot 53: {res_iron.strip()}")
+
+    # Backup data merge if slot 0 is not yet present on server
+    check_east = rcon.command(f"data get block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} Items")
+    if "Sawbyte Key Blade" not in check_east:
+        print(f"  [Stage 3] Item replace did not write custom item. Applying data merge fallback...")
+        merge_res = rcon.command(
+            f"data merge block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} "
+            r'{Items: ['
+            r'{Slot: 0b, id: "minecraft:diamond_sword", count: 1b, components: {"minecraft:custom_name": \'{"text":"Sawbyte Key Blade"}\', "minecraft:lore": [\'{"text":"A legendary weapon"}\'], "minecraft:enchantments": {"levels": {"minecraft:sharpness": 5}}}}, '
+            r'{Slot: 1b, id: "minecraft:oak_planks", count: 16b}'
+            r']}'
+        )
+        print(f"  [Stage 3] Data merge result: {merge_res.strip()}")
+
+    # Pre-inspection RCON check
+    pre_east = rcon.command(f"data get block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} Items")
+    pre_west = rcon.command(f"data get block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} Items")
+    print(f"  [Stage 3] Pre-inspection RCON East (34): {pre_east.strip()}")
+    print(f"  [Stage 3] Pre-inspection RCON West (33): {pre_west.strip()}")
     client.send_command("wait.ticks 5")
 
     # Navigate across bridged pit to chest
@@ -538,7 +567,7 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     # Polling wait for container slots to be populated by server packets
     slot_map = {}
     last_inspect = {}
-    for attempt in range(12):
+    for attempt in range(15):
         client.send_command("wait.ticks 3")
         inspect_raw = client.send_command("gui.inspect")
         try:
@@ -549,7 +578,7 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
                 break
         except Exception:
             pass
-        print(f"  [Stage 3] Waiting for container slots to populate (attempt {attempt + 1}/12, observed slots: {list(slot_map.keys())})...")
+        print(f"  [Stage 3] Waiting for container slots to populate (attempt {attempt + 1}/15, observed slots: {list(slot_map.keys())})...")
 
     if 0 not in slot_map or 1 not in slot_map or 53 not in slot_map:
         raise AssertionError(f"Stage 3 failed: Container slots truncated or missing. Observed slots: {list(slot_map.keys())}. Inspect payload: {last_inspect}")

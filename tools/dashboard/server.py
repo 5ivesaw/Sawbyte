@@ -178,7 +178,7 @@ def build_status():
         "kilo": kilo_info,
         "estimation": {
             "overall_progress_pct": overall_progress_pct,
-            "estimated_time_remaining": kilo_info["status"].get("estimated_time_remaining", "2-3 hours"),
+            "estimated_time_remaining": f"1-2 hours (v0.2.1 DoD, {dod_done}/{dod_total} complete)",
             "dod_done": dod_done,
             "dod_total": dod_total,
             "vision_fidelity": kilo_info["status"].get("vision_fidelity", "EXCELLENT"),
@@ -379,6 +379,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
     </div>
     <div style="margin-top:8px;">
       <div style="font-size:11px; text-transform:uppercase; color:var(--sub); font-weight:bold;">Latest Code Review & Attack Findings:</div>
+      <div style="font-size:10px; color:#d29922; margin-bottom:4px;">⚠️ AI hypotheses only — requires protocol 26.3 verification & reproducible tests before implementing.</div>
       <div id="kilo-code-box" class="collapsible-box">Awaiting first scheduled scan...</div>
     </div>
     <div style="margin-top:8px;">

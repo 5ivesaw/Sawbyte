@@ -116,13 +116,14 @@ def evaluate_codebase() -> dict:
         "1. Desync bugs between server packets and client state tables (e.g., container slots, entities, physics ticks). "
         "2. Protocol 26.3 edge cases (component parsing, VarInt bounds, screen kinds). "
         "3. Race conditions, buffer truncation, or unhandled errors that discard state. "
+        "Important protocol constraints: Minecraft Java Edition strictly uses AES-128-CFB8 where the shared secret is both the key and IV by design; do not flag this or recommend independent IVs. In TCP stream framing, decoding errors on unframed packets must not be silently skipped as that desynchronizes the byte stream. "
         "Report all findings with exact file paths, line references, severity (Critical/High/Medium/Low), "
         "root cause explanation, and concrete remediation advice. "
         "Do NOT execute any git commands or write/edit any files."
     )
 
     try:
-        report, reasoning, tokens = run_kilo_prompt(prompt, timeout=300)
+        report, reasoning, tokens = run_kilo_prompt(prompt, timeout=420)
         findings_data = {
             "timestamp": time.time(),
             "time_iso": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -178,20 +179,22 @@ def evaluate_vision_and_docs() -> dict:
         "- Current state: Physics parity (160-tick flat-world error < 1e-6), Crucible benchmark Stages 1-6 dual-interface (native and Fabric bridge) being verified against vanilla 26.3 server, CI passing across Linux, Windows, macOS.\n"
         "- Goal: Complete all 6 Crucible stages on both backends, complete COVERAGE.md audit, and release v0.2.1.\n\n"
         "Evaluate the following questions objectively based on current implementation:\n"
-        "1. Is the project close to being finished? What is the estimated completion percentage (0-100%)?\n"
-        "2. Does the client reflect the universal foundational base engine vision (zero graphics, authentic 1:1 vanilla 26.3, general composable primitives without hardcoding)?\n"
-        "3. Is anything missing or unaddressed from Definition of Done?\n"
-        "4. What exact remaining tasks are needed to achieve release v0.2.1?\n"
+        "1. Is the v0.2.1 milestone close to being finished? Differentiate between immediate Release v0.2.1 DoD (Crucible benchmark Stages 1-6 dual-interface passing, CI green, COVERAGE.md audit) and the long-term infinite engine roadmap (G0-G8).\n"
+        "2. What is the estimated completion percentage (0-100%) for Release v0.2.1 DoD?\n"
+        "3. How many engineering hours remain to finish Release v0.2.1 DoD?\n"
+        "4. Does the client reflect the universal foundational base engine vision (zero graphics, authentic 1:1 vanilla 26.3, general composable primitives without hardcoding)?\n"
+        "5. What exact remaining tasks are needed to achieve release v0.2.1?\n"
         "Provide your answer in structured format with:\n"
-        "- COMPLETION_PERCENTAGE: <number 0-100>\n"
-        "- ESTIMATED_HOURS_REMAINING: <number>\n"
+        "- COMPLETION_PERCENTAGE: <number 0-100 for v0.2.1 milestone>\n"
+        "- ESTIMATED_HOURS_REMAINING: <number of hours for v0.2.1 milestone>\n"
+        "- LONG_TERM_HOURS_REMAINING: <number of hours for entire long-term vision roadmap>\n"
         "- VISION_FIDELITY: <EXCELLENT/GOOD/NEEDS_WORK>\n"
-        "- REMAINING_TASKS: <bulleted list>\n"
+        "- REMAINING_TASKS: <bulleted list for v0.2.1>\n"
         "- SUMMARY: <concise executive paragraph>"
     )
 
     try:
-        report, reasoning, tokens = run_kilo_prompt(prompt, timeout=300)
+        report, reasoning, tokens = run_kilo_prompt(prompt, timeout=420)
         pct_match = re.search(r"COMPLETION_PERCENTAGE:\s*(\d+)", report)
         pct = int(pct_match.group(1)) if pct_match else 88
         hrs_match = re.search(r"ESTIMATED_HOURS_REMAINING:\s*([\d\.-]+)", report)
