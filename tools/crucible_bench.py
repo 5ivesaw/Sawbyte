@@ -411,6 +411,8 @@ def execute_stage_1(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     print("  -> Running Stage 1: Complex Biome & Block-State Navigation...")
     t0 = time.monotonic()
     # Build course in loaded spawn area at Z=10, Y=64..68, X=10..25
+    rcon.command("setworldspawn 10 64 10")
+    rcon.command("gamerule spawnRadius 0")
     rcon.command("fill 8 64 8 36 68 12 air")
     rcon.command("fill 8 63 8 36 63 12 smooth_stone")
     # Obstacles along the straight line from X=10 to 25 at Z=10
@@ -706,6 +708,9 @@ def execute_stage_6(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     """Stage 6: Lethal Damage, Respawn State Machine & Item Recovery."""
     print("  -> Running Stage 6: Lethal Damage, Respawn State Machine & Item Recovery...")
     t0 = time.monotonic()
+    # Ensure spawn point is pinned at arena start
+    rcon.command("setworldspawn 10 64 10")
+    rcon.command("gamerule spawnRadius 0")
     # Drop item at (25, 64, 10)
     rcon.command("summon item 25.5 64.0 10.5 {Item: {id: \"minecraft:diamond\", count: 1b}, Tags: [\"crucible_loot\"]}")
     # Kill the bot via server RCON
@@ -716,6 +721,8 @@ def execute_stage_6(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     obs = json.loads(client.send_command("gym.observe"))
     if obs.get("health", 0.0) < 19.0:
         raise AssertionError(f"Stage 6 failed: Bot did not respawn with full health: {obs}")
+
+    client.send_command("wait.ticks 10")
 
     # Navigate back to dropped item
     client.send_command("task.navigate 25 64 10 walk")
@@ -780,7 +787,7 @@ def main() -> None:
     parser.add_argument("--backend", choices=["native", "client", "both"], default="native")
     parser.add_argument("--native-bin", type=Path, default=ROOT / "target" / "release" / "sawbyte-play")
     parser.add_argument("--cli-bin", type=Path, default=ROOT / "target" / "release" / "sawbyte")
-    parser.add_argument("--bridge-jar", type=Path, default=ROOT / "run" / "mods" / "sawbyte-bridge-0.2.0.jar")
+    parser.add_argument("--bridge-jar", type=Path, default=ROOT / "run" / "mods" / "sawbyte-bridge-0.2.1.jar")
     parser.add_argument("--block-profile", type=Path, default=ROOT / "run" / "reports" / "block-profile.json")
     parser.add_argument("--server-port", type=int, default=25565)
     parser.add_argument("--rcon-port", type=int, default=25575)
