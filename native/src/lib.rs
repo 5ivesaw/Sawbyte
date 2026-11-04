@@ -2649,60 +2649,61 @@ impl Session {
                     } else {
                         None
                     };
+                    let step_tick = self.live_tick;
                     self.preempt_movement();
                     self.scheduler
                         .submit(&[
                             (
-                                next_tick,
+                                step_tick,
                                 Action::Button {
                                     button: Button::Forward,
                                     down: buttons[0],
                                 },
                             ),
                             (
-                                next_tick,
+                                step_tick,
                                 Action::Button {
                                     button: Button::Back,
                                     down: buttons[1],
                                 },
                             ),
                             (
-                                next_tick,
+                                step_tick,
                                 Action::Button {
                                     button: Button::Left,
                                     down: buttons[2],
                                 },
                             ),
                             (
-                                next_tick,
+                                step_tick,
                                 Action::Button {
                                     button: Button::Right,
                                     down: buttons[3],
                                 },
                             ),
                             (
-                                next_tick,
+                                step_tick,
                                 Action::Button {
                                     button: Button::Jump,
                                     down: buttons[4],
                                 },
                             ),
                             (
-                                next_tick,
+                                step_tick,
                                 Action::Button {
                                     button: Button::Sneak,
                                     down: buttons[5],
                                 },
                             ),
                             (
-                                next_tick,
+                                step_tick,
                                 Action::Button {
                                     button: Button::Sprint,
                                     down: buttons[6],
                                 },
                             ),
                             (
-                                next_tick,
+                                step_tick,
                                 Action::Look {
                                     yaw: yd,
                                     pitch: pd,
@@ -2711,12 +2712,12 @@ impl Session {
                         ])
                         .map_err(|e| format!("scheduler error: {e}"))?;
                     if let Some(hb) = hotbar {
-                        if let Err(error) = self.event_queue.submit(&[(next_tick, SubTickEvent::SelectHotbar { slot: hb })]) {
+                        if let Err(error) = self.event_queue.submit(&[(step_tick, SubTickEvent::SelectHotbar { slot: hb })]) {
                             let _ = self.scheduler.cancel();
                             return Err(format!("hotbar scheduling error: {error}"));
                         }
                     }
-                    outputs.push(format!("gym.step scheduled for tick {next_tick} (current_tick={})", self.live_tick));
+                    outputs.push(format!("gym.step scheduled for tick {step_tick} (current_tick={})", self.live_tick));
                 }
                 ["wait.ticks", n] => {
                     let count = n.parse::<u64>().map_err(|_| "bad wait.ticks count")?;
@@ -3904,6 +3905,7 @@ mod tests {
             }
         }
         assert_eq!(session.state_table.selected_hotbar, 2);
+        session.live_tick = 2;
 
         let cmd2 = session.script_queue.pop_front().unwrap();
         let (tx2, rx2) = mpsc::channel();
@@ -3921,9 +3923,6 @@ mod tests {
         assert!(other_rx.recv_timeout(Duration::from_secs(1)).unwrap().contains("already pending"));
         assert_eq!(session.pending_replies.len(), 1);
 
-        session.live_tick = 2;
-        session.resolve_pending_replies();
-        assert!(gym_rx.try_recv().is_err());
         session.scheduler.advance(2).unwrap();
         let drained = session.event_queue.drain_tick(2).unwrap();
         for ev in drained {

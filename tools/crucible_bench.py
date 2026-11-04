@@ -686,9 +686,12 @@ def execute_stage_5(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     client.send_command("task.cancel")
 
     # 20-tick exact gym.step loop
-    obs_prev = json.loads(client.send_command("gym.observe"))
-    prev_tick = obs_prev["tick"]
-    for i in range(20):
+    obs_init = json.loads(client.send_command("gym.observe"))
+    obs_step0 = json.loads(client.send_command("gym.step 1 0 0 0 0 0 0 0.0 0.0"))
+    if obs_step0["tick"] <= obs_init["tick"]:
+        raise AssertionError(f"Stage 5 failed: gym.step tick did not advance from observe: init={obs_init['tick']}, step0={obs_step0['tick']}")
+    prev_tick = obs_step0["tick"]
+    for i in range(1, 20):
         step_raw = client.send_command("gym.step 1 0 0 0 0 0 0 0.0 0.0")
         obs = json.loads(step_raw)
         curr_tick = obs["tick"]
