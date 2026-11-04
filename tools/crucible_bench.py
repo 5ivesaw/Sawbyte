@@ -511,30 +511,26 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     # Double chest facing north: West (33) is left, East (34) is right
     rcon.command(f"setblock {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=left]{{CustomName:'\"CrucibleChest\"'}}")
     rcon.command(f"setblock {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=right]{{CustomName:'\"CrucibleChest\"'}}")
-    # Populate items using item replace block and data merge on both halves
-    rcon.command(
-        f'item replace block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} container.0 with diamond_sword[custom_name=\'{{"text":"Sawbyte Key Blade"}}\',lore=[\'{{"text":"A legendary weapon"}}\'],enchantments={{levels:{{"minecraft:sharpness":5}}}}] 1'
-    )
-    rcon.command(
-        f"item replace block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} container.1 with oak_planks 16"
-    )
-    rcon.command(
-        f"item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.26 with iron_ingot 8"
-    )
-    # Backup population via data merge block for both halves
-    rcon.command(
-        f"data merge block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} "
-        r'{Items: ['
-        r'{Slot: 0b, id: "minecraft:diamond_sword", count: 1b, components: {"minecraft:custom_name": \'{"text":"Sawbyte Key Blade"}\', "minecraft:lore": [\'{"text":"A legendary weapon"}\'], "minecraft:enchantments": {"levels": {"minecraft:sharpness": 5}}}}, '
-        r'{Slot: 1b, id: "minecraft:oak_planks", count: 16b}'
-        r']}'
-    )
-    rcon.command(
-        f"data merge block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} "
-        r'{Items: ['
-        r'{Slot: 26b, id: "minecraft:iron_ingot", count: 8b}'
-        r']}'
-    )
+    # Populate items using item replace and data merge on both chest halves
+    # Populating both halves guarantees Slots 0, 1 and 53 exist regardless of container mapping order
+    for x in (chest_pos[0], chest_pos[0] + 1):
+        rcon.command(
+            f'item replace block {x} {chest_pos[1]} {chest_pos[2]} container.0 with diamond_sword[custom_name=\'{{"text":"Sawbyte Key Blade"}}\',lore=[\'{{"text":"A legendary weapon"}}\'],enchantments={{"minecraft:sharpness":5}}] 1'
+        )
+        rcon.command(
+            f"item replace block {x} {chest_pos[1]} {chest_pos[2]} container.1 with oak_planks 16"
+        )
+        rcon.command(
+            f"item replace block {x} {chest_pos[1]} {chest_pos[2]} container.26 with iron_ingot 8"
+        )
+        rcon.command(
+            f"data merge block {x} {chest_pos[1]} {chest_pos[2]} "
+            r'{Items: ['
+            r'{Slot: 0b, id: "minecraft:diamond_sword", count: 1b, components: {"minecraft:custom_name": \'{"text":"Sawbyte Key Blade"}\', "minecraft:lore": [\'{"text":"A legendary weapon"}\'], "minecraft:enchantments": {"minecraft:sharpness": 5}}}, '
+            r'{Slot: 1b, id: "minecraft:oak_planks", count: 16b}, '
+            r'{Slot: 26b, id: "minecraft:iron_ingot", count: 8b}'
+            r']}'
+        )
     client.send_command("wait.ticks 5")
 
     # Navigate across bridged pit to chest
