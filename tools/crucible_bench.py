@@ -508,16 +508,31 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     print("  -> Running Stage 3: Component-Heavy Container & Multi-Slot Inventory Manipulation...")
     t0 = time.monotonic()
     chest_pos = (33, 64, 10)
-    # Double chest: 33 is right, 34 is left
-    rcon.command(f"setblock {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=right]{{CustomName:'\"CrucibleChest\"'}}")
-    rcon.command(f"setblock {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=left]{{CustomName:'\"CrucibleChest\"'}}")
-    # Component-heavy Slot 0, Slots 1 and 53 populated
+    # Double chest facing north: West (33) is left, East (34) is right
+    rcon.command(f"setblock {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=left]{{CustomName:'\"CrucibleChest\"'}}")
+    rcon.command(f"setblock {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=right]{{CustomName:'\"CrucibleChest\"'}}")
+    # Populate items using item replace block and data merge on both halves
+    rcon.command(
+        f'item replace block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} container.0 with diamond_sword[custom_name=\'{{"text":"Sawbyte Key Blade"}}\',lore=[\'{{"text":"A legendary weapon"}}\'],enchantments={{levels:{{"minecraft:sharpness":5}}}}] 1'
+    )
+    rcon.command(
+        f"item replace block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} container.1 with oak_planks 16"
+    )
+    rcon.command(
+        f"item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.26 with iron_ingot 8"
+    )
+    # Backup population via data merge block for both halves
     rcon.command(
         f"data merge block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} "
         r'{Items: ['
         r'{Slot: 0b, id: "minecraft:diamond_sword", count: 1b, components: {"minecraft:custom_name": \'{"text":"Sawbyte Key Blade"}\', "minecraft:lore": [\'{"text":"A legendary weapon"}\'], "minecraft:enchantments": {"levels": {"minecraft:sharpness": 5}}}}, '
-        r'{Slot: 1b, id: "minecraft:oak_planks", count: 16b}, '
-        r'{Slot: 53b, id: "minecraft:iron_ingot", count: 8b}'
+        r'{Slot: 1b, id: "minecraft:oak_planks", count: 16b}'
+        r']}'
+    )
+    rcon.command(
+        f"data merge block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} "
+        r'{Items: ['
+        r'{Slot: 26b, id: "minecraft:iron_ingot", count: 8b}'
         r']}'
     )
     client.send_command("wait.ticks 5")
@@ -553,7 +568,7 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
 
     # Verify RCON server ground truth
     chest_data = rcon.command(f"data get block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} Items")
-    if "Slot: 1b" in chest_data and "oak_planks" in chest_data:
+    if "oak_planks" in chest_data:
         raise AssertionError("Stage 3 failed: Slot 1 (oak_planks) still present in chest after transfer")
     if "Sawbyte Key Blade" not in chest_data:
         raise AssertionError("Stage 3 failed: Slot 0 was unexpectedly disturbed")
