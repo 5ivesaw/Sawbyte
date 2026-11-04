@@ -189,4 +189,4 @@ Sawbyte/
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
-*Disclaimer: Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.*
+*Disclaimer: Not an official Minecraft product. Not approved by or associated with Mojang or Microslop(Microsoft).*
