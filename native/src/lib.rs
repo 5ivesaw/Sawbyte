@@ -1502,7 +1502,7 @@ impl Session {
                         self.player.pos[1].floor() as i32,
                         self.player.pos[2].floor() as i32,
                     ];
-                    let path = find_path(&self.world, start, goal, 2048)?;
+                    let path = find_path(&self.world, start, goal, 8192)?;
                     let waypoints = path.len();
                     self.preempt_movement();
                     self.active_nav_path = if path.len() > 1 {

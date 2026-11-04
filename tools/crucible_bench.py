@@ -410,30 +410,30 @@ def execute_stage_1(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     """Stage 1: Complex Biome & Block-State Navigation."""
     print("  -> Running Stage 1: Complex Biome & Block-State Navigation...")
     t0 = time.monotonic()
-    # Build course at Z=200, Y=69..72, X=200..215
-    rcon.command("fill 198 69 198 217 73 202 air")
-    rcon.command("fill 198 68 198 217 68 202 smooth_stone")
-    # Obstacles along the straight line from X=200 to 215 at Z=200
-    rcon.command("setblock 202 69 200 poppy")
-    rcon.command("setblock 204 69 200 short_grass")
-    rcon.command("setblock 208 69 200 oak_fence_gate[facing=west,open=true]")
-    # Marker at destination (floor block under player at 215)
-    rcon.command("setblock 215 68 200 gold_block")
+    # Build course in loaded spawn area at Z=10, Y=64..68, X=10..25
+    rcon.command("fill 8 64 8 36 68 12 air")
+    rcon.command("fill 8 63 8 36 63 12 smooth_stone")
+    # Obstacles along the straight line from X=10 to 25 at Z=10
+    rcon.command("setblock 12 64 10 poppy")
+    rcon.command("setblock 14 64 10 short_grass")
+    rcon.command("setblock 18 64 10 oak_fence_gate[facing=west,open=true]")
+    # Marker at destination (floor block under player at 25)
+    rcon.command("setblock 25 63 10 gold_block")
     # Teleport bot to start
-    rcon.command("tp @a 200.5 69.0 200.5 90 0")
-    client.send_command("wait.ticks 10")
+    rcon.command("tp @a 10.5 64.0 10.5 90 0")
+    client.send_command("wait.ticks 20")
 
     # Bot issues navigate command
-    client.send_command("task.navigate 215 69 200 walk")
+    client.send_command("task.navigate 25 64 10 walk")
     client.wait_until("task_idle", 300)
 
     # RCON Ground Truth Verification
-    res = rcon.command("execute if entity @a[x=215,y=69,z=200,distance=..1.8]")
+    res = rcon.command("execute if entity @a[x=25,y=64,z=10,distance=..1.8]")
     passed = "Test passed" in res or "count: 1" in res
     if not passed:
         # Check actual coordinate
         pos_raw = rcon.command("data get entity @a[limit=1] Pos")
-        raise AssertionError(f"Stage 1 failed: Bot did not reach goal (215, 69, 200). Actual pos: {pos_raw}")
+        raise AssertionError(f"Stage 1 failed: Bot did not reach goal (25, 64, 10). Actual pos: {pos_raw}")
 
     return {"stage": 1, "name": "complex_biome_navigation", "passed": True, "elapsed": time.monotonic() - t0}
 
@@ -447,56 +447,56 @@ def execute_stage_2(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     client.send_command("player.select_hotbar 0")
     client.send_command("wait.ticks 5")
 
-    # Course setup starting from X=215
-    rcon.command("setblock 216 69 200 bedrock")
+    # Course setup starting from X=25
+    rcon.command("setblock 26 64 10 bedrock")
     client.send_command("wait.ticks 5")
 
     # 1. Unbreakable refusal
     refused = False
     try:
-        resp = client.send_command("interact.mine 216 69 200")
+        resp = client.send_command("interact.mine 26 64 10")
         if "unbreakable" in resp.lower():
             refused = True
     except RuntimeError as e:
         if "unbreakable" in str(e).lower():
             refused = True
 
-    rcon_check = rcon.command("execute if block 216 69 200 bedrock")
+    rcon_check = rcon.command("execute if block 26 64 10 bedrock")
     if not refused or ("Test passed" not in rcon_check and "count: 1" not in rcon_check):
         raise AssertionError("Stage 2 failed: Bot did not reject mining bedrock, or bedrock broke")
 
     # 2. Mine oak log & stone with duration
-    rcon.command("setblock 216 69 200 oak_log")
-    rcon.command("setblock 217 69 200 stone")
+    rcon.command("setblock 26 64 10 oak_log")
+    rcon.command("setblock 27 64 10 stone")
     client.send_command("wait.ticks 5")
 
-    client.send_command("interact.mine 216 69 200")
+    client.send_command("interact.mine 26 64 10")
     client.wait_until("task_idle", 250)
-    rcon_log = rcon.command("execute if block 216 69 200 air")
+    rcon_log = rcon.command("execute if block 26 64 10 air")
     if "Test passed" not in rcon_log and "count: 1" not in rcon_log:
-        raise AssertionError("Stage 2 failed: Oak log at (216, 69, 200) was not broken")
+        raise AssertionError("Stage 2 failed: Oak log at (26, 64, 10) was not broken")
 
-    client.send_command("interact.mine 217 69 200")
+    client.send_command("interact.mine 27 64 10")
     client.wait_until("task_idle", 250)
-    rcon_stone = rcon.command("execute if block 217 69 200 air")
+    rcon_stone = rcon.command("execute if block 27 64 10 air")
     if "Test passed" not in rcon_stone and "count: 1" not in rcon_stone:
-        raise AssertionError("Stage 2 failed: Stone at (217, 69, 200) was not broken")
+        raise AssertionError("Stage 2 failed: Stone at (27, 64, 10) was not broken")
 
-    # 3. Gap Bridging: 4-block pit from X=218..221
-    rcon.command("fill 218 68 200 221 68 200 air")
+    # 3. Gap Bridging: 4-block pit from X=28..31
+    rcon.command("fill 28 63 10 31 63 10 air")
     rcon.command("item replace entity @a hotbar.1 with cobblestone 64")
     client.send_command("player.select_hotbar 1")
     client.send_command("wait.ticks 5")
 
-    for bx in range(218, 222):
-        client.send_command(f"interact.place {bx} 68 200 1")
+    for bx in range(28, 32):
+        client.send_command(f"interact.place {bx} 63 10 1")
         client.send_command("wait.ticks 5")
 
     # Verify RCON presence of placed cobblestones
-    for bx in range(218, 222):
-        rcon_b = rcon.command(f"execute if block {bx} 68 200 cobblestone")
+    for bx in range(28, 32):
+        rcon_b = rcon.command(f"execute if block {bx} 63 10 cobblestone")
         if "Test passed" not in rcon_b and "count: 1" not in rcon_b:
-            raise AssertionError(f"Stage 2 failed: Bridging block at ({bx}, 68, 200) was not placed in server world")
+            raise AssertionError(f"Stage 2 failed: Bridging block at ({bx}, 63, 10) was not placed in server world")
 
     return {"stage": 2, "name": "mining_refusal_and_bridging", "passed": True, "elapsed": time.monotonic() - t0}
 
@@ -505,8 +505,8 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     """Stage 3: Component-Heavy Container & Multi-Slot Inventory Manipulation."""
     print("  -> Running Stage 3: Component-Heavy Container & Multi-Slot Inventory Manipulation...")
     t0 = time.monotonic()
-    chest_pos = (223, 69, 200)
-    # Double chest: 223 is right, 224 is left
+    chest_pos = (33, 64, 10)
+    # Double chest: 33 is right, 34 is left
     rcon.command(f"setblock {chest_pos[0]} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=right]{{CustomName:'\"CrucibleChest\"'}}")
     rcon.command(f"setblock {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} chest[facing=north,type=left]{{CustomName:'\"CrucibleChest\"'}}")
     # Component-heavy Slot 0, Slots 1 and 53 populated
@@ -561,11 +561,11 @@ def execute_stage_4(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     t0 = time.monotonic()
     # Spawn dummy entity behind a stone wall
     rcon.command("kill @e[tag=crucible_dummy]")
-    rcon.command("setblock 225 69 205 stone")
-    rcon.command("setblock 225 70 205 stone")
-    rcon.command("summon zombie 227.5 69.0 205.5 {NoAI: 1b, Health: 8.0f, Tags: [\"crucible_dummy\"]}")
+    rcon.command("setblock 20 64 15 stone")
+    rcon.command("setblock 20 65 15 stone")
+    rcon.command("summon zombie 22.5 64.0 15.5 {NoAI: 1b, Health: 8.0f, Tags: [\"crucible_dummy\"]}")
     # Teleport bot facing wall
-    rcon.command("tp @a 223.5 69.0 205.5 90 0")
+    rcon.command("tp @a 18.5 64.0 15.5 90 0")
     client.send_command("wait.ticks 10")
 
     obs = json.loads(client.send_command("gym.observe"))
@@ -589,7 +589,7 @@ def execute_stage_4(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
         raise AssertionError("Stage 4 failed: Bot did not reject attacking occluded entity through solid wall")
 
     # 2. Reposition around wall
-    client.send_command("task.navigate 226 69 203 walk")
+    client.send_command("task.navigate 21 64 13 walk")
     client.wait_until("task_idle", 100)
 
     # 3. Attack target with clear line of sight
@@ -619,12 +619,12 @@ def execute_stage_5(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     print("  -> Running Stage 5: Mid-Path Preemption & Tick-Exact RL Loop...")
     t0 = time.monotonic()
     # Start long navigation
-    client.send_command("task.navigate 250 69 200 walk")
+    client.send_command("task.navigate 35 64 10 walk")
     client.send_command("wait.ticks 4")
 
     # Preempt mid-stride
     client.send_command("task.cancel")
-    client.send_command("task.navigate 220 69 200 walk")
+    client.send_command("task.navigate 20 64 10 walk")
     client.send_command("wait.ticks 5")
     client.send_command("task.cancel")
 
@@ -646,8 +646,8 @@ def execute_stage_6(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     """Stage 6: Lethal Damage, Respawn State Machine & Item Recovery."""
     print("  -> Running Stage 6: Lethal Damage, Respawn State Machine & Item Recovery...")
     t0 = time.monotonic()
-    # Drop item at (220, 69, 200)
-    rcon.command("summon item 220.5 69.0 200.5 {Item: {id: \"minecraft:diamond\", count: 1b}, Tags: [\"crucible_loot\"]}")
+    # Drop item at (25, 64, 10)
+    rcon.command("summon item 25.5 64.0 10.5 {Item: {id: \"minecraft:diamond\", count: 1b}, Tags: [\"crucible_loot\"]}")
     # Kill the bot via server RCON
     rcon.command("kill @a")
 
@@ -658,11 +658,11 @@ def execute_stage_6(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
         raise AssertionError(f"Stage 6 failed: Bot did not respawn with full health: {obs}")
 
     # Navigate back to dropped item
-    client.send_command("task.navigate 220 69 200 walk")
+    client.send_command("task.navigate 25 64 10 walk")
     client.wait_until("task_idle", 150)
 
     # Server RCON verification: bot is back at coordinates
-    pos_check = rcon.command("execute if entity @a[x=220,y=69,z=200,distance=..3.0]")
+    pos_check = rcon.command("execute if entity @a[x=25,y=64,z=10,distance=..3.0]")
     if "Test passed" not in pos_check and "count: 1" not in pos_check:
         actual_pos = rcon.command("data get entity @a[limit=1] Pos")
         raise AssertionError(f"Stage 6 failed: Bot did not navigate back to dropped item. Actual pos: {actual_pos}")
