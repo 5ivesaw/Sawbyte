@@ -624,7 +624,7 @@ def execute_stage_4(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
 
     obs = json.loads(client.send_command("gym.observe"))
     entities = obs.get("entities", [])
-    target = next((e for e in entities if e.get("type", "").endswith("zombie") or e.get("id")), None)
+    target = next((e for e in entities if "zombie" in str(e.get("type", "")).lower() or e.get("id")), None)
     if not target:
         raise AssertionError("Stage 4 failed: Target entity not discovered in gym.observe")
     target_id = target["id"]
