@@ -165,6 +165,7 @@ pub struct ActiveMine {
     pub remaining_ticks: u32,
     pub total_ticks: u32,
     pub sequence: i32,
+    pub confirmation_deadline: Option<u64>,
 }
 
 #[derive(Clone, Debug)]
@@ -484,7 +485,13 @@ impl Session {
             }
             // Live block updates mutate our loaded chunk section palettes in-place.
             id if id == self.packets.cb_block_update => {
-                self.world.apply_block_update_packet(&mut r)?;
+                let (pos, state) = self.world.apply_block_update_packet(&mut r)?;
+                if self.active_mine.as_ref().is_some_and(|mine| mine.pos == pos && mine.confirmation_deadline.is_some())
+                    && self.world.is_air_state(state)
+                {
+                    self.active_mine = None;
+                    self.state_table.push_event(format!("mine_complete:({},{},{})", pos[0], pos[1], pos[2]));
+                }
             }
             id if id == self.packets.cb_section_blocks_update => {
                 self.world.apply_section_blocks_update_packet(&mut r)?;
@@ -982,11 +989,16 @@ impl Session {
             if let SubTickEvent::SelectHotbar { slot } = &ev {
                 self.state_table.selected_hotbar = *slot;
             } else if let SubTickEvent::StopDestroyBlock { pos, .. } = &ev {
+                if !self.active_mine.as_ref().is_some_and(|mine| mine.pos == *pos) {
+                    continue;
+                }
                 if let Some(mine) = &self.active_mine {
                     if mine.pos == *pos {
-                        self.active_mine = None;
+                        if let Some(mine) = self.active_mine.as_mut() {
+                            mine.confirmation_deadline = Some(self.live_tick.saturating_add(40));
+                        }
                         self.state_table.push_event(format!(
-                            "mine_complete:({},{},{})",
+                            "mine_finish_queued:({},{},{})",
                             pos[0], pos[1], pos[2]
                         ));
                     }
@@ -1002,6 +1014,14 @@ impl Session {
             } else {
                 self.state_table
                     .push_event(format!("unsupported_native_event:{ev:?}"));
+            }
+        }
+
+        if self.active_mine.as_ref().and_then(|mine| mine.confirmation_deadline)
+            .is_some_and(|deadline| self.live_tick >= deadline)
+        {
+            if let Some(mine) = self.active_mine.take() {
+                self.state_table.push_event(format!("mine_failed:confirmation_timeout:({},{},{})", mine.pos[0], mine.pos[1], mine.pos[2]));
             }
         }
 
@@ -1385,8 +1405,8 @@ impl Session {
                     ));
                 }
                 ["task.cancel"] => {
-                    self.preempt_movement();
                     self.event_queue.clear();
+                    self.preempt_movement();
                     outputs.push("cancelled active navigation and released all scheduled inputs".into());
                 }
                 ["interact.raycast_block"] => {
@@ -1500,6 +1520,7 @@ impl Session {
                         remaining_ticks: duration_ticks,
                         total_ticks: duration_ticks,
                         sequence: seq,
+                        confirmation_deadline: None,
                     });
                     outputs.push(format!(
                         "queued validated block mining at ({}, {}, {}) face={face:?} duration_ticks={duration_ticks}",
@@ -1552,6 +1573,7 @@ impl Session {
                         remaining_ticks: duration_ticks,
                         total_ticks: duration_ticks,
                         sequence: seq,
+                        confirmation_deadline: None,
                     });
                     outputs.push(format!(
                         "queued raycast block mining at ({}, {}, {}) face={:?} duration_ticks={duration_ticks}",
@@ -3601,6 +3623,40 @@ mod tests {
     }
 
     #[test]
+    fn mining_waits_for_matching_server_block_update() {
+        let mut session = test_session();
+        session.active_mine = Some(ActiveMine {
+            pos: [1, 2, 3],
+            face: BlockFace::Up,
+            remaining_ticks: 0,
+            total_ticks: 1,
+            sequence: 1,
+            confirmation_deadline: Some(40),
+        });
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+        let mut tx = wire::Tx::new(client);
+
+        let update = |pos: [u64; 3], state: i32| {
+            let mut packet = Vec::new();
+            var(session.packets.cb_block_update, &mut packet);
+            let packed = (pos[0] << 38) | (pos[2] << 12) | pos[1];
+            packet.extend_from_slice(&packed.to_be_bytes());
+            var(state, &mut packet);
+            packet
+        };
+        let other = update([2, 2, 3], 0);
+        let solid = update([1, 2, 3], 1);
+        let destroyed = update([1, 2, 3], 0);
+        session.packet(&other, &mut tx).unwrap();
+        session.packet(&solid, &mut tx).unwrap();
+        assert!(session.active_mine.is_some());
+        session.packet(&destroyed, &mut tx).unwrap();
+        assert!(session.active_mine.is_none());
+        assert!(session.state_table.received_events.iter().any(|event| event == "mine_complete:(1,2,3)"));
+    }
+
+    #[test]
     fn active_mine_is_tracked_and_aborted_on_task_cancel() {
         let profile = serde_json::json!({
             "minecraft": "26.3",
@@ -3630,7 +3686,7 @@ mod tests {
         // Cancel task
         session.execute_live_script("task.cancel").unwrap();
         assert!(session.active_mine.is_none());
-        assert_eq!(session.event_queue.pending(), 0);
+        assert_eq!(session.event_queue.pending(), 1);
         assert!(session.state_table.received_events.iter().any(|e| e.contains("mine_aborted:(0,-60,1)")));
     }
 

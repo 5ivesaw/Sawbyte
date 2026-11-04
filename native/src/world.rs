@@ -295,13 +295,18 @@ impl World {
     }
 
     /// Decodes a packed 64-bit `BlockPos` (`x: 26b`, `z: 26b`, `y: 12b`) and applies packet 8 (`BlockUpdate`).
-    pub fn apply_block_update_packet(&mut self, r: &mut Reader<'_>) -> Result<()> {
+    pub fn apply_block_update_packet(&mut self, r: &mut Reader<'_>) -> Result<([i32; 3], u32)> {
         let packed = r.u64()? as i64;
         let x = (packed >> 38) as i32;
         let y = ((packed << 52) >> 52) as i32;
         let z = ((packed << 26) >> 38) as i32;
         let state_id = r.count(1_000_000)? as u32;
-        self.set_block(x, y, z, state_id)
+        self.set_block(x, y, z, state_id)?;
+        Ok(([x, y, z], state_id))
+    }
+
+    pub fn is_air_state(&self, state_id: u32) -> bool {
+        self.air.contains(&state_id)
     }
 
     /// Decodes packet 86 (`SectionBlocksUpdate`) and applies all local block state changes.
