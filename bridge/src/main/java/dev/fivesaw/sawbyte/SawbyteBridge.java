@@ -51,6 +51,7 @@ public final class SawbyteBridge implements ClientModInitializer {
     private int waitTicksRemaining = 0;
     private double[] activeNavGoal = null;
     private PrintWriter pendingNavReply = null;
+    private BlockPos activeMinePos = null;
     private long tickCounter = 0;
 
     @Override public void onInitializeClient() {
@@ -203,6 +204,7 @@ public final class SawbyteBridge implements ClientModInitializer {
 
     private void handleLiveControlTick(Minecraft client) {
         if (client.player != null && client.player.isDeadOrDying()) {
+            activeMinePos = null;
             client.player.respawn();
         }
 
@@ -223,6 +225,19 @@ public final class SawbyteBridge implements ClientModInitializer {
                 float targetYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
                 client.player.setYRot(targetYaw);
                 keys(client, 1 | 64); // forward + sprint
+            }
+        }
+
+        // Step active mining controller
+        if (activeMinePos != null) {
+            if (client.level != null && client.level.getBlockState(activeMinePos).isAir()) {
+                activeMinePos = null;
+            } else if (client.gameMode != null && client.player != null) {
+                client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+                boolean broken = client.gameMode.continueDestroyBlock(activeMinePos, net.minecraft.core.Direction.UP);
+                if (broken) {
+                    activeMinePos = null;
+                }
             }
         }
 
@@ -293,7 +308,7 @@ public final class SawbyteBridge implements ClientModInitializer {
                         reqQueue.add(req);
                     }
                 } else if (cond.equals("task_idle")) {
-                    if (activeNavGoal == null && waitTicksRemaining == 0) {
+                    if (activeNavGoal == null && activeMinePos == null && waitTicksRemaining == 0) {
                         req.writer.println("condition met: task_idle");
                         req.writer.flush();
                     } else {
@@ -331,6 +346,10 @@ public final class SawbyteBridge implements ClientModInitializer {
             }
             case "task.cancel" -> {
                 activeNavGoal = null;
+                if (activeMinePos != null && client.gameMode != null) {
+                    client.gameMode.stopDestroyBlock();
+                }
+                activeMinePos = null;
                 keys(client, 0);
                 req.writer.println("cancelled active navigation and released all scheduled inputs");
                 req.writer.flush();
@@ -351,8 +370,13 @@ public final class SawbyteBridge implements ClientModInitializer {
                         client.player.setYRot((float) Math.toDegrees(-Math.atan2(dx, dz)));
                         client.player.setXRot((float) Math.toDegrees(-Math.atan2(dy, hDist)));
 
-                        client.gameMode.startDestroyBlock(pos, net.minecraft.core.Direction.UP);
-                        client.gameMode.destroyBlock(pos);
+                        client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+                        boolean broken = client.gameMode.startDestroyBlock(pos, net.minecraft.core.Direction.UP);
+                        if (!broken && client.level != null && !client.level.getBlockState(pos).isAir()) {
+                            activeMinePos = pos;
+                        } else {
+                            activeMinePos = null;
+                        }
                     }
                     req.writer.println("mine_complete:(" + x + "," + y + "," + z + ")");
                     req.writer.flush();
