@@ -2576,7 +2576,7 @@ impl Session {
                 let tool = val["params"]["name"].as_str().unwrap_or("");
                 let script_tokens = tokenize_command_line(script).unwrap_or_default();
                 let first_word = script_tokens.first().map(|s| s.as_str()).unwrap_or("");
-                if first_word == "gym.step" || tool == "gym_step_and_observe" {
+                if first_word == "gym.step" && script.lines().count() == 1 {
                     match self.execute_live_script(script) {
                         Ok(_) => {
                             let next_tick = self.live_tick.saturating_add(1);
@@ -2585,7 +2585,7 @@ impl Session {
                                 is_json: true,
                                 json_rpc_id: Some(id),
                                 kind: PendingReplyKind::Tick {
-                                    target_tick: next_tick,
+                                    target_tick: next_tick.saturating_add(1),
                                     command: "gym.step".to_string(),
                                 },
                             });
@@ -2739,7 +2739,7 @@ impl Session {
                                 is_json: false,
                                 json_rpc_id: None,
                                 kind: PendingReplyKind::Tick {
-                                    target_tick: next_tick,
+                                    target_tick: next_tick.saturating_add(1),
                                     command: "gym.step".to_string(),
                                 },
                             });
@@ -3549,17 +3549,21 @@ mod tests {
         assert_eq!(session.pending_replies.len(), 1);
 
         session.live_tick = 2;
+        session.resolve_pending_replies();
+        assert!(gym_rx.try_recv().is_err());
+        session.scheduler.advance(2).unwrap();
         let drained = session.event_queue.drain_tick(2).unwrap();
         for ev in drained {
             if let SubTickEvent::SelectHotbar { slot } = ev {
                 session.state_table.selected_hotbar = slot;
             }
         }
+        session.live_tick = 3;
         session.resolve_pending_replies();
 
         let gym_reply = gym_rx.recv_timeout(Duration::from_secs(1)).unwrap();
         let gym_obs: serde_json::Value = serde_json::from_str(&gym_reply).unwrap();
-        assert_eq!(gym_obs["tick"], 2);
+        assert_eq!(gym_obs["tick"], 3);
         assert_eq!(gym_obs["command"], "gym.step");
         assert_eq!(gym_obs["selected_hotbar"], 3);
     }

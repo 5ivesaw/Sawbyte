@@ -4,6 +4,8 @@ Updated 2026-11-04. Read [VISION.md](VISION.md), [PLAN.md](../PLAN.md), [AGENTS.
 
 ## Current work and evidence
 
+Latest code before the handoff commit is `ea80154`. A follow-up changes the `gym.step` deferred reply to wait until the scheduled input tick has been applied. Verify that change and its tests in the newest Actions runs. The latest available real-player comparison succeeded for `58d01b1`; later runs must be inspected at their own exact commits.
+
 The code baseline immediately before this handoff update is `c0ac4a9`. Its [Build and verify run](https://github.com/5ivesaw/Sawbyte/actions/runs/41799438455) and [real-player run](https://github.com/5ivesaw/Sawbyte/actions/runs/41799438739) are pending as of this update. Previous commit `8269749` failed Linux formatting only; `c0ac4a9` applies the exact CI formatting patch and adds batched block-update tracking. The earlier [cross-platform build](https://github.com/5ivesaw/Sawbyte/actions/runs/41798534414) passed for `58d01b1`. Check all actual results and use current `git status`, commit and workflow runs as authoritative.
 
 Recent work adds mining and placement observation, click revision tracking, incomplete-container rejection, system chat/event inspection and complete bounded NBT arrays. These are partial implementations, not proof of general interaction coverage. A server revision or block update proves only the state observed, and no change must be labelled successful solely because it was sent. Validate all success, cancellation, timeout, stale state, disconnect and concurrent-input paths against a real server and the reference client.
