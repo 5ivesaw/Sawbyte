@@ -76,12 +76,16 @@ class TestSawbytePythonSdk(unittest.TestCase):
                 .set_setting("fov", "92")
                 .connect_live(endpoint)
                 .navigate(3, -60, 3)
-                .run_shop_purchase("minecraft:stone", 64)
+                .wait_until("screen_open", 100, "Chest")
+                .gui_click_slot(0, "pickup")
+                .wait_ticks(10)
                 .cancel_task()
                 .observe_gym()
             )
             script = wf.compile_script()
-            self.assertIn("gui.run_shop_workflow minecraft:stone 64", script)
+            self.assertIn("wait.until screen_open 100 \"Chest\"", script)
+            self.assertIn("gui.click_slot 0 pickup", script)
+            self.assertIn("wait.ticks 10", script)
             self.assertIn("task.cancel", script)
 
             binary = os.environ.get("SAWBYTE_BIN")
@@ -94,7 +98,7 @@ class TestSawbytePythonSdk(unittest.TestCase):
                         tools = client.list_tools()
                         self.assertGreaterEqual(len(tools), 8)
                         out = client.execute_workflow(wf)
-                        self.assertIn("live_executed:gui.run_shop_workflow minecraft:stone 64", out)
+                        self.assertIn("live_executed:wait.ticks 10", out)
         finally:
             srv.close()
 

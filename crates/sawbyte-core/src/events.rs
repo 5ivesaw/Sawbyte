@@ -216,11 +216,13 @@ pub enum SubTickEvent {
     ManualHandoff {
         reason: String,
     },
+    PerformRespawn,
 }
 
 impl SubTickEvent {
     pub fn valid(&self) -> bool {
         match self {
+            Self::PerformRespawn => true,
             Self::SelectHotbar { slot } => *slot < 9,
             Self::UseItemOn { hit, .. } => {
                 hit.iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v))

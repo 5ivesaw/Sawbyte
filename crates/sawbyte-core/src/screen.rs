@@ -14,6 +14,7 @@ pub struct ItemStack {
     pub damage: Option<(i32, i32)>, // (current_damage, max_damage)
     pub custom_model_data: Option<i32>,
     pub components: Vec<(String, String)>,
+    pub components_raw: Vec<u8>,
 }
 
 impl ItemStack {
@@ -27,6 +28,7 @@ impl ItemStack {
             damage: None,
             custom_model_data: None,
             components: Vec::new(),
+            components_raw: Vec::new(),
         }
     }
 

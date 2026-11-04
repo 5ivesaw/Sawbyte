@@ -1,0 +1,569 @@
+{
+  "review_date": "2026-11-03",
+  "head": "aa7053bffcd3aad43c16688a492fc65e6d386e60",
+  "scope": "Current project working tree before planning edits; tracked and untracked authored files. PNGs inspected visually; other listed files read as text. Identical PLAN copies compared by hash.",
+  "excluded_directories": [
+    ".git",
+    ".gradle",
+    "__pycache__",
+    "build",
+    "node_modules",
+    "target"
+  ],
+  "baseline_status": [
+    " M .github/workflows/ci.yml",
+    " M PLAN.md",
+    " M README.md",
+    " M crates/sawbyte-cli/tests/cli.rs",
+    " M crates/sawbyte-core/src/events.rs",
+    " M crates/sawbyte-core/src/lib.rs",
+    " M crates/sawbyte-core/src/mcp.rs",
+    " M crates/sawbyte-core/src/screen.rs",
+    " M crates/sawbyte-core/src/tasks.rs",
+    " M native/Cargo.toml",
+    " M native/src/inventory.rs",
+    " M native/src/main.rs",
+    " M native/src/raycast.rs",
+    " M native/src/world.rs",
+    " M sdks/python/sawbyte/__init__.py",
+    " M sdks/python/tests/test_sdk.py",
+    " M sdks/typescript/index.ts",
+    " M tools/player_lab.py",
+    "?? crates/sawbyte-core/src/json.rs",
+    "?? docs/PLAN.md",
+    "?? docs/archive/",
+    "?? native/src/lib.rs",
+    "?? \"sawbyte icon.png\"",
+    "?? sdks/python/sawbyte/__pycache__/",
+    "?? sdks/python/tests/__pycache__/",
+    "?? sdks/typescript/index.js",
+    "?? sdks/typescript/test/"
+  ],
+  "files": [
+    {
+      "path": ".github/actions/branding/action.yml",
+      "bytes": 868,
+      "sha256": "64c0c69826e4f2565e35218df9f5598aad4091b6d19b936942de27b4c88aed67",
+      "kind": "text",
+      "lines": 19
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 5682,
+      "sha256": "43189481ed5edb2d48145005cf442402828f346dd94d5b60eb80642fe13c7525",
+      "kind": "text",
+      "lines": 154
+    },
+    {
+      "path": ".github/workflows/player.yml",
+      "bytes": 7769,
+      "sha256": "1c6fd23cd6f92b49ea8a91becc9eaffa9b37d67b7663afbe466bafbf18b5646e",
+      "kind": "text",
+      "lines": 207
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 196,
+      "sha256": "d1f9af37a1a0e8eaad8482b260c1807fe64b66698234bc43a854d1fecd07b55b",
+      "kind": "text",
+      "lines": 17
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 5320,
+      "sha256": "4e53967fb7cb60dd52cc8008e02ccf7072634f0dd82115d34c14e6879199c711",
+      "kind": "text",
+      "lines": 37
+    },
+    {
+      "path": "Cargo.lock",
+      "bytes": 318,
+      "sha256": "dfb4ed1b7526babf07da59eb173b6e533a8de9db97f0590c4af5859936c29562",
+      "kind": "text",
+      "lines": 19
+    },
+    {
+      "path": "Cargo.toml",
+      "bytes": 391,
+      "sha256": "1224014bd7b8fef773e27e32446b1411ec2e004843a496f3934dc72a35f8d055",
+      "kind": "text",
+      "lines": 20
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1064,
+      "sha256": "3421ccbe35e9b9bcbbea667fe82e5f7493299feaca9983a822f2eedd170fa490",
+      "kind": "text",
+      "lines": 21
+    },
+    {
+      "path": "PLAN.md",
+      "bytes": 64897,
+      "sha256": "e3c23e68968263e67deb252244787306b715389c8b6210e0df9fbe05bd2e6b43",
+      "kind": "text",
+      "lines": 603
+    },
+    {
+      "path": "README.md",
+      "bytes": 7435,
+      "sha256": "3ec27403477e81f2aebe4cc02ed7212e37dc35080eb356fad58112c638330b7b",
+      "kind": "text",
+      "lines": 160
+    },
+    {
+      "path": "assets/cream-architecture.svg",
+      "bytes": 4719,
+      "sha256": "e9709463317477ddd0b1a49eec4a324b06d900317ab823a538531e6811eb5010",
+      "kind": "text",
+      "lines": 57
+    },
+    {
+      "path": "assets/cream-hero.svg",
+      "bytes": 3561,
+      "sha256": "9becc1a92f08a2e4790089aba6f7a44d8baa14cc0068173865906844a5a61319",
+      "kind": "text",
+      "lines": 55
+    },
+    {
+      "path": "assets/cream-metrics.svg",
+      "bytes": 2004,
+      "sha256": "9f9cf5020b23cac34e3ee6063e373daa691cc8533bc7f18cc5d04504cf23db68",
+      "kind": "text",
+      "lines": 24
+    },
+    {
+      "path": "assets/sawbyte.png",
+      "bytes": 1286672,
+      "sha256": "32366c503277a6e67fc83c21e09beca3530774703ea06e7c13bd3461b5bf00a9",
+      "kind": "image",
+      "lines": null
+    },
+    {
+      "path": "bridge/build.gradle",
+      "bytes": 632,
+      "sha256": "fff980ca3d1b8970160110a4b787adcd34ecdd5fab82a17c53bf257a34f25d17",
+      "kind": "text",
+      "lines": 22
+    },
+    {
+      "path": "bridge/gradle.properties",
+      "bytes": 52,
+      "sha256": "e97adc88391ff3f380f4d88dbe8d650dd6756e6b7cace04eea285972fa236c76",
+      "kind": "text",
+      "lines": 2
+    },
+    {
+      "path": "bridge/settings.gradle",
+      "bytes": 188,
+      "sha256": "d43dc0abea4d2dbac5ccff58f9df5af3f74dd1be212a0e02e63d8f2b59eb924e",
+      "kind": "text",
+      "lines": 8
+    },
+    {
+      "path": "bridge/src/main/java/dev/fivesaw/sawbyte/SawbyteBridge.java",
+      "bytes": 7713,
+      "sha256": "a37cf256c40f25ed9b25a4e5578ba18b6164fbcf6dd5b8ddeca59ea657c8b13d",
+      "kind": "text",
+      "lines": 171
+    },
+    {
+      "path": "bridge/src/main/resources/fabric.mod.json",
+      "bytes": 461,
+      "sha256": "3f756214cb2b10af9de87a3d0453f0b67f353ec2a58a54b17f87479c634f1073",
+      "kind": "text",
+      "lines": 12
+    },
+    {
+      "path": "crates/sawbyte-cli/Cargo.toml",
+      "bytes": 270,
+      "sha256": "86903b79cc83421e48c2b797b6d504f3c1178a5f7d91f1072e2a5798e2b56e2a",
+      "kind": "text",
+      "lines": 13
+    },
+    {
+      "path": "crates/sawbyte-cli/build.rs",
+      "bytes": 206,
+      "sha256": "100c7fd6a7d6538e50f337f38d1d2b0aca6ae9b2479c04c3f73b2b01dfd4e9b3",
+      "kind": "text",
+      "lines": 9
+    },
+    {
+      "path": "crates/sawbyte-cli/src/main.rs",
+      "bytes": 12960,
+      "sha256": "9dbaa746b94a9754bffac063a707cae1dc3c9581f234fd2a639c55dccbee256b",
+      "kind": "text",
+      "lines": 307
+    },
+    {
+      "path": "crates/sawbyte-cli/tests/cli.rs",
+      "bytes": 5123,
+      "sha256": "4e23657eecd12ba3e288e28e0b60b5d563fa258a672c0058e7a36924d37d8f24",
+      "kind": "text",
+      "lines": 129
+    },
+    {
+      "path": "crates/sawbyte-core/Cargo.toml",
+      "bytes": 163,
+      "sha256": "56e453ede3928767a7f5c446b5882875cce0454d9fac6665603d298ad513b5c2",
+      "kind": "text",
+      "lines": 9
+    },
+    {
+      "path": "crates/sawbyte-core/src/events.rs",
+      "bytes": 11985,
+      "sha256": "614ca26ae0fbc1151224d9e5ea875914566a057df6eb77c724dac2cdbe6ff76c",
+      "kind": "text",
+      "lines": 441
+    },
+    {
+      "path": "crates/sawbyte-core/src/humanisation.rs",
+      "bytes": 9326,
+      "sha256": "a23b7177e15fe5d465ea185dbd9691e17bf9a1e2e00b79e3129ed1e37860d478",
+      "kind": "text",
+      "lines": 290
+    },
+    {
+      "path": "crates/sawbyte-core/src/json.rs",
+      "bytes": 9400,
+      "sha256": "412e96260631df0adeba6357a5c5c1fd52d65020b2efe321222b6b5fef433d0d",
+      "kind": "text",
+      "lines": 277
+    },
+    {
+      "path": "crates/sawbyte-core/src/launcher.rs",
+      "bytes": 23879,
+      "sha256": "6464a108944832fe3c6546a00661f8ca478760525a7dede1c99b008a20ea536a",
+      "kind": "text",
+      "lines": 638
+    },
+    {
+      "path": "crates/sawbyte-core/src/lib.rs",
+      "bytes": 14006,
+      "sha256": "f11535e7f6a50ff11bc405ee5f5bfbbd2adcc8b414f3505e50b1bacbe278b58b",
+      "kind": "text",
+      "lines": 462
+    },
+    {
+      "path": "crates/sawbyte-core/src/mcp.rs",
+      "bytes": 30503,
+      "sha256": "d327941fdeb6271a8037ee2ff7b43401b75efad7b61a83f3b581f1ee288977a1",
+      "kind": "text",
+      "lines": 635
+    },
+    {
+      "path": "crates/sawbyte-core/src/screen.rs",
+      "bytes": 13616,
+      "sha256": "bf2a83bd6c05fc670e053d42b88e06683dbb15bcf1cf2efb697cb3e178a6233a",
+      "kind": "text",
+      "lines": 441
+    },
+    {
+      "path": "crates/sawbyte-core/src/tape.rs",
+      "bytes": 5037,
+      "sha256": "b75b90b24d466bd91278935227ecf143749b6d0a1cfb0c8dae114a0be66d11cc",
+      "kind": "text",
+      "lines": 158
+    },
+    {
+      "path": "crates/sawbyte-core/src/tasks.rs",
+      "bytes": 30476,
+      "sha256": "f100c7cbb0cb4d1027e7f47f3523145b84fcae9f9044e355cf02630982327e3d",
+      "kind": "text",
+      "lines": 924
+    },
+    {
+      "path": "crates/sawbyte-core/tests/scheduler.rs",
+      "bytes": 6435,
+      "sha256": "c86aa1c43c930edc343fadcef9c550497839594cfd24b0889fede551e420a913",
+      "kind": "text",
+      "lines": 209
+    },
+    {
+      "path": "crates/sawbyte-protocol/Cargo.toml",
+      "bytes": 167,
+      "sha256": "abedc646a85b130fa291b3c0546e1664347a02932efb5b3312f6f1222a8d9f5f",
+      "kind": "text",
+      "lines": 9
+    },
+    {
+      "path": "crates/sawbyte-protocol/src/lib.rs",
+      "bytes": 9276,
+      "sha256": "ea94d1bf9d8829b2ac8e541241febc8dbfd418a5d8bcef310232bac97c36682d",
+      "kind": "text",
+      "lines": 270
+    },
+    {
+      "path": "docs/AUDIT-2026-11-03.md",
+      "bytes": 51235,
+      "sha256": "ee632756f5578084545b447ab8001e4e83ba99700c4239868683cc732343f74b",
+      "kind": "text",
+      "lines": 429
+    },
+    {
+      "path": "docs/COVERAGE.md",
+      "bytes": 6114,
+      "sha256": "631ff4dbca9190746920cc449affefa6cbdd34fbc1b5185e227587e807f9e7ce",
+      "kind": "text",
+      "lines": 42
+    },
+    {
+      "path": "docs/DECISIONS.md",
+      "bytes": 2394,
+      "sha256": "3d3fdbd8c7ee6ec0e21717535979e76443f7b2b5d7d008e04f1d942808798b23",
+      "kind": "text",
+      "lines": 22
+    },
+    {
+      "path": "docs/HANDOFF.md",
+      "bytes": 4573,
+      "sha256": "bc1b716913eb4fdca7a39dd804d21e2524a3e7670bd1b7a3a4f00f4e493e0c2e",
+      "kind": "text",
+      "lines": 34
+    },
+    {
+      "path": "docs/PLAN.md",
+      "bytes": 64897,
+      "sha256": "e3c23e68968263e67deb252244787306b715389c8b6210e0df9fbe05bd2e6b43",
+      "kind": "text",
+      "lines": 603
+    },
+    {
+      "path": "docs/PLAYER.md",
+      "bytes": 4417,
+      "sha256": "9d0ceeec58db8a24373bd9f51838528169c5a998157c68f4b2ed45a9343a2aff",
+      "kind": "text",
+      "lines": 48
+    },
+    {
+      "path": "docs/REVIEW-INVENTORY.md",
+      "bytes": 6223,
+      "sha256": "56ac533fa8fdff6e8246ea621ddd3485d0a2683aba1bef5c69da416653f52612",
+      "kind": "text",
+      "lines": 27
+    },
+    {
+      "path": "docs/VISION.md",
+      "bytes": 8925,
+      "sha256": "c18793fc7d6585819c0386df24c7aeb23f89419b8148e09fb4bf90b58a18397a",
+      "kind": "text",
+      "lines": 72
+    },
+    {
+      "path": "docs/evidence/2026-11-03/README.md",
+      "bytes": 335,
+      "sha256": "dcc71b85a3b237e141344be67a137db3c4917b78d6752991a8842adda7a78a80",
+      "kind": "text",
+      "lines": 3
+    },
+    {
+      "path": "docs/evidence/2026-11-03/comparison.json",
+      "bytes": 264,
+      "sha256": "f577e74e60ea2496d80e27d3e93ba0cdd905ae26bcb258de39b482b7335a7cf8",
+      "kind": "text",
+      "lines": 9
+    },
+    {
+      "path": "docs/evidence/2026-11-03/live-trace.txt",
+      "bytes": 276,
+      "sha256": "6eaaf48ecf06cfc500a57eee5b61b7b40605414cba83060cec0c1c2f718e5e39",
+      "kind": "text",
+      "lines": 4
+    },
+    {
+      "path": "docs/evidence/2026-11-03/native-live-resources.json",
+      "bytes": 75,
+      "sha256": "8ab2bf113667e7cbfea6882e42f9541ae0f00600cddf9529d988d045f909180a",
+      "kind": "text",
+      "lines": 4
+    },
+    {
+      "path": "docs/evidence/2026-11-03/native-resources.json",
+      "bytes": 75,
+      "sha256": "bba0235661260d391ddf13fa98970e7b1db72834ae17cf39900d5ef1a17bb197",
+      "kind": "text",
+      "lines": 4
+    },
+    {
+      "path": "native/Cargo.lock",
+      "bytes": 42297,
+      "sha256": "c3b8b81e4373924a0ac957759a6a2cf49f4a59ba405667a7b8e044a424faafd3",
+      "kind": "text",
+      "lines": 1694
+    },
+    {
+      "path": "native/Cargo.toml",
+      "bytes": 644,
+      "sha256": "b5badd9c11679bca48fccecfbab8bac2785eb2d60a6de09bcb4add9b876e7962",
+      "kind": "text",
+      "lines": 36
+    },
+    {
+      "path": "native/build.rs",
+      "bytes": 200,
+      "sha256": "7dc90e2793abdc2475c74f23d67d0b4051e7f1c550da590d8be7e32cefceb1c9",
+      "kind": "text",
+      "lines": 9
+    },
+    {
+      "path": "native/rust-toolchain.toml",
+      "bytes": 86,
+      "sha256": "c33d1f0b1b8fda448bea32d7dc867aa64947c87169fd9de7122ffccad1dd80f9",
+      "kind": "text",
+      "lines": 4
+    },
+    {
+      "path": "native/src/auth.rs",
+      "bytes": 8599,
+      "sha256": "e00124588341176f44aa0d09bacd8629808deee38c636cff29ae7e51b9d9edf8",
+      "kind": "text",
+      "lines": 244
+    },
+    {
+      "path": "native/src/inventory.rs",
+      "bytes": 46425,
+      "sha256": "95e110fa789d7f3bc7d1ed005d420baa83c34ca9e255549fdc072620ab53b77d",
+      "kind": "text",
+      "lines": 1257
+    },
+    {
+      "path": "native/src/lib.rs",
+      "bytes": 133204,
+      "sha256": "5414f4dab00b39e4364b08596e4256788015ee3d5045073960831829b1de1250",
+      "kind": "text",
+      "lines": 3112
+    },
+    {
+      "path": "native/src/main.rs",
+      "bytes": 255,
+      "sha256": "b9752f1f056ea268c71342ad67b803cc829dc625d8516f1d34fa04718ebbe410",
+      "kind": "text",
+      "lines": 9
+    },
+    {
+      "path": "native/src/player.rs",
+      "bytes": 16634,
+      "sha256": "b2363b20c78b1d342038c6e022383583bbc843f1139a95989ef3b0b1677a25fa",
+      "kind": "text",
+      "lines": 494
+    },
+    {
+      "path": "native/src/raycast.rs",
+      "bytes": 12663,
+      "sha256": "4023da207afd6d64bfbf8d79e0f76358811fa57eb36361e95dd62033ad59de93",
+      "kind": "text",
+      "lines": 370
+    },
+    {
+      "path": "native/src/wire.rs",
+      "bytes": 10983,
+      "sha256": "1d346758150a321bd62eda857300c48fa5cb19cba2662759f61ed05d5c01c83d",
+      "kind": "text",
+      "lines": 310
+    },
+    {
+      "path": "native/src/world.rs",
+      "bytes": 24459,
+      "sha256": "31b7714f61663552edbc4994a8a2cfc747a6b6b1a2337c27d5908f4beda5bbae",
+      "kind": "text",
+      "lines": 678
+    },
+    {
+      "path": "packaging/sawbyte.desktop",
+      "bytes": 185,
+      "sha256": "09501f1dbff31bb476963e56c06c58c77b8894e666fd0e316f49a1e81310f332",
+      "kind": "text",
+      "lines": 8
+    },
+    {
+      "path": "packaging/windows_resource.rs",
+      "bytes": 1100,
+      "sha256": "ccf8d4302c1bea86aca704707bcf9ac6eb647a6890b6ec3ffb7d3e642587585c",
+      "kind": "text",
+      "lines": 24
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "bytes": 86,
+      "sha256": "c33d1f0b1b8fda448bea32d7dc867aa64947c87169fd9de7122ffccad1dd80f9",
+      "kind": "text",
+      "lines": 4
+    },
+    {
+      "path": "sawbyte icon.png",
+      "bytes": 1286672,
+      "sha256": "32366c503277a6e67fc83c21e09beca3530774703ea06e7c13bd3461b5bf00a9",
+      "kind": "image",
+      "lines": null
+    },
+    {
+      "path": "sdks/python/pyproject.toml",
+      "bytes": 380,
+      "sha256": "ce70e80ebb93350150d6cc54d5c3490f36fd1dd44dd3c913d87e6a51845f0c31",
+      "kind": "text",
+      "lines": 13
+    },
+    {
+      "path": "sdks/python/sawbyte/__init__.py",
+      "bytes": 11204,
+      "sha256": "487b29d8454d6061b0caf2aae79b773135be2c2f370a46e9afe2a6738bd92625",
+      "kind": "text",
+      "lines": 303
+    },
+    {
+      "path": "sdks/python/tests/test_sdk.py",
+      "bytes": 4011,
+      "sha256": "1eee52848a5c66a152eb40ad110c433a3b7f6c24891748dc4c8757e0c6b1e818",
+      "kind": "text",
+      "lines": 107
+    },
+    {
+      "path": "sdks/typescript/index.js",
+      "bytes": 2532,
+      "sha256": "1d10618fa784327d09541580a168624e01498bd8db5fb4aabdcd4d783f790351",
+      "kind": "text",
+      "lines": 116
+    },
+    {
+      "path": "sdks/typescript/index.ts",
+      "bytes": 3149,
+      "sha256": "4e38be6a408bc50f6559987dde41ff7a4c965d7e5183fcdc3009a8dc443ffae6",
+      "kind": "text",
+      "lines": 124
+    },
+    {
+      "path": "sdks/typescript/package.json",
+      "bytes": 215,
+      "sha256": "1d08e38c1ce19197b0a7b9bfc1fec7693378b14ff3bebae4e6c30253c3ae6198",
+      "kind": "text",
+      "lines": 8
+    },
+    {
+      "path": "sdks/typescript/test/sdk.test.mjs",
+      "bytes": 1408,
+      "sha256": "54d72df46661f6c8b648a1204902d45e973960c6e3e2b302bfd877a0cbbac506",
+      "kind": "text",
+      "lines": 37
+    },
+    {
+      "path": "sdks/typescript/tsconfig.json",
+      "bytes": 211,
+      "sha256": "6a02bdc42c12b4a9561722e133578935604e21e1824740b8614dcf959790f55c",
+      "kind": "text",
+      "lines": 11
+    },
+    {
+      "path": "tools/build_icons.py",
+      "bytes": 516,
+      "sha256": "a9c07edf676c3c4c19a05f8c5f14324bce8e4f4513da7e4a0287087acace21e2",
+      "kind": "text",
+      "lines": 11
+    },
+    {
+      "path": "tools/player_lab.py",
+      "bytes": 15225,
+      "sha256": "2dd7d7a1350ed543016a61d61b6e760420d4bfcaa2d23e9e45d5201eabe736dc",
+      "kind": "text",
+      "lines": 314
+    }
+  ]
+}

@@ -255,7 +255,11 @@ impl SawbyteControlBridge {
             if line.is_empty() || line.starts_with('#') || line.starts_with("//") {
                 continue;
             }
-            let parts: Vec<&str> = line.split_whitespace().collect();
+            let tokens = match crate::tokenize_command_line(line) {
+                Ok(t) => t,
+                Err(e) => return Err(format!("line {}: {e}", line_no + 1)),
+            };
+            let parts: Vec<&str> = tokens.iter().map(|s| s.as_str()).collect();
             match parts.as_slice() {
                 ["launcher.create_instance", name, version, mode] => {
                     let runtime_mode = RuntimeMode::parse(mode)
@@ -367,10 +371,34 @@ impl SawbyteControlBridge {
     /// Handles a JSON-RPC 2.0 / Model Context Protocol (MCP) request line.
     pub fn handle_mcp_json_rpc(&mut self, request_line: &str) -> String {
         let req = request_line.trim();
-        let id = extract_json_id(req).unwrap_or_else(|| "1".to_owned());
-        let method = extract_json_string(req, "method").unwrap_or_default();
+        let parsed = match crate::json::JsonValue::parse(req) {
+            Ok(v) => v,
+            Err(e) => {
+                return format!(
+                    "{{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{{\"code\":-32700,\"message\":\"Parse error: {}\"}}}}",
+                    escape_json(&e)
+                );
+            }
+        };
 
-        match method.as_str() {
+        let id = match parsed.get("id") {
+            Some(crate::json::JsonValue::Number(n)) => {
+                if n.fract() == 0.0 && n.is_finite() {
+                    format!("{}", *n as i64)
+                } else {
+                    format!("{n}")
+                }
+            }
+            Some(crate::json::JsonValue::String(s)) => format!("\"{}\"", escape_json(s)),
+            _ => "1".to_string(),
+        };
+
+        let method = parsed
+            .get("method")
+            .and_then(|m| m.as_str())
+            .unwrap_or_default();
+
+        match method {
             "initialize" => format!(
                 "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{{\"name\":\"sawbyte-mcp\",\"version\":\"0.2.0\"}},\"capabilities\":{{\"tools\":{{\"listChanged\":false}},\"resources\":{{\"listChanged\":false}},\"prompts\":{{\"listChanged\":false}}}}}}}}"
             ),
@@ -397,8 +425,12 @@ impl SawbyteControlBridge {
                 ]}}}}"
             ),
             "resources/read" => {
-                let uri = extract_json_string(req, "uri").unwrap_or_default();
-                let text_opt = match uri.as_str() {
+                let params = parsed.get("params");
+                let uri = params
+                    .and_then(|p| p.get("uri"))
+                    .and_then(|u| u.as_str())
+                    .unwrap_or_default();
+                let text_opt = match uri {
                     "sawbyte://client/options" => Some(self.client.export_options_txt()),
                     "sawbyte://world/map2d" => Some(
                         self.forward_live_command("inspect.map")
@@ -417,12 +449,12 @@ impl SawbyteControlBridge {
                 match text_opt {
                     Some(text) => format!(
                         "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"contents\":[{{\"uri\":\"{}\",\"mimeType\":\"text/plain\",\"text\":\"{}\"}}]}}}}",
-                        escape_json(&uri),
+                        escape_json(uri),
                         escape_json(&text)
                     ),
                     None => format!(
                         "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"error\":{{\"code\":-32602,\"message\":\"Unknown resource URI: {}\"}}}}",
-                        escape_json(&uri)
+                        escape_json(uri)
                     ),
                 }
             }
@@ -435,9 +467,13 @@ impl SawbyteControlBridge {
                 "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"description\":\"Sawbyte automation prompt\",\"messages\":[{{\"role\":\"user\",\"content\":{{\"type\":\"text\",\"text\":\"Use tools/list and tools/call to inspect state and schedule validated actions.\"}}}}]}}}}"
             ),
             "tools/call" => {
-                let tool_name = extract_json_string(req, "name").unwrap_or_default();
+                let params = parsed.get("params");
+                let tool_name = params
+                    .and_then(|p| p.get("name"))
+                    .and_then(|n| n.as_str())
+                    .unwrap_or_default();
                 let is_valid_tool = matches!(
-                    tool_name.as_str(),
+                    tool_name,
                     "launcher_control"
                         | "client_menu_and_settings"
                         | "player_input"
@@ -451,18 +487,25 @@ impl SawbyteControlBridge {
                 if !is_valid_tool {
                     return format!(
                         "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"isError\":true,\"content\":[{{\"type\":\"text\",\"text\":\"unknown tool '{}'\"}}]}}}}",
-                        escape_json(&tool_name)
+                        escape_json(tool_name)
                     );
                 }
-                let script_or_cmd = extract_json_string(req, "script")
-                    .or_else(|| extract_json_string(req, "command"))
+                let args = params.and_then(|p| p.get("arguments"));
+                let script_or_cmd = args
+                    .and_then(|a| a.get("script").or_else(|| a.get("command")))
+                    .and_then(|s| s.as_str())
+                    .or_else(|| {
+                        params
+                            .and_then(|p| p.get("script").or_else(|| p.get("command")))
+                            .and_then(|s| s.as_str())
+                    })
                     .unwrap_or_default();
                 if script_or_cmd.trim().is_empty() {
                     return format!(
                         "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"isError\":true,\"content\":[{{\"type\":\"text\",\"text\":\"missing required 'script' or 'command' argument for tool '{tool_name}'\"}}]}}}}"
                     );
                 }
-                match self.execute_script(&script_or_cmd) {
+                match self.execute_script(script_or_cmd) {
                     Ok(lines) => format!(
                         "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"isError\":false,\"content\":[{{\"type\":\"text\",\"text\":\"{}\"}}]}}}}",
                         escape_json(&lines.join("\n"))
@@ -534,58 +577,6 @@ fn escape_json(input: &str) -> String {
     out
 }
 
-fn extract_json_id(json: &str) -> Option<String> {
-    let needle = "\"id\"";
-    let key_pos = json.find(needle)?;
-    let after_key = &json[key_pos + needle.len()..];
-    let colon_pos = after_key.find(':')?;
-    let rest = after_key[colon_pos + 1..].trim_start();
-    let end = rest.find([',', '}', ' '])?;
-    Some(rest[..end].trim().to_owned())
-}
-
-fn extract_json_string(json: &str, key: &str) -> Option<String> {
-    let needle = format!("\"{key}\"");
-    let key_pos = json.find(&needle)?;
-    let after_key = &json[key_pos + needle.len()..];
-    let colon_pos = after_key.find(':')?;
-    let rest = after_key[colon_pos + 1..].trim_start();
-    if !rest.starts_with('"') {
-        return None;
-    }
-    let mut out = String::new();
-    let mut chars = rest[1..].chars();
-    while let Some(c) = chars.next() {
-        match c {
-            '"' => return Some(out),
-            '\\' => {
-                if let Some(escaped) = chars.next() {
-                    match escaped {
-                        'n' => out.push('\n'),
-                        'r' => out.push('\r'),
-                        't' => out.push('\t'),
-                        'u' => {
-                            let hex: String = chars.by_ref().take(4).collect();
-                            if hex.len() == 4 {
-                                if let Ok(code) = u32::from_str_radix(&hex, 16) {
-                                    if let Some(ch) = char::from_u32(code) {
-                                        out.push(ch);
-                                        continue;
-                                    }
-                                }
-                            }
-                            out.push_str(&format!("\\u{hex}"));
-                        }
-                        other => out.push(other),
-                    }
-                }
-            }
-            other => out.push(other),
-        }
-    }
-    None
-}
-
 #[allow(dead_code)]
 const _: MouseButton = MouseButton::Left;
 
@@ -603,14 +594,27 @@ mod tests {
         // Start a real loopback TCP listener representing a running `sawbyte-play live --listen` process
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = listener.local_addr().unwrap().to_string();
+        let (stop_tx, stop_rx) = std::sync::mpsc::channel();
         let server_thread = std::thread::spawn(move || {
-            for stream in listener.incoming().take(3).flatten() {
-                let mut writer = stream.try_clone().unwrap();
-                let reader = BufReader::new(stream);
-                for line in reader.lines().map_while(Result::ok) {
-                    let reply = format!("live_ack:{line}");
-                    writeln!(writer, "{reply}").unwrap();
-                    writer.flush().unwrap();
+            listener.set_nonblocking(true).unwrap();
+            while stop_rx.try_recv().is_err() {
+                match listener.accept() {
+                    Ok((stream, _)) => {
+                        let mut writer = match stream.try_clone() {
+                            Ok(w) => w,
+                            Err(_) => continue,
+                        };
+                        let reader = BufReader::new(stream);
+                        for line in reader.lines().map_while(std::result::Result::ok) {
+                            let reply = format!("live_ack:{line}");
+                            let _ = writeln!(writer, "{reply}");
+                            let _ = writer.flush();
+                        }
+                    }
+                    Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                        std::thread::sleep(Duration::from_millis(5));
+                    }
+                    Err(_) => break,
                 }
             }
         });
@@ -623,12 +627,13 @@ mod tests {
         assert!(init_resp.contains("sawbyte-mcp"));
 
         let script_req = format!(
-            r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"code_execute","script":"launcher.create_instance rl-node-1 sawbyte-26.3 native\nsettings.set fov 95\nlauncher.backup rl-node-1\nlauncher.connect_live {addr}\ntask.navigate 4 -60 4\ngui.run_shop_workflow minecraft:stone 64\ngym.observe"}}}}"#
+            r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"code_execute","script":"launcher.create_instance rl-node-1 sawbyte-26.3 native\nsettings.set fov 95\nlauncher.backup rl-node-1\nlauncher.connect_live {addr}\ntask.navigate 4 -60 4\nwait.until screen_open 40 \"Chest\"\nwait.ticks 10\ngym.observe"}}}}"#
         );
         let call_resp = bridge.handle_mcp_json_rpc(&script_req);
         assert!(call_resp.contains("\"isError\":false"));
         assert!(call_resp.contains("live_ack:task.navigate 4 -60 4"));
-        assert!(call_resp.contains("live_ack:gui.run_shop_workflow minecraft:stone 64"));
+        assert!(call_resp.contains(r#"live_ack:wait.until screen_open 40 \"Chest\""#));
+        assert!(call_resp.contains("live_ack:wait.ticks 10"));
         assert!(call_resp.contains("live_ack:gym.observe"));
 
         // Verify disk persistence across reload
@@ -637,6 +642,7 @@ mod tests {
         assert_eq!(inst.settings.get("fov").map(String::as_str), Some("95"));
         assert_eq!(inst.snapshot_count, 1);
 
+        let _ = stop_tx.send(());
         let _ = server_thread.join();
         let _ = std::fs::remove_dir_all(&temp_root);
     }

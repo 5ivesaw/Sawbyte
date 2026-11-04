@@ -52,6 +52,7 @@ pub struct Player {
     pub sneaking: bool,
     pub flying: bool,
     pub gliding: bool,
+    pub swimming: bool,
     pub mounted_entity: Option<i32>,
     pub food_level: i32,
     pub attributes: PlayerAttributes,
@@ -71,6 +72,7 @@ impl Default for Player {
             sneaking: false,
             flying: false,
             gliding: false,
+            swimming: false,
             mounted_entity: None,
             food_level: 20,
             attributes: PlayerAttributes::default(),
@@ -126,8 +128,20 @@ impl Player {
         }
     }
 
+    pub fn box_aabb(&self) -> [f64; 6] {
+        let h = self.box_height();
+        [
+            self.pos[0] - 0.3,
+            self.pos[1],
+            self.pos[2] - 0.3,
+            self.pos[0] + 0.3,
+            self.pos[1] + h,
+            self.pos[2] + 0.3,
+        ]
+    }
+
     fn is_swimming_pose(&self) -> bool {
-        false
+        self.swimming
     }
 
     pub fn apply_knockback(&mut self, vx: f64, vy: f64, vz: f64) {
@@ -139,6 +153,7 @@ impl Player {
         self.pitch = (self.pitch + frame.pitch_delta as f32).clamp(-90.0, 90.0);
 
         if self.mounted_entity.is_some() {
+            // Mounted entity: yaw/pitch updates but translation follows vehicle
             self.velocity = [0.0, 0.0, 0.0];
             return Ok(());
         }
@@ -178,6 +193,12 @@ impl Player {
         let on_climbable = world.is_climbable(bx, by, bz);
         let in_cobweb = world.is_cobweb(bx, by, bz);
 
+        if in_water && (self.sprinting || (wants_sprint && b.pressed(Button::Forward))) {
+            self.swimming = true;
+        } else if !in_water {
+            self.swimming = false;
+        }
+
         // Creative flight mode
         if self.flying {
             if b.pressed(Button::Jump) {
@@ -203,6 +224,28 @@ impl Player {
             self.velocity[1] *= 0.6;
             self.velocity[2] *= 0.91;
             return Ok(());
+        }
+
+        // Elytra gliding flight mode
+        if self.gliding {
+            if self.ground {
+                self.gliding = false;
+            } else {
+                let pitch_rad = (self.pitch as f64).to_radians();
+                let look_cos = pitch_rad.cos().max(0.0);
+                let (sin_yaw, cos_yaw) = Self::yaw_trig(self.yaw);
+                let forward_accel = look_cos * 0.05;
+                self.velocity[0] += (-sin_yaw as f64) * forward_accel;
+                self.velocity[2] += (cos_yaw as f64) * forward_accel;
+                self.velocity[1] = (self.velocity[1] - 0.05) * 0.98 + (look_cos * 0.03);
+                let moved = Self::sweep_box(self.pos, self.box_height(), self.velocity, world)?;
+                for (axis, delta) in moved.iter().enumerate() {
+                    self.pos[axis] += *delta;
+                }
+                self.velocity[0] *= 0.99;
+                self.velocity[2] *= 0.99;
+                return Ok(());
+            }
         }
 
         // Fluid buoyancy or ground jump

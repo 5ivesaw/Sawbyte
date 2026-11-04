@@ -231,6 +231,74 @@ pub fn raycast_entity(
     best
 }
 
+/// Checks whether an unobstructed line of sight exists between `origin` and `target` in `world`.
+/// Returns `false` if any solid block collision box intersects the segment.
+pub fn has_line_of_sight(origin: [f64; 3], target: [f64; 3], world: &World) -> bool {
+    has_line_of_sight_excluding(origin, target, world, None)
+}
+
+/// Returns `false` if any solid block collision box (excluding an optional target block) intersects the segment.
+pub fn has_line_of_sight_excluding(
+    origin: [f64; 3],
+    target: [f64; 3],
+    world: &World,
+    exclude_block: Option<[i32; 3]>,
+) -> bool {
+    let delta = [target[0] - origin[0], target[1] - origin[1], target[2] - origin[2]];
+    let dist = (delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]).sqrt();
+    if dist < 1e-4 {
+        return true;
+    }
+    let dir = [delta[0] / dist, delta[1] / dist, delta[2] / dist];
+    let min_v = [
+        origin[0].min(target[0]).floor() as i32,
+        origin[1].min(target[1]).floor() as i32,
+        origin[2].min(target[2]).floor() as i32,
+    ];
+    let max_v = [
+        origin[0].max(target[0]).floor() as i32,
+        origin[1].max(target[1]).floor() as i32,
+        origin[2].max(target[2]).floor() as i32,
+    ];
+
+    for x in min_v[0]..=max_v[0] {
+        for y in min_v[1]..=max_v[1] {
+            for z in min_v[2]..=max_v[2] {
+                if exclude_block == Some([x, y, z]) {
+                    continue;
+                }
+                match world.collision_boxes(x, y, z) {
+                    Ok(boxes) => {
+                        for b in boxes {
+                            if let Some((hit_dist, _, _)) = ray_intersect_aabb(origin, dir, b, dist) {
+                                if hit_dist < dist - 0.05 {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                    Err(_) => {
+                        let unit_box = [
+                            x as f64,
+                            y as f64,
+                            z as f64,
+                            (x + 1) as f64,
+                            (y + 1) as f64,
+                            (z + 1) as f64,
+                        ];
+                        if let Some((hit_dist, _, _)) = ray_intersect_aabb(origin, dir, unit_box, dist) {
+                            if hit_dist < dist - 0.05 {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    true
+}
+
 /// Computes per-tick block breaking progress (`0.0..=1.0`) matching Minecraft 26.3 rules.
 pub fn break_progress_per_tick(
     player: &Player,

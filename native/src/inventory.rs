@@ -18,27 +18,45 @@ pub struct PacketTable {
     pub cb_container_set_content: i32,
     pub cb_container_set_data: i32,
     pub cb_container_set_slot: i32,
+    pub cb_entity_position_sync: i32,
     pub cb_move_entity_pos: i32,
     pub cb_open_screen: i32,
+    pub cb_player_combat_kill: i32,
     pub cb_remove_entities: i32,
+    pub cb_respawn: i32,
     pub cb_section_blocks_update: i32,
+    pub cb_set_cursor_item: i32,
     pub cb_set_entity_motion: i32,
     pub cb_set_health: i32,
+    pub cb_set_player_inventory: i32,
     pub cb_system_chat: i32,
     pub cb_teleport_entity: i32,
+    pub cb_update_mob_effect: i32,
+    pub cb_remove_mob_effect: i32,
+    pub cb_update_attributes: i32,
+    pub cb_game_event: i32,
+    pub cb_player_abilities: i32,
+    pub cb_set_equipment: i32,
+    pub cb_set_experience: i32,
+    pub cb_block_changed_ack: i32,
     // Serverbound play packet IDs
+    pub sb_attack: i32,
     pub sb_chat_command: i32,
     pub sb_chat: i32,
+    pub sb_client_command: i32,
     pub sb_container_button_click: i32,
     pub sb_container_click: i32,
     pub sb_container_close: i32,
     pub sb_interact: i32,
     pub sb_place_recipe: i32,
     pub sb_player_action: i32,
+    pub sb_player_abilities: i32,
+    pub sb_player_command: i32,
     pub sb_rename_item: i32,
     pub sb_select_trade: i32,
     pub sb_set_carried_item: i32,
     pub sb_sign_update: i32,
+    pub sb_steer_vehicle: i32,
     pub sb_swing: i32,
     pub sb_use_item_on: i32,
     pub sb_use_item: i32,
@@ -49,35 +67,53 @@ pub struct PacketTable {
 impl Default for PacketTable {
     fn default() -> Self {
         Self {
-            cb_add_entity: 1,
-            cb_block_update: 8,
-            cb_container_close: 17,
-            cb_container_set_content: 18,
-            cb_container_set_data: 19,
-            cb_container_set_slot: 20,
-            cb_move_entity_pos: 49,
-            cb_open_screen: 55,
-            cb_remove_entities: 76,
-            cb_section_blocks_update: 86,
-            cb_set_entity_motion: 95,
-            cb_set_health: 98,
-            cb_system_chat: 115,
-            cb_teleport_entity: 119,
-            sb_chat_command: 6,
-            sb_chat: 8,
-            sb_container_button_click: 16,
-            sb_container_click: 17,
-            sb_container_close: 18,
-            sb_interact: 24,
-            sb_place_recipe: 38,
-            sb_player_action: 41,
-            sb_rename_item: 48,
-            sb_select_trade: 51,
-            sb_set_carried_item: 52,
-            sb_sign_update: 59,
-            sb_swing: 60,
-            sb_use_item_on: 66,
-            sb_use_item: 67,
+            cb_add_entity: 1,              // minecraft:add_entity
+            cb_block_update: 8,            // minecraft:block_update
+            cb_container_close: 17,        // minecraft:container_close
+            cb_container_set_content: 18,  // minecraft:container_set_content
+            cb_container_set_data: 19,     // minecraft:container_set_data
+            cb_container_set_slot: 20,     // minecraft:container_set_slot
+            cb_entity_position_sync: 35,   // minecraft:entity_position_sync
+            cb_move_entity_pos: 54,        // minecraft:move_entity_pos
+            cb_open_screen: 60,            // minecraft:open_screen
+            cb_player_combat_kill: 69,     // minecraft:player_combat_kill
+            cb_remove_entities: 78,        // minecraft:remove_entities
+            cb_respawn: 84,                // minecraft:respawn
+            cb_section_blocks_update: 86,  // minecraft:section_blocks_update
+            cb_set_cursor_item: 98,        // minecraft:set_cursor_item
+            cb_set_entity_motion: 103,     // minecraft:set_entity_motion
+            cb_set_health: 106,            // minecraft:set_health
+            cb_set_player_inventory: 110,  // minecraft:set_player_inventory
+            cb_system_chat: 124,           // minecraft:system_chat
+            cb_teleport_entity: 128,       // minecraft:teleport_entity
+            cb_update_mob_effect: 134,     // minecraft:update_mob_effect
+            cb_remove_mob_effect: 81,      // minecraft:remove_mob_effect
+            cb_update_attributes: 133,     // minecraft:update_attributes
+            cb_game_event: 37,             // minecraft:game_event
+            cb_player_abilities: 51,       // minecraft:player_abilities
+            cb_set_equipment: 105,         // minecraft:set_equipment
+            cb_set_experience: 107,        // minecraft:set_experience
+            cb_block_changed_ack: 4,       // minecraft:block_changed_ack
+            sb_attack: 1,                  // minecraft:attack
+            sb_chat_command: 7,            // minecraft:chat_command
+            sb_chat: 9,                    // minecraft:chat
+            sb_client_command: 12,         // minecraft:client_command
+            sb_container_button_click: 17, // minecraft:container_button_click
+            sb_container_click: 18,        // minecraft:container_click
+            sb_container_close: 19,        // minecraft:container_close
+            sb_interact: 26,               // minecraft:interact
+            sb_place_recipe: 39,           // minecraft:place_recipe
+            sb_player_action: 41,          // minecraft:player_action
+            sb_player_abilities: 35,       // minecraft:player_abilities
+            sb_player_command: 36,         // minecraft:player_command
+            sb_rename_item: 49,            // minecraft:rename_item
+            sb_select_trade: 52,           // minecraft:select_trade
+            sb_set_carried_item: 54,       // minecraft:set_carried_item
+            sb_sign_update: 62,            // minecraft:sign_update
+            sb_steer_vehicle: 38,          // minecraft:steer_vehicle
+            sb_swing: 63,                  // minecraft:swing
+            sb_use_item_on: 66,            // minecraft:use_item_on
+            sb_use_item: 67,               // minecraft:use_item
             item_names: HashMap::new(),
         }
     }
@@ -113,28 +149,54 @@ impl PacketTable {
             "minecraft:container_set_slot",
             table.cb_container_set_slot,
         );
+        table.cb_entity_position_sync =
+            get_id(cb, "minecraft:entity_position_sync", table.cb_entity_position_sync);
         table.cb_move_entity_pos =
             get_id(cb, "minecraft:move_entity_pos", table.cb_move_entity_pos);
         table.cb_open_screen = get_id(cb, "minecraft:open_screen", table.cb_open_screen);
+        table.cb_player_combat_kill =
+            get_id(cb, "minecraft:player_combat_kill", table.cb_player_combat_kill);
         table.cb_remove_entities =
             get_id(cb, "minecraft:remove_entities", table.cb_remove_entities);
+        table.cb_respawn = get_id(cb, "minecraft:respawn", table.cb_respawn);
         table.cb_section_blocks_update = get_id(
             cb,
             "minecraft:section_blocks_update",
             table.cb_section_blocks_update,
         );
+        table.cb_set_cursor_item =
+            get_id(cb, "minecraft:set_cursor_item", table.cb_set_cursor_item);
         table.cb_set_entity_motion = get_id(
             cb,
             "minecraft:set_entity_motion",
             table.cb_set_entity_motion,
         );
         table.cb_set_health = get_id(cb, "minecraft:set_health", table.cb_set_health);
+        table.cb_set_player_inventory =
+            get_id(cb, "minecraft:set_player_inventory", table.cb_set_player_inventory);
         table.cb_system_chat = get_id(cb, "minecraft:system_chat", table.cb_system_chat);
         table.cb_teleport_entity =
             get_id(cb, "minecraft:teleport_entity", table.cb_teleport_entity);
+        table.cb_update_mob_effect =
+            get_id(cb, "minecraft:update_mob_effect", table.cb_update_mob_effect);
+        table.cb_remove_mob_effect =
+            get_id(cb, "minecraft:remove_mob_effect", table.cb_remove_mob_effect);
+        table.cb_update_attributes =
+            get_id(cb, "minecraft:update_attributes", table.cb_update_attributes);
+        table.cb_game_event = get_id(cb, "minecraft:game_event", table.cb_game_event);
+        table.cb_player_abilities =
+            get_id(cb, "minecraft:player_abilities", table.cb_player_abilities);
+        table.cb_set_equipment =
+            get_id(cb, "minecraft:set_equipment", table.cb_set_equipment);
+        table.cb_set_experience =
+            get_id(cb, "minecraft:set_experience", table.cb_set_experience);
+        table.cb_block_changed_ack =
+            get_id(cb, "minecraft:block_changed_ack", table.cb_block_changed_ack);
 
+        table.sb_attack = get_id(sb, "minecraft:attack", table.sb_attack);
         table.sb_chat_command = get_id(sb, "minecraft:chat_command", table.sb_chat_command);
         table.sb_chat = get_id(sb, "minecraft:chat", table.sb_chat);
+        table.sb_client_command = get_id(sb, "minecraft:client_command", table.sb_client_command);
         table.sb_container_button_click = get_id(
             sb,
             "minecraft:container_button_click",
@@ -147,11 +209,17 @@ impl PacketTable {
         table.sb_interact = get_id(sb, "minecraft:interact", table.sb_interact);
         table.sb_place_recipe = get_id(sb, "minecraft:place_recipe", table.sb_place_recipe);
         table.sb_player_action = get_id(sb, "minecraft:player_action", table.sb_player_action);
+        table.sb_player_abilities =
+            get_id(sb, "minecraft:player_abilities", table.sb_player_abilities);
+        table.sb_player_command =
+            get_id(sb, "minecraft:player_command", table.sb_player_command);
         table.sb_rename_item = get_id(sb, "minecraft:rename_item", table.sb_rename_item);
         table.sb_select_trade = get_id(sb, "minecraft:select_trade", table.sb_select_trade);
         table.sb_set_carried_item =
             get_id(sb, "minecraft:set_carried_item", table.sb_set_carried_item);
         table.sb_sign_update = get_id(sb, "minecraft:sign_update", table.sb_sign_update);
+        table.sb_steer_vehicle =
+            get_id(sb, "minecraft:steer_vehicle", table.sb_steer_vehicle);
         table.sb_swing = get_id(sb, "minecraft:swing", table.sb_swing);
         table.sb_use_item_on = get_id(sb, "minecraft:use_item_on", table.sb_use_item_on);
         table.sb_use_item = get_id(sb, "minecraft:use_item", table.sb_use_item);
@@ -165,6 +233,13 @@ impl PacketTable {
         }
         table
     }
+}
+
+pub fn encode_client_command_respawn(packets: &PacketTable) -> Vec<u8> {
+    let mut p = Vec::new();
+    var(packets.sb_client_command, &mut p);
+    var(0, &mut p);
+    p
 }
 
 pub fn nbt_to_plain_text(val: &serde_json::Value) -> String {
@@ -214,6 +289,32 @@ pub struct TrackedEntity {
     pub pitch: f32,
     pub width: f64,
     pub height: f64,
+    pub equipment: HashMap<u8, ItemStack>,
+}
+
+pub fn entity_dimensions(entity_type: i32) -> (f64, f64) {
+    match entity_type {
+        // Chicken
+        18 => (0.4, 0.7),
+        // Cow, Pig, Sheep
+        19 | 82 | 90 => (0.9, 1.4),
+        // Spider
+        96 => (1.4, 0.9),
+        // Iron Golem
+        58 => (1.4, 2.7),
+        // Creeper
+        21 => (0.6, 1.7),
+        // Enderman
+        29 => (0.6, 2.9),
+        // Item entity
+        59 => (0.25, 0.25),
+        // Boat
+        10 => (1.375, 0.5625),
+        // Minecart
+        62 => (0.98, 0.7),
+        // Player / Humanoids (Zombie, Skeleton, etc.) default
+        _ => (0.6, 1.8),
+    }
 }
 
 impl TrackedEntity {
@@ -233,6 +334,7 @@ impl TrackedEntity {
 pub struct PlayerStateTable {
     pub player_entity_id: Option<i32>,
     pub inventory_slots: Vec<Option<ItemStack>>,
+    pub cursor_item: Option<ItemStack>,
     pub selected_hotbar: u8,
     pub open_screen: Option<ScreenState>,
     pub entities: BTreeMap<i32, TrackedEntity>,
@@ -255,6 +357,7 @@ impl Default for PlayerStateTable {
         Self {
             player_entity_id: None,
             inventory_slots: vec![None; 46],
+            cursor_item: None,
             selected_hotbar: 0,
             open_screen: None,
             entities: BTreeMap::new(),
@@ -304,7 +407,35 @@ fn decode_slot_item(
             break;
         };
         match comp_id {
-            // 3 = max_damage (VarInt), 4 = damage (VarInt) in 26.3 data_component_type
+            // 0 = custom_data (NBT)
+            0 => {
+                if let Ok(tag) = r.nbt() {
+                    stack.components.push(("custom_data".into(), tag.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 1 = max_stack_size (VarInt)
+            1 => {
+                if let Ok(mss) = r.var() {
+                    stack.components.push(("max_stack_size".into(), mss.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 2 = max_damage (VarInt)
+            2 => {
+                if let Ok(max_dmg) = r.var() {
+                    let cur = stack.damage.map_or(0, |(d, _)| d);
+                    stack.damage = Some((cur, max_dmg));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 3 = max_damage (VarInt, legacy/alt), 4 = damage (VarInt) in 26.3 data_component_type
             3 => {
                 if let Ok(max_dmg) = r.var() {
                     let cur = stack.damage.map_or(0, |(d, _)| d);
@@ -348,6 +479,151 @@ fn decode_slot_item(
                         }
                     }
                     stack.lore = lines;
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 8 = rarity (VarInt)
+            8 => {
+                if let Ok(rar) = r.var() {
+                    stack.components.push(("rarity".into(), rar.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 9 = enchantments (VarInt count of pairs)
+            9 => {
+                if let Ok(count) = r.count(256) {
+                    for _ in 0..count {
+                        if let (Ok(ench_id), Ok(lvl)) = (r.var(), r.var()) {
+                            stack.enchantments.push((format!("enchantment_{ench_id}"), lvl));
+                        } else {
+                            exact_stream = false;
+                            break;
+                        }
+                    }
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 13 = custom_model_data (VarInt)
+            13 => {
+                if let Ok(cmd) = r.var() {
+                    stack.custom_model_data = Some(cmd);
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 14 = hide_additional_tooltip, 15 = hide_tooltip (Unit)
+            14 => {
+                stack.components.push(("hide_additional_tooltip".into(), "true".into()));
+            }
+            15 => {
+                stack.components.push(("hide_tooltip".into(), "true".into()));
+            }
+            // 16 = repair_cost (VarInt)
+            16 => {
+                if let Ok(rc) = r.var() {
+                    stack.components.push(("repair_cost".into(), rc.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 17 = creative_slot_lock (Unit)
+            17 => {
+                stack.components.push(("creative_slot_lock".into(), "true".into()));
+            }
+            // 18 = glint_override, 27 = enchantment_glint_override (boolean)
+            18 | 27 => {
+                if let Ok(b) = r.take(1) {
+                    stack.components.push(("glint_override".into(), (b[0] != 0).to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 10 = food (nutrition: VarInt, saturation: f32, can_always_eat: bool)
+            10 => {
+                if let (Ok(nutrition), Ok(sat), Ok(always_eat)) = (r.var(), r.f32(), r.byte()) {
+                    stack.components.push(("food_nutrition".into(), nutrition.to_string()));
+                    stack.components.push(("food_saturation".into(), sat.to_string()));
+                    stack.components.push(("food_always_eat".into(), (always_eat != 0).to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 11 = potion_contents
+            11 => {
+                if let Ok(has_potion) = r.byte() {
+                    if has_potion != 0 {
+                        let _ = r.var(); // potion_id
+                    }
+                    if let Ok(has_color) = r.byte() {
+                        if has_color != 0 {
+                            let _ = r.i32(); // custom_color
+                        }
+                    }
+                    if let Ok(effect_count) = r.count(64) {
+                        for _ in 0..effect_count {
+                            let _ = r.var(); // effect_id
+                            let _ = r.byte(); // amp
+                            let _ = r.var(); // duration
+                            let _ = r.byte(); // flags
+                        }
+                    }
+                    stack.components.push(("potion_contents".into(), "present".into()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 19 = intangible_projectile (Unit)
+            19 => {
+                stack.components.push(("intangible_projectile".into(), "true".into()));
+            }
+            // 20 = fire_resistant (Unit)
+            20 => {
+                stack.components.push(("fire_resistant".into(), "true".into()));
+            }
+            // 23 = tool (rules)
+            23 => {
+                if let (Ok(default_speed), Ok(dmg_per_block), Ok(rule_count)) = (r.f32(), r.var(), r.count(64)) {
+                    for _ in 0..rule_count {
+                        let _ = r.var(); // block_set
+                        if let Ok(has_speed) = r.byte() {
+                            if has_speed != 0 {
+                                let _ = r.f32();
+                            }
+                        }
+                        if let Ok(has_correct) = r.byte() {
+                            if has_correct != 0 {
+                                let _ = r.byte();
+                            }
+                        }
+                    }
+                    stack.components.push(("tool_speed".into(), default_speed.to_string()));
+                    stack.components.push(("tool_damage".into(), dmg_per_block.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 24 | 44 = unbreakable (show_in_tooltip: bool)
+            24 | 44 => {
+                let show = r.byte().unwrap_or(0) != 0;
+                stack.components.push(("unbreakable".into(), show.to_string()));
+            }
+            // 32 = trim (material: VarInt, pattern: VarInt)
+            32 => {
+                if let (Ok(mat), Ok(pat)) = (r.var(), r.var()) {
+                    stack.components.push(("trim_material".into(), mat.to_string()));
+                    stack.components.push(("trim_pattern".into(), pat.to_string()));
                 } else {
                     exact_stream = false;
                     break;
@@ -486,8 +762,15 @@ impl PlayerStateTable {
         let window_id = r.var()?;
         let state_id = r.var()?;
         let slot = i16::from_be_bytes(r.take(2)?.try_into()?);
-        let (item, _) = decode_slot_item(r, packets)?;
+        let (mut item, _) = decode_slot_item(r, packets)?;
+        if let Some(ref mut it) = item {
+            if !r.0.is_empty() && it.components_raw.is_empty() {
+                it.components_raw = r.0.to_vec();
+            }
+        }
+        r.0 = &[];
         if window_id == -1 && slot == -1 {
+            self.cursor_item = item.clone();
             if let Some(screen) = &mut self.open_screen {
                 screen.state_id = state_id;
                 screen.cursor_item = item;
@@ -503,11 +786,50 @@ impl PlayerStateTable {
             if screen.window_id == window_id {
                 screen.state_id = state_id;
                 if slot == -1 {
+                    self.cursor_item = item.clone();
                     screen.cursor_item = item;
                 } else if slot >= 0 {
                     screen.set_slot_authoritative(slot as usize, item);
                 }
             }
+        }
+        Ok(())
+    }
+
+    pub fn apply_set_player_inventory(
+        &mut self,
+        r: &mut Reader<'_>,
+        packets: &PacketTable,
+    ) -> Result<()> {
+        let slot = r.var()?;
+        let (mut item, _) = decode_slot_item(r, packets)?;
+        if let Some(ref mut it) = item {
+            if !r.0.is_empty() && it.components_raw.is_empty() {
+                it.components_raw = r.0.to_vec();
+            }
+        }
+        r.0 = &[];
+        if slot >= 0 && (slot as usize) < self.inventory_slots.len() {
+            self.inventory_slots[slot as usize] = item;
+        }
+        Ok(())
+    }
+
+    pub fn apply_set_cursor_item(
+        &mut self,
+        r: &mut Reader<'_>,
+        packets: &PacketTable,
+    ) -> Result<()> {
+        let (mut item, _) = decode_slot_item(r, packets)?;
+        if let Some(ref mut it) = item {
+            if !r.0.is_empty() && it.components_raw.is_empty() {
+                it.components_raw = r.0.to_vec();
+            }
+        }
+        r.0 = &[];
+        self.cursor_item = item.clone();
+        if let Some(screen) = &mut self.open_screen {
+            screen.cursor_item = item;
         }
         Ok(())
     }
@@ -522,6 +844,7 @@ impl PlayerStateTable {
         let slot_count = r.count(256)?;
         let mut staged_slots = vec![None; slot_count];
         let mut stream_intact = true;
+        let mut decoded_count = 0;
         for slot_ref in staged_slots.iter_mut() {
             let (stack, exact) = decode_slot_item(r, packets)?;
             *slot_ref = stack;
@@ -529,8 +852,35 @@ impl PlayerStateTable {
                 stream_intact = false;
                 break;
             }
+            decoded_count += 1;
         }
-        let cursor_item = if stream_intact && !r.0.is_empty() {
+        if !stream_intact {
+            self.record_decode_error(
+                "container_set_content",
+                &*crate::wire::bad("unrecognized component in slot stream; preserved previously decoded slots"),
+            );
+            // If stream stopped mid-packet due to an unknown component, apply only the slots
+            // that were successfully decoded, preserving existing slots for the remainder!
+            if window_id == 0 {
+                for (idx, item) in staged_slots.iter().take(decoded_count).enumerate() {
+                    if idx < self.inventory_slots.len() {
+                        self.inventory_slots[idx] = item.clone();
+                    }
+                }
+            }
+            if let Some(screen) = &mut self.open_screen {
+                if screen.window_id == window_id {
+                    screen.state_id = state_id;
+                    for (idx, item) in staged_slots.into_iter().take(decoded_count).enumerate() {
+                        if idx < screen.slots.len() {
+                            screen.slots[idx] = item;
+                        }
+                    }
+                }
+            }
+            return Ok(());
+        }
+        let cursor_item = if !r.0.is_empty() {
             decode_slot_item(r, packets).ok().and_then(|(it, _)| it)
         } else {
             None
@@ -564,6 +914,7 @@ impl PlayerStateTable {
         let x = r.f64()?;
         let y = r.f64()?;
         let z = r.f64()?;
+        let (width, height) = entity_dimensions(entity_type);
         if self.entities.len() >= 1024 && !self.entities.contains_key(&entity_id) {
             if let Some(&oldest) = self.entities.keys().next() {
                 self.entities.remove(&oldest);
@@ -578,8 +929,9 @@ impl PlayerStateTable {
                 velocity: [0.0; 3],
                 yaw: 0.0,
                 pitch: 0.0,
-                width: 0.6,
-                height: 1.8,
+                width,
+                height,
+                equipment: HashMap::new(),
             },
         );
         Ok(())
@@ -647,6 +999,88 @@ impl PlayerStateTable {
                 self.chat_log.remove(0);
             }
             self.chat_log.push(text);
+        }
+        Ok(())
+    }
+
+    pub fn apply_update_mob_effect(&mut self, r: &mut Reader<'_>) -> Result<(i32, i32, u8)> {
+        let entity_id = r.var()?;
+        let effect_id = r.var()?;
+        let amplifier = r.byte()?;
+        let _duration = r.var()?;
+        let _flags = r.byte()?;
+        self.push_event(format!("mob_effect_updated:entity={entity_id},effect={effect_id},amp={amplifier}"));
+        Ok((entity_id, effect_id, amplifier))
+    }
+
+    pub fn apply_remove_mob_effect(&mut self, r: &mut Reader<'_>) -> Result<(i32, i32)> {
+        let entity_id = r.var()?;
+        let effect_id = r.var()?;
+        self.push_event(format!("mob_effect_removed:entity={entity_id},effect={effect_id}"));
+        Ok((entity_id, effect_id))
+    }
+
+    pub fn apply_update_attributes(&mut self, r: &mut Reader<'_>) -> Result<(i32, Vec<(String, f64)>)> {
+        let entity_id = r.var()?;
+        let count = r.count(256)?;
+        let mut attrs = Vec::with_capacity(count);
+        for _ in 0..count {
+            let key = r.string()?;
+            let base = r.f64()?;
+            let mod_count = r.count(256)?;
+            for _ in 0..mod_count {
+                let _uuid = r.take(16)?;
+                let _amount = r.f64()?;
+                let _operation = r.byte()?;
+            }
+            attrs.push((key, base));
+        }
+        Ok((entity_id, attrs))
+    }
+
+    pub fn apply_game_event(&mut self, r: &mut Reader<'_>) -> Result<(u8, f32)> {
+        let event = r.byte()?;
+        let value = r.f32()?;
+        if event == 3 {
+            self.game_mode = value as u8;
+            self.push_event(format!("game_mode_changed:{}", self.game_mode));
+        }
+        Ok((event, value))
+    }
+
+    pub fn apply_player_abilities(&mut self, r: &mut Reader<'_>) -> Result<(bool, f32)> {
+        let flags = r.byte()?;
+        let flying = (flags & 2) != 0;
+        let fly_speed = r.f32()?;
+        let _walk_speed = r.f32()?;
+        self.push_event(format!("player_abilities:flying={flying},fly_speed={fly_speed}"));
+        Ok((flying, fly_speed))
+    }
+
+    pub fn apply_set_experience(&mut self, r: &mut Reader<'_>) -> Result<()> {
+        self.xp_progress = r.f32()?;
+        self.xp_level = r.var()?;
+        let _total = r.var()?;
+        self.push_event(format!("experience_updated:level={},progress={}", self.xp_level, self.xp_progress));
+        Ok(())
+    }
+
+    pub fn apply_set_equipment(&mut self, r: &mut Reader<'_>, packets: &PacketTable) -> Result<()> {
+        let entity_id = r.var()?;
+        loop {
+            let raw_slot = r.byte()?;
+            let slot = raw_slot & 0x7f;
+            let (item, _) = decode_slot_item(r, packets)?;
+            if let Some(ent) = self.entities.get_mut(&entity_id) {
+                if let Some(it) = item {
+                    ent.equipment.insert(slot, it);
+                } else {
+                    ent.equipment.remove(&slot);
+                }
+            }
+            if (raw_slot & 0x80) == 0 {
+                break;
+            }
         }
         Ok(())
     }
@@ -725,6 +1159,10 @@ pub fn encode_serverbound_event_with_pose(
             out.push(BlockFace::Down as u8);
             var(0, &mut out);
             Some((packets.sb_player_action, out))
+        }
+        SubTickEvent::PerformRespawn => {
+            var(0, &mut out);
+            Some((packets.sb_client_command, out))
         }
         SubTickEvent::SwapOffhand => {
             var(6, &mut out);
@@ -856,6 +1294,39 @@ pub fn encode_serverbound_event_with_pose(
             }
             Some((packets.sb_sign_update, out))
         }
+        SubTickEvent::SteerVehicle {
+            left_right,
+            forward_backward,
+            jumping,
+            unmount,
+        } => {
+            out.extend(left_right.to_be_bytes());
+            out.extend(forward_backward.to_be_bytes());
+            let mut flags = 0u8;
+            if *jumping {
+                flags |= 1;
+            }
+            if *unmount {
+                flags |= 2;
+            }
+            out.push(flags);
+            Some((packets.sb_steer_vehicle, out))
+        }
+        SubTickEvent::StartFallFlying => {
+            var(0, &mut out); // entity_id = 0 for player
+            var(8, &mut out); // action = 8: start fall flying
+            var(0, &mut out); // jump_boost_percentage
+            Some((packets.sb_player_command, out))
+        }
+        SubTickEvent::ToggleCreativeFlight { flying } => {
+            out.push(if *flying { 2 } else { 0 }); // bit 1 = is flying
+            Some((packets.sb_player_abilities, out))
+        }
+        SubTickEvent::RequestTabComplete { transaction_id, input } => {
+            var(*transaction_id, &mut out);
+            string(input, &mut out);
+            Some((packets.sb_chat_command, out))
+        }
         _ => None,
     }
 }
@@ -893,7 +1364,7 @@ mod tests {
             mode: ClickMode::Pickup,
         })
         .unwrap();
-        assert_eq!(click_id, 17);
+        assert_eq!(click_id, 18);
     }
 
     #[test]
@@ -943,5 +1414,104 @@ mod tests {
             "minecraft:cobblestone"
         );
         assert_eq!(screen.cursor_item.as_ref().unwrap().count, 8);
+    }
+
+    #[test]
+    fn set_player_inventory_and_cursor_item_packets_update_state() {
+        let mut table = PlayerStateTable::default();
+        let mut packets = PacketTable::default();
+        packets.item_names.insert(1, "minecraft:stone".to_string());
+        packets.item_names.insert(250, "minecraft:iron_sword".to_string());
+
+        // Test SetPlayerInventory (slot 36, stone x64)
+        let mut raw_inv = Vec::new();
+        var(36, &mut raw_inv); // slot 36
+        var(64, &mut raw_inv); // count 64
+        var(1, &mut raw_inv);  // item_id 1 (stone)
+        var(0, &mut raw_inv);  // 0 added components
+        var(0, &mut raw_inv);  // 0 removed components
+        let mut r1 = Reader(&raw_inv);
+        table.apply_set_player_inventory(&mut r1, &packets).unwrap();
+
+        let slot_36 = table.inventory_slots[36].as_ref().unwrap();
+        assert_eq!(slot_36.id, "minecraft:stone");
+        assert_eq!(slot_36.count, 64);
+
+        // Test SetCursorItem with components (iron_sword x1, damage component 4 with dmg=15)
+        let mut raw_cursor = Vec::new();
+        var(1, &mut raw_cursor);   // count 1
+        var(250, &mut raw_cursor); // item_id 250 (iron sword)
+        var(1, &mut raw_cursor);   // 1 added component
+        var(0, &mut raw_cursor);   // 0 removed components
+        var(4, &mut raw_cursor);   // component id 4 = damage
+        var(15, &mut raw_cursor);  // damage value 15
+        let mut r2 = Reader(&raw_cursor);
+        table.apply_set_cursor_item(&mut r2, &packets).unwrap();
+
+        let cursor = table.cursor_item.as_ref().unwrap();
+        assert_eq!(cursor.id, "minecraft:iron_sword");
+        assert_eq!(cursor.count, 1);
+        assert_eq!(cursor.damage, Some((15, 0)));
+    }
+
+    #[test]
+    fn container_set_slot_with_components_preserves_item_id_and_count() {
+        let mut table = PlayerStateTable::default();
+        let mut packets = PacketTable::default();
+        packets.item_names.insert(100, "minecraft:diamond_sword".to_string());
+
+        // ContainerSetSlot: window 0, state_id 5, slot 0
+        let mut raw = Vec::new();
+        var(0, &mut raw);          // window 0
+        var(5, &mut raw);          // state_id 5
+        raw.extend(0i16.to_be_bytes()); // slot 0
+        var(1, &mut raw);          // count 1
+        var(100, &mut raw);        // item 100
+        var(1, &mut raw);          // 1 added component
+        var(0, &mut raw);          // 0 removed
+        var(999, &mut raw);        // unknown component id 999
+        raw.extend(&[0xde, 0xad, 0xbe, 0xef]); // arbitrary trailing bytes
+
+        let mut reader = Reader(&raw);
+        table.apply_container_set_slot(&mut reader, &packets).unwrap();
+
+        let slot_0 = table.inventory_slots[0].as_ref().unwrap();
+        assert_eq!(slot_0.id, "minecraft:diamond_sword");
+        assert_eq!(slot_0.count, 1);
+        assert!(!slot_0.components_raw.is_empty());
+        assert_eq!(slot_0.components_raw, vec![0xde, 0xad, 0xbe, 0xef]);
+    }
+
+    #[test]
+    fn container_set_content_with_unknown_component_preserves_subsequent_slots() {
+        let mut table = PlayerStateTable {
+            open_screen: Some(ScreenState::container(1, 1, 1, "Chest")),
+            ..Default::default()
+        };
+        // Pre-populate slot 1 with valuable item that must not be truncated to None
+        table.open_screen.as_mut().unwrap().slots[1] = Some(ItemStack::new("minecraft:diamond", 64));
+        let packets = PacketTable::default();
+
+        // Build ContainerSetContent packet: window 1, state 10, 2 slots
+        let mut raw = Vec::new();
+        var(1, &mut raw);  // window 1
+        var(10, &mut raw); // state 10
+        var(2, &mut raw);  // 2 slots
+        // Slot 0 has an unknown component 999
+        var(1, &mut raw);   // count 1
+        var(50, &mut raw);  // item 50
+        var(1, &mut raw);   // 1 added component
+        var(0, &mut raw);   // 0 removed
+        var(999, &mut raw); // unknown component id 999
+
+        let mut reader = Reader(&raw);
+        table.apply_container_set_content(&mut reader, &packets).unwrap();
+
+        let screen = table.open_screen.as_ref().unwrap();
+        assert_eq!(screen.state_id, 10);
+        // Slot 1 must still be diamond x64, preserved!
+        assert_eq!(screen.slots[1].as_ref().unwrap().id, "minecraft:diamond");
+        assert_eq!(screen.slots[1].as_ref().unwrap().count, 64);
+        assert!(table.decode_errors > 0);
     }
 }

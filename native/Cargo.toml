@@ -1,10 +1,18 @@
 [package]
 name = "sawbyte-play"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 license = "MIT"
 
 [workspace]
+
+[lib]
+name = "sawbyte_play"
+path = "src/lib.rs"
+
+[[bin]]
+name = "sawbyte-play"
+path = "src/main.rs"
 
 [dependencies]
 sawbyte-core = { path = "../crates/sawbyte-core" }

@@ -15,3 +15,5 @@
 /run/
 *.sbif
 *.csv
+__pycache__/
+*.py[cod]

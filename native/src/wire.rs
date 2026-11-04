@@ -191,6 +191,14 @@ pub fn connection(stream: TcpStream) -> io::Result<(Rx, Tx)> {
     ))
 }
 impl Rx {
+    pub fn new(stream: TcpStream) -> Self {
+        Self {
+            stream,
+            threshold: None,
+            cipher: None,
+        }
+    }
+
     pub fn encrypt(&mut self, key: &[u8; 16]) {
         self.cipher = Some(cfb8::Decryptor::new(key.into(), key.into()));
     }
@@ -248,6 +256,14 @@ impl Rx {
     }
 }
 impl Tx {
+    pub fn new(stream: TcpStream) -> Self {
+        Self {
+            stream,
+            threshold: None,
+            cipher: None,
+        }
+    }
+
     pub fn encrypt(&mut self, key: &[u8; 16]) {
         self.cipher = Some(cfb8::Encryptor::new(key.into(), key.into()));
     }

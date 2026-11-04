@@ -6,6 +6,7 @@ use std::fmt;
 
 pub mod events;
 pub mod humanisation;
+pub mod json;
 pub mod launcher;
 pub mod mcp;
 pub mod screen;
@@ -214,10 +215,10 @@ impl<B: Backend, P: InputPolicy> Scheduler<B, P> {
         if actions.len() > self.capacity.saturating_sub(self.queue.len()) {
             return Err(Error::QueueFull);
         }
-        let mut previous = self.queue.back().map(|(tick, _)| *tick);
+        let mut previous = None;
         for &(tick, action) in actions {
             if self.last_tick.is_some_and(|last| tick <= last)
-                || previous.is_some_and(|last| tick < last)
+                || previous.is_some_and(|prev| tick < prev)
             {
                 return Err(Error::OutOfOrder);
             }
@@ -230,6 +231,7 @@ impl<B: Backend, P: InputPolicy> Scheduler<B, P> {
             previous = Some(tick);
         }
         self.queue.extend(actions.iter().copied());
+        self.queue.make_contiguous().sort_by_key(|(tick, _)| *tick);
         Ok(())
     }
 
@@ -327,3 +329,135 @@ impl<B: Backend, P: InputPolicy> Drop for Scheduler<B, P> {
         let _ = self.backend.release_all();
     }
 }
+
+/// Tokenizes a raw command line into string arguments, supporting whitespace separation,
+/// double quotes ("..."), single quotes ('...'), backslash escaping (\", \', \\, \n, \t),
+/// and structured JSON commands (e.g. {"command": "task.navigate", "args": [3, -60, 2]}).
+pub fn tokenize_command_line(line: &str) -> Result<Vec<String>, String> {
+    let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    if trimmed.starts_with('{') {
+        if let Ok(val) = json::JsonValue::parse(trimmed) {
+            if let Some(cmd) = val.get("command").and_then(|v| v.as_str()) {
+                let mut tokens = vec![cmd.to_string()];
+                if let Some(args) = val.get("args").and_then(|v| v.as_array()) {
+                    for arg in args {
+                        tokens.push(arg.to_string_lossy());
+                    }
+                }
+                return Ok(tokens);
+            }
+        }
+    }
+
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut in_quote: Option<char> = None;
+    let mut token_has_content = false;
+    let mut chars = trimmed.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        if let Some(q) = in_quote {
+            if c == q {
+                in_quote = None;
+            } else if c == '\\' {
+                if let Some(next_c) = chars.next() {
+                    match next_c {
+                        'n' => current.push('\n'),
+                        'r' => current.push('\r'),
+                        't' => current.push('\t'),
+                        '\\' => current.push('\\'),
+                        '"' => current.push('"'),
+                        '\'' => current.push('\''),
+                        other => {
+                            current.push('\\');
+                            current.push(other);
+                        }
+                    }
+                } else {
+                    current.push('\\');
+                }
+            } else {
+                current.push(c);
+            }
+        } else if c == '"' || c == '\'' {
+            in_quote = Some(c);
+            token_has_content = true;
+        } else if c.is_whitespace() {
+            if token_has_content {
+                tokens.push(std::mem::take(&mut current));
+                token_has_content = false;
+            }
+        } else if c == '\\' {
+            token_has_content = true;
+            if let Some(next_c) = chars.next() {
+                match next_c {
+                    ' ' => current.push(' '),
+                    'n' => current.push('\n'),
+                    'r' => current.push('\r'),
+                    't' => current.push('\t'),
+                    '\\' => current.push('\\'),
+                    '"' => current.push('"'),
+                    '\'' => current.push('\''),
+                    other => {
+                        current.push('\\');
+                        current.push(other);
+                    }
+                }
+            } else {
+                current.push('\\');
+            }
+        } else {
+            token_has_content = true;
+            current.push(c);
+        }
+    }
+
+    if in_quote.is_some() {
+        return Err("unterminated quote in command line".to_owned());
+    }
+
+    if token_has_content {
+        tokens.push(current);
+    }
+
+    Ok(tokens)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tokenize_quoted_and_structured_commands() {
+        assert_eq!(
+            tokenize_command_line("task.navigate 3 -60 2").unwrap(),
+            vec!["task.navigate", "3", "-60", "2"]
+        );
+        assert_eq!(
+            tokenize_command_line("chat.send \"hello world\"").unwrap(),
+            vec!["chat.send", "hello world"]
+        );
+        assert_eq!(
+            tokenize_command_line("wait.until screen_open 40 \"Large Chest\"").unwrap(),
+            vec!["wait.until", "screen_open", "40", "Large Chest"]
+        );
+        assert_eq!(
+            tokenize_command_line("chat.send 'foo \\'bar\\' baz'").unwrap(),
+            vec!["chat.send", "foo 'bar' baz"]
+        );
+        assert_eq!(
+            tokenize_command_line("\"/home/fivesaw/The Projects/Sawbyte/block-profile.json\"").unwrap(),
+            vec!["/home/fivesaw/The Projects/Sawbyte/block-profile.json"]
+        );
+        assert_eq!(
+            tokenize_command_line(r#"{"command": "task.navigate", "args": [3, -60, 2]}"#).unwrap(),
+            vec!["task.navigate", "3", "-60", "2"]
+        );
+        assert!(tokenize_command_line("chat.send \"unterminated").is_err());
+    }
+}
+

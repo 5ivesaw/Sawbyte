@@ -48,44 +48,73 @@ class Server:
             subprocess.run(["java", "-DbundlerMainClass=net.minecraft.data.Main", "-jar", "server.jar",
                 "--reports", "--output", "generated"], cwd=self.directory, stdout=log,
                 stderr=subprocess.STDOUT, check=True, timeout=150)
+        def lookup_block_hardness(name: str) -> float:
+            if name in ["bedrock", "barrier", "end_portal_frame", "command_block", "structure_block", "jigsaw", "reinforced_deepslate"]:
+                return -1.0
+            if any(k in name for k in ["air", "water", "lava", "grass", "flower", "torch", "crop", "sapling", "wheat", "carpet"]):
+                return 0.0
+            if "leaves" in name:
+                return 0.2
+            if any(k in name for k in ["dirt", "sand", "gravel", "snow"]):
+                return 0.5
+            if name == "grass_block":
+                return 0.6
+            if any(k in name for k in ["stone", "andesite", "diorite", "granite"]):
+                return 1.5
+            if any(k in name for k in ["cobblestone", "planks", "log", "wood", "fence"]):
+                return 2.0
+            if any(k in name for k in ["deepslate", "ore"]):
+                return 3.0
+            if any(k in name for k in ["iron_block", "gold_block", "diamond_block"]):
+                return 5.0
+            if "obsidian" in name:
+                return 50.0
+            return 1.5
+
         block_data = json.loads((self.directory / "generated/reports/blocks.json").read_text())
         profile = {
             "minecraft": "26.3", "air": [], "solid": [],
             "bottom_slabs": [], "top_slabs": [], "stairs": [], "fences": [],
             "carpets": [], "climbable": [], "water": [], "lava": [],
-            "cobwebs": [], "soul_sand": [], "ice": [],
+            "cobwebs": [], "soul_sand": [], "ice": [], "hardness": {},
         }
-        for group, names in {
-            "air": ["air", "cave_air", "void_air"],
-            "solid": ["bedrock", "dirt", "grass_block", "stone", "cobblestone", "oak_planks", "sand", "gravel"],
-            "climbable": ["ladder", "vine", "scaffolding"],
-            "water": ["water"],
-            "lava": ["lava"],
-            "cobwebs": ["cobweb"],
-            "soul_sand": ["soul_sand", "honey_block"],
-            "ice": ["ice", "packed_ice", "blue_ice"],
-            "fences": ["oak_fence", "cobblestone_wall"],
-            "carpets": ["white_carpet"],
-        }.items():
-            for name in names:
-                key = f"minecraft:{name}"
-                if key in block_data:
-                    profile[group].extend(state["id"] for state in block_data[key]["states"])
-        for slab in ["stone_slab", "oak_slab", "cobblestone_slab"]:
-            key = f"minecraft:{slab}"
-            if key in block_data:
-                for state in block_data[key]["states"]:
-                    stype = state.get("properties", {}).get("type", "bottom")
-                    if stype == "bottom":
-                        profile["bottom_slabs"].append(state["id"])
-                    elif stype == "top":
-                        profile["top_slabs"].append(state["id"])
-                    else:
-                        profile["solid"].append(state["id"])
         for key, val in block_data.items():
-            if key.endswith("_stairs") and "states" in val:
-                for state in val["states"]:
-                    profile["stairs"].append(state["id"])
+            clean_name = key.replace("minecraft:", "")
+            states = val.get("states", [])
+            for state in states:
+                sid = state["id"]
+                profile["hardness"][str(sid)] = lookup_block_hardness(clean_name)
+                props = state.get("properties", {})
+                if clean_name in ["air", "cave_air", "void_air", "light"] or any(k in clean_name for k in ["grass", "flower", "torch", "crop", "sapling", "button", "lever", "rail", "pressure_plate", "sign"]):
+                    profile["air"].append(sid)
+                elif "slab" in clean_name:
+                    stype = props.get("type", "bottom")
+                    if stype == "bottom":
+                        profile["bottom_slabs"].append(sid)
+                    elif stype == "top":
+                        profile["top_slabs"].append(sid)
+                    else:
+                        profile["solid"].append(sid)
+                elif "stairs" in clean_name:
+                    profile["stairs"].append(sid)
+                elif any(k in clean_name for k in ["fence", "wall", "pane", "iron_bars"]):
+                    profile["fences"].append(sid)
+                elif "carpet" in clean_name:
+                    profile["carpets"].append(sid)
+                elif clean_name in ["ladder", "vine", "scaffolding"]:
+                    profile["climbable"].append(sid)
+                elif clean_name == "water" or clean_name == "bubble_column":
+                    profile["water"].append(sid)
+                elif clean_name == "lava":
+                    profile["lava"].append(sid)
+                elif clean_name == "cobweb":
+                    profile["cobwebs"].append(sid)
+                elif clean_name in ["soul_sand", "honey_block"]:
+                    profile["soul_sand"].append(sid)
+                elif "ice" in clean_name:
+                    profile["ice"].append(sid)
+                else:
+                    profile["solid"].append(sid)
         packets_file = self.directory / "generated/reports/packets.json"
         if packets_file.exists():
             packets_data = json.loads(packets_file.read_text())

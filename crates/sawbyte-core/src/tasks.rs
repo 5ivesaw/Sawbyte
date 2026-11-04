@@ -730,66 +730,6 @@ pub fn execute_workflow(steps: &[WorkflowStep], host: &mut impl WorkflowHost) ->
     }
 }
 
-/// Example multi-screen test fixture workflow demonstrating general UI transitions and state verification.
-pub fn shop_purchase_workflow(item_id: &str, amount: &str) -> Vec<WorkflowStep> {
-    vec![
-        WorkflowStep::SetVar {
-            key: "desired_amount".into(),
-            value: amount.into(),
-        },
-        WorkflowStep::WaitScreenTitle {
-            title: "Shop".into(),
-            timeout_ms: 5000,
-        },
-        WorkflowStep::ClickItem {
-            selector: ItemSelector {
-                name_exact: Some("Building Blocks".into()),
-                ..Default::default()
-            },
-            unique: true,
-            mode: ClickMode::Pickup,
-            retry: RetryPolicy::Bounded(1),
-        },
-        WorkflowStep::WaitScreenTitle {
-            title: "Building Blocks".into(),
-            timeout_ms: 5000,
-        },
-        WorkflowStep::ClickItem {
-            selector: ItemSelector {
-                id: Some(item_id.into()),
-                ..Default::default()
-            },
-            unique: true,
-            mode: ClickMode::Pickup,
-            retry: RetryPolicy::Bounded(1),
-        },
-        WorkflowStep::WaitElement {
-            label: "Confirm".into(),
-            timeout_ms: 5000,
-        },
-        WorkflowStep::ClickWidget {
-            label: "Confirm".into(),
-            retry: RetryPolicy::Bounded(1),
-        },
-        WorkflowStep::WaitField {
-            field_name: "amount".into(),
-            timeout_ms: 5000,
-        },
-        WorkflowStep::FillField {
-            field_name: "amount".into(),
-            text: "$desired_amount".into(),
-        },
-        WorkflowStep::ClickWidget {
-            label: "Pay".into(),
-            retry: RetryPolicy::Never,
-        },
-        WorkflowStep::WaitEvent {
-            event_name: "purchase_confirmed".into(),
-            timeout_ms: 5000,
-        },
-    ]
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -910,15 +850,70 @@ mod tests {
     }
 
     #[test]
-    fn shop_workflow_succeeds_and_never_retries_after_payment_timeout() {
-        let wf = shop_purchase_workflow("minecraft:stone", "64");
+    fn general_workflow_succeeds_and_never_retries_after_non_idempotent_step_timeout() {
+        let wf = vec![
+            WorkflowStep::SetVar {
+                key: "desired_amount".into(),
+                value: "64".into(),
+            },
+            WorkflowStep::WaitScreenTitle {
+                title: "Shop".into(),
+                timeout_ms: 5000,
+            },
+            WorkflowStep::ClickItem {
+                selector: ItemSelector {
+                    name_exact: Some("Building Blocks".into()),
+                    ..Default::default()
+                },
+                unique: true,
+                mode: ClickMode::Pickup,
+                retry: RetryPolicy::Bounded(1),
+            },
+            WorkflowStep::WaitScreenTitle {
+                title: "Building Blocks".into(),
+                timeout_ms: 5000,
+            },
+            WorkflowStep::ClickItem {
+                selector: ItemSelector {
+                    id: Some("minecraft:stone".into()),
+                    ..Default::default()
+                },
+                unique: true,
+                mode: ClickMode::Pickup,
+                retry: RetryPolicy::Bounded(1),
+            },
+            WorkflowStep::WaitElement {
+                label: "Confirm".into(),
+                timeout_ms: 5000,
+            },
+            WorkflowStep::ClickWidget {
+                label: "Confirm".into(),
+                retry: RetryPolicy::Bounded(1),
+            },
+            WorkflowStep::WaitField {
+                field_name: "amount".into(),
+                timeout_ms: 5000,
+            },
+            WorkflowStep::FillField {
+                field_name: "amount".into(),
+                text: "$desired_amount".into(),
+            },
+            WorkflowStep::ClickWidget {
+                label: "Pay".into(),
+                retry: RetryPolicy::Never,
+            },
+            WorkflowStep::WaitEvent {
+                event_name: "purchase_confirmed".into(),
+                timeout_ms: 5000,
+            },
+        ];
 
         // 1. Normal confirmed flow
         let mut ok_host = MockShopServer::new(true);
         let outcome = execute_workflow(&wf, &mut ok_host);
         assert!(matches!(outcome, WorkflowOutcome::Completed { .. }));
 
-        // 2. Timeout after clicking "Pay" (retry: Never) halts with UncertainOutcomeHalt instead of paying twice
+        // 2. Timeout after clicking non-idempotent action (retry: Never) halts with UncertainOutcomeHalt
         let mut timeout_host = MockShopServer::new(false);
         let outcome2 = execute_workflow(&wf, &mut timeout_host);
         assert!(matches!(

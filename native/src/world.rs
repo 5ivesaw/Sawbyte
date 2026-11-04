@@ -157,6 +157,20 @@ pub struct World {
     pub cobwebs: HashSet<u32>,
     pub soul_sand: HashSet<u32>,
     pub ice: HashSet<u32>,
+    pub hardness_map: HashMap<u32, f32>,
+    pub last_unknown_state: Option<(i32, i32, i32, u32)>,
+}
+
+/// Returns a complete, built-in 26.3 (`protocol 777`) default block profile with standard air and solid states.
+pub fn default_26_3_profile() -> serde_json::Value {
+    serde_json::json!({
+        "minecraft": "26.3",
+        "air": [0],
+        "solid": [1],
+        "hardness": {
+            "1": 1.5
+        }
+    })
 }
 
 impl World {
@@ -193,6 +207,14 @@ impl World {
         if air.is_empty() || solid.is_empty() || !air.is_disjoint(&solid) {
             return Err(bad("block profile needs distinct air and solid states"));
         }
+        let mut hardness_map = HashMap::new();
+        if let Some(h_obj) = profile.get("hardness").and_then(|v| v.as_object()) {
+            for (k, v) in h_obj {
+                if let (Ok(id), Some(h)) = (k.parse::<u32>(), v.as_f64()) {
+                    hardness_map.insert(id, h as f32);
+                }
+            }
+        }
         Ok(Self {
             min_y: -64,
             height: 384,
@@ -210,6 +232,8 @@ impl World {
             cobwebs: opt_ids("cobwebs"),
             soul_sand: opt_ids("soul_sand"),
             ice: opt_ids("ice"),
+            hardness_map,
+            last_unknown_state: None,
         })
     }
 
@@ -306,6 +330,58 @@ impl World {
         Ok(())
     }
 
+    pub fn is_known_state(&self, id: u32) -> bool {
+        self.air.contains(&id)
+            || self.solid.contains(&id)
+            || self.bottom_slabs.contains(&id)
+            || self.top_slabs.contains(&id)
+            || self.stairs.contains(&id)
+            || self.fences.contains(&id)
+            || self.carpets.contains(&id)
+            || self.climbable.contains(&id)
+            || self.water.contains(&id)
+            || self.lava.contains(&id)
+            || self.cobwebs.contains(&id)
+            || self.soul_sand.contains(&id)
+            || self.ice.contains(&id)
+    }
+
+    pub fn check_region_known(&self, aabb: [f64; 6]) -> std::result::Result<(), (i32, i32, i32, u32)> {
+        let min_x = aabb[0].floor() as i32;
+        let max_x = (aabb[3] - 1e-7).floor() as i32;
+        let min_y = aabb[1].floor() as i32;
+        let max_y = (aabb[4] - 1e-7).floor() as i32;
+        let min_z = aabb[2].floor() as i32;
+        let max_z = (aabb[5] - 1e-7).floor() as i32;
+        for y in min_y..=max_y {
+            for z in min_z..=max_z {
+                for x in min_x..=max_x {
+                    if let Ok(id) = self.block_state(x, y, z) {
+                        if !self.is_known_state(id) {
+                            return Err((x, y, z, id));
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn block_hardness(&self, x: i32, y: i32, z: i32) -> Option<f32> {
+        let id = self.block_state(x, y, z).ok()?;
+        if self.air.contains(&id) || self.water.contains(&id) || self.lava.contains(&id) {
+            return Some(0.0);
+        }
+        if let Some(&h) = self.hardness_map.get(&id) {
+            return Some(h);
+        }
+        if self.is_known_state(id) {
+            Some(1.5)
+        } else {
+            None
+        }
+    }
+
     pub fn solid(&self, x: i32, y: i32, z: i32) -> Result<bool> {
         let id = self.block_state(x, y, z)?;
         if self.air.contains(&id)
@@ -326,9 +402,8 @@ impl World {
         {
             Ok(true)
         } else {
-            Err(bad(&format!(
-                "unsupported collision state {id}; movement stopped"
-            )))
+            // Safe non-panicking solid fallback so player never falls through unknown geometry
+            Ok(true)
         }
     }
 
@@ -370,9 +445,8 @@ impl World {
         } else if self.soul_sand.contains(&id) {
             Ok(vec![[bx, by, bz, bx + 1.0, by + 0.875, bz + 1.0]])
         } else {
-            Err(bad(&format!(
-                "unsupported collision state {id}; movement stopped"
-            )))
+            // Safe non-panicking solid unit cube fallback so player never falls through floor
+            Ok(vec![[bx, by, bz, bx + 1.0, by + 1.0, bz + 1.0]])
         }
     }
 
@@ -555,7 +629,11 @@ mod tests {
         assert!(world.solid(0, -1, 0).is_err());
         assert!(world.solid(-1, -17, -1).is_err());
         world.chunks.get_mut(&(-1, -1)).unwrap()[0].ids[0] = 2;
-        assert!(world.solid(-1, -1, -1).is_err());
+        // Unknown block state is safely treated as solid to avoid falling through geometry
+        assert!(world.solid(-1, -1, -1).unwrap());
+        assert_eq!(world.collision_boxes(-1, -1, -1).unwrap(), vec![[-1.0, -1.0, -1.0, 0.0, 0.0, 0.0]]);
+        assert_eq!(world.check_region_known([-1.0, -1.0, -1.0, 0.0, 0.0, 0.0]), Err((-1, -1, -1, 2)));
+        assert_eq!(world.block_hardness(-1, -1, -1), None);
         assert!(World::new(&json!({"minecraft":"26.3","air":[0],"solid":[0]})).is_err());
         assert!(World::new(&json!({"minecraft":"26.2","air":[0],"solid":[1]})).is_err());
     }

@@ -8,7 +8,7 @@ use std::io::{self, BufRead, Write};
 use std::path::Path;
 use std::time::Duration;
 
-const HELP: &str = "Sawbyte 0.2.0 — standalone headless Rust client launcher & MCP control bridge
+const HELP: &str = "Sawbyte 0.2.1 — standalone headless Rust client launcher & MCP control bridge
 
 Usage:
   sawbyte --help
@@ -285,11 +285,36 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Some("benchmark") if args.len() == 1 => {
-            let (bin_ns, bin_bytes, json_ns, json_bytes) = benchmark_transports(50);
+            println!("================================================================================");
+            println!("                    SAWBYTE CONTROL BRIDGE BENCHMARK");
+            println!("================================================================================");
+            let (bin_ns, bin_bytes, json_ns, json_bytes) = benchmark_transports(100);
+            let bin_ms = bin_ns as f64 / 1_000_000.0;
+            let json_ms = json_ns as f64 / 1_000_000.0;
+            let speedup = json_ns as f64 / bin_ns.max(1) as f64;
             println!(
-                "Transport Benchmark (50x 160-tick batches):\n  Binary SBIF: {} ns total ({} bytes/batch)\n  JSON-RPC:    {} ns total ({} bytes/batch)",
-                bin_ns, bin_bytes, json_ns, json_bytes
+                "[Transport Serialization & Framing (100x 160-tick batches = 16,000 frames)]\n  Binary SBIF: {:>8.3} ms ({:>5} bytes/batch, {:>6.1} ns/frame)\n  JSON-RPC:    {:>8.3} ms ({:>5} bytes/batch, {:>6.1} ns/frame)\n  -> Efficiency: SBIF binary framing is {:.1}x faster and uses {:.1}% less bandwidth\n",
+                bin_ms, bin_bytes, (bin_ns as f64 / 16000.0),
+                json_ms, json_bytes, (json_ns as f64 / 16000.0),
+                speedup, (1.0 - (bin_bytes as f64 / json_bytes as f64)) * 100.0
             );
+
+            let candidates = [
+                "native/target/release/sawbyte-play",
+                "target/release/sawbyte-play",
+                "native/target/debug/sawbyte-play",
+                "target/debug/sawbyte-play",
+            ];
+            for path in &candidates {
+                if Path::new(path).exists() {
+                    let status = std::process::Command::new(path).arg("benchmark").status();
+                    if let Ok(st) = status {
+                        if st.success() {
+                            return Ok(());
+                        }
+                    }
+                }
+            }
         }
         _ => return Err("invalid arguments; use sawbyte --help".into()),
     }

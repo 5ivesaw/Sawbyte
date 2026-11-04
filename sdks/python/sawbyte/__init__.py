@@ -61,8 +61,23 @@ class WorkflowBuilder:
         self.statements.append(f"task.navigate {x} {y} {z}")
         return self
 
-    def run_shop_purchase(self, item_id: str, amount: int = 64) -> "WorkflowBuilder":
-        self.statements.append(f"gui.run_shop_workflow {item_id} {amount}")
+    def wait_ticks(self, ticks: int) -> "WorkflowBuilder":
+        self.statements.append(f"wait.ticks {ticks}")
+        return self
+
+    def wait_until(self, condition: str, timeout_ticks: int = 100, filter_arg: Optional[str] = None) -> "WorkflowBuilder":
+        if filter_arg:
+            self.statements.append(f"wait.until {condition} {timeout_ticks} \"{filter_arg}\"")
+        else:
+            self.statements.append(f"wait.until {condition} {timeout_ticks}")
+        return self
+
+    def gui_click_slot(self, slot: int, mode: str = "pickup") -> "WorkflowBuilder":
+        self.statements.append(f"gui.click_slot {slot} {mode}")
+        return self
+
+    def gui_close(self) -> "WorkflowBuilder":
+        self.statements.append("gui.close")
         return self
 
     def chat(self, message: str) -> "WorkflowBuilder":
@@ -128,6 +143,20 @@ class SawbyteLiveTcpClient:
         if text.startswith("error: "):
             raise RuntimeError(text)
         return text
+
+    def wait_ticks(self, ticks: int) -> str:
+        return self.eval(f"wait.ticks {ticks}")
+
+    def wait_until(self, condition: str, timeout_ticks: int = 100, filter_arg: Optional[str] = None) -> str:
+        if filter_arg:
+            return self.eval(f"wait.until {condition} {timeout_ticks} \"{filter_arg}\"")
+        return self.eval(f"wait.until {condition} {timeout_ticks}")
+
+    def gui_click_slot(self, slot: int, mode: str = "pickup") -> str:
+        return self.eval(f"gui.click_slot {slot} {mode}")
+
+    def gui_close(self) -> str:
+        return self.eval("gui.close")
 
 
 class SawbyteMcpClient:
@@ -246,8 +275,13 @@ class SawbyteEnv:
             f"gym.step {b('forward')} {b('back')} {b('left')} {b('right')} "
             f"{b('jump')} {b('sneak')} {b('sprint')} {yaw_d:.4f} {pitch_d:.4f}"
         )
-        self.client.send_command(cmd)
-        obs = self.observe()
+        resp = self.client.send_command(cmd)
+        try:
+            obs = json.loads(resp)
+            if not isinstance(obs, dict) or "pos" not in obs:
+                obs = self.observe()
+        except Exception:
+            obs = self.observe()
         pos = obs.get("pos", [0.0, 0.0, 0.0])
         dist = math.sqrt(sum(( float(a) - float(g) ) ** 2 for a, g in zip(pos, self.goal_pos)))
         dead = float(obs.get("health", 20.0)) <= 0.0

@@ -45,9 +45,17 @@ jobs:
       - name: Static analysis
         run: cargo clippy --workspace --all-targets --locked --offline -- -D warnings
       - name: Tests
-        run: cargo test --workspace --locked --offline
+        run: |
+          cargo test --workspace --locked --offline
+          if [ -f native/Cargo.lock ]; then
+            cargo test --manifest-path native/Cargo.toml
+          fi
       - name: Build release
-        run: cargo build --workspace --release --locked --offline
+        run: |
+          cargo build --workspace --release --locked --offline
+          if [ -f native/Cargo.lock ]; then
+            cargo build --release --manifest-path native/Cargo.toml
+          fi
       - name: Smoke test
         shell: bash
         run: |
@@ -62,16 +70,27 @@ jobs:
           ./target/release/sawbyte launcher rollback smoke-bot 1
           ./target/release/sawbyte benchmark
           SAWBYTE_BIN=./target/release/sawbyte python sdks/python/tests/test_sdk.py
+          node --test sdks/typescript/test/sdk.test.mjs
       - name: Package preview
         shell: bash
         run: |
           mkdir -p dist
           if [ "$RUNNER_OS" = "Windows" ]; then
             cp target/release/sawbyte.exe dist/
+            if [ -f native/target/release/sawbyte-play.exe ]; then
+              cp native/target/release/sawbyte-play.exe dist/
+            elif [ -f target/release/sawbyte-play.exe ]; then
+              cp target/release/sawbyte-play.exe dist/
+            fi
           else
             cp target/release/sawbyte dist/
+            if [ -f native/target/release/sawbyte-play ]; then
+              cp native/target/release/sawbyte-play dist/
+            elif [ -f target/release/sawbyte-play ]; then
+              cp target/release/sawbyte-play dist/
+            fi
           fi
-          cp README.md LICENSE docs/COVERAGE.md dist/
+          cp README.md LICENSE dist/
           cp assets/sawbyte.png dist/sawbyte.png
           cp packaging/generated/sawbyte.ico packaging/generated/sawbyte.icns dist/
           if [ "$RUNNER_OS" = "Linux" ]; then cp packaging/sawbyte.desktop dist/; fi

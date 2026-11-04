@@ -115,14 +115,14 @@ fn persistent_disk_launcher_and_live_tcp_mcp_bridge_work_across_processes() {
         .unwrap()
         .write_all(
             b"{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\"}\n\
-              {\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"code_execute\",\"script\":\"gui.run_shop_workflow minecraft:stone 64\"}}\n",
+              {\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"code_execute\",\"script\":\"wait.until screen_open 40 \\\"Chest\\\"\"}}\n",
         )
         .unwrap();
     let mcp_out = child.wait_with_output().unwrap();
     assert!(mcp_out.status.success());
     let mcp_text = String::from_utf8(mcp_out.stdout).unwrap();
     assert!(mcp_text.contains("sawbyte-mcp"));
-    assert!(mcp_text.contains("live_session_ok:gui.run_shop_workflow minecraft:stone 64"));
+    assert!(mcp_text.contains(r#"live_session_ok:wait.until screen_open 40 \"Chest\""#));
 
     let _ = srv.join();
     let _ = std::fs::remove_dir_all(&temp_home);

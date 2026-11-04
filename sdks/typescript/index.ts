@@ -66,8 +66,27 @@ export class SawbyteWorkflow {
     return this;
   }
 
-  runShopPurchase(itemId: string, amount = 64): this {
-    this.statements.push(`gui.run_shop_workflow ${itemId} ${amount}`);
+  waitTicks(ticks: number): this {
+    this.statements.push(`wait.ticks ${ticks}`);
+    return this;
+  }
+
+  waitUntil(condition: string, timeoutTicks = 100, filterArg?: string): this {
+    if (filterArg) {
+      this.statements.push(`wait.until ${condition} ${timeoutTicks} "${filterArg}"`);
+    } else {
+      this.statements.push(`wait.until ${condition} ${timeoutTicks}`);
+    }
+    return this;
+  }
+
+  guiClickSlot(slot: number, mode = "pickup"): this {
+    this.statements.push(`gui.click_slot ${slot} ${mode}`);
+    return this;
+  }
+
+  guiClose(): this {
+    this.statements.push("gui.close");
     return this;
   }
 
@@ -100,6 +119,9 @@ export function createMcpToolCallRequest(
     jsonrpc: "2.0",
     id,
     method: "tools/call",
-    params: { name: toolName, script },
+    params: {
+      name: toolName,
+      arguments: { script },
+    },
   });
 }
