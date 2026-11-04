@@ -82,28 +82,19 @@ impl<'a> Reader<'a> {
                 match tag {
                     7 => {
                         let raw = self.take(count)?;
-                        if count <= 256 {
-                            Value::Array(raw.iter().map(|&b| Value::from(b as i8)).collect())
-                        } else {
-                            Value::from(format!("byte_array[{count}]"))
-                        }
+                        Value::Array(raw.iter().map(|&b| Value::from(b as i8)).collect())
                     }
                     11 => {
                         let raw = self.take(count * 4)?;
-                        if count <= 256 {
-                            Value::Array(
+                        Value::Array(
                                 raw.chunks_exact(4)
                                     .map(|c| Value::from(i32::from_be_bytes([c[0], c[1], c[2], c[3]])))
                                     .collect(),
                             )
-                        } else {
-                            Value::from(format!("int_array[{count}]"))
-                        }
                     }
                     _ => {
                         let raw = self.take(count * 8)?;
-                        if count <= 256 {
-                            Value::Array(
+                        Value::Array(
                                 raw.chunks_exact(8)
                                     .map(|c| {
                                         Value::from(i64::from_be_bytes([
@@ -112,9 +103,6 @@ impl<'a> Reader<'a> {
                                     })
                                     .collect(),
                             )
-                        } else {
-                            Value::from(format!("long_array[{count}]"))
-                        }
                     }
                 }
             }
@@ -124,12 +112,10 @@ impl<'a> Reader<'a> {
                 if !(0..=16384).contains(&n) {
                     return Err(bad("NBT list limit"));
                 }
-                let mut items = Vec::with_capacity((n as usize).min(4096));
-                for idx in 0..n {
+                let mut items = Vec::with_capacity(n as usize);
+                for _ in 0..n {
                     let elem = self.tag(kind, depth + 1)?;
-                    if (idx as usize) < 4096 {
-                        items.push(elem);
-                    }
+                    items.push(elem);
                 }
                 Value::Array(items)
             }
@@ -304,6 +290,23 @@ impl Tx {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn nbt_large_arrays_and_lists_preserve_every_element() {
+        let mut bytes = vec![7];
+        bytes.extend_from_slice(&257i32.to_be_bytes());
+        bytes.extend(std::iter::repeat_n(42, 257));
+        let value = Reader(&bytes).nbt().unwrap();
+        assert_eq!(value.as_array().unwrap().len(), 257);
+        assert_eq!(value[256], 42);
+
+        let mut list = vec![9, 1];
+        list.extend_from_slice(&4097i32.to_be_bytes());
+        list.extend(std::iter::repeat_n(7, 4097));
+        let value = Reader(&list).nbt().unwrap();
+        assert_eq!(value.as_array().unwrap().len(), 4097);
+        assert_eq!(value[4096], 7);
+    }
     use std::net::TcpListener;
     #[test]
     fn encrypted_compressed_packets_keep_stream_state() {
