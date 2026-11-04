@@ -351,6 +351,7 @@ public final class SawbyteBridge implements ClientModInitializer {
                         client.player.setYRot((float) Math.toDegrees(-Math.atan2(dx, dz)));
                         client.player.setXRot((float) Math.toDegrees(-Math.atan2(dy, hDist)));
 
+                        client.gameMode.startDestroyBlock(pos, net.minecraft.core.Direction.UP);
                         client.gameMode.destroyBlock(pos);
                     }
                     req.writer.println("mine_complete:(" + x + "," + y + "," + z + ")");
@@ -358,29 +359,43 @@ public final class SawbyteBridge implements ClientModInitializer {
                 }
             }
             case "interact.place", "interact.place_on" -> {
-                if (client.player != null && client.gameMode != null) {
+                if (client.player != null && client.gameMode != null && client.level != null) {
                     int x = Integer.parseInt(parts[1]);
                     int y = Integer.parseInt(parts[2]);
                     int z = Integer.parseInt(parts[3]);
-                    net.minecraft.core.Direction face = net.minecraft.core.Direction.UP;
+                    BlockPos targetPos = new BlockPos(x, y, z);
                     if (parts.length > 4) {
                         try {
-                            int f = Integer.parseInt(parts[4]);
-                            face = switch (f) {
-                                case 0 -> net.minecraft.core.Direction.DOWN;
-                                case 1 -> net.minecraft.core.Direction.UP;
-                                case 2 -> net.minecraft.core.Direction.NORTH;
-                                case 3 -> net.minecraft.core.Direction.SOUTH;
-                                case 4 -> net.minecraft.core.Direction.WEST;
-                                case 5 -> net.minecraft.core.Direction.EAST;
-                                default -> net.minecraft.core.Direction.UP;
-                            };
+                            int slot = Integer.parseInt(parts[4]);
+                            if (slot >= 0 && slot < 9) {
+                                client.player.getInventory().setSelectedSlot(slot);
+                            }
                         } catch (NumberFormatException ignored) {}
                     }
-                    BlockPos targetPos = new BlockPos(x, y, z);
-                    BlockPos supportPos = targetPos.relative(face.getOpposite());
+                    net.minecraft.core.Direction placeFace = null;
+                    BlockPos supportPos = null;
+                    net.minecraft.core.Direction[] directions = {
+                        net.minecraft.core.Direction.EAST,
+                        net.minecraft.core.Direction.WEST,
+                        net.minecraft.core.Direction.SOUTH,
+                        net.minecraft.core.Direction.NORTH,
+                        net.minecraft.core.Direction.UP,
+                        net.minecraft.core.Direction.DOWN
+                    };
+                    for (net.minecraft.core.Direction d : directions) {
+                        BlockPos neighbor = targetPos.relative(d.getOpposite());
+                        if (!client.level.getBlockState(neighbor).isAir()) {
+                            placeFace = d;
+                            supportPos = neighbor;
+                            break;
+                        }
+                    }
+                    if (placeFace == null) {
+                        placeFace = net.minecraft.core.Direction.UP;
+                        supportPos = targetPos.below();
+                    }
                     net.minecraft.world.phys.Vec3 hitVec = net.minecraft.world.phys.Vec3.atCenterOf(supportPos);
-                    net.minecraft.world.phys.BlockHitResult hit = new net.minecraft.world.phys.BlockHitResult(hitVec, face, supportPos, false);
+                    net.minecraft.world.phys.BlockHitResult hit = new net.minecraft.world.phys.BlockHitResult(hitVec, placeFace, supportPos, false);
                     client.gameMode.useItemOn(client.player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
                 }
                 req.writer.println("placed block");
@@ -443,7 +458,15 @@ public final class SawbyteBridge implements ClientModInitializer {
                             String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item.getItem()).toString();
                             int count = item.getCount();
                             String name = item.getHoverName().getString();
-                            slotsList.add(String.format("{\"slot\": %d, \"id\": \"%s\", \"count\": %d, \"display_name\": \"%s\"}", i, id, count, name.replace("\"", "\\\"")));
+                            var loreLines = new ArrayList<String>();
+                            var loreComp = item.get(net.minecraft.core.component.DataComponents.LORE);
+                            if (loreComp != null) {
+                                for (var line : loreComp.lines()) {
+                                    loreLines.add("\"" + line.getString().replace("\"", "\\\"") + "\"");
+                                }
+                            }
+                            slotsList.add(String.format("{\"slot\": %d, \"id\": \"%s\", \"count\": %d, \"display_name\": \"%s\", \"lore\": [%s]}",
+                                i, id, count, name.replace("\"", "\\\""), String.join(", ", loreLines)));
                         }
                     }
                     req.writer.println("{\"slots\": [" + String.join(", ", slotsList) + "]}");

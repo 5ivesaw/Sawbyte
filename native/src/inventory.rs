@@ -1112,14 +1112,14 @@ pub fn encode_serverbound_event_with_pose(
             face,
             sequence,
         } => {
-            var(0, &mut out);
+            var(0, &mut out); // START_DESTROY_BLOCK
             out.extend(pack_block_pos(*pos).to_be_bytes());
             out.push(*face as u8);
             var(*sequence, &mut out);
             Some((packets.sb_player_action, out))
         }
         SubTickEvent::AbortDestroyBlock { pos, face } => {
-            var(1, &mut out);
+            var(2, &mut out); // ABORT_DESTROY_BLOCK
             out.extend(pack_block_pos(*pos).to_be_bytes());
             out.push(*face as u8);
             var(0, &mut out);
@@ -1130,21 +1130,21 @@ pub fn encode_serverbound_event_with_pose(
             face,
             sequence,
         } => {
-            var(2, &mut out);
+            var(3, &mut out); // STOP_DESTROY_BLOCK
             out.extend(pack_block_pos(*pos).to_be_bytes());
             out.push(*face as u8);
             var(*sequence, &mut out);
             Some((packets.sb_player_action, out))
         }
         SubTickEvent::DropItem { entire_stack } => {
-            var(if *entire_stack { 3 } else { 4 }, &mut out);
+            var(if *entire_stack { 4 } else { 5 }, &mut out); // DROP_ALL_ITEMS / DROP_ITEM
             out.extend(0u64.to_be_bytes());
             out.push(BlockFace::Down as u8);
             var(0, &mut out);
             Some((packets.sb_player_action, out))
         }
         SubTickEvent::ReleaseUseItem => {
-            var(5, &mut out);
+            var(6, &mut out); // RELEASE_USE_ITEM
             out.extend(0u64.to_be_bytes());
             out.push(BlockFace::Down as u8);
             var(0, &mut out);
@@ -1155,7 +1155,7 @@ pub fn encode_serverbound_event_with_pose(
             Some((packets.sb_client_command, out))
         }
         SubTickEvent::SwapOffhand => {
-            var(6, &mut out);
+            var(7, &mut out); // SWAP_ITEM_WITH_OFFHAND
             out.extend(0u64.to_be_bytes());
             out.push(BlockFace::Down as u8);
             var(0, &mut out);
@@ -1194,27 +1194,29 @@ pub fn encode_serverbound_event_with_pose(
             entity_id,
             interaction,
             sneaking,
-        } => {
-            var(*entity_id, &mut out);
-            match interaction {
-                EntityInteraction::Interact { hand } => {
-                    var(0, &mut out);
-                    var(if *hand == Hand::MainHand { 0 } else { 1 }, &mut out);
-                }
-                EntityInteraction::Attack => {
-                    var(1, &mut out);
-                }
-                EntityInteraction::InteractAt { hand, target } => {
-                    var(2, &mut out);
-                    for c in target {
-                        out.extend(c.to_be_bytes());
-                    }
-                    var(if *hand == Hand::MainHand { 0 } else { 1 }, &mut out);
-                }
+        } => match interaction {
+            EntityInteraction::Attack => {
+                var(*entity_id, &mut out);
+                Some((packets.sb_attack, out))
             }
-            out.push(u8::from(*sneaking));
-            Some((packets.sb_interact, out))
-        }
+            EntityInteraction::Interact { hand } => {
+                var(*entity_id, &mut out);
+                var(if *hand == Hand::MainHand { 0 } else { 1 }, &mut out);
+                out.extend(0u64.to_be_bytes());
+                out.push(0);
+                out.push(u8::from(*sneaking));
+                Some((packets.sb_interact, out))
+            }
+            EntityInteraction::InteractAt { hand, target } => {
+                var(*entity_id, &mut out);
+                var(if *hand == Hand::MainHand { 0 } else { 1 }, &mut out);
+                for c in target {
+                    out.extend(c.to_be_bytes());
+                }
+                out.push(u8::from(*sneaking));
+                Some((packets.sb_interact, out))
+            }
+        },
         SubTickEvent::ContainerClick {
             window_id,
             state_id,

@@ -483,6 +483,8 @@ def execute_stage_2(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
         raise AssertionError("Stage 2 failed: Stone at (27, 64, 10) was not broken")
 
     # 3. Gap Bridging: 4-block pit from X=28..31
+    client.send_command("task.navigate 27 64 10 walk")
+    client.wait_until("task_idle", 100)
     rcon.command("fill 28 63 10 31 63 10 air")
     rcon.command("item replace entity @a hotbar.1 with cobblestone 64")
     client.send_command("player.select_hotbar 1")
@@ -519,6 +521,10 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
         r']}'
     )
     client.send_command("wait.ticks 5")
+
+    # Navigate across bridged pit to chest
+    client.send_command("task.navigate 32 64 10 walk")
+    client.wait_until("task_idle", 150)
 
     # Open chest
     client.send_command(f"interact.use_block {chest_pos[0]} {chest_pos[1]} {chest_pos[2]}")

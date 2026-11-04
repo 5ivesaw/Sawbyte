@@ -1108,6 +1108,14 @@ impl Session {
             if mine.remaining_ticks > 0 {
                 mine.remaining_ticks -= 1;
             }
+            let eye = self.player.eye_position();
+            let block_center = [mine.pos[0] as f64 + 0.5, mine.pos[1] as f64 + 0.5, mine.pos[2] as f64 + 0.5];
+            let dx_aim = block_center[0] - eye[0];
+            let dy_aim = block_center[1] - eye[1];
+            let dz_aim = block_center[2] - eye[2];
+            let horiz_dist = (dx_aim * dx_aim + dz_aim * dz_aim).sqrt();
+            self.player.yaw = (-dx_aim).atan2(dz_aim).to_degrees() as f32;
+            self.player.pitch = (-dy_aim).atan2(horiz_dist).to_degrees() as f32;
         }
 
         // Drain and transmit all discrete sub-tick events scheduled for this tick
@@ -1140,7 +1148,7 @@ impl Session {
                 if let Some(mine) = &self.active_mine {
                     if mine.pos == *pos {
                         if let Some(mine) = self.active_mine.as_mut() {
-                            mine.confirmation_deadline = Some(self.live_tick.saturating_add(40));
+                            mine.confirmation_deadline = Some(self.live_tick.saturating_add(60));
                         }
                         self.state_table.push_event(format!(
                             "mine_finish_queued:({},{},{})",
@@ -1626,7 +1634,7 @@ impl Session {
                         + (pos[1] as f64 + 0.5 - eye[1]).powi(2)
                         + (pos[2] as f64 + 0.5 - eye[2]).powi(2))
                     .sqrt();
-                    let max_reach = self.player.attributes.block_interaction_range;
+                    let max_reach = self.player.attributes.block_interaction_range.max(6.0);
                     if dist > max_reach {
                         return Err(format!(
                             "block ({}, {}, {}) out of player reach ({dist:.2} > {max_reach:.2})",
@@ -1683,7 +1691,7 @@ impl Session {
                         let base = self.player
                             .compute_break_ticks(hardness, tool_speed, can_harvest, false)
                             .unwrap_or_else(|| ((hardness * 30.0 / tool_speed).ceil() as u32).max(1));
-                        base.saturating_add(2)
+                        base.saturating_add(5)
                     };
                     let seq = self.state_table.next_sequence_n(2);
                     let mut events = ComposableTask::MineBlock {
@@ -1741,7 +1749,7 @@ impl Session {
                         let base = self.player
                             .compute_break_ticks(hardness, tool_speed, can_harvest, false)
                             .unwrap_or_else(|| ((hardness * 30.0 / tool_speed).ceil() as u32).max(1));
-                        base.saturating_add(2)
+                        base.saturating_add(5)
                     };
                     let seq = self.state_table.next_sequence_n(2);
                     let mut events = ComposableTask::MineBlock {
@@ -1817,7 +1825,7 @@ impl Session {
                         ([pos[0] + 1, pos[1], pos[2]], BlockFace::West),
                     ];
                     let eye = self.player.eye_position();
-                    let max_reach = self.player.attributes.block_interaction_range;
+                    let max_reach = self.player.attributes.block_interaction_range.max(6.0);
                     let mut best_support = None;
                     let mut best_dist = f64::MAX;
                     for (sp, face) in candidates {
@@ -1925,7 +1933,7 @@ impl Session {
                         + (sp_center[1] - eye[1]).powi(2)
                         + (sp_center[2] - eye[2]).powi(2))
                     .sqrt();
-                    let max_reach = self.player.attributes.block_interaction_range;
+                    let max_reach = self.player.attributes.block_interaction_range.max(6.0);
                     if dist > max_reach {
                         return Err(format!(
                             "placement support ({}, {}, {}) out of reach ({dist:.2} > {max_reach:.2})",
@@ -2028,7 +2036,7 @@ impl Session {
                         + (target_center[1] - eye[1]).powi(2)
                         + (target_center[2] - eye[2]).powi(2))
                     .sqrt();
-                    let max_reach = self.player.attributes.block_interaction_range;
+                    let max_reach = self.player.attributes.block_interaction_range.max(6.0);
                     if dist > max_reach {
                         return Err(format!(
                             "block ({}, {}, {}) out of reach ({dist:.2} > {max_reach:.2})",
@@ -2080,6 +2088,12 @@ impl Session {
                     if !raycast::has_line_of_sight(eye, target_point, &self.world) {
                         return Err(format!("line of sight to entity {id} is blocked by block"));
                     }
+                    let dx = target_point[0] - eye[0];
+                    let dy = target_point[1] - eye[1];
+                    let dz = target_point[2] - eye[2];
+                    let horiz_dist = (dx * dx + dz * dz).sqrt();
+                    self.player.yaw = (-dx).atan2(dz).to_degrees() as f32;
+                    self.player.pitch = (-dy).atan2(horiz_dist).to_degrees() as f32;
                     self.event_queue
                         .submit(&[
                             (
