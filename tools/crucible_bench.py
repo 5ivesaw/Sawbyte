@@ -516,12 +516,12 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     # West block (33, type=left) contains container slots 27..53
     # Populate East block: Slot 0 (diamond_sword with components), Slot 1 (oak_planks)
     res_sword = rcon.command(
-        f'item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.0 with minecraft:diamond_sword[minecraft:custom_name=\'{{"text":"Sawbyte Key Blade"}}\',minecraft:lore=[\'{{"text":"A legendary weapon"}}\'],minecraft:enchantments={{levels:{{"minecraft:sharpness":5}}}}] 1'
+        f'item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.0 with minecraft:diamond_sword[minecraft:custom_name=\'{{"text":"Sawbyte Key Blade"}}\',minecraft:lore=[\'{{"text":"A legendary weapon"}}\'],minecraft:enchantments={{"minecraft:sharpness":5}}] 1'
     )
     print(f"  [Stage 3] RCON item replace slot 0: {res_sword.strip()}")
-    if "Sawbyte Key Blade" not in res_sword and "diamond_sword" not in res_sword:
+    if "Replaced" not in res_sword and "replaced" not in res_sword:
         res_sword_plain = rcon.command(
-            f'item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.0 with diamond_sword[custom_name=\'{{"text":"Sawbyte Key Blade"}}\',lore=[\'{{"text":"A legendary weapon"}}\'],enchantments={{levels:{{"minecraft:sharpness":5}}}}] 1'
+            f'item replace block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} container.0 with diamond_sword[custom_name=\'{{"text":"Sawbyte Key Blade"}}\',lore=[\'{{"text":"A legendary weapon"}}\'],enchantments={{"minecraft:sharpness":5}}] 1'
         )
         print(f"  [Stage 3] RCON fallback item replace slot 0: {res_sword_plain.strip()}")
 
@@ -540,13 +540,14 @@ def execute_stage_3(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     check_east = rcon.command(f"data get block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} Items")
     if "Sawbyte Key Blade" not in check_east:
         print(f"  [Stage 3] Item replace did not write custom item. Applying data merge fallback...")
-        merge_res = rcon.command(
+        merge_payload = (
             f"data merge block {chest_pos[0] + 1} {chest_pos[1]} {chest_pos[2]} "
-            r'{Items: ['
-            r'{Slot: 0b, id: "minecraft:diamond_sword", count: 1b, components: {"minecraft:custom_name": \'{"text":"Sawbyte Key Blade"}\', "minecraft:lore": [\'{"text":"A legendary weapon"}\'], "minecraft:enchantments": {"levels": {"minecraft:sharpness": 5}}}}, '
-            r'{Slot: 1b, id: "minecraft:oak_planks", count: 16b}'
-            r']}'
+            '{Items: ['
+            '{Slot: 0b, id: "minecraft:diamond_sword", count: 1b, components: {"minecraft:custom_name": \'{"text":"Sawbyte Key Blade"}\', "minecraft:lore": [\'{"text":"A legendary weapon"}\'], "minecraft:enchantments": {"minecraft:sharpness": 5}}}, '
+            '{Slot: 1b, id: "minecraft:oak_planks", count: 16b}'
+            ']}'
         )
+        merge_res = rcon.command(merge_payload)
         print(f"  [Stage 3] Data merge result: {merge_res.strip()}")
 
     # Pre-inspection RCON check
