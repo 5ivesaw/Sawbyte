@@ -989,7 +989,7 @@ impl Session {
             if let SubTickEvent::SelectHotbar { slot } = &ev {
                 self.state_table.selected_hotbar = *slot;
             } else if let SubTickEvent::StopDestroyBlock { pos, .. } = &ev {
-                if !self.active_mine.as_ref().is_some_and(|mine| mine.pos == *pos) {
+                if self.active_mine.as_ref().is_none_or(|mine| mine.pos != *pos) {
                     continue;
                 }
                 if let Some(mine) = &self.active_mine {
@@ -2114,6 +2114,12 @@ impl Session {
                         .submit(&[(next_tick, ev)])
                         .map_err(|e| format!("{e:?}"))?;
                     outputs.push(format!("queued live command: /{cmd}"));
+                }
+                ["inspect.chat"] => {
+                    outputs.push(serde_json::json!({
+                        "messages": self.state_table.chat_log,
+                        "history_limit": 128,
+                    }).to_string());
                 }
                 ["inspect.map"] | ["inspect.map", _] => {
                     let radius = parts
@@ -3620,6 +3626,16 @@ mod tests {
 
         // Movement was NOT cancelled!
         assert!(session.scheduler.pending() >= pending_before);
+    }
+
+    #[test]
+    fn inspect_chat_returns_recorded_messages_as_json() {
+        let mut session = test_session();
+        session.state_table.chat_log.push("Hello \"player\"".to_owned());
+        let output = session.execute_live_script("inspect.chat").unwrap();
+        let value: serde_json::Value = serde_json::from_str(&output[0]).unwrap();
+        assert_eq!(value["messages"][0], "Hello \"player\"");
+        assert_eq!(value["history_limit"], 128);
     }
 
     #[test]
