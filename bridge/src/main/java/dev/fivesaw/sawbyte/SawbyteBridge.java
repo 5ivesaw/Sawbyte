@@ -50,7 +50,6 @@ public final class SawbyteBridge implements ClientModInitializer {
     private PrintWriter pendingWaitReply = null;
     private int waitTicksRemaining = 0;
     private double[] activeNavGoal = null;
-    private PrintWriter pendingNavReply = null;
     private BlockPos activeMinePos = null;
     private long tickCounter = 0;
 
@@ -217,11 +216,6 @@ public final class SawbyteBridge implements ClientModInitializer {
             if (dist < 0.7) {
                 keys(client, 0);
                 activeNavGoal = null;
-                if (pendingNavReply != null) {
-                    pendingNavReply.println("nav_arrived");
-                    pendingNavReply.flush();
-                    pendingNavReply = null;
-                }
             } else {
                 float targetYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
                 client.player.setYRot(targetYaw);
@@ -361,7 +355,8 @@ public final class SawbyteBridge implements ClientModInitializer {
                 double y = Double.parseDouble(parts[2]);
                 double z = Double.parseDouble(parts[3]);
                 activeNavGoal = new double[]{x, y, z};
-                pendingNavReply = req.writer;
+                req.writer.println("live navigation active -> (" + x + ", " + y + ", " + z + ")");
+                req.writer.flush();
             }
             case "task.cancel" -> {
                 activeNavGoal = null;

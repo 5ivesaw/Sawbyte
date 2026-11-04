@@ -872,7 +872,11 @@ impl Session {
         }
         let recording = self.settle == 0;
         let frame = if recording {
-            frames[self.index]
+            if self.index < frames.len() {
+                frames[self.index]
+            } else {
+                InputFrame::default()
+            }
         } else {
             self.settle -= 1;
             InputFrame::default()
