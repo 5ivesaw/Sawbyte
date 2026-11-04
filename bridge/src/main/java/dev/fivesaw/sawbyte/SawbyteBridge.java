@@ -233,7 +233,6 @@ public final class SawbyteBridge implements ClientModInitializer {
             if (client.level != null && client.level.getBlockState(activeMinePos).isAir()) {
                 activeMinePos = null;
             } else if (client.gameMode != null && client.player != null) {
-                client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
                 boolean broken = client.gameMode.continueDestroyBlock(activeMinePos, net.minecraft.core.Direction.UP);
                 if (broken) {
                     activeMinePos = null;
@@ -370,7 +369,6 @@ public final class SawbyteBridge implements ClientModInitializer {
                         client.player.setYRot((float) Math.toDegrees(-Math.atan2(dx, dz)));
                         client.player.setXRot((float) Math.toDegrees(-Math.atan2(dy, hDist)));
 
-                        client.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
                         boolean broken = client.gameMode.startDestroyBlock(pos, net.minecraft.core.Direction.UP);
                         if (!broken && client.level != null && !client.level.getBlockState(pos).isAir()) {
                             activeMinePos = pos;
