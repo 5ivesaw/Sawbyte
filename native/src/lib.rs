@@ -205,6 +205,7 @@ pub struct Session {
     pub event_queue: DiscreteEventQueue,
     pub active_mine: Option<ActiveMine>,
     pub pending_placements: Vec<PendingPlacement>,
+    pub pending_click: Option<(i32, i32, Option<u64>)>,
     pub voxel_patch_buf: Vec<u8>,
     pub custom_modules: Vec<Box<dyn LiveModule>>,
     pub active_nav_path: Vec<[i32; 3]>,
@@ -264,6 +265,18 @@ impl WorkflowHost for Session {
 }
 
 impl Session {
+    fn observe_container_revision(&mut self) {
+        if let (Some((window, revision, Some(_))), Some(screen)) =
+            (self.pending_click, self.state_table.open_screen.as_ref())
+        {
+            if screen.window_id == window && screen.state_id != revision {
+                let current_revision = screen.state_id;
+                self.state_table.push_event(format!("container_revision_observed:{window}:{current_revision}"));
+                self.pending_click = None;
+            }
+        }
+    }
+
     fn placement_target_is_solid(&self, pos: [i32; 3]) -> std::result::Result<bool, String> {
         if self.pending_placements.iter().any(|placement| placement.pos == pos) {
             return Err("placement is already pending at this position".to_owned());
@@ -286,6 +299,7 @@ impl Session {
             event_queue: DiscreteEventQueue::new(4096),
             active_mine: None,
             pending_placements: Vec::new(),
+            pending_click: None,
             voxel_patch_buf: Vec::with_capacity(245),
             custom_modules: Vec::new(),
             active_nav_path: Vec::new(),
@@ -558,6 +572,9 @@ impl Session {
                         .record_decode_error("container_set_slot", e.as_ref());
                     self.state_table.open_screen = None;
                     self.state_table.push_event("screen_invalidated:slot_decode_error");
+                    self.pending_click = None;
+                } else {
+                    self.observe_container_revision();
                 }
             }
             id if id == self.packets.cb_container_set_content => {
@@ -569,6 +586,9 @@ impl Session {
                         .record_decode_error("container_set_content", e.as_ref());
                     self.state_table.open_screen = None;
                     self.state_table.push_event("screen_invalidated:content_decode_error");
+                    self.pending_click = None;
+                } else {
+                    self.observe_container_revision();
                 }
             }
             id if id == self.packets.cb_set_player_inventory => {
@@ -1025,6 +1045,16 @@ impl Session {
             .drain_tick(self.live_tick)
             .map_err(|e| bad(&format!("event queue error: {e}")))?;
         for ev in drained {
+            if let SubTickEvent::ContainerClick { window_id, state_id, .. } = &ev {
+                let current = self.state_table.open_screen.as_ref()
+                    .is_some_and(|screen| screen.window_id == *window_id && screen.state_id == *state_id);
+                if !current {
+                    self.pending_click = None;
+                    self.state_table.push_event(format!("container_click_failed:stale_screen:{window_id}:{state_id}"));
+                    continue;
+                }
+                self.pending_click = Some((*window_id, *state_id, Some(self.live_tick.saturating_add(40))));
+            }
             if let SubTickEvent::UseItemOn { sequence, .. } = &ev {
                 if let Some(placement) = self.pending_placements.iter_mut().find(|placement| placement.sequence == *sequence) {
                     placement.confirmation_deadline = Some(self.live_tick.saturating_add(40));
@@ -1079,6 +1109,10 @@ impl Session {
         });
         for sequence in timed_out {
             self.state_table.push_event(format!("placement_confirmation_timeout:{sequence}"));
+        }
+        if self.pending_click.is_some_and(|(_, _, deadline)| deadline.is_some_and(|tick| self.live_tick >= tick)) {
+            self.pending_click = None;
+            self.state_table.push_event("container_click_confirmation_timeout");
         }
 
         let buttons = frame.buttons.bits();
@@ -1316,6 +1350,7 @@ impl Session {
                                 && self.active_mine.is_none()
                                 && self.event_queue.pending() == 0
                                 && self.pending_placements.is_empty()
+                                && self.pending_click.is_none()
                         }
                         WaitCondition::ScreenOpen { title_contains } => {
                             self.state_table.open_screen.as_ref().is_some_and(|s| {
@@ -1467,6 +1502,9 @@ impl Session {
                 ["task.cancel"] => {
                     self.event_queue.clear();
                     self.preempt_movement();
+                    if self.pending_click.take().is_some() {
+                        self.state_table.push_event("container_click_observation_cancelled");
+                    }
                     for placement in self.pending_placements.drain(..) {
                         self.state_table.push_event(format!("placement_observation_cancelled:{}", placement.sequence));
                     }
@@ -2083,6 +2121,9 @@ impl Session {
                     }
                 }
                 ["gui.click_slot", slot] | ["gui.click_slot", slot, _] => {
+                    if self.pending_click.is_some() {
+                        return Err("a container click is already pending".into());
+                    }
                     let s_idx: i16 = slot.parse().map_err(|_| "bad slot")?;
                     let quick = parts.get(2).is_some_and(|m| *m == "quick");
                     let screen = self
@@ -2101,12 +2142,18 @@ impl Session {
                             ClickMode::Pickup
                         },
                     };
+                    let window_id = screen.window_id;
+                    let state_id = screen.state_id;
                     self.event_queue
                         .submit(&[(next_tick, ev)])
                         .map_err(|e| format!("{e:?}"))?;
+                    self.pending_click = Some((window_id, state_id, None));
                     outputs.push(format!("queued live container click slot={s_idx}"));
                 }
                 ["gui.click_item", query] => {
+                    if self.pending_click.is_some() {
+                        return Err("a container click is already pending".into());
+                    }
                     let screen = self
                         .state_table
                         .open_screen
@@ -2127,22 +2174,24 @@ impl Session {
                     let ev = screen
                         .click_matching_item(Some(rev), &selector, true, 0, ClickMode::Pickup)
                         .map_err(|e| format!("{e:?}"))?;
+                    let window_id = screen.window_id;
                     self.event_queue
                         .submit(&[(next_tick, ev)])
                         .map_err(|e| format!("{e:?}"))?;
+                    self.pending_click = Some((window_id, rev, None));
                     outputs.push(format!("queued live item click for '{query}'"));
                 }
                 ["gui.close"] => {
                     let screen = self
                         .state_table
                         .open_screen
-                        .take()
+                        .as_ref()
                         .ok_or_else(|| "no open container screen on server".to_owned())?;
                     let wid = screen.window_id;
                     self.event_queue
                         .submit(&[(next_tick, SubTickEvent::CloseContainer { window_id: wid })])
                         .map_err(|e| format!("{e:?}"))?;
-                    outputs.push(format!("closed container window_id={wid}"));
+                    outputs.push(format!("queued container close window_id={wid}"));
                 }
                 ["inventory.inspect"] => {
                     let populated: Vec<String> = self
@@ -3010,6 +3059,7 @@ fn run_live(args: &[String]) -> Result<()> {
                         && state.active_mine.is_none()
                         && state.event_queue.pending() == 0
                         && state.pending_placements.is_empty()
+                        && state.pending_click.is_none()
                     {
                         if let Some(script_line) = state.script_queue.pop_front() {
                             state.handle_control_request_with_channel(&script_line, None);
@@ -3717,6 +3767,19 @@ mod tests {
 
         // Movement was NOT cancelled!
         assert!(session.scheduler.pending() >= pending_before);
+    }
+
+    #[test]
+    fn container_click_waits_for_matching_new_revision() {
+        let mut session = test_session();
+        session.state_table.open_screen = Some(ScreenState::container(4, 7, 1, "test"));
+        session.pending_click = Some((4, 7, Some(40)));
+        session.observe_container_revision();
+        assert!(session.pending_click.is_some());
+        session.state_table.open_screen.as_mut().unwrap().state_id = 8;
+        session.observe_container_revision();
+        assert!(session.pending_click.is_none());
+        assert!(session.state_table.received_events.iter().any(|event| event == "container_revision_observed:4:8"));
     }
 
     #[test]

@@ -1433,7 +1433,7 @@ mod tests {
     }
 
     #[test]
-    fn container_set_slot_with_components_preserves_item_id_and_count() {
+    fn container_set_slot_with_unknown_component_is_rejected() {
         let mut table = PlayerStateTable::default();
         let mut packets = PacketTable::default();
         packets.item_names.insert(100, "minecraft:diamond_sword".to_string());
@@ -1451,13 +1451,8 @@ mod tests {
         raw.extend(&[0xde, 0xad, 0xbe, 0xef]); // arbitrary trailing bytes
 
         let mut reader = Reader(&raw);
-        table.apply_container_set_slot(&mut reader, &packets).unwrap();
-
-        let slot_0 = table.inventory_slots[0].as_ref().unwrap();
-        assert_eq!(slot_0.id, "minecraft:diamond_sword");
-        assert_eq!(slot_0.count, 1);
-        assert!(!slot_0.components_raw.is_empty());
-        assert_eq!(slot_0.components_raw, vec![0xde, 0xad, 0xbe, 0xef]);
+        assert!(table.apply_container_set_slot(&mut reader, &packets).is_err());
+        assert!(table.inventory_slots[0].is_none());
     }
 
     #[test]
