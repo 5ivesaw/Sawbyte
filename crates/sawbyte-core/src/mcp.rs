@@ -298,7 +298,8 @@ impl SawbyteControlBridge {
                 | ["launcher_control", "list"]
                 | ["launcher.instances"]
                 | ["list"] => {
-                    let mut inst_names: Vec<String> = self.launcher.instances.keys().cloned().collect();
+                    let mut inst_names: Vec<String> =
+                        self.launcher.instances.keys().cloned().collect();
                     inst_names.sort();
                     outputs.push(format!("instances: {}", inst_names.join(", ")));
                 }
