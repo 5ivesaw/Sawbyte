@@ -1056,6 +1056,7 @@ impl Session {
     /// Aborts any active block mining in progress and notifies the server with `AbortDestroyBlock`.
     pub fn abort_active_mine(&mut self, mut tx: Option<&mut wire::Tx>) {
         if let Some(mine) = self.active_mine.take() {
+            self.event_queue.discard_mining(mine.pos);
             let abort_ev = SubTickEvent::AbortDestroyBlock {
                 pos: mine.pos,
                 face: mine.face,
@@ -1071,7 +1072,9 @@ impl Session {
                 }
             } else {
                 let next_tick = self.live_tick.saturating_add(1);
-                let _ = self.event_queue.submit(&[(next_tick, abort_ev)]);
+                if let Err(error) = self.event_queue.insert_ordered(next_tick, abort_ev) {
+                    self.state_table.push_event(format!("mine_abort_failed:{error}"));
+                }
             }
             self.state_table.push_event(format!(
                 "mine_aborted:({},{},{})",

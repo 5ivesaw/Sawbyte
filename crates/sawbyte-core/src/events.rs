@@ -327,6 +327,31 @@ impl DiscreteEventQueue {
         self.events.len()
     }
 
+    /// Remove pending start/stop events for one block without disturbing other actions.
+    pub fn discard_mining(&mut self, pos: [i32; 3]) {
+        self.events.retain(|(_, event)| {
+            !matches!(event, SubTickEvent::StartDestroyBlock { pos: target, .. }
+                | SubTickEvent::StopDestroyBlock { pos: target, .. } if *target == pos)
+        });
+    }
+
+    /// Insert a cleanup event before later scheduled work while preserving tick order.
+    pub fn insert_ordered(&mut self, tick: u64, event: SubTickEvent) -> Result<(), &'static str> {
+        if self.events.len() >= self.capacity {
+            return Err("discrete event queue full");
+        }
+        if self.last_tick.is_some_and(|last| tick <= last) || !event.valid() {
+            return Err("invalid cleanup event or tick");
+        }
+        let index = self
+            .events
+            .iter()
+            .position(|(at, _)| *at > tick)
+            .unwrap_or(self.events.len());
+        self.events.insert(index, (tick, event));
+        Ok(())
+    }
+
     pub fn submit(&mut self, batch: &[(u64, SubTickEvent)]) -> Result<(), &'static str> {
         if batch.len() > self.capacity.saturating_sub(self.events.len()) {
             return Err("discrete event queue full");
@@ -369,6 +394,43 @@ impl DiscreteEventQueue {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn mining_abort_can_precede_other_future_events() {
+        let mut queue = DiscreteEventQueue::new(4);
+        let pos = [1, 2, 3];
+        queue
+            .submit(&[
+                (
+                    5,
+                    SubTickEvent::StopDestroyBlock {
+                        pos,
+                        face: BlockFace::Up,
+                        sequence: 2,
+                    },
+                ),
+                (8, SubTickEvent::SelectHotbar { slot: 1 }),
+            ])
+            .unwrap();
+        queue.discard_mining(pos);
+        queue
+            .insert_ordered(
+                2,
+                SubTickEvent::AbortDestroyBlock {
+                    pos,
+                    face: BlockFace::Up,
+                },
+            )
+            .unwrap();
+        assert!(matches!(
+            queue.drain_tick(2).unwrap().as_slice(),
+            [SubTickEvent::AbortDestroyBlock { .. }]
+        ));
+        assert_eq!(
+            queue.drain_tick(8).unwrap(),
+            vec![SubTickEvent::SelectHotbar { slot: 1 }]
+        );
+    }
 
     #[test]
     fn preserves_subtick_click_edges_and_rejects_invalid_events() {
