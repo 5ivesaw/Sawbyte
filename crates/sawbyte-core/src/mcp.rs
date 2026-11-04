@@ -600,6 +600,7 @@ mod tests {
             while stop_rx.try_recv().is_err() {
                 match listener.accept() {
                     Ok((stream, _)) => {
+                        let _ = stream.set_nonblocking(false);
                         let mut writer = match stream.try_clone() {
                             Ok(w) => w,
                             Err(_) => continue,
