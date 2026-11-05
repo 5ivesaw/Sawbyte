@@ -738,9 +738,23 @@ def execute_stage_6(client: SawbyteLiveTcpClient, rcon: RconClient) -> Dict[str,
     # Kill the bot via server RCON
     rcon.command("kill @a")
 
-    # Control connection must stay alive; wait for respawn
-    client.wait_until("player_alive", 100)
-    obs = json.loads(client.send_command("gym.observe"))
+    # Wait for the kill command to be processed by server and client to receive death packet
+    time.sleep(0.3)
+    client.send_command("wait.ticks 5")
+
+    # Now wait for respawn state machine to bring player back to life with full health
+    obs = {}
+    for _ in range(25):
+        client.wait_until("player_alive", 50)
+        obs_raw = client.send_command("gym.observe")
+        try:
+            obs = json.loads(obs_raw)
+            if obs.get("health", 0.0) >= 19.0:
+                break
+        except Exception:
+            pass
+        client.send_command("wait.ticks 5")
+
     if obs.get("health", 0.0) < 19.0:
         raise AssertionError(f"Stage 6 failed: Bot did not respawn with full health: {obs}")
 
