@@ -8,7 +8,7 @@ setlocal enabledelayedexpansion
 
 set "TARGET_DIR=%LOCALAPPDATA%\Programs\Sawbyte"
 set "BIN_TARGET=%TARGET_DIR%\sawbyte.exe"
-set "TAG=v0.3.1"
+set "TAG=v0.3.2"
 set "DOWNLOAD_URL=https://github.com/5ivesaw/Sawbyte/releases/download/%TAG%/sawbyte-windows-2022-X64.zip"
 
 echo [Sawbyte Installer] Initializing installation...

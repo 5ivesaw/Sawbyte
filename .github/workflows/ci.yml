@@ -207,7 +207,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           if [[ "$TAG" == "main" || "$TAG" == "" ]]; then
-            TAG="v0.3.1"
+            TAG="v0.3.2"
           fi
           echo "Publishing release for $TAG"
           if gh release view "$TAG" >/dev/null 2>&1; then

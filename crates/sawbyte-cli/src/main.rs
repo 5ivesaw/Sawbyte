@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Duration;
 
-const HELP: &str = "Sawbyte 0.3.1 — standalone headless Rust client launcher & MCP control bridge
+const HELP: &str = "Sawbyte 0.3.2 — standalone headless Rust client launcher & MCP control bridge
 
 Usage:
   sawbyte --help
@@ -27,7 +27,7 @@ Usage:
   sawbyte status <IP:PORT> [virtual-host] [protocol-number]
   sawbyte mcp [--stdio] [--connect <ip:port>]
   sawbyte launcher list
-  sawbyte launcher create <name> <profile> <native|bridge>
+  sawbyte launcher create <name> <profile> <native|bridge|visualizer>
   sawbyte launcher set-setting <name> <key> <value>
   sawbyte launcher backup <name>
   sawbyte launcher rollback <name> <id>

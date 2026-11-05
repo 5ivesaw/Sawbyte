@@ -9,6 +9,7 @@ pub mod auth;
 pub mod inventory;
 pub mod player;
 pub mod raycast;
+pub mod visualizer;
 pub mod wire;
 pub mod world;
 use sawbyte_core::{
@@ -201,6 +202,30 @@ pub struct PendingReply {
     pub kind: PendingReplyKind,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct DeathRecord {
+    pub attempt: u32,
+    pub tick: u64,
+    pub pos: [f64; 3],
+    pub cause: String,
+    pub killer_id: Option<i32>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct MilestoneRecord {
+    pub name: String,
+    pub notes: String,
+    pub tick: u64,
+    pub attempt: u32,
+    pub death_count: u32,
+    pub pos: [f64; 3],
+    pub health: f32,
+    pub food: u8,
+    pub xp_level: i32,
+    pub inventory_summary: String,
+    pub timestamp_epoch_secs: u64,
+}
+
 pub struct Session {
     pub world: world::World,
     pub player: player::Player,
@@ -222,6 +247,9 @@ pub struct Session {
     pub script_queue: VecDeque<String>,
     pub is_dead: bool,
     pub death_count: u32,
+    pub death_history: Vec<DeathRecord>,
+    pub milestone_history: Vec<MilestoneRecord>,
+    pub visualizer: visualizer::LowPolyVisualizer,
     #[allow(dead_code)]
     pub auto_respawn: bool,
     dimensions: Vec<(i32, i32)>,
@@ -270,6 +298,108 @@ impl WorkflowHost for Session {
 }
 
 impl Session {
+    pub fn record_death(&mut self, cause: &str, killer_id: Option<i32>) {
+        if !self.is_dead {
+            self.is_dead = true;
+            self.death_count = self.death_count.saturating_add(1);
+            let attempt = self.death_count;
+            let record = DeathRecord {
+                attempt,
+                tick: self.live_tick,
+                pos: self.player.pos,
+                cause: cause.to_string(),
+                killer_id,
+            };
+            if self.death_history.len() >= 128 {
+                self.death_history.remove(0);
+            }
+            self.death_history.push(record);
+            self.preempt_movement();
+            self.state_table.push_event(format!(
+                "player.death:attempt={attempt}:cause={cause}:pos=({:.2},{:.2},{:.2})",
+                self.player.pos[0], self.player.pos[1], self.player.pos[2]
+            ));
+
+            let log_line = format!(
+                "[DEATH] attempt={} tick={} pos=({:.2}, {:.2}, {:.2}) cause=\"{}\" killer_id={:?}\n",
+                attempt, self.live_tick, self.player.pos[0], self.player.pos[1], self.player.pos[2], cause, killer_id
+            );
+            let _ = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open("milestones.log")
+                .and_then(|mut f| std::io::Write::write_all(&mut f, log_line.as_bytes()));
+        }
+    }
+
+    pub fn summarize_inventory(&self) -> String {
+        let mut items = Vec::new();
+        for slot_opt in &self.state_table.inventory_slots {
+            if let Some(stack) = slot_opt {
+                if stack.count > 0 && !stack.id.is_empty() {
+                    let short_id = stack.id.strip_prefix("minecraft:").unwrap_or(&stack.id);
+                    items.push(format!("{short_id}:{}", stack.count));
+                }
+            }
+        }
+        if items.is_empty() {
+            "empty".to_string()
+        } else {
+            items.join(", ")
+        }
+    }
+
+    pub fn record_milestone(&mut self, name: &str, notes: &str) -> MilestoneRecord {
+        let now_secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let inv = self.summarize_inventory();
+        let record = MilestoneRecord {
+            name: name.to_string(),
+            notes: notes.to_string(),
+            tick: self.live_tick,
+            attempt: self.death_count + 1,
+            death_count: self.death_count,
+            pos: self.player.pos,
+            health: self.state_table.health,
+            food: self.state_table.food,
+            xp_level: self.state_table.xp_level,
+            inventory_summary: inv,
+            timestamp_epoch_secs: now_secs,
+        };
+        if self.milestone_history.len() >= 128 {
+            self.milestone_history.remove(0);
+        }
+        self.milestone_history.push(record.clone());
+
+        let text_line = format!(
+            "[MILESTONE] name=\"{}\" attempt={} deaths={} tick={} pos=({:.2}, {:.2}, {:.2}) health={:.1} food={} xp={} notes=\"{}\" inventory=[{}]\n",
+            record.name, record.attempt, record.death_count, record.tick,
+            record.pos[0], record.pos[1], record.pos[2],
+            record.health, record.food, record.xp_level, record.notes, record.inventory_summary
+        );
+        let _ = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("milestones.log")
+            .and_then(|mut f| std::io::Write::write_all(&mut f, text_line.as_bytes()));
+
+        let json_line = format!(
+            "{{\"name\":\"{}\",\"attempt\":{},\"deaths\":{},\"tick\":{},\"pos\":[{:.2},{:.2},{:.2}],\"health\":{:.1},\"food\":{},\"xp\":{},\"notes\":\"{}\",\"timestamp\":{}}}\n",
+            record.name, record.attempt, record.death_count, record.tick,
+            record.pos[0], record.pos[1], record.pos[2],
+            record.health, record.food, record.xp_level, record.notes, record.timestamp_epoch_secs
+        );
+        let _ = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("milestones.jsonl")
+            .and_then(|mut f| std::io::Write::write_all(&mut f, json_line.as_bytes()));
+
+        record
+    }
+
     fn observe_block_update(&mut self, pos: [i32; 3], state: u32) {
         if self.active_mine.as_ref().is_some_and(|mine| mine.pos == pos && mine.confirmation_deadline.is_some())
             && self.world.is_air_state(state)
@@ -392,6 +522,9 @@ impl Session {
             script_queue: VecDeque::new(),
             is_dead: false,
             death_count: 0,
+            death_history: Vec::new(),
+            milestone_history: Vec::new(),
+            visualizer: visualizer::LowPolyVisualizer::default(),
             auto_respawn: true,
             dimensions: Vec::new(),
             playing: false,
@@ -514,10 +647,7 @@ impl Session {
             62 => tx.packet(45, r.take(4)?)?,
             id if id == self.packets.cb_player_combat_kill => {
                 if !self.is_dead {
-                    self.is_dead = true;
-                    self.death_count += 1;
-                    self.preempt_movement();
-                    self.state_table.push_event("player.death".to_string());
+                    self.record_death("combat_kill", None);
                     if self.auto_respawn {
                         tx.packet(self.packets.sb_client_command, &[0])?;
                     }
@@ -689,10 +819,7 @@ impl Session {
                     Ok(()) => {
                         self.player.food_level = self.state_table.food;
                         if self.state_table.health <= 0.0 && !self.is_dead {
-                            self.is_dead = true;
-                            self.death_count += 1;
-                            self.preempt_movement();
-                            self.state_table.push_event("player.death".to_string());
+                            self.record_death("health_depleted", None);
                             if self.auto_respawn {
                                 tx.packet(self.packets.sb_client_command, &[0])?;
                             }
@@ -2696,6 +2823,97 @@ impl Session {
                 ["gym.observe"] => {
                     outputs.push(self.gym_observation_json("gym.observe"));
                 }
+                ["inspect.deaths"] => {
+                    if self.death_history.is_empty() {
+                        outputs.push("no deaths recorded".to_string());
+                    } else {
+                        let mut s = format!("deaths total={}:\n", self.death_count);
+                        for d in &self.death_history {
+                            s.push_str(&format!(
+                                "  - attempt #{} tick={} pos=({:.2}, {:.2}, {:.2}) cause=\"{}\" killer_id={:?}\n",
+                                d.attempt, d.tick, d.pos[0], d.pos[1], d.pos[2], d.cause, d.killer_id
+                            ));
+                        }
+                        outputs.push(s.trim_end().to_string());
+                    }
+                }
+                ["inspect.milestones"] => {
+                    if self.milestone_history.is_empty() {
+                        outputs.push("no milestones logged".to_string());
+                    } else {
+                        let mut s = format!("milestones total={}:\n", self.milestone_history.len());
+                        for m in &self.milestone_history {
+                            s.push_str(&format!(
+                                "  - [{}] attempt #{} deaths={} tick={} pos=({:.1}, {:.1}, {:.1}) health={:.1} food={} notes=\"{}\"\n",
+                                m.name, m.attempt, m.death_count, m.tick, m.pos[0], m.pos[1], m.pos[2], m.health, m.food, m.notes
+                            ));
+                        }
+                        outputs.push(s.trim_end().to_string());
+                    }
+                }
+                ["milestone.save", name, notes @ ..] | ["milestone.record", name, notes @ ..] => {
+                    let m = self.record_milestone(name, &notes.join(" "));
+                    outputs.push(format!(
+                        "milestone_recorded name=\"{}\" attempt={} deaths={} tick={} pos=({:.2}, {:.2}, {:.2}) health={:.1} food={} xp={} inventory=[{}]",
+                        m.name, m.attempt, m.death_count, m.tick, m.pos[0], m.pos[1], m.pos[2], m.health, m.food, m.xp_level, m.inventory_summary
+                    ));
+                }
+                ["inspect.frame", rest @ ..] => {
+                    let w = rest.first().and_then(|s| s.parse().ok()).unwrap_or(160);
+                    let h = rest.get(1).and_then(|s| s.parse().ok()).unwrap_or(100);
+                    let mode = match rest.get(2).copied().unwrap_or("first_person") {
+                        "third_person" | "chase" => visualizer::CameraMode::ThirdPersonChase,
+                        "radar" | "topdown" => visualizer::CameraMode::TopDownRadar,
+                        _ => visualizer::CameraMode::FirstPerson,
+                    };
+                    let viz = visualizer::LowPolyVisualizer::new(w, h, mode);
+                    let entities: Vec<visualizer::EntityRenderData> = self
+                        .state_table
+                        .entities
+                        .values()
+                        .map(|e| visualizer::EntityRenderData {
+                            entity_id: e.entity_id,
+                            pos: e.pos,
+                            kind: "entity".to_string(),
+                        })
+                        .collect();
+                    let frame = viz.render(&self.player, &self.world, &entities);
+                    outputs.push(format!("frame:{}", frame.to_base64_data_uri()));
+                }
+                ["inspect.visualizer_state"] => {
+                    let entities: Vec<String> = self
+                        .state_table
+                        .entities
+                        .values()
+                        .take(30)
+                        .map(|e| {
+                            let dx = e.pos[0] - self.player.pos[0];
+                            let dz = e.pos[2] - self.player.pos[2];
+                            let dist = (dx * dx + dz * dz).sqrt();
+                            format!("{{\"id\":{},\"pos\":[{:.2},{:.2},{:.2}],\"dist\":{:.2}}}", e.entity_id, e.pos[0], e.pos[1], e.pos[2], dist)
+                        })
+                        .collect();
+                    let waypoints: Vec<String> = self
+                        .active_nav_path
+                        .iter()
+                        .take(16)
+                        .map(|p| format!("[{},{},{}]", p[0], p[1], p[2]))
+                        .collect();
+                    let last_death = self.death_history.last().map(|d| {
+                        format!("{{\"attempt\":{},\"tick\":{},\"pos\":[{:.2},{:.2},{:.2}],\"cause\":\"{}\"}}", d.attempt, d.tick, d.pos[0], d.pos[1], d.pos[2], d.cause)
+                    }).unwrap_or_else(|| "null".to_string());
+                    outputs.push(format!(
+                        "{{\"pos\":[{:.3},{:.3},{:.3}],\"yaw\":{:.2},\"pitch\":{:.2},\"health\":{:.1},\"food\":{},\"xp\":{},\"is_dead\":{},\"death_count\":{},\"attempt\":{},\"live_tick\":{},\"nav_active\":{},\"waypoints\":[{}],\"entities\":[{}],\"last_death\":{}}}",
+                        self.player.pos[0], self.player.pos[1], self.player.pos[2],
+                        self.player.yaw, self.player.pitch,
+                        self.state_table.health, self.state_table.food, self.state_table.xp_level,
+                        self.is_dead, self.death_count, self.death_count + 1, self.live_tick,
+                        self.active_nav_goal.is_some(),
+                        waypoints.join(","),
+                        entities.join(","),
+                        last_death
+                    ));
+                }
                 ["gym.step", rest @ ..] => {
                     if self.pending_replies.iter().any(|reply| matches!(
                         &reply.kind,
@@ -2845,7 +3063,7 @@ impl Session {
                     "id": id,
                     "result": {
                         "protocolVersion": "2025-06-18",
-                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.3.1" },
+                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.3.2" },
                         "capabilities": { "tools": { "listChanged": false }, "resources": { "listChanged": false } }
                     }
                 })

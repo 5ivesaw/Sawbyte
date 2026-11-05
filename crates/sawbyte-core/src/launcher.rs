@@ -41,6 +41,13 @@ pub fn built_in_version_profiles() -> Vec<VersionAdapterProfile> {
             bridge_supported: true,
         },
         VersionAdapterProfile {
+            profile_id: "fabric-minimal".into(),
+            minecraft_version: "26.3".into(),
+            protocol_version: 777,
+            native_verified_parity: true,
+            bridge_supported: true,
+        },
+        VersionAdapterProfile {
             profile_id: "sawbyte-26.2".into(),
             minecraft_version: "26.2".into(),
             protocol_version: 776,
@@ -54,6 +61,7 @@ pub fn built_in_version_profiles() -> Vec<VersionAdapterProfile> {
 pub enum RuntimeMode {
     NativeStandalone,
     FullClientBridge,
+    NativeMinimalVisualizer,
 }
 
 impl RuntimeMode {
@@ -61,6 +69,7 @@ impl RuntimeMode {
         match self {
             Self::NativeStandalone => "native",
             Self::FullClientBridge => "bridge",
+            Self::NativeMinimalVisualizer => "visualizer",
         }
     }
 
@@ -68,8 +77,9 @@ impl RuntimeMode {
         match s {
             "native" => Ok(Self::NativeStandalone),
             "bridge" => Ok(Self::FullClientBridge),
+            "visualizer" | "native-visualizer" | "minimal" => Ok(Self::NativeMinimalVisualizer),
             _ => Err(format!(
-                "unknown runtime mode '{s}'; expected 'native' or 'bridge'"
+                "unknown runtime mode '{s}'; expected 'native', 'bridge', or 'visualizer'"
             )),
         }
     }
@@ -263,6 +273,19 @@ impl PersistentLauncher {
         settings.insert("autoJump".into(), "false".into());
         settings.insert("pauseOnLostFocus".into(), "false".into());
         settings.insert("policy".into(), "humanised".into());
+        if version_profile == "fabric-minimal" || mode == RuntimeMode::NativeMinimalVisualizer {
+            settings.insert("graphicsMode".into(), "0".into());
+            settings.insert("renderDistance".into(), "2".into());
+            settings.insert("simulationDistance".into(), "2".into());
+            settings.insert("smoothLighting".into(), "0".into());
+            settings.insert("particles".into(), "2".into());
+            settings.insert("entityShadows".into(), "false".into());
+            settings.insert("clouds".into(), "0".into());
+            settings.insert("biomeBlendRadius".into(), "0".into());
+            settings.insert("maxFps".into(), "30".into());
+            settings.insert("mipmapLevels".into(), "0".into());
+            settings.insert("viewBobbing".into(), "false".into());
+        }
         let dir = self.instance_dir(name);
         fs::create_dir_all(dir.join("snapshots")).map_err(|e| e.to_string())?;
         fs::create_dir_all(dir.join("mods")).map_err(|e| e.to_string())?;
@@ -411,12 +434,12 @@ impl PersistentLauncher {
     pub fn inject_bridge_mod(&self, instance_name: &str) -> Result<PathBuf, String> {
         let mods_dir = self.mods_dir(instance_name);
         fs::create_dir_all(&mods_dir).map_err(|e| e.to_string())?;
-        let target = mods_dir.join("sawbyte-bridge-0.3.1.jar");
+        let target = mods_dir.join("sawbyte-bridge-0.3.2.jar");
 
         let mut found = None;
         if let Ok(current_exe) = std::env::current_exe() {
             if let Some(parent) = current_exe.parent() {
-                for name in ["sawbyte-bridge-0.3.1.jar", "sawbyte-bridge-26.3.jar"] {
+                for name in ["sawbyte-bridge-0.3.2.jar", "sawbyte-bridge-0.3.1.jar", "sawbyte-bridge-26.3.jar"] {
                     let p = parent.join(name);
                     if p.exists() {
                         found = Some(p);
@@ -427,11 +450,15 @@ impl PersistentLauncher {
         }
         if found.is_none() {
             for cand in [
+                "sawbyte-bridge-0.3.2.jar",
                 "sawbyte-bridge-0.3.1.jar",
                 "sawbyte-bridge-26.3.jar",
+                "bridge/build/libs/sawbyte-bridge-0.3.2.jar",
                 "bridge/build/libs/sawbyte-bridge-0.3.1.jar",
                 "bridge/build/libs/sawbyte-bridge-26.3.jar",
+                "run/bin/sawbyte-bridge-0.3.2.jar",
                 "run/bin/sawbyte-bridge-0.3.1.jar",
+                "release-assets/sawbyte-bridge-0.3.2.jar",
                 "release-assets/sawbyte-bridge-0.3.1.jar",
             ] {
                 let p = PathBuf::from(cand);
@@ -449,8 +476,8 @@ impl PersistentLauncher {
 
         // If not found locally, fetch official release asset
         let release_url =
-            "https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.1/sawbyte-bridge-0.3.1.jar";
-        self.install_mod_file(instance_name, "sawbyte-bridge-0.3.1.jar", release_url)
+            "https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-bridge-0.3.2.jar";
+        self.install_mod_file(instance_name, "sawbyte-bridge-0.3.2.jar", release_url)
     }
 
     /// Writes a token-free snapshot file on disk under `<instance>/snapshots/snapshot-<id>.cfg`.
@@ -651,7 +678,10 @@ impl PersistentLauncher {
             .instances
             .get(instance_name)
             .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
-        if inst.mode == RuntimeMode::FullClientBridge || inst.version_profile == "fabric-26.3" {
+        if inst.mode == RuntimeMode::FullClientBridge
+            || inst.version_profile == "fabric-26.3"
+            || inst.version_profile == "fabric-minimal"
+        {
             return self.spawn_fabric_process(
                 instance_name,
                 server_override,
@@ -659,13 +689,15 @@ impl PersistentLauncher {
                 extra_args,
             );
         }
-        if inst.mode != RuntimeMode::NativeStandalone {
+        if inst.mode != RuntimeMode::NativeStandalone
+            && inst.mode != RuntimeMode::NativeMinimalVisualizer
+        {
             return Err(format!(
-                "instance '{instance_name}' mode is '{:?}'; native process spawn only supports NativeStandalone",
+                "instance '{instance_name}' mode is '{:?}'; native process spawn only supports NativeStandalone or NativeMinimalVisualizer",
                 inst.mode
             ));
         }
-        if inst.version_profile != "sawbyte-26.3" {
+        if inst.version_profile != "sawbyte-26.3" && inst.version_profile != "fabric-minimal" {
             return Err(format!(
                 "instance '{instance_name}' version profile '{}' is not supported for native live execution (only 'sawbyte-26.3' is currently supported)",
                 inst.version_profile

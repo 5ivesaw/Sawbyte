@@ -5,7 +5,7 @@
 set -e
 
 REPO="5ivesaw/Sawbyte"
-TAG="v0.3.1"
+TAG="v0.3.2"
 INSTALL_DIR="$HOME/.local/bin"
 DESKTOP_DIR="$HOME/.local/share/applications"
 ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"

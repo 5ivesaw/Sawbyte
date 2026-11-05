@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/ci.yml?branch=main&style=for-the-badge&label=Build&labelColor=161b22&color=238636" alt="Build and verify status" /></a>
   <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/player.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/player.yml?branch=main&style=for-the-badge&label=Movement%20Lab&labelColor=161b22&color=238636" alt="Movement lab parity status" /></a>
-  <a href="https://github.com/5ivesaw/Sawbyte/releases/tag/v0.3.1"><img src="https://img.shields.io/badge/Release-v0.3.1-1f6feb?style=for-the-badge&labelColor=161b22" alt="Version 0.3.1" /></a>
+  <a href="https://github.com/5ivesaw/Sawbyte/releases/tag/v0.3.2"><img src="https://img.shields.io/badge/Release-v0.3.2-1f6feb?style=for-the-badge&labelColor=161b22" alt="Version 0.3.2" /></a>
   <img src="https://img.shields.io/badge/Minecraft-26.3%20(Protocol%20777)-8c5230?style=for-the-badge&labelColor=161b22" alt="Minecraft Protocol 777" />
   <img src="https://img.shields.io/badge/Platforms-Linux%20%7C%20Windows%20%7C%20macOS-388bfd?style=for-the-badge&labelColor=161b22" alt="Supported Platforms" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-6e7681?style=for-the-badge&labelColor=161b22" alt="License MIT" /></a>
@@ -21,11 +21,13 @@
 
 - **Universal Foundational Base**: General, composable low-level primitives for sub-voxel motion, targeting, camera manipulation, block mining, placement, entity combat, and atomic container transactions. Not hardcoded for any single server, economy, or minigame—Sawbyte is a general-purpose automation foundation.
 - **Cross-Platform Desktop Launcher**: Equal experience across Linux, Windows, and macOS. Provides persistent instance configuration, account security, snapshot backups, `options.txt` management, live bot process supervision, and real-time command consoles with zero extra runtime dependencies.
+- **Autonomous Long-Horizon Agent Parity**: Runs continuously for hours or days without leaks, artificial delays, or crashes. Tracks every milestone, attempt count, death causes, sub-voxel coordinates, and inventory snapshots directly into persistent disk files (`milestones.log` / `milestones.jsonl`) via synchronous zero-latency hooks.
+- **Pure-Rust Software 3D Rasterizer & Radar**: Ultra-lightweight software raymarcher and top-down radar renderer running 100% in Rust with zero GPU drivers or JVM dependencies (~10 MiB RSS). Emits standard uncompressed BMP data URIs directly to the web UI.
 - **Sub-Voxel Simulation & Parity**: 20 TPS client-side physics prediction matching vanilla Java Edition with maximum position error under `3.41e-7` blocks and zero ground-state mismatches across slabs, stairs, climbables, and fluid vectors.
 - **Hardware Efficiency**: Consumes **~8.2 MiB RSS** (over **98% less memory** than the vanilla JVM client) and launches in **~0.12 s** (**~120x faster cold start**).
 - **Exact Game Observations**: Exposes sub-voxel positions, velocities, orientation, health and food vitals, surrounding 3D voxel geometry, entity bounding boxes with eye raycasting, and full container slot components directly from memory without fake stubs.
-- **Model Context Protocol (MCP)**: Native stdio JSON-RPC 2.0 server exposing 9 tools for autonomous AI agent control.
-- **Optional Graphical Bridge**: Optional Fabric reference client bridge (`sawbyte-bridge`) for visual replay and parity verification against vanilla Java Minecraft.
+- **Model Context Protocol (MCP)**: Native stdio JSON-RPC 2.0 server exposing 10 tools and autonomous resources (`sawbyte://agent/milestones`) for AI agent orchestration.
+- **Optional Graphical Bridge & Potato Mode**: Optional Fabric reference client bridge (`sawbyte-bridge`) and stripped potato profile (`fabric-minimal`) for visual verification against vanilla Java Minecraft.
 
 ---
 
@@ -37,12 +39,12 @@ The Sawbyte Graphical Launcher provides an embedded desktop interface and superv
 +---------------------------------------------------------------------------------------------------+
 |  SAWBYTE DESKTOP SUPERVISOR (127.0.0.1:8767)                        [Install CLI to System PATH]  |
 +---------------------------------------------------------------------------------------------------+
-|  Instances      Mods & Addons     Live Supervisor     Terminal & CLI     Accounts     Profiles    |
+|  Instances      Visualizer & HUD    Mods & Addons    Supervisor & Term    Milestones    Profiles  |
 +---------------------------------------------------------------------------------------------------+
-|  bot-01         Modrinth Search:  > inspect.status    $ sawbyte --help   SawBot_01    777 (26.3)  |
-|  - FOV: 90      [fabric-api]      Pos: (12.4,-60,4.2) Implemented: ...   Status: IDLE Parity: 1:1 |
-|  - Mode: native [lithium]         Health: 20.0        Process code: 0                             |
-|  [Launch Bot]   [Inject Bridge]   [Send Live Action]  [Run Subcommand]   [Add User]   [Bench: 6/6]|
+|  bot-01         [3D CRT Display]    Modrinth Search: > inspect.status     Attempt: #1   777 (26.3)|
+|  - FOV: 90      Pos: (12.4,-60,4.2) [fabric-api]     Pos: (12.4,-60,4.2)  Deaths: 0     Parity 1:1|
+|  - Mode: native HP: 20.0 Food: 20   [lithium]        Health: 20.0         [Save Mark]   Bench 18  |
+|  [Launch Bot]   [Mode: 1st/3rd/Rad] [Inject Bridge]  [Interactive Shell]  [View Log]    [Verify]  |
 +---------------------------------------------------------------------------------------------------+
 ```
 
@@ -76,28 +78,36 @@ You can install the `sawbyte` binary and desktop shortcuts permanently into your
 ### Launcher Capabilities
 
 1. **Instance Manager**:
-   - Create, list, configure, and delete client instances for both Native (zero-graphics) and Fabric (graphical) profiles.
-   - Edit Minecraft settings (`options.txt`, `fov`, `renderDistance`, `gamma`, keybinds).
+   - Create, list, configure, and delete client instances across 3 runtime modes: `native` (zero graphics), `visualizer` (pure-Rust 3D software rasterizer), and `bridge` (graphical Fabric reference).
+   - One-click **"Potato Mode"** quick action to instantly strip rendering overhead (`renderDistance: 2`, `particles: minimal`, `smoothLighting: off`, `maxFps: 30`).
    - Point-in-time snapshot backup and instant one-click rollback.
-2. **Fabric 26.3 Mod Manager & Modrinth API Integration**:
+2. **Pure-Rust 3D Software Visualizer & Telemetry HUD**:
+   - Integrated live retro CRT viewport rendering software 3D raymarched frames and radar views without GPU or JVM dependencies.
+   - Switch dynamically between First-Person, Third-Person Chase, and Top-Down Radar modes.
+   - Live telemetry HUD displaying sub-tick player coordinates, yaw/pitch orientation, health, hunger, live tick counter, death count, and attempt number.
+3. **Autonomous Agent Milestone & Death Tracker**:
+   - Persistent live tracking of multi-hour and multi-day agent runs without delays or frame stalls.
+   - Saves attempt numbers, death causes, sub-voxel coordinates, and inventory snapshots directly to `milestones.log` and `milestones.jsonl`.
+   - In-launcher milestone browser with one-click manual milestone recording.
+4. **Fabric 26.3 Mod Manager & Modrinth API Integration**:
    - Live query and search of Modrinth API v2 for Fabric 26.3 compatible mods.
    - One-click mod download and installation directly into `<instance>/mods/`.
    - Automatic recursive dependency resolution (e.g. Fabric API, Cloth Config, Architectury).
-   - One-click **"Inject Sawbyte Framework Bridge Mod"** (`sawbyte-bridge-0.3.1.jar`) to bind graphical Fabric clients directly into the Sawbyte RPC network.
-3. **Interactive In-Browser Terminal & CLI Console**:
+   - One-click **"Inject Sawbyte Framework Bridge Mod"** (`sawbyte-bridge-0.3.2.jar`) to bind graphical Fabric clients directly into the Sawbyte RPC network.
+5. **Interactive In-Browser Terminal & CLI Console**:
    - Built-in interactive command terminal directly inside the browser.
    - Execute any `sawbyte` CLI subcommand or debug script with real-time output and exit codes.
    - Built-in preset shortcuts: `sawbyte --help`, `sawbyte capabilities`, `sawbyte version`, `sawbyte launcher status`, and mod queries.
-4. **Live Bot Supervisor & Console**:
+6. **Live Bot Supervisor & Console**:
    - One-click launch and termination of live `sawbyte-play` background processes.
    - Live process monitor displaying PID, uptime, server address, and control socket.
-   - Interactive command console: execute `inspect.status`, `chat.send`, `wait.ticks`, or custom scripts in real time.
+   - Interactive command console: execute `inspect.status`, `milestone.save`, `chat.send`, `wait.ticks`, or custom scripts in real time.
    - Real-time live log viewer streaming from `logs/latest.log`.
-5. **Account Manager**:
+7. **Account Manager**:
    - Add offline development accounts with deterministic or randomized UUIDs.
    - Microsoft OAuth2 Device Code authentication flow display.
    - Atomic per-instance account locking to prevent concurrent session collisions.
-6. **Profiles & Parity Verification**:
+8. **Profiles & Parity Verification**:
    - Inspect version profiles, block registry palettes, and view live parity benchmark reports.
 
 ---
@@ -213,6 +223,15 @@ sawbyte eval "inspect.status" --connect 127.0.0.1:25580
 sawbyte eval "inspect.chat" --connect 127.0.0.1:25580
 sawbyte eval "inspect.events" --connect 127.0.0.1:25580
 
+# Autonomous long-horizon milestone & death tracking
+sawbyte eval 'milestone.save "Reached Nether" "found fortress at 120 64 -300"' --connect 127.0.0.1:25580
+sawbyte eval "inspect.milestones" --connect 127.0.0.1:25580
+sawbyte eval "inspect.deaths" --connect 127.0.0.1:25580
+
+# Fetch pure-Rust software 3D raymarched frame or radar data URI
+sawbyte eval "inspect.frame 160 100 first_person" --connect 127.0.0.1:25580
+sawbyte eval "inspect.visualizer_state" --connect 127.0.0.1:25580
+
 # Find navigator in hotbar by keyword and select slot
 sawbyte eval 'inventory.find "navigator"' --connect 127.0.0.1:25580
 sawbyte eval "player.hotbar 0" --connect 127.0.0.1:25580
@@ -238,8 +257,9 @@ sawbyte mcp --stdio
 ```
 
 Exposed MCP Tools:
-- `launcher_control`: Manage instances, snapshots, accounts, and spawn live bots.
+- `launcher_control`: Manage instances, snapshots, accounts, and spawn live bots across native, visualizer, and bridge modes.
 - `client_menu_and_settings`: Configure options and persist settings on disk.
+- `agent_milestone_logger`: Synchronous zero-latency milestone logging to persistent disk files (`milestones.log` / `milestones.jsonl`) tracking attempt number, death counts, coordinates, and full inventory.
 - `player_input`: Send smooth/direct camera yaw/pitch deltas and movement keys.
 - `player_interact`: Perform line-of-sight raycast block mining, placement, item use, and entity attacks.
 - `gui_screen_automation`: Inspect server containers and click slots with `state_id` transaction verification.
@@ -247,6 +267,9 @@ Exposed MCP Tools:
 - `world_inspector_and_profiler`: Render ASCII maps and query chunk voxels.
 - `gym_step_and_observe`: Synchronous tick stepping and observation for RL agents.
 - `code_execute`: Execute multi-line SawbyteScript sequences.
+
+Exposed MCP Resources:
+- `sawbyte://agent/milestones`: Real-time JSON stream of autonomous attempt history, death records, and milestone markers.
 
 ### 5. In-Memory Performance Benchmarks
 
@@ -306,7 +329,7 @@ console.log(wf.compileScript());
 
 ## Distribution & Downloads
 
-Pre-built, self-contained binaries are published on the [Releases](https://github.com/5ivesaw/Sawbyte/releases/tag/v0.3.1) page:
+Pre-built, self-contained binaries are published on the [Releases](https://github.com/5ivesaw/Sawbyte/releases/tag/v0.3.2) page:
 
 | Operating System | Full Engine Archive (CLI + Play + Launcher) | Dedicated Launcher Package |
 |:---|:---|:---|
@@ -327,6 +350,7 @@ Sawbyte/
 │   ├── src/inventory.rs     # Protocol 777 inventory decoding, container state machines & items
 │   ├── src/player.rs        # 20 TPS physics, AABB collisions, jump/sprint dynamics & trig table
 │   ├── src/raycast.rs       # Voxel AABB eye raycasting & line-of-sight occlusion checks
+│   ├── src/visualizer.rs    # Pure-Rust software 3D raymarching rasterizer & retro radar visualizer
 │   ├── src/wire.rs          # Packet framing, VarInt codecs, AES-CFB8 & zlib stream handlers
 │   └── src/world.rs         # Chunk section palette decoding, 3D voxel storage & block shapes
 ├── crates/

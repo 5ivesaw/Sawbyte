@@ -415,7 +415,7 @@ impl SawbyteControlBridge {
 
         match method {
             "initialize" => format!(
-                "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{{\"name\":\"sawbyte-mcp\",\"version\":\"0.3.1\"}},\"capabilities\":{{\"tools\":{{\"listChanged\":false}},\"resources\":{{\"listChanged\":false}},\"prompts\":{{\"listChanged\":false}}}}}}}}"
+                "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{{\"name\":\"sawbyte-mcp\",\"version\":\"0.3.2\"}},\"capabilities\":{{\"tools\":{{\"listChanged\":false}},\"resources\":{{\"listChanged\":false}},\"prompts\":{{\"listChanged\":false}}}}}}}}"
             ),
             "notifications/initialized" => String::new(),
             "ping" => format!("{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{}}}}"),
@@ -429,6 +429,7 @@ impl SawbyteControlBridge {
                 {{\"name\":\"task_and_navigation\",\"description\":\"Run live 3D A* pathfinding across the server's loaded chunk sections on `sawbyte-play live`.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
                 {{\"name\":\"world_inspector_and_profiler\",\"description\":\"Render the live 2D ASCII map from server chunks and query live player status.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
                 {{\"name\":\"gym_step_and_observe\",\"description\":\"Step and observe the live `sawbyte-play` session for PyTorch/Gymnasium reinforcement learning.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
+                {{\"name\":\"agent_milestone_logger\",\"description\":\"Track autonomous agent progress, record game milestones (e.g. diamonds_found, nether_portal, dragon_slain) to milestones.log, and inspect death history and attempt counters without delays.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
                 {{\"name\":\"code_execute\",\"description\":\"Execute multi-line SawbyteScript across the persistent disk launcher and live `sawbyte-play` session.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}}\
                 ]}}}}"
             ),
@@ -436,6 +437,7 @@ impl SawbyteControlBridge {
                 "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"resources\":[\
                 {{\"uri\":\"sawbyte://launcher/state\",\"name\":\"Persistent Disk Launcher State\",\"mimeType\":\"text/plain\"}},\
                 {{\"uri\":\"sawbyte://client/options\",\"name\":\"Persistent Client options.txt & Keybinds\",\"mimeType\":\"text/plain\"}},\
+                {{\"uri\":\"sawbyte://agent/milestones\",\"name\":\"Autonomous Agent Milestone Log\",\"mimeType\":\"text/plain\"}},\
                 {{\"uri\":\"sawbyte://world/map2d\",\"name\":\"Live Server 2D World Map\",\"mimeType\":\"text/plain\"}}\
                 ]}}}}"
             ),
@@ -447,6 +449,10 @@ impl SawbyteControlBridge {
                     .unwrap_or_default();
                 let text_opt = match uri {
                     "sawbyte://client/options" => Some(self.client.export_options_txt()),
+                    "sawbyte://agent/milestones" => Some(
+                        self.forward_live_command("inspect.milestones")
+                            .unwrap_or_else(|e| e),
+                    ),
                     "sawbyte://world/map2d" => Some(
                         self.forward_live_command("inspect.map")
                             .unwrap_or_else(|e| e),
@@ -497,6 +503,7 @@ impl SawbyteControlBridge {
                         | "task_and_navigation"
                         | "world_inspector_and_profiler"
                         | "gym_step_and_observe"
+                        | "agent_milestone_logger"
                         | "code_execute"
                 );
                 if !is_valid_tool {

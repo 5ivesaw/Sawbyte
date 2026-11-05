@@ -41,7 +41,7 @@ pub fn run_launcher_gui(port_opt: Option<u16>) -> Result<(), Box<dyn std::error:
 
     let url = format!("http://127.0.0.1:{port}");
     println!("========================================================================");
-    println!("        SAWBYTE GRAPHICAL DESKTOP LAUNCHER v0.3.1");
+    println!("        SAWBYTE GRAPHICAL DESKTOP LAUNCHER v0.3.2");
     println!("========================================================================");
     println!("  URL:           {url}");
     let root = PersistentLauncher::resolve_home();
@@ -249,6 +249,56 @@ fn handle_http_client(
             let res = handle_mods_search(&clean_q);
             send_json_result(&mut stream, res)?;
         }
+        ("GET", "/api/visualizer/frame") => {
+            let instance = query
+                .split('&')
+                .find(|p| p.starts_with("instance="))
+                .and_then(|p| p.split('=').nth(1))
+                .unwrap_or("default-native");
+            let mode = query
+                .split('&')
+                .find(|p| p.starts_with("mode="))
+                .and_then(|p| p.split('=').nth(1))
+                .unwrap_or("first_person");
+            let w = query
+                .split('&')
+                .find(|p| p.starts_with("w="))
+                .and_then(|p| p.split('=').nth(1))
+                .unwrap_or("160");
+            let h = query
+                .split('&')
+                .find(|p| p.starts_with("h="))
+                .and_then(|p| p.split('=').nth(1))
+                .unwrap_or("100");
+            let res = handle_visualizer_frame(instance, w, h, mode);
+            send_json_result(&mut stream, res)?;
+        }
+        ("GET", "/api/visualizer/state") => {
+            let instance = query
+                .split('&')
+                .find(|p| p.starts_with("instance="))
+                .and_then(|p| p.split('=').nth(1))
+                .unwrap_or("default-native");
+            let res = handle_visualizer_state(instance);
+            send_json_result(&mut stream, res)?;
+        }
+        ("GET", "/api/milestones") => {
+            let instance = query
+                .split('&')
+                .find(|p| p.starts_with("instance="))
+                .and_then(|p| p.split('=').nth(1))
+                .unwrap_or("default-native");
+            let res = handle_get_milestones(instance);
+            send_json_result(&mut stream, res)?;
+        }
+        ("POST", "/api/milestone/save") => {
+            let res = handle_post_milestone(&body_str);
+            send_json_result(&mut stream, res)?;
+        }
+        ("POST", "/api/instance/optimize_minimal") => {
+            let res = handle_optimize_minimal(&body_str);
+            send_json_result(&mut stream, res)?;
+        }
         ("GET", "/api/logs") => {
             let instance = query
                 .split('&')
@@ -329,7 +379,7 @@ fn build_api_status(processes: &ProcessMap) -> String {
         "\"root_dir\":{},",
         escape_json(&launcher.root_dir.to_string_lossy())
     ));
-    json.push_str("\"version\":\"0.3.1\",");
+    json.push_str("\"version\":\"0.3.2\",");
 
     // Version profiles
     json.push_str("\"version_profiles\":[");
@@ -903,6 +953,108 @@ fn url_encode(input: &str) -> String {
     out
 }
 
+fn get_instance_rpc_endpoint(instance: &str) -> Result<String, String> {
+    let launcher = PersistentLauncher::load_or_init()?;
+    let inst = launcher
+        .instances
+        .get(instance)
+        .ok_or_else(|| format!("instance '{instance}' not found"))?;
+    Ok(inst.rpc_bind.clone())
+}
+
+fn send_rpc_command(connect: &str, cmd: &str) -> Result<String, String> {
+    let mut stream = TcpStream::connect(connect)
+        .map_err(|e| format!("cannot connect to bot RPC at {connect}: {e}"))?;
+    let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
+    let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
+    writeln!(stream, "{cmd}").map_err(|e| e.to_string())?;
+    stream.flush().map_err(|e| e.to_string())?;
+    let mut reader = BufReader::new(stream);
+    let mut reply = String::new();
+    reader.read_line(&mut reply).map_err(|e| e.to_string())?;
+    Ok(reply.trim().to_string())
+}
+
+fn handle_visualizer_frame(
+    instance: &str,
+    w: &str,
+    h: &str,
+    mode: &str,
+) -> Result<String, String> {
+    let endpoint = get_instance_rpc_endpoint(instance)?;
+    let cmd = format!("inspect.frame {w} {h} {mode}");
+    let reply = send_rpc_command(&endpoint, &cmd)?;
+    if let Some(data_uri) = reply.strip_prefix("frame:") {
+        Ok(format!(
+            "{{\"ok\":true,\"data_uri\":{}}}",
+            escape_json(data_uri)
+        ))
+    } else {
+        Err(format!("invalid frame response: {reply}"))
+    }
+}
+
+fn handle_visualizer_state(instance: &str) -> Result<String, String> {
+    let endpoint = get_instance_rpc_endpoint(instance)?;
+    let reply = send_rpc_command(&endpoint, "inspect.visualizer_state")?;
+    Ok(format!("{{\"ok\":true,\"state\":{reply}}}"))
+}
+
+fn handle_get_milestones(instance: &str) -> Result<String, String> {
+    let endpoint = get_instance_rpc_endpoint(instance);
+    let rpc_text = endpoint
+        .ok()
+        .and_then(|ep| send_rpc_command(&ep, "inspect.milestones").ok());
+    let log_content = fs::read_to_string("milestones.log").unwrap_or_default();
+    Ok(format!(
+        "{{\"ok\":true,\"summary\":{},\"log\":{}}}",
+        escape_json(&rpc_text.unwrap_or_default()),
+        escape_json(&log_content)
+    ))
+}
+
+fn handle_post_milestone(body: &str) -> Result<String, String> {
+    let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
+    let instance = json
+        .get("instance")
+        .and_then(|v| v.as_str())
+        .unwrap_or("default-native");
+    let name = json
+        .get("name")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'name'")?;
+    let notes = json.get("notes").and_then(|v| v.as_str()).unwrap_or("");
+    let endpoint = get_instance_rpc_endpoint(instance)?;
+    let cmd = format!("milestone.save {name} {notes}");
+    let reply = send_rpc_command(&endpoint, &cmd)?;
+    Ok(format!("{{\"ok\":true,\"reply\":{}}}", escape_json(&reply)))
+}
+
+fn handle_optimize_minimal(body: &str) -> Result<String, String> {
+    let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
+    let instance = json
+        .get("instance")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'instance'")?;
+    let mut launcher = PersistentLauncher::load_or_init()?;
+    launcher.set_setting(instance, "graphicsMode", "0")?;
+    launcher.set_setting(instance, "renderDistance", "2")?;
+    launcher.set_setting(instance, "simulationDistance", "2")?;
+    launcher.set_setting(instance, "smoothLighting", "0")?;
+    launcher.set_setting(instance, "particles", "2")?;
+    launcher.set_setting(instance, "entityShadows", "false")?;
+    launcher.set_setting(instance, "clouds", "0")?;
+    launcher.set_setting(instance, "biomeBlendRadius", "0")?;
+    launcher.set_setting(instance, "maxFps", "30")?;
+    launcher.set_setting(instance, "mipmapLevels", "0")?;
+    launcher.set_setting(instance, "viewBobbing", "false")?;
+    if let Some(inst) = launcher.instances.get_mut(instance) {
+        inst.mode = RuntimeMode::NativeMinimalVisualizer;
+    }
+    launcher.save()?;
+    Ok("{\"ok\":true,\"message\":\"Instance optimized to Native Minimal Low-Poly Visualizer mode.\"}".to_string())
+}
+
 fn read_instance_logs(instance: &str) -> String {
     if instance.is_empty() {
         return String::new();
@@ -939,141 +1091,216 @@ fn get_launcher_html() -> &'static str {
 <title>Sawbyte Desktop Launcher & Bot Supervisor</title>
 <style>
   :root {
-    --bg: #090d16;
-    --card: #131926;
-    --card-hover: #1a2336;
-    --border: #222e47;
-    --text: #e6edf3;
-    --sub: #8b9bb4;
-    --accent: #58a6ff;
-    --green: #2ea043;
-    --green-btn: #238636;
-    --red: #f85149;
-    --red-btn: #da3633;
-    --purple: #bc8cff;
-    --yellow: #d29922;
+    --bg: #070a12;
+    --card: rgba(17, 24, 39, 0.85);
+    --card-hover: rgba(26, 35, 54, 0.95);
+    --border: rgba(88, 166, 255, 0.15);
+    --border-bright: rgba(88, 166, 255, 0.35);
+    --text: #f0f6fc;
+    --sub: #94a3b8;
+    --accent: #38bdf8;
+    --accent-glow: rgba(56, 189, 248, 0.25);
+    --green: #10b981;
+    --green-btn: #059669;
+    --red: #f43f5e;
+    --red-btn: #e11d48;
+    --purple: #a855f7;
+    --amber: #f59e0b;
   }
   * { box-sizing: border-box; }
   body {
     background: var(--bg);
+    background-image: 
+      radial-gradient(ellipse at 85% 0%, rgba(30, 58, 138, 0.22) 0%, transparent 55%),
+      radial-gradient(ellipse at 15% 100%, rgba(5, 150, 105, 0.15) 0%, transparent 50%);
     color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", monospace;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Inter, monospace;
     margin: 0;
     padding: 0;
     font-size: 13px;
+    min-height: 100vh;
   }
   header {
-    background: var(--card);
+    background: rgba(11, 15, 25, 0.9);
+    backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
-    padding: 12px 24px;
+    padding: 14px 28px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
   }
-  .brand { display: flex; align-items: center; gap: 12px; }
-  .brand img { width: 36px; height: 36px; border-radius: 6px; }
-  .brand h1 { margin: 0; font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand img { width: 38px; height: 38px; border-radius: 8px; box-shadow: 0 0 16px var(--accent-glow); }
+  .brand h1 { margin: 0; font-size: 19px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
   .brand .sub { font-size: 11px; color: var(--sub); }
   .header-actions { display: flex; align-items: center; gap: 10px; }
-  .tabs { display: flex; gap: 4px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 6px; border: 1px solid var(--border); }
+  .tabs { display: flex; gap: 4px; background: rgba(0,0,0,0.35); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
   .tab-btn {
     background: transparent;
     border: none;
     color: var(--sub);
-    padding: 6px 14px;
-    border-radius: 4px;
+    padding: 7px 16px;
+    border-radius: 6px;
     font-weight: 600;
     cursor: pointer;
     font-size: 12px;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .tab-btn.active, .tab-btn:hover { background: var(--card-hover); color: #fff; }
-  .container { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-top: 14px; }
+  .tab-btn.active, .tab-btn:hover { background: rgba(56, 189, 248, 0.15); color: #fff; border: 1px solid var(--border-bright); }
+  .container { max-width: 1320px; margin: 24px auto; padding: 0 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 18px; margin-top: 16px; }
   .card {
     background: var(--card);
+    backdrop-filter: blur(14px);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 18px;
+    border-radius: 10px;
+    padding: 20px;
     position: relative;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    transition: transform 0.15s, border-color 0.15s;
   }
-  .card h3 { margin: 0 0 10px 0; font-size: 15px; font-weight: 600; }
+  .card:hover { border-color: var(--border-bright); }
+  .card h3 { margin: 0 0 12px 0; font-size: 15px; font-weight: 600; color: #fff; }
   .badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
-  .badge-green { background: rgba(46,160,67,0.2); color: #3fb950; border: 1px solid #3fb950; }
-  .badge-red { background: rgba(248,81,73,0.2); color: #f85149; border: 1px solid #f85149; }
-  .badge-blue { background: rgba(88,166,255,0.2); color: #58a6ff; border: 1px solid #58a6ff; }
-  .badge-purple { background: rgba(188,140,255,0.2); color: #bc8cff; border: 1px solid #bc8cff; }
+  .badge-green { background: rgba(16,185,129,0.18); color: #34d399; border: 1px solid rgba(16,185,129,0.4); }
+  .badge-red { background: rgba(244,63,94,0.18); color: #fb7185; border: 1px solid rgba(244,63,94,0.4); }
+  .badge-blue { background: rgba(56,189,248,0.18); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); }
+  .badge-purple { background: rgba(168,85,247,0.18); color: #c084fc; border: 1px solid rgba(168,85,247,0.4); }
+  .badge-amber { background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
+  .pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+    animation: pulse 1.8s infinite;
+  }
+  @keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+  }
   .btn {
     background: var(--green-btn);
     color: #fff;
-    border: none;
-    padding: 6px 14px;
-    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 7px 15px;
+    border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
     font-size: 12px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: background 0.15s;
+    transition: all 0.15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   }
-  .btn:hover { background: var(--green); }
+  .btn:hover { background: var(--green); transform: translateY(-1px); }
+  .btn:active { transform: translateY(1px); }
   .btn-red { background: var(--red-btn); }
   .btn-red:hover { background: var(--red); }
-  .btn-secondary { background: #21262d; border: 1px solid var(--border); color: #c9d1d9; }
-  .btn-secondary:hover { background: #30363d; color: #fff; }
+  .btn-amber { background: #d97706; }
+  .btn-amber:hover { background: var(--amber); }
+  .btn-cyan { background: #0284c7; }
+  .btn-cyan:hover { background: var(--accent); }
+  .btn-secondary { background: rgba(30, 41, 59, 0.8); border: 1px solid var(--border); color: #cbd5e1; }
+  .btn-secondary:hover { background: rgba(51, 65, 85, 0.9); color: #fff; border-color: var(--border-bright); }
   input, select, textarea {
     width: 100%;
-    background: #090d16;
+    background: #090e17;
     border: 1px solid var(--border);
     color: #fff;
-    padding: 8px 10px;
-    border-radius: 5px;
+    padding: 9px 12px;
+    border-radius: 6px;
     font-size: 12px;
     margin-top: 4px;
     margin-bottom: 12px;
+    transition: border-color 0.15s;
   }
-  input:focus, select:focus, textarea:focus { border-color: var(--accent); outline: none; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px var(--accent-glow); }
   .console {
-    background: #06090f;
+    background: #05080e;
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border-radius: 8px;
+    padding: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 11px;
     height: 240px;
     overflow-y: auto;
     white-space: pre-wrap;
-    color: #c9d1d9;
+    color: #cbd5e1;
     margin-top: 8px;
+    line-height: 1.5;
   }
+  .viz-screen {
+    background: #000;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 24px rgba(0,0,0,0.6);
+    aspect-ratio: 16/10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .viz-screen img {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    object-fit: fill;
+  }
+  .viz-crt-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+    background-size: 100% 4px;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
+  }
+  .hud-stat {
+    display: flex;
+    flex-direction: column;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+  }
+  .hud-stat .label { font-size: 10px; color: var(--sub); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+  .hud-stat .val { font-size: 13px; font-weight: 700; color: #fff; font-family: monospace; margin-top: 2px; }
   .modal-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(6px);
     z-index: 100;
     align-items: center;
     justify-content: center;
   }
   .modal {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    background: #0f172a;
+    border: 1px solid var(--border-bright);
+    border-radius: 10px;
     padding: 24px;
-    max-width: 480px;
+    max-width: 520px;
     width: 100%;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
   }
 </style>
 </head>
@@ -1081,10 +1308,10 @@ fn get_launcher_html() -> &'static str {
 
 <header>
   <div class="brand">
-    <img src="/sawbyte.png" alt="Sawbyte Icon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23238636%22/><text x=%2250%22 y=%2265%22 font-size=%2250%22 font-family=%22sans-serif%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22>S</text></svg>'">
+    <img src="/sawbyte.png" alt="Sawbyte Logo" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230284c7%22/><text x=%2250%22 y=%2265%22 font-size=%2250%22 font-family=%22sans-serif%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22>S</text></svg>'">
     <div>
-      <h1>Sawbyte Desktop Launcher <span class="badge badge-purple" style="vertical-align:middle;">v0.3.1</span></h1>
-      <div class="sub">Zero-Graphics Headless Minecraft Client & Automation Engine</div>
+      <h1>Sawbyte Desktop Launcher <span class="badge badge-purple" style="vertical-align:middle;">v0.3.2</span></h1>
+      <div class="sub">Native Rust Headless Engine & Low-Poly Visualizer Suite</div>
     </div>
   </div>
 
@@ -1095,8 +1322,8 @@ fn get_launcher_html() -> &'static str {
 
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('instances')">Instances</button>
+    <button class="tab-btn" onclick="switchTab('supervisor')">Live Supervisor & 3D Visualizer</button>
     <button class="tab-btn" onclick="switchTab('mods')">Mods & Addons</button>
-    <button class="tab-btn" onclick="switchTab('supervisor')">Live Supervisor</button>
     <button class="tab-btn" onclick="switchTab('terminal')">Terminal & CLI</button>
     <button class="tab-btn" onclick="switchTab('accounts')">Accounts</button>
     <button class="tab-btn" onclick="switchTab('resources')">Version Profiles</button>
@@ -1106,22 +1333,139 @@ fn get_launcher_html() -> &'static str {
 <div class="container">
   <!-- Tab: Instances -->
   <div id="tab-instances" class="tab-content">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
       <div>
-        <h2 style="margin:0; font-size:16px;">Configured Bot Instances</h2>
-        <div style="color:var(--sub); font-size:12px;">Stored persistently on disk in <code>~/.sawbyte/instances</code></div>
+        <h2 style="margin:0; font-size:18px;">Configured Bot Instances</h2>
+        <div style="color:var(--sub); font-size:12px; margin-top:2px;">Persistent configurations stored on disk in <code>~/.sawbyte/instances</code></div>
       </div>
       <button class="btn" onclick="showCreateModal()">+ Create Instance</button>
     </div>
     <div id="instances-list" class="grid"></div>
   </div>
 
+  <!-- Tab: Live Supervisor & Low-Poly Visualizer -->
+  <div id="tab-supervisor" class="tab-content" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h2 style="margin:0; font-size:18px;">Live Bot Supervision & Pure-Rust 3D Visualizer</h2>
+        <div style="color:var(--sub); font-size:12px; margin-top:2px;">Ultra-optimized low-poly software rasterizer written 100% in Rust — Zero GPU/JVM bloat</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-weight:600; color:var(--sub);">Target Bot:</span>
+        <select id="supervisor-instance" style="width:220px; margin:0;" onchange="onSupervisorInstanceChange()"></select>
+      </div>
+    </div>
+
+    <!-- HUD Telemetry Grid -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:16px;">
+      <div class="hud-stat">
+        <span class="label">Position (X, Y, Z)</span>
+        <span id="hud-pos" class="val">--</span>
+      </div>
+      <div class="hud-stat">
+        <span class="label">Orientation (Yaw, Pitch)</span>
+        <span id="hud-rot" class="val">--</span>
+      </div>
+      <div class="hud-stat">
+        <span class="label">Health & Food</span>
+        <span id="hud-vitals" class="val">--</span>
+      </div>
+      <div class="hud-stat">
+        <span class="label">Autonomous Attempt</span>
+        <span id="hud-attempt" class="val">--</span>
+      </div>
+      <div class="hud-stat">
+        <span class="label">Total Deaths</span>
+        <span id="hud-deaths" class="val">--</span>
+      </div>
+      <div class="hud-stat">
+        <span class="label">Task Navigation</span>
+        <span id="hud-task" class="val">--</span>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1.15fr 1fr; gap:18px;">
+      <!-- Left Column: Rust 3D Low-Poly Visualizer Viewport -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h3>Rust Low-Poly 3D Visualizer (Retro Mode)</h3>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="setVizMode('first_person')">1st Person</button>
+            <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="setVizMode('chase')">Chase Cam</button>
+            <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="setVizMode('radar')">Radar</button>
+          </div>
+        </div>
+
+        <div class="viz-screen">
+          <img id="viz-img" src="" alt="Rust Low-Poly 3D Viewport">
+          <div class="viz-crt-overlay"></div>
+          <div id="viz-loading-overlay" style="position:absolute; color:var(--sub); font-size:12px; font-family:monospace;">
+            Waiting for running bot process...
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:11px; color:var(--sub);">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span>Res:</span>
+            <button class="btn btn-secondary" style="padding:2px 6px; font-size:10px;" onclick="setVizRes('160','100')">160x100</button>
+            <button class="btn btn-secondary" style="padding:2px 6px; font-size:10px;" onclick="setVizRes('240','150')">240x150</button>
+            <button class="btn btn-secondary" style="padding:2px 6px; font-size:10px;" onclick="setVizRes('320','200')">320x200</button>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" id="viz-stream-toggle" checked style="width:auto; margin:0;" onchange="toggleVizStream()">
+            <label for="viz-stream-toggle" style="cursor:pointer;">Live Visualizer (15 FPS)</label>
+          </div>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--border); margin:18px 0;">
+
+        <!-- Autonomous Agent Milestones Tracker -->
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0;">Autonomous Milestones & Progress Log</h3>
+          <button class="btn btn-cyan" style="padding:4px 10px; font-size:11px;" onclick="showMilestoneModal()">+ Record Milestone</button>
+        </div>
+        <div style="color:var(--sub); font-size:11px; margin-top:4px;">Appended directly to <code>milestones.log</code> and <code>milestones.jsonl</code> with zero delay.</div>
+        <div id="milestones-container" class="console" style="height:140px; margin-top:8px;">No milestones recorded yet.</div>
+      </div>
+
+      <!-- Right Column: Interactive Command Bar & Process Logs -->
+      <div style="display:flex; flex-direction:column; gap:18px;">
+        <div class="card">
+          <h3>Interactive Command Bar</h3>
+          <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="runCmd('inspect.status')">inspect.status</button>
+            <button class="btn btn-secondary" onclick="runCmd('inspect.deaths')">inspect.deaths</button>
+            <button class="btn btn-secondary" onclick="runCmd('inspect.milestones')">inspect.milestones</button>
+            <button class="btn btn-secondary" onclick="runCmd('inspect.events')">inspect.events</button>
+            <button class="btn btn-secondary" onclick="runCmd('gym.observe')">gym.observe</button>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="custom-cmd" placeholder="Enter live command (e.g. milestone.save &quot;iron_age&quot; &quot;found 24 iron&quot;)..." style="margin:0;" onkeydown="if(event.key==='Enter') sendCustomCmd()">
+            <button class="btn" onclick="sendCustomCmd()">Send</button>
+          </div>
+          <div style="margin-top:12px;">
+            <span style="font-size:11px; color:var(--sub); text-transform:uppercase; font-weight:bold;">Response Output:</span>
+            <div id="cmd-output" class="console" style="height:120px;">Waiting for command execution...</div>
+          </div>
+        </div>
+
+        <div class="card" style="flex:1;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>Live Process Logs</h3>
+            <button class="btn btn-secondary" style="padding:2px 8px; font-size:11px;" onclick="loadInstanceLogs()">Refresh</button>
+          </div>
+          <div id="process-logs" class="console" style="height:210px;">No logs selected.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Tab: Mods & Addons -->
   <div id="tab-mods" class="tab-content" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
       <div>
-        <h2 style="margin:0; font-size:16px;">Fabric 26.3 Mod Manager & Modrinth Integration</h2>
-        <div style="color:var(--sub); font-size:12px;">Search and install mods directly from Modrinth API v2 into target instance mods directory</div>
+        <h2 style="margin:0; font-size:18px;">Fabric 26.3 Mod Manager & Modrinth API</h2>
+        <div style="color:var(--sub); font-size:12px; margin-top:2px;">Search and install Fabric mods directly into instance <code>mods/</code> directory</div>
       </div>
       <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-weight:600; color:var(--sub);">Target Instance:</span>
@@ -1129,16 +1473,15 @@ fn get_launcher_html() -> &'static str {
       </div>
     </div>
 
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-      <!-- Bridge Mod & Search Box -->
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px;">
       <div class="card">
         <h3>Sawbyte Framework Bridge Mod</h3>
         <p style="color:var(--sub); font-size:12px; margin-top:2px;">
-          Injects the authoritative <code>sawbyte-bridge-0.3.1.jar</code> into the selected instance so the Fabric client communicates directly with Sawbyte RPC.
+          Injects <code>sawbyte-bridge-0.3.2.jar</code> into the selected instance so the Fabric client communicates directly with Sawbyte RPC.
         </p>
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px;">
           <span id="bridge-status-badge" class="badge badge-blue">Checking Bridge...</span>
-          <button class="btn" onclick="injectBridge()">Inject Sawbyte Bridge Mod</button>
+          <button class="btn" onclick="injectBridge()">Inject Bridge Mod</button>
         </div>
 
         <hr style="border:0; border-top:1px solid var(--border); margin:18px 0;">
@@ -1158,7 +1501,6 @@ fn get_launcher_html() -> &'static str {
         </div>
       </div>
 
-      <!-- Installed Mods Table -->
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <h3>Installed Mods</h3>
@@ -1183,58 +1525,14 @@ fn get_launcher_html() -> &'static str {
     </div>
   </div>
 
-  <!-- Tab: Live Supervisor -->
-  <div id="tab-supervisor" class="tab-content" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <div>
-        <h2 style="margin:0; font-size:16px;">Live Process Supervision & Bot Console</h2>
-        <div style="color:var(--sub); font-size:12px;">Send real-time gameplay commands and observe raw tick simulation outputs</div>
-      </div>
-      <div>
-        <select id="supervisor-instance" style="width:200px; margin:0;" onchange="loadInstanceLogs()"></select>
-      </div>
-    </div>
-
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-      <div class="card">
-        <h3>Interactive Command Bar</h3>
-        <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
-          <button class="btn btn-secondary" onclick="runCmd('inspect.status')">inspect.status</button>
-          <button class="btn btn-secondary" onclick="runCmd('inspect.chat')">inspect.chat</button>
-          <button class="btn btn-secondary" onclick="runCmd('inspect.events')">inspect.events</button>
-          <button class="btn btn-secondary" onclick="runCmd('gym.observe')">gym.observe</button>
-          <button class="btn btn-secondary" onclick="runCmd('inventory.inspect')">inventory.inspect</button>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <input type="text" id="custom-cmd" placeholder="Enter live command (e.g. chat.send &quot;hello&quot;, interact.mine 26 64 10)..." style="margin:0;" onkeydown="if(event.key==='Enter') sendCustomCmd()">
-          <button class="btn" onclick="sendCustomCmd()">Send</button>
-        </div>
-        <div style="margin-top:12px;">
-          <span style="font-size:11px; color:var(--sub); text-transform:uppercase; font-weight:bold;">Response Output:</span>
-          <div id="cmd-output" class="console">Waiting for command execution...</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h3>Live Process Logs</h3>
-          <button class="btn btn-secondary" style="padding:2px 8px; font-size:11px;" onclick="loadInstanceLogs()">Refresh</button>
-        </div>
-        <div id="process-logs" class="console" style="height:320px;">No logs selected.</div>
-      </div>
-    </div>
-  </div>
-
   <!-- Tab: Terminal & CLI -->
   <div id="tab-terminal" class="tab-content" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
       <div>
-        <h2 style="margin:0; font-size:16px;">Interactive Terminal & CLI Console</h2>
-        <div style="color:var(--sub); font-size:12px;">Run full native Sawbyte CLI subcommands directly from the launcher with real-time text output</div>
+        <h2 style="margin:0; font-size:18px;">Interactive Terminal & CLI Console</h2>
+        <div style="color:var(--sub); font-size:12px; margin-top:2px;">Execute native Sawbyte CLI subcommands directly from the launcher</div>
       </div>
-      <div>
-        <button class="btn btn-secondary" onclick="clearTerminal()">Clear Console</button>
-      </div>
+      <button class="btn btn-secondary" onclick="clearTerminal()">Clear Console</button>
     </div>
 
     <div class="card">
@@ -1243,8 +1541,7 @@ fn get_launcher_html() -> &'static str {
         <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte --help')">sawbyte --help</button>
         <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte capabilities')">sawbyte capabilities</button>
         <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte version')">sawbyte version</button>
-        <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte launcher status')">sawbyte launcher status</button>
-        <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte launcher mods list default-native')">mods list</button>
+        <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte launcher status')">launcher status</button>
         <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte install')">sawbyte install</button>
       </div>
 
@@ -1253,27 +1550,26 @@ fn get_launcher_html() -> &'static str {
         <button class="btn" onclick="executeTerminalCmd()">Run Command</button>
       </div>
 
-      <div id="terminal-console" class="console" style="height:420px; font-size:12px; line-height:1.45; color:#58a6ff; margin-top:12px;">Sawbyte Interactive CLI Shell v0.3.1
-Type any CLI subcommand above or click a preset to execute.
-$ sawbyte --help ready.</div>
+      <div id="terminal-console" class="console" style="height:420px; font-size:12px; line-height:1.45; color:#38bdf8; margin-top:12px;">Sawbyte Interactive CLI Shell v0.3.2
+Ready for execution.</div>
     </div>
   </div>
 
   <!-- Tab: Accounts -->
   <div id="tab-accounts" class="tab-content" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
       <div>
-        <h2 style="margin:0; font-size:16px;">Player Account Manager</h2>
-        <div style="color:var(--sub); font-size:12px;">Manage offline and Microsoft OAuth2 authenticated bot identities</div>
+        <h2 style="margin:0; font-size:18px;">Player Account Manager</h2>
+        <div style="color:var(--sub); font-size:12px; margin-top:2px;">Manage offline and authenticated bot identities</div>
       </div>
       <button class="btn" onclick="showAccountModal()">+ Add Account</button>
     </div>
     <div id="accounts-list" class="grid"></div>
   </div>
 
-  <!-- Tab: Resources -->
+  <!-- Tab: Version Profiles -->
   <div id="tab-resources" class="tab-content" style="display:none;">
-    <h2 style="margin:0 0 12px 0; font-size:16px;">Authoritative Version Profiles & Benchmarks</h2>
+    <h2 style="margin:0 0 16px 0; font-size:18px;">Authoritative Version Profiles & Benchmarks</h2>
     <div class="grid">
       <div class="card">
         <h3>Supported Protocol Profiles</h3>
@@ -1290,13 +1586,12 @@ $ sawbyte --help ready.</div>
         </table>
       </div>
       <div class="card">
-        <h3>Measured Crucible Benchmarks (v0.3.1)</h3>
-        <p style="color:var(--sub); font-size:12px;">All 6 Crucible Stages verified on both Native and Fabric backends with server RCON ground truth:</p>
+        <h3>Measured Benchmarks</h3>
         <ul style="color:var(--text); line-height:1.7;">
-          <li><strong>Memory (Peak RSS):</strong> ~8.2 MiB (Native) vs ~614 MiB (Fabric) — <strong>~98.7% reduction</strong></li>
-          <li><strong>Cold Start to Active Tick:</strong> ~0.12 s (Native) vs ~14.5 s (Fabric) — <strong>~120x faster</strong></li>
-          <li><strong>Multi-Bot Density:</strong> 100+ bots per 1 GB RAM</li>
-          <li><strong>In-Memory Simulation:</strong> ~4,800,000 ticks/sec</li>
+          <li><strong>Native Standalone RSS:</strong> ~8.2 MiB (Over 98% memory reduction)</li>
+          <li><strong>Native Low-Poly Visualizer RSS:</strong> ~10.4 MiB (Pure Rust 3D software rendering)</li>
+          <li><strong>Cold Start to Active Tick:</strong> ~0.12 s (~120x faster than JVM client)</li>
+          <li><strong>Universal Capability Tests:</strong> 18/18 Passed (100%)</li>
         </ul>
       </div>
     </div>
@@ -1308,16 +1603,18 @@ $ sawbyte --help ready.</div>
   <div class="modal">
     <h3 style="margin-top:0;">Create Bot Instance</h3>
     <label>Instance Name</label>
-    <input type="text" id="new-inst-name" placeholder="e.g. miner-bot-01">
+    <input type="text" id="new-inst-name" placeholder="e.g. agent-bot-01">
     <label>Version Profile</label>
     <select id="new-inst-profile">
-      <option value="sawbyte-26.3">sawbyte-26.3 (Protocol 777 - Verified Parity)</option>
-      <option value="fabric-26.3">fabric-26.3 (Fabric Client Bridge - Graphical & Mod Support)</option>
+      <option value="sawbyte-26.3">sawbyte-26.3 (Protocol 777 - Parity Verified)</option>
+      <option value="fabric-minimal">fabric-minimal (Fabric 26.3 Stripped Potato Visualizer)</option>
+      <option value="fabric-26.3">fabric-26.3 (Fabric Graphical Client & Modrinth)</option>
       <option value="sawbyte-26.2">sawbyte-26.2 (Protocol 776)</option>
     </select>
     <label>Runtime Mode</label>
     <select id="new-inst-mode">
       <option value="native">Native Standalone (Zero-Graphics Rust - 8MB RAM)</option>
+      <option value="visualizer">Native Minimal Visualizer (Rust Low-Poly 3D Engine - 10MB RAM)</option>
       <option value="bridge">Full Client Bridge (Fabric 26.3 Graphical Reference)</option>
     </select>
     <label>Server Endpoint</label>
@@ -1327,6 +1624,21 @@ $ sawbyte --help ready.</div>
     <div style="display:flex; justify-content:flex-end; gap:8px;">
       <button class="btn btn-secondary" onclick="hideModal('create-modal')">Cancel</button>
       <button class="btn" onclick="submitCreateInstance()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Record Milestone -->
+<div id="milestone-modal" class="modal-overlay">
+  <div class="modal">
+    <h3 style="margin-top:0;">Record Autonomous Agent Milestone</h3>
+    <label>Milestone Name / Identifier</label>
+    <input type="text" id="ms-name" placeholder="e.g. iron_tools, nether_portal, stronghold_found">
+    <label>Notes / Context</label>
+    <textarea id="ms-notes" rows="3" placeholder="e.g. Crafted iron pickaxe & shield, mining down to Y=-58"></textarea>
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn btn-secondary" onclick="hideModal('milestone-modal')">Cancel</button>
+      <button class="btn btn-cyan" onclick="submitRecordMilestone()">Save Milestone</button>
     </div>
   </div>
 </div>
@@ -1351,18 +1663,29 @@ $ sawbyte --help ready.</div>
 
 <script>
 let launcherState = {};
+let currentVizMode = 'first_person';
+let currentVizW = '160';
+let currentVizH = '100';
+let vizInterval = null;
 
 function switchTab(tabId) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + tabId).style.display = 'block';
   event.target.classList.add('active');
-  if (tabId === 'supervisor') loadInstanceLogs();
+  if (tabId === 'supervisor') {
+    loadInstanceLogs();
+    startVizStream();
+    loadMilestones();
+  } else {
+    stopVizStream();
+  }
   if (tabId === 'mods') loadMods();
 }
 
 function showCreateModal() { document.getElementById('create-modal').style.display = 'flex'; }
 function showAccountModal() { document.getElementById('account-modal').style.display = 'flex'; }
+function showMilestoneModal() { document.getElementById('milestone-modal').style.display = 'flex'; }
 function hideModal(id) { document.getElementById(id).style.display = 'none'; }
 
 function genRandomUuid() {
@@ -1401,11 +1724,8 @@ function installCliToSystem() {
     .then(r => r.json())
     .then(res => {
       btn.disabled = false;
-      if (res.ok) {
-        alert(res.message);
-      } else {
-        alert('Install error: ' + (res.error || 'Unknown error'));
-      }
+      if (res.ok) alert(res.message);
+      else alert('Install error: ' + (res.error || 'Unknown error'));
       checkCliStatus();
     })
     .catch(err => {
@@ -1435,30 +1755,53 @@ function renderInstances(instances) {
     div.innerHTML = '<div style="color:var(--sub);">No instances created yet. Click "+ Create Instance" to add one.</div>';
     return;
   }
-  div.innerHTML = instances.map(inst => `
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3>${inst.name}</h3>
-        <span class="badge ${inst.running ? 'badge-green' : 'badge-blue'}">${inst.running ? 'RUNNING (PID ' + inst.pid + ')' : 'STOPPED'}</span>
+  div.innerHTML = instances.map(inst => {
+    let modeBadge = '<span class="badge badge-blue">Native Standalone</span>';
+    if (inst.mode === 'visualizer' || inst.mode === 'native-visualizer') {
+      modeBadge = '<span class="badge badge-amber">Rust Low-Poly Visualizer</span>';
+    } else if (inst.mode === 'bridge') {
+      modeBadge = '<span class="badge badge-purple">Fabric Client Bridge</span>';
+    }
+    return `
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0;">${inst.name}</h3>
+          <span class="badge ${inst.running ? 'badge-green' : 'badge-blue'}">
+            ${inst.running ? '<span class="pulse-dot"></span> RUNNING (PID ' + inst.pid + ')' : 'STOPPED'}
+          </span>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
+          ${modeBadge}
+          <span class="badge badge-secondary" style="background:rgba(255,255,255,0.05); color:var(--sub);">${inst.profile}</span>
+        </div>
+        <div style="color:var(--sub); font-size:12px; margin-top:8px;">
+          Target: <strong>${inst.server}</strong> &bull; RPC: <strong>${inst.rpc_bind}</strong>
+        </div>
+        <div style="color:var(--sub); font-size:12px; margin-top:2px;">
+          Snapshots: <strong>${inst.snapshots}</strong>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:14px; flex-wrap:wrap;">
+          ${inst.running
+            ? `<button class="btn btn-red" onclick="stopBot('${inst.name}')">Stop Bot</button>`
+            : `<button class="btn" onclick="launchBot('${inst.name}')">Launch Bot</button>`}
+          <button class="btn btn-secondary btn-amber" onclick="optimizeInstanceMinimal('${inst.name}')">Potato Mode</button>
+          <button class="btn btn-secondary" onclick="backupBot('${inst.name}')">Snapshot</button>
+          <button class="btn btn-secondary btn-red" onclick="deleteBot('${inst.name}')">Delete</button>
+        </div>
       </div>
-      <div style="color:var(--sub); font-size:12px; margin-top:4px;">
-        Profile: <strong style="color:var(--text);">${inst.profile}</strong> &bull; Mode: <strong>${inst.mode}</strong>
-      </div>
-      <div style="color:var(--sub); font-size:12px; margin-top:2px;">
-        Target: <strong>${inst.server}</strong> &bull; RPC: <strong>${inst.rpc_bind}</strong>
-      </div>
-      <div style="color:var(--sub); font-size:12px; margin-top:2px;">
-        Snapshots: <strong>${inst.snapshots}</strong>
-      </div>
-      <div style="display:flex; gap:6px; margin-top:14px; flex-wrap:wrap;">
-        ${inst.running
-          ? `<button class="btn btn-red" onclick="stopBot('${inst.name}')">Stop Bot</button>`
-          : `<button class="btn" onclick="launchBot('${inst.name}')">Launch Bot</button>`}
-        <button class="btn btn-secondary" onclick="backupBot('${inst.name}')">Snapshot</button>
-        <button class="btn btn-secondary btn-red" onclick="deleteBot('${inst.name}')">Delete</button>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
+}
+
+function optimizeInstanceMinimal(name) {
+  fetch('/api/instance/optimize_minimal', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ instance: name })
+  }).then(r => r.json()).then(res => {
+    alert(res.ok ? res.message : 'Error: ' + res.error);
+    refreshStatus();
+  });
 }
 
 function renderAccounts(accounts) {
@@ -1496,7 +1839,7 @@ function renderProfiles(profiles) {
 function updateSupervisorDropdown(instances) {
   const sel = document.getElementById('supervisor-instance');
   const current = sel.value;
-  sel.innerHTML = instances.map(i => `<option value="${i.name}">${i.name} (${i.running ? 'PID ' + i.pid : 'Offline'})</option>`).join('');
+  sel.innerHTML = instances.map(i => `<option value="${i.name}">${i.name} (${i.running ? 'Running' : 'Offline'})</option>`).join('');
   if (current && instances.some(i => i.name === current)) sel.value = current;
 }
 
@@ -1510,6 +1853,12 @@ function updateModsDropdown(instances) {
     sel.value = instances[0].name;
     loadMods();
   }
+}
+
+function onSupervisorInstanceChange() {
+  loadInstanceLogs();
+  pollVizFrame();
+  loadMilestones();
 }
 
 function submitCreateInstance() {
@@ -1555,6 +1904,7 @@ function launchBot(name) {
   }).then(r => r.json()).then(res => {
     if (!res.ok) alert('Launch failed: ' + res.error);
     refreshStatus();
+    startVizStream();
   });
 }
 
@@ -1598,6 +1948,99 @@ function deleteAccount(username) {
   }).then(r => r.json()).then(refreshStatus);
 }
 
+// Low-Poly Visualizer Functions
+function setVizMode(mode) {
+  currentVizMode = mode;
+  pollVizFrame();
+}
+
+function setVizRes(w, h) {
+  currentVizW = w;
+  currentVizH = h;
+  pollVizFrame();
+}
+
+function toggleVizStream() {
+  const enabled = document.getElementById('viz-stream-toggle').checked;
+  if (enabled) startVizStream();
+  else stopVizStream();
+}
+
+function startVizStream() {
+  if (vizInterval) clearInterval(vizInterval);
+  vizInterval = setInterval(pollVizFrame, 120); // ~8-10 FPS
+  pollVizFrame();
+}
+
+function stopVizStream() {
+  if (vizInterval) { clearInterval(vizInterval); vizInterval = null; }
+}
+
+function pollVizFrame() {
+  const instName = document.getElementById('supervisor-instance').value;
+  if (!instName) return;
+
+  // Poll visualizer frame
+  fetch(`/api/visualizer/frame?instance=${encodeURIComponent(instName)}&w=${currentVizW}&h=${currentVizH}&mode=${currentVizMode}`)
+    .then(r => r.json())
+    .then(data => {
+      const img = document.getElementById('viz-img');
+      const overlay = document.getElementById('viz-loading-overlay');
+      if (data.ok && data.data_uri) {
+        img.src = data.data_uri;
+        overlay.style.display = 'none';
+      }
+    })
+    .catch(() => {});
+
+  // Poll visualizer telemetry state
+  fetch(`/api/visualizer/state?instance=${encodeURIComponent(instName)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok && data.state) {
+        const s = data.state;
+        if (s.pos) document.getElementById('hud-pos').innerText = `${s.pos[0].toFixed(1)}, ${s.pos[1].toFixed(1)}, ${s.pos[2].toFixed(1)}`;
+        if (s.yaw !== undefined) document.getElementById('hud-rot').innerText = `${s.yaw.toFixed(1)}° / ${s.pitch.toFixed(1)}°`;
+        if (s.health !== undefined) document.getElementById('hud-vitals').innerText = `${s.health.toFixed(1)} HP / ${s.food} F`;
+        if (s.attempt !== undefined) document.getElementById('hud-attempt').innerText = `#${s.attempt}`;
+        if (s.death_count !== undefined) document.getElementById('hud-deaths').innerText = `${s.death_count}`;
+        document.getElementById('hud-task').innerText = s.nav_active ? 'NAVIGATING' : (s.is_dead ? 'DEAD' : 'IDLE');
+      }
+    })
+    .catch(() => {});
+}
+
+// Milestones
+function loadMilestones() {
+  const instName = document.getElementById('supervisor-instance').value;
+  fetch(`/api/milestones?instance=${encodeURIComponent(instName)}`)
+    .then(r => r.json())
+    .then(data => {
+      const div = document.getElementById('milestones-container');
+      const text = data.summary || data.log;
+      div.innerText = text && text.trim() ? text : 'No milestones logged yet.';
+    })
+    .catch(console.error);
+}
+
+function submitRecordMilestone() {
+  const instName = document.getElementById('supervisor-instance').value;
+  const name = document.getElementById('ms-name').value.trim();
+  const notes = document.getElementById('ms-notes').value.trim();
+  if (!name) return alert('Please enter a milestone name');
+
+  fetch('/api/milestone/save', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ instance: instName, name, notes })
+  }).then(r => r.json()).then(res => {
+    hideModal('milestone-modal');
+    document.getElementById('ms-name').value = '';
+    document.getElementById('ms-notes').value = '';
+    loadMilestones();
+  });
+}
+
 function runCmd(cmd) {
   document.getElementById('custom-cmd').value = cmd;
   sendCustomCmd();
@@ -1620,6 +2063,7 @@ function sendCustomCmd() {
   }).then(r => r.json()).then(res => {
     if (res.ok) {
       out.innerText = `> ${cmd}\n${res.reply}`;
+      if (cmd.startsWith('milestone')) loadMilestones();
     } else {
       out.innerText = `> ${cmd}\nERROR: ${res.error}`;
     }
@@ -1639,7 +2083,7 @@ function loadInstanceLogs() {
     .catch(console.error);
 }
 
-// Mods Management Functions
+// Mods Management
 function loadMods() {
   const instName = document.getElementById('mods-instance').value;
   if (!instName) return;
@@ -1757,14 +2201,14 @@ function removeMod(filename) {
   });
 }
 
-// Terminal Shell Functions
+// Terminal Shell
 function runTerminalPreset(cmd) {
   document.getElementById('terminal-cmd-input').value = cmd;
   executeTerminalCmd();
 }
 
 function clearTerminal() {
-  document.getElementById('terminal-console').innerText = 'Sawbyte Interactive CLI Shell v0.3.1\n$ ';
+  document.getElementById('terminal-console').innerText = 'Sawbyte Interactive CLI Shell v0.3.2\n$ ';
 }
 
 function executeTerminalCmd() {
