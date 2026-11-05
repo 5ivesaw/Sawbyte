@@ -468,7 +468,7 @@ pub fn check_cli_status() -> (bool, String, bool) {
     }
 }
 
-pub fn install_cli_to_system(system_mode: bool) -> Result<String, String> {
+pub fn install_cli_to_system(_system_mode: bool) -> Result<String, String> {
     let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let exe_dir = current_exe
         .parent()
@@ -477,10 +477,12 @@ pub fn install_cli_to_system(system_mode: bool) -> Result<String, String> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
+        let system_mode = _system_mode;
         let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
         let can_write_usr = fs::OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open("/usr/local/bin/.sawbyte_probe")
             .is_ok();
         let _ = fs::remove_file("/usr/local/bin/.sawbyte_probe");
@@ -621,8 +623,8 @@ fn search_and_print_mods(query: &str, _mc_version: &str) -> Result<(), Box<dyn s
         .ok_or("invalid Modrinth response")?;
     println!("--------------------------------------------------------------------------------");
     println!(
-        "{:<24} {:<16} {:<12} {}",
-        "TITLE", "SLUG / ID", "DOWNLOADS", "DESCRIPTION"
+        "{:<24} {:<16} {:<12} DESCRIPTION",
+        "TITLE", "SLUG / ID", "DOWNLOADS"
     );
     println!("--------------------------------------------------------------------------------");
     for hit in hits {
