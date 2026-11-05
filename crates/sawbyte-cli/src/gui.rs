@@ -666,7 +666,10 @@ fn handle_terminal_execute(body: &str) -> Result<String, String> {
     }
 
     let mut parts: Vec<&str> = cmd.split_whitespace().collect();
-    if parts.first().is_some_and(|&p| p == "sawbyte" || p == "./sawbyte") {
+    if parts
+        .first()
+        .is_some_and(|&p| p == "sawbyte" || p == "./sawbyte")
+    {
         parts.remove(0);
     }
 
@@ -743,7 +746,9 @@ fn handle_mods_remove(body: &str) -> Result<String, String> {
         .ok_or("missing 'filename'")?;
     let launcher = PersistentLauncher::load_or_init()?;
     launcher.remove_mod(instance, filename)?;
-    Ok(format!("{{\"ok\":true,\"message\":\"Removed mod '{filename}'\"}}"))
+    Ok(format!(
+        "{{\"ok\":true,\"message\":\"Removed mod '{filename}'\"}}"
+    ))
 }
 
 fn handle_mods_install(body: &str) -> Result<String, String> {
@@ -820,7 +825,8 @@ fn handle_mods_install(body: &str) -> Result<String, String> {
                         let dep_url = format!(
                             "https://api.modrinth.com/v2/project/{dep_proj}/version?loaders=[\"fabric\"]"
                         );
-                        if let Ok(dep_out) = Command::new("curl").args(["-sSL", &dep_url]).output() {
+                        if let Ok(dep_out) = Command::new("curl").args(["-sSL", &dep_url]).output()
+                        {
                             if dep_out.status.success() {
                                 if let Ok(dep_json) =
                                     JsonValue::parse(&String::from_utf8_lossy(&dep_out.stdout))

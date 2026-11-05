@@ -354,7 +354,11 @@ impl PersistentLauncher {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_file() && path.extension().is_some_and(|ext| ext == "jar") {
-                let filename = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                let filename = path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_string();
                 let size_bytes = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
                 let is_bridge = filename.starts_with("sawbyte-bridge");
                 list.push(ModRecord {
@@ -397,7 +401,9 @@ impl PersistentLauncher {
             .status()
             .map_err(|e| format!("failed to execute curl: {e}"))?;
         if !status.success() {
-            return Err(format!("curl download failed with status {status} for {url}"));
+            return Err(format!(
+                "curl download failed with status {status} for {url}"
+            ));
         }
         Ok(target)
     }
@@ -442,7 +448,8 @@ impl PersistentLauncher {
         }
 
         // If not found locally, fetch official release asset
-        let release_url = "https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.1/sawbyte-bridge-0.3.1.jar";
+        let release_url =
+            "https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.1/sawbyte-bridge-0.3.1.jar";
         self.install_mod_file(instance_name, "sawbyte-bridge-0.3.1.jar", release_url)
     }
 
@@ -645,7 +652,12 @@ impl PersistentLauncher {
             .get(instance_name)
             .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
         if inst.mode == RuntimeMode::FullClientBridge || inst.version_profile == "fabric-26.3" {
-            return self.spawn_fabric_process(instance_name, server_override, account_name, extra_args);
+            return self.spawn_fabric_process(
+                instance_name,
+                server_override,
+                account_name,
+                extra_args,
+            );
         }
         if inst.mode != RuntimeMode::NativeStandalone {
             return Err(format!(
@@ -734,7 +746,7 @@ impl PersistentLauncher {
         account_name: &str,
         extra_args: &[String],
     ) -> Result<(Child, PathBuf), String> {
-        let inst = self
+        let _inst = self
             .instances
             .get(instance_name)
             .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
@@ -762,7 +774,12 @@ impl PersistentLauncher {
         cmd.current_dir(&dir);
 
         let mut jar_found = None;
-        for jar in ["fabric-loader.jar", "fabric.jar", "client.jar", "minecraft.jar"] {
+        for jar in [
+            "fabric-loader.jar",
+            "fabric.jar",
+            "client.jar",
+            "minecraft.jar",
+        ] {
             let p = dir.join(jar);
             if p.exists() {
                 jar_found = Some(p);
@@ -789,7 +806,8 @@ impl PersistentLauncher {
         for arg in extra_args {
             cmd.arg(arg);
         }
-        cmd.stdout(Stdio::from(log_file)).stderr(Stdio::from(err_file));
+        cmd.stdout(Stdio::from(log_file))
+            .stderr(Stdio::from(err_file));
 
         self.acquire_account_lock(account_name, instance_name)?;
         let child = cmd.spawn().map_err(|e| {

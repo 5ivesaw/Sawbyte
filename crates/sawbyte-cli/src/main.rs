@@ -546,10 +546,7 @@ pub fn install_cli_to_system(system_mode: bool) -> Result<String, String> {
         let path_env = std::env::var("PATH").unwrap_or_default();
         let in_path = path_env.split(':').any(|p| Path::new(p) == bin_dir);
 
-        let mut msg = format!(
-            "Installed 'sawbyte' CLI to {}",
-            target_sawbyte.display()
-        );
+        let mut msg = format!("Installed 'sawbyte' CLI to {}", target_sawbyte.display());
         if in_path {
             msg.push_str(" (PATH verified: OK)");
         } else {
@@ -565,7 +562,9 @@ pub fn install_cli_to_system(system_mode: bool) -> Result<String, String> {
     {
         let local_app_data =
             std::env::var("LOCALAPPDATA").unwrap_or_else(|_| "C:\\ProgramData".into());
-        let target_dir = PathBuf::from(local_app_data).join("Programs").join("Sawbyte");
+        let target_dir = PathBuf::from(local_app_data)
+            .join("Programs")
+            .join("Sawbyte");
         fs::create_dir_all(&target_dir).map_err(|e| e.to_string())?;
         let target_sawbyte = target_dir.join("sawbyte.exe");
         fs::copy(&current_exe, &target_sawbyte).map_err(|e| e.to_string())?;
@@ -631,9 +630,15 @@ fn search_and_print_mods(query: &str, _mc_version: &str) -> Result<(), Box<dyn s
             .get("title")
             .and_then(|t| t.as_str())
             .unwrap_or("Untitled");
-        let slug = hit.get("slug").and_then(|s| s.as_str()).unwrap_or("unknown");
+        let slug = hit
+            .get("slug")
+            .and_then(|s| s.as_str())
+            .unwrap_or("unknown");
         let downloads = hit.get("downloads").and_then(|d| d.as_u64()).unwrap_or(0);
-        let desc = hit.get("description").and_then(|d| d.as_str()).unwrap_or("");
+        let desc = hit
+            .get("description")
+            .and_then(|d| d.as_str())
+            .unwrap_or("");
         let short_desc: String = desc.chars().take(45).collect();
         println!(
             "{:<24} {:<16} {:<12} {}...",
@@ -702,8 +707,7 @@ fn install_mod_with_dependencies(
                 if dep_type == "required" {
                     if let Some(dep_proj) = dep.get("project_id").and_then(|p| p.as_str()) {
                         println!("Fetching required dependency: {dep_proj}...");
-                        let _ =
-                            install_mod_with_dependencies(launcher, instance, dep_proj, false);
+                        let _ = install_mod_with_dependencies(launcher, instance, dep_proj, false);
                     }
                 }
             }
