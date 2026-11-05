@@ -7,6 +7,8 @@ echo Starting Sawbyte Graphical Desktop Launcher...
 
 if exist "launcher\xmcl-electron-app\dist\win-unpacked\sawbyte-launcher.exe" (
     start "" "launcher\xmcl-electron-app\dist\win-unpacked\sawbyte-launcher.exe" %*
+) else if exist "launcher\xmcl-electron-app\build\output\win-unpacked\sawbyte-launcher.exe" (
+    start "" "launcher\xmcl-electron-app\build\output\win-unpacked\sawbyte-launcher.exe" %*
 ) else if exist "sawbyte-launcher-bin.exe" (
     start "" "sawbyte-launcher-bin.exe" %*
 ) else if exist "launcher" (

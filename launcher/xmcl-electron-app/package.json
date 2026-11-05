@@ -2,7 +2,7 @@
     "name": "sawbyte-launcher",
     "private": true,
     "main": "./index.js",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "author": "5ivesaw",
     "description": "Sawbyte Launcher — High-performance zero-JVM Minecraft engine & Fabric client manager",
     "license": "MIT",

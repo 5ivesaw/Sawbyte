@@ -196,7 +196,7 @@ function initParticleCanvas() {
 // ==============================================================================
 
 function initReleaseDownloader() {
-  const LATEST_TAG = "v0.3.2";
+  const LATEST_TAG = "v0.3.3";
   const BASE_URL = `https://github.com/5ivesaw/Sawbyte/releases/download/${LATEST_TAG}`;
 
   const platformMap = {
@@ -209,7 +209,7 @@ function initReleaseDownloader() {
     "mac-launcher": `${BASE_URL}/sawbyte-launcher-macos-14-ARM64.tar.gz`,
     "mac-engine": `${BASE_URL}/sawbyte-macos-14-ARM64.tar.gz`,
     "mac-play": `${BASE_URL}/sawbyte-play-macos-arm64.tar.gz`,
-    "bridge-jar": `${BASE_URL}/sawbyte-bridge-0.3.2.jar`,
+    "bridge-jar": `${BASE_URL}/sawbyte-bridge-0.3.3.jar`,
   };
 
   for (const [id, url] of Object.entries(platformMap)) {
@@ -352,7 +352,7 @@ function initVisualizerSimulator() {
     const hud = document.getElementById('telemetry-display');
     if (hud) {
       hud.innerHTML = `
-        <div class="mc-b">Sawbyte 0.3.2 (26.3 / Vanilla / Rust Headless)</div>
+        <div class="mc-b">Sawbyte 0.3.3 (26.3 / Vanilla / Rust Headless)</div>
         <div>XYZ: <span class="mc-a">${posX.toFixed(2)} / ${posY.toFixed(2)} / ${posZ.toFixed(2)}</span></div>
         <div>Facing: <span class="mc-e">Yaw ${yaw.toFixed(1)}° / Pitch ${pitch.toFixed(1)}°</span></div>
         <div>Tick: <span class="mc-f">${tick}</span> <span class="mc-8">|</span> TPS: <span class="mc-a">20.00</span> <span class="mc-8">|</span> Deaths: <span class="mc-a">0</span></div>

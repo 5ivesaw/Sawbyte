@@ -127,23 +127,9 @@ async function start() {
     return
   }
   const dir = !(process.env.BUILD_TARGET || (process.env.RELEASE === 'true'))
-  // Create empty binding.gyp to let electron-rebuild trigger rebuild to it
-  await ensureFile(resolve(__dirname, 'node_modules', 'node_datachannel', 'binding.gyp'))
   const config: Configuration = {
     ...electronBuilderConfig,
     async beforeBuild(context) {
-      const rebuildProcess = rebuild({
-        buildPath: context.appDir,
-        electronVersion: context.electronVersion,
-        arch: context.arch,
-        types: ['dev'],
-        onlyModules: ['node_datachannel'],
-      })
-      rebuildProcess.lifecycle.on('module-found', (path: string) => {
-        console.log(`  ${chalk.blue('•')} rebuild module ${chalk.blue('path')}=${path}`)
-      })
-      await rebuildProcess
-      console.log(`  ${chalk.blue('•')} rebuilt native modules ${chalk.blue('electron')}=${context.electronVersion} ${chalk.blue('arch')}=${context.arch}`)
       const time = await buildMain({ ...esbuildConfig, metafile: true }, true, {
         platform: context.platform.nodeName,
         arch: context.arch,

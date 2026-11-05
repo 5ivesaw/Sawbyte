@@ -1,6 +1,6 @@
 {
     "name": "sawbyte-launcher-workspace",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "description": "Sawbyte Launcher Monorepo Workspace",
     "private": true,
     "license": "MIT",

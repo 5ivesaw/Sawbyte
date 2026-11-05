@@ -21,7 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04, windows-2022, macos-14]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -78,6 +78,23 @@ jobs:
           if [ "$RUNNER_OS" = "Linux" ]; then
             python tools/universal_bench.py --target harness
           fi
+      - name: Setup pnpm and Node.js
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          cache-dependency-path: launcher/pnpm-lock.yaml
+      - name: Build desktop launcher
+        shell: bash
+        run: |
+          cd launcher
+          pnpm install --no-frozen-lockfile
+          pnpm run build:renderer
+          pnpm run build
       - name: Package preview
         shell: bash
         run: |
@@ -96,6 +113,13 @@ jobs:
             cp "packaging/Sawbyte Launcher.bat" dist-launcher/
             cp packaging/install.bat dist/
             cp packaging/install.bat dist-launcher/
+            for d in launcher/xmcl-electron-app/build/output/win-unpacked launcher/xmcl-electron-app/dist/win-unpacked; do
+              if [ -d "$d" ]; then
+                mkdir -p dist-launcher/launcher/xmcl-electron-app/dist
+                cp -r "$d" dist-launcher/launcher/xmcl-electron-app/dist/win-unpacked
+                break
+              fi
+            done
           elif [ "$RUNNER_OS" = "macOS" ]; then
             cp target/release/sawbyte dist/
             cp target/release/sawbyte dist-launcher/
@@ -112,6 +136,13 @@ jobs:
             cp packaging/install.sh dist/
             cp packaging/install.sh dist-launcher/
             chmod +x dist/install.sh dist-launcher/install.sh
+            for d in "launcher/xmcl-electron-app/build/output/mac/Sawbyte Launcher.app" "launcher/xmcl-electron-app/dist/mac/Sawbyte Launcher.app"; do
+              if [ -d "$d" ]; then
+                mkdir -p "dist-launcher/launcher/xmcl-electron-app/dist/mac"
+                cp -r "$d" "dist-launcher/launcher/xmcl-electron-app/dist/mac/"
+                break
+              fi
+            done
           else
             cp target/release/sawbyte dist/
             cp target/release/sawbyte dist-launcher/
@@ -130,6 +161,13 @@ jobs:
             cp packaging/install.sh dist/
             cp packaging/install.sh dist-launcher/
             chmod +x dist/install.sh dist-launcher/install.sh
+            for d in launcher/xmcl-electron-app/build/output/linux-unpacked launcher/xmcl-electron-app/dist/linux-unpacked; do
+              if [ -d "$d" ]; then
+                mkdir -p dist-launcher/launcher/xmcl-electron-app/dist
+                cp -r "$d" dist-launcher/launcher/xmcl-electron-app/dist/linux-unpacked
+                break
+              fi
+            done
           fi
           cp README.md LICENSE dist/
           cp README.md LICENSE dist-launcher/
@@ -207,7 +245,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           if [[ "$TAG" == "main" || "$TAG" == "" ]]; then
-            TAG="v0.3.2"
+            TAG="v0.3.3"
           fi
           echo "Publishing release for $TAG"
           if gh release view "$TAG" >/dev/null 2>&1; then

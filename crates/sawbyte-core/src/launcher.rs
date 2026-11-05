@@ -434,12 +434,13 @@ impl PersistentLauncher {
     pub fn inject_bridge_mod(&self, instance_name: &str) -> Result<PathBuf, String> {
         let mods_dir = self.mods_dir(instance_name);
         fs::create_dir_all(&mods_dir).map_err(|e| e.to_string())?;
-        let target = mods_dir.join("sawbyte-bridge-0.3.2.jar");
+        let target = mods_dir.join("sawbyte-bridge-0.3.3.jar");
 
         let mut found = None;
         if let Ok(current_exe) = std::env::current_exe() {
             if let Some(parent) = current_exe.parent() {
                 for name in [
+                    "sawbyte-bridge-0.3.3.jar",
                     "sawbyte-bridge-0.3.2.jar",
                     "sawbyte-bridge-0.3.1.jar",
                     "sawbyte-bridge-26.3.jar",
@@ -454,14 +455,18 @@ impl PersistentLauncher {
         }
         if found.is_none() {
             for cand in [
+                "sawbyte-bridge-0.3.3.jar",
                 "sawbyte-bridge-0.3.2.jar",
                 "sawbyte-bridge-0.3.1.jar",
                 "sawbyte-bridge-26.3.jar",
+                "bridge/build/libs/sawbyte-bridge-0.3.3.jar",
                 "bridge/build/libs/sawbyte-bridge-0.3.2.jar",
                 "bridge/build/libs/sawbyte-bridge-0.3.1.jar",
                 "bridge/build/libs/sawbyte-bridge-26.3.jar",
+                "run/bin/sawbyte-bridge-0.3.3.jar",
                 "run/bin/sawbyte-bridge-0.3.2.jar",
                 "run/bin/sawbyte-bridge-0.3.1.jar",
+                "release-assets/sawbyte-bridge-0.3.3.jar",
                 "release-assets/sawbyte-bridge-0.3.2.jar",
                 "release-assets/sawbyte-bridge-0.3.1.jar",
             ] {
@@ -480,8 +485,8 @@ impl PersistentLauncher {
 
         // If not found locally, fetch official release asset
         let release_url =
-            "https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-bridge-0.3.2.jar";
-        self.install_mod_file(instance_name, "sawbyte-bridge-0.3.2.jar", release_url)
+            "https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-bridge-0.3.3.jar";
+        self.install_mod_file(instance_name, "sawbyte-bridge-0.3.3.jar", release_url)
     }
 
     /// Writes a token-free snapshot file on disk under `<instance>/snapshots/snapshot-<id>.cfg`.

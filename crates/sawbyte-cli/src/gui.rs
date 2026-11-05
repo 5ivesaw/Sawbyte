@@ -41,7 +41,7 @@ pub fn run_launcher_gui(port_opt: Option<u16>) -> Result<(), Box<dyn std::error:
 
     let url = format!("http://127.0.0.1:{port}");
     println!("========================================================================");
-    println!("        SAWBYTE GRAPHICAL DESKTOP LAUNCHER v0.3.2");
+    println!("        SAWBYTE GRAPHICAL DESKTOP LAUNCHER v0.3.3");
     println!("========================================================================");
     println!("  URL:           {url}");
     let root = PersistentLauncher::resolve_home();
@@ -379,7 +379,7 @@ fn build_api_status(processes: &ProcessMap) -> String {
         "\"root_dir\":{},",
         escape_json(&launcher.root_dir.to_string_lossy())
     ));
-    json.push_str("\"version\":\"0.3.2\",");
+    json.push_str("\"version\":\"0.3.3\",");
 
     // Version profiles
     json.push_str("\"version_profiles\":[");
@@ -1305,7 +1305,7 @@ fn get_launcher_html() -> &'static str {
   <div class="brand">
     <img src="/sawbyte.png" alt="Sawbyte Logo" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230284c7%22/><text x=%2250%22 y=%2265%22 font-size=%2250%22 font-family=%22sans-serif%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22>S</text></svg>'">
     <div>
-      <h1>Sawbyte Desktop Launcher <span class="badge badge-purple" style="vertical-align:middle;">v0.3.2</span></h1>
+      <h1>Sawbyte Desktop Launcher <span class="badge badge-purple" style="vertical-align:middle;">v0.3.3</span></h1>
       <div class="sub">Native Rust Headless Engine & Low-Poly Visualizer Suite</div>
     </div>
   </div>
@@ -1472,7 +1472,7 @@ fn get_launcher_html() -> &'static str {
       <div class="card">
         <h3>Sawbyte Framework Bridge Mod</h3>
         <p style="color:var(--sub); font-size:12px; margin-top:2px;">
-          Injects <code>sawbyte-bridge-0.3.2.jar</code> into the selected instance so the Fabric client communicates directly with Sawbyte RPC.
+          Injects <code>sawbyte-bridge-0.3.3.jar</code> into the selected instance so the Fabric client communicates directly with Sawbyte RPC.
         </p>
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px;">
           <span id="bridge-status-badge" class="badge badge-blue">Checking Bridge...</span>
@@ -1545,7 +1545,7 @@ fn get_launcher_html() -> &'static str {
         <button class="btn" onclick="executeTerminalCmd()">Run Command</button>
       </div>
 
-      <div id="terminal-console" class="console" style="height:420px; font-size:12px; line-height:1.45; color:#38bdf8; margin-top:12px;">Sawbyte Interactive CLI Shell v0.3.2
+      <div id="terminal-console" class="console" style="height:420px; font-size:12px; line-height:1.45; color:#38bdf8; margin-top:12px;">Sawbyte Interactive CLI Shell v0.3.3
 Ready for execution.</div>
     </div>
   </div>
@@ -2203,7 +2203,7 @@ function runTerminalPreset(cmd) {
 }
 
 function clearTerminal() {
-  document.getElementById('terminal-console').innerText = 'Sawbyte Interactive CLI Shell v0.3.2\n$ ';
+  document.getElementById('terminal-console').innerText = 'Sawbyte Interactive CLI Shell v0.3.3\n$ ';
 }
 
 function executeTerminalCmd() {

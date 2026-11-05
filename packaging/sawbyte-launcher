@@ -6,6 +6,8 @@ export PATH="$DIR:$PATH"
 # 1. Standalone compiled Electron application
 if [ -x "$DIR/launcher/xmcl-electron-app/dist/linux-unpacked/sawbyte-launcher" ]; then
     exec "$DIR/launcher/xmcl-electron-app/dist/linux-unpacked/sawbyte-launcher" "$@"
+elif [ -x "$DIR/launcher/xmcl-electron-app/build/output/linux-unpacked/sawbyte-launcher" ]; then
+    exec "$DIR/launcher/xmcl-electron-app/build/output/linux-unpacked/sawbyte-launcher" "$@"
 elif [ -x "$DIR/sawbyte-launcher-bin" ]; then
     exec "$DIR/sawbyte-launcher-bin" "$@"
 # 2. Local launcher workspace with pnpm
