@@ -70,6 +70,8 @@ jobs:
           ./target/release/sawbyte launcher set-setting smoke-bot fov 90
           ./target/release/sawbyte launcher backup smoke-bot
           ./target/release/sawbyte launcher rollback smoke-bot 1
+          ./target/release/sawbyte launcher mods list smoke-bot
+          ./target/release/sawbyte install
           ./target/release/sawbyte benchmark
           SAWBYTE_BIN=./target/release/sawbyte python sdks/python/tests/test_sdk.py
           node --test sdks/typescript/test/sdk.test.mjs
@@ -92,6 +94,8 @@ jobs:
             fi
             cp "packaging/Sawbyte Launcher.bat" dist/
             cp "packaging/Sawbyte Launcher.bat" dist-launcher/
+            cp packaging/install.bat dist/
+            cp packaging/install.bat dist-launcher/
           elif [ "$RUNNER_OS" = "macOS" ]; then
             cp target/release/sawbyte dist/
             cp target/release/sawbyte dist-launcher/
@@ -105,6 +109,9 @@ jobs:
             cp "packaging/Sawbyte Launcher.command" dist/
             cp "packaging/Sawbyte Launcher.command" dist-launcher/
             chmod +x "dist/Sawbyte Launcher.command" "dist-launcher/Sawbyte Launcher.command"
+            cp packaging/install.sh dist/
+            cp packaging/install.sh dist-launcher/
+            chmod +x dist/install.sh dist-launcher/install.sh
           else
             cp target/release/sawbyte dist/
             cp target/release/sawbyte dist-launcher/
@@ -120,6 +127,9 @@ jobs:
             chmod +x dist/sawbyte-launcher dist-launcher/sawbyte-launcher
             cp packaging/sawbyte.desktop dist/
             cp packaging/sawbyte.desktop dist-launcher/
+            cp packaging/install.sh dist/
+            cp packaging/install.sh dist-launcher/
+            chmod +x dist/install.sh dist-launcher/install.sh
           fi
           cp README.md LICENSE dist/
           cp README.md LICENSE dist-launcher/

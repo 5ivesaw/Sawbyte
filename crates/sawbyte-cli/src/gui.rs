@@ -192,6 +192,63 @@ fn handle_http_client(
             let res = handle_send_live_command(&body_str);
             send_json_result(&mut stream, res)?;
         }
+        ("GET", "/api/cli/status") => {
+            let (installed, path, in_path) = crate::check_cli_status();
+            let payload = format!(
+                "{{\"installed\":{installed},\"path\":{},\"in_path\":{in_path}}}",
+                escape_json(&path)
+            );
+            send_response(&mut stream, 200, "application/json", payload.as_bytes())?;
+        }
+        ("POST", "/api/cli/install") => {
+            let res = crate::install_cli_to_system(false);
+            send_json_result(
+                &mut stream,
+                res.map(|msg| {
+                    let (installed, path, in_path) = crate::check_cli_status();
+                    format!(
+                        "{{\"ok\":true,\"message\":{},\"installed\":{installed},\"path\":{},\"in_path\":{in_path}}}",
+                        escape_json(&msg),
+                        escape_json(&path)
+                    )
+                }),
+            )?;
+        }
+        ("POST", "/api/terminal/execute") => {
+            let res = handle_terminal_execute(&body_str);
+            send_json_result(&mut stream, res)?;
+        }
+        ("GET", "/api/mods/list") => {
+            let instance = query
+                .split('&')
+                .find(|p| p.starts_with("instance="))
+                .and_then(|p| p.split('=').nth(1))
+                .unwrap_or("default-native");
+            let res = handle_mods_list(instance);
+            send_json_result(&mut stream, res)?;
+        }
+        ("POST", "/api/mods/inject_bridge") => {
+            let res = handle_mods_inject_bridge(&body_str);
+            send_json_result(&mut stream, res)?;
+        }
+        ("POST", "/api/mods/install") => {
+            let res = handle_mods_install(&body_str);
+            send_json_result(&mut stream, res)?;
+        }
+        ("POST", "/api/mods/remove") => {
+            let res = handle_mods_remove(&body_str);
+            send_json_result(&mut stream, res)?;
+        }
+        ("GET", "/api/mods/search") => {
+            let q = query
+                .split('&')
+                .find(|p| p.starts_with("query="))
+                .and_then(|p| p.split('=').nth(1))
+                .unwrap_or("");
+            let clean_q = q.replace('+', " ");
+            let res = handle_mods_search(&clean_q);
+            send_json_result(&mut stream, res)?;
+        }
         ("GET", "/api/logs") => {
             let instance = query
                 .split('&')
@@ -597,6 +654,249 @@ fn handle_send_live_command(body: &str) -> Result<String, String> {
     ))
 }
 
+fn handle_terminal_execute(body: &str) -> Result<String, String> {
+    let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
+    let cmd = json
+        .get("command")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    if cmd.is_empty() {
+        return Ok("{\"ok\":true,\"output\":\"\"}".to_string());
+    }
+
+    let mut parts: Vec<&str> = cmd.split_whitespace().collect();
+    if parts.first().is_some_and(|&p| p == "sawbyte" || p == "./sawbyte") {
+        parts.remove(0);
+    }
+
+    let current_exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("sawbyte"));
+    let mut child_cmd = Command::new(&current_exe);
+    for part in &parts {
+        child_cmd.arg(part);
+    }
+    let output = child_cmd
+        .output()
+        .map_err(|e| format!("failed to execute command: {e}"))?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let full = if stderr.is_empty() {
+        stdout.to_string()
+    } else if stdout.is_empty() {
+        stderr.to_string()
+    } else {
+        format!("{stdout}\n{stderr}")
+    };
+    let exit_code = output.status.code().unwrap_or(0);
+    Ok(format!(
+        "{{\"ok\":true,\"output\":{},\"exit_code\":{exit_code}}}",
+        escape_json(&full)
+    ))
+}
+
+fn handle_mods_list(instance: &str) -> Result<String, String> {
+    let launcher = PersistentLauncher::load_or_init()?;
+    let mods = launcher.list_mods(instance)?;
+    let mut out = format!("{{\"ok\":true,\"instance\":\"{instance}\",\"mods\":[");
+    let mut bridge_installed = false;
+    for (i, m) in mods.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        if m.is_bridge {
+            bridge_installed = true;
+        }
+        out.push_str(&format!(
+            "{{\"filename\":{},\"size_bytes\":{},\"is_bridge\":{}}}",
+            escape_json(&m.filename),
+            m.size_bytes,
+            m.is_bridge
+        ));
+    }
+    out.push_str(&format!("],\"bridge_installed\":{bridge_installed}}}"));
+    Ok(out)
+}
+
+fn handle_mods_inject_bridge(body: &str) -> Result<String, String> {
+    let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
+    let instance = json
+        .get("instance")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'instance'")?;
+    let launcher = PersistentLauncher::load_or_init()?;
+    let path = launcher.inject_bridge_mod(instance)?;
+    Ok(format!(
+        "{{\"ok\":true,\"message\":\"Sawbyte Bridge Mod injected\",\"path\":{}}}",
+        escape_json(&path.to_string_lossy())
+    ))
+}
+
+fn handle_mods_remove(body: &str) -> Result<String, String> {
+    let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
+    let instance = json
+        .get("instance")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'instance'")?;
+    let filename = json
+        .get("filename")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'filename'")?;
+    let launcher = PersistentLauncher::load_or_init()?;
+    launcher.remove_mod(instance, filename)?;
+    Ok(format!("{{\"ok\":true,\"message\":\"Removed mod '{filename}'\"}}"))
+}
+
+fn handle_mods_install(body: &str) -> Result<String, String> {
+    let json = JsonValue::parse(body).map_err(|e| format!("invalid json: {e}"))?;
+    let instance = json
+        .get("instance")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'instance'")?;
+    let launcher = PersistentLauncher::load_or_init()?;
+
+    if let (Some(filename), Some(url)) = (
+        json.get("filename").and_then(|v| v.as_str()),
+        json.get("url").and_then(|v| v.as_str()),
+    ) {
+        let p = launcher.install_mod_file(instance, filename, url)?;
+        return Ok(format!(
+            "{{\"ok\":true,\"message\":\"Installed {filename}\",\"path\":{}}}",
+            escape_json(&p.to_string_lossy())
+        ));
+    }
+
+    let slug = json
+        .get("slug")
+        .and_then(|v| v.as_str())
+        .ok_or("missing 'slug' or 'url'")?;
+    let with_deps = json
+        .get("with_deps")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+
+    let v_url = format!("https://api.modrinth.com/v2/project/{slug}/version?loaders=[\"fabric\"]");
+    let out = Command::new("curl")
+        .args(["-sSL", &v_url])
+        .output()
+        .map_err(|e| e.to_string())?;
+    if !out.status.success() {
+        return Err(format!("failed to fetch version for '{slug}'"));
+    }
+    let body_str = String::from_utf8_lossy(&out.stdout);
+    let versions = JsonValue::parse(&body_str).map_err(|e| format!("json parse error: {e}"))?;
+    let v_arr = versions.as_array().ok_or("no versions found on Modrinth")?;
+    if v_arr.is_empty() {
+        return Err(format!("no Fabric versions available for '{slug}'"));
+    }
+    let latest = &v_arr[0];
+    let files = latest
+        .get("files")
+        .and_then(|f| f.as_array())
+        .ok_or("no files in version")?;
+    if files.is_empty() {
+        return Err("no files found in latest version".into());
+    }
+    let file_url = files[0]
+        .get("url")
+        .and_then(|u| u.as_str())
+        .ok_or("missing file url")?;
+    let filename = files[0]
+        .get("filename")
+        .and_then(|f| f.as_str())
+        .ok_or("missing filename")?;
+
+    let path = launcher.install_mod_file(instance, filename, file_url)?;
+    let mut installed_list = vec![filename.to_string()];
+
+    if with_deps {
+        if let Some(deps) = latest.get("dependencies").and_then(|d| d.as_array()) {
+            for dep in deps {
+                let dep_type = dep
+                    .get("dependency_type")
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("");
+                if dep_type == "required" {
+                    if let Some(dep_proj) = dep.get("project_id").and_then(|p| p.as_str()) {
+                        let dep_url = format!(
+                            "https://api.modrinth.com/v2/project/{dep_proj}/version?loaders=[\"fabric\"]"
+                        );
+                        if let Ok(dep_out) = Command::new("curl").args(["-sSL", &dep_url]).output() {
+                            if dep_out.status.success() {
+                                if let Ok(dep_json) =
+                                    JsonValue::parse(&String::from_utf8_lossy(&dep_out.stdout))
+                                {
+                                    if let Some(dep_arr) = dep_json.as_array() {
+                                        if let Some(dep_latest) = dep_arr.first() {
+                                            if let Some(dfiles) =
+                                                dep_latest.get("files").and_then(|f| f.as_array())
+                                            {
+                                                if let Some(dfile) = dfiles.first() {
+                                                    if let (Some(durl), Some(dname)) = (
+                                                        dfile.get("url").and_then(|u| u.as_str()),
+                                                        dfile
+                                                            .get("filename")
+                                                            .and_then(|n| n.as_str()),
+                                                    ) {
+                                                        if launcher
+                                                            .install_mod_file(instance, dname, durl)
+                                                            .is_ok()
+                                                        {
+                                                            installed_list.push(dname.to_string());
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let installed_json = installed_list
+        .iter()
+        .map(|s| escape_json(s))
+        .collect::<Vec<_>>()
+        .join(",");
+    Ok(format!(
+        "{{\"ok\":true,\"message\":\"Mod installed successfully\",\"installed\":[{installed_json}],\"path\":{}}}",
+        escape_json(&path.to_string_lossy())
+    ))
+}
+
+fn handle_mods_search(query: &str) -> Result<String, String> {
+    let clean_query = query.trim();
+    let url = format!(
+        "https://api.modrinth.com/v2/search?query={}&facets=[[\"categories:fabric\"]]&limit=16",
+        url_encode(clean_query)
+    );
+    let out = Command::new("curl")
+        .args(["-sSL", &url])
+        .output()
+        .map_err(|e| format!("failed to query Modrinth: {e}"))?;
+    if !out.status.success() {
+        return Err("Modrinth search failed".into());
+    }
+    Ok(String::from_utf8_lossy(&out.stdout).to_string())
+}
+
+fn url_encode(input: &str) -> String {
+    let mut out = String::new();
+    for b in input.bytes() {
+        match b {
+            b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(b as char);
+            }
+            _ => out.push_str(&format!("%{:02X}", b)),
+        }
+    }
+    out
+}
+
 fn read_instance_logs(instance: &str) -> String {
     if instance.is_empty() {
         return String::new();
@@ -663,11 +963,14 @@ fn get_launcher_html() -> &'static str {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
   }
   .brand { display: flex; align-items: center; gap: 12px; }
   .brand img { width: 36px; height: 36px; border-radius: 6px; }
   .brand h1 { margin: 0; font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
   .brand .sub { font-size: 11px; color: var(--sub); }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
   .tabs { display: flex; gap: 4px; background: rgba(0,0,0,0.2); padding: 4px; border-radius: 6px; border: 1px solid var(--border); }
   .tab-btn {
     background: transparent;
@@ -721,8 +1024,8 @@ fn get_launcher_html() -> &'static str {
   .btn:hover { background: var(--green); }
   .btn-red { background: var(--red-btn); }
   .btn-red:hover { background: var(--red); }
-  .btn-secondary { background: #21262d; border: 1px solid var(--border); }
-  .btn-secondary:hover { background: #30363d; }
+  .btn-secondary { background: #21262d; border: 1px solid var(--border); color: #c9d1d9; }
+  .btn-secondary:hover { background: #30363d; color: #fff; }
   input, select, textarea {
     width: 100%;
     background: #090d16;
@@ -772,15 +1075,23 @@ fn get_launcher_html() -> &'static str {
 
 <header>
   <div class="brand">
-    <img src="/sawbyte.png" alt="Sawbyte Icon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>'">
+    <img src="/sawbyte.png" alt="Sawbyte Icon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23238636%22/><text x=%2250%22 y=%2265%22 font-size=%2250%22 font-family=%22sans-serif%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22>S</text></svg>'">
     <div>
       <h1>Sawbyte Desktop Launcher <span class="badge badge-purple" style="vertical-align:middle;">v0.3.1</span></h1>
       <div class="sub">Zero-Graphics Headless Minecraft Client & Automation Engine</div>
     </div>
   </div>
+
+  <div class="header-actions">
+    <span id="cli-status-badge" class="badge badge-blue">CLI Status: Checking...</span>
+    <button id="btn-install-cli" class="btn btn-secondary" onclick="installCliToSystem()">Install CLI to PATH</button>
+  </div>
+
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('instances')">Instances</button>
+    <button class="tab-btn" onclick="switchTab('mods')">Mods & Addons</button>
     <button class="tab-btn" onclick="switchTab('supervisor')">Live Supervisor</button>
+    <button class="tab-btn" onclick="switchTab('terminal')">Terminal & CLI</button>
     <button class="tab-btn" onclick="switchTab('accounts')">Accounts</button>
     <button class="tab-btn" onclick="switchTab('resources')">Version Profiles</button>
   </div>
@@ -799,6 +1110,73 @@ fn get_launcher_html() -> &'static str {
     <div id="instances-list" class="grid"></div>
   </div>
 
+  <!-- Tab: Mods & Addons -->
+  <div id="tab-mods" class="tab-content" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+      <div>
+        <h2 style="margin:0; font-size:16px;">Fabric 26.3 Mod Manager & Modrinth Integration</h2>
+        <div style="color:var(--sub); font-size:12px;">Search and install mods directly from Modrinth API v2 into target instance mods directory</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-weight:600; color:var(--sub);">Target Instance:</span>
+        <select id="mods-instance" style="width:220px; margin:0;" onchange="loadMods()"></select>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+      <!-- Bridge Mod & Search Box -->
+      <div class="card">
+        <h3>Sawbyte Framework Bridge Mod</h3>
+        <p style="color:var(--sub); font-size:12px; margin-top:2px;">
+          Injects the authoritative <code>sawbyte-bridge-0.3.1.jar</code> into the selected instance so the Fabric client communicates directly with Sawbyte RPC.
+        </p>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px;">
+          <span id="bridge-status-badge" class="badge badge-blue">Checking Bridge...</span>
+          <button class="btn" onclick="injectBridge()">Inject Sawbyte Bridge Mod</button>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--border); margin:18px 0;">
+
+        <h3>Search & Install Modrinth Fabric Mods</h3>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <input type="text" id="mod-search-input" placeholder="Search mods (e.g. fabric-api, lithium, sodium, ferrite-core)..." style="margin:0;" onkeydown="if(event.key==='Enter') searchMods()">
+          <button class="btn" onclick="searchMods()">Search</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
+          <input type="checkbox" id="mod-auto-deps" checked style="width:auto; margin:0;">
+          <label for="mod-auto-deps" style="font-size:11px; color:var(--sub); cursor:pointer;">Auto-resolve and download required dependencies (e.g. Fabric API)</label>
+        </div>
+
+        <div id="mod-search-results" style="margin-top:14px; max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+          <div style="color:var(--sub); font-size:12px;">Enter a query above to search Modrinth Fabric 26.3 mods.</div>
+        </div>
+      </div>
+
+      <!-- Installed Mods Table -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3>Installed Mods</h3>
+          <button class="btn btn-secondary" style="padding:2px 8px; font-size:11px;" onclick="loadMods()">Refresh</button>
+        </div>
+        <div id="installed-mods-container" style="margin-top:8px; max-height:440px; overflow-y:auto;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="text-align:left; border-bottom:1px solid var(--border); color:var(--sub); font-size:11px;">
+                <th style="padding:6px;">Filename</th>
+                <th>Size</th>
+                <th>Type</th>
+                <th style="text-align:right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="installed-mods-tbody">
+              <tr><td colspan="4" style="color:var(--sub); padding:8px;">No instance selected.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Tab: Live Supervisor -->
   <div id="tab-supervisor" class="tab-content" style="display:none;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -813,7 +1191,7 @@ fn get_launcher_html() -> &'static str {
 
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
       <div class="card">
-        <h3>⚡ Interactive Command Bar</h3>
+        <h3>Interactive Command Bar</h3>
         <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
           <button class="btn btn-secondary" onclick="runCmd('inspect.status')">inspect.status</button>
           <button class="btn btn-secondary" onclick="runCmd('inspect.chat')">inspect.chat</button>
@@ -833,11 +1211,45 @@ fn get_launcher_html() -> &'static str {
 
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h3>📜 Live Process Logs</h3>
+          <h3>Live Process Logs</h3>
           <button class="btn btn-secondary" style="padding:2px 8px; font-size:11px;" onclick="loadInstanceLogs()">Refresh</button>
         </div>
         <div id="process-logs" class="console" style="height:320px;">No logs selected.</div>
       </div>
+    </div>
+  </div>
+
+  <!-- Tab: Terminal & CLI -->
+  <div id="tab-terminal" class="tab-content" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div>
+        <h2 style="margin:0; font-size:16px;">Interactive Terminal & CLI Console</h2>
+        <div style="color:var(--sub); font-size:12px;">Run full native Sawbyte CLI subcommands directly from the launcher with real-time text output</div>
+      </div>
+      <div>
+        <button class="btn btn-secondary" onclick="clearTerminal()">Clear Console</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
+        <span style="font-size:11px; color:var(--sub); margin-right:4px; align-self:center;">Presets:</span>
+        <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte --help')">sawbyte --help</button>
+        <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte capabilities')">sawbyte capabilities</button>
+        <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte version')">sawbyte version</button>
+        <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte launcher status')">sawbyte launcher status</button>
+        <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte launcher mods list default-native')">mods list</button>
+        <button class="btn btn-secondary" onclick="runTerminalPreset('sawbyte install')">sawbyte install</button>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="terminal-cmd-input" placeholder="Type sawbyte command (e.g. sawbyte --help, sawbyte launcher status)..." style="margin:0; font-family:monospace;" onkeydown="if(event.key==='Enter') executeTerminalCmd()">
+        <button class="btn" onclick="executeTerminalCmd()">Run Command</button>
+      </div>
+
+      <div id="terminal-console" class="console" style="height:420px; font-size:12px; line-height:1.45; color:#58a6ff; margin-top:12px;">Sawbyte Interactive CLI Shell v0.3.1
+Type any CLI subcommand above or click a preset to execute.
+$ sawbyte --help ready.</div>
     </div>
   </div>
 
@@ -894,6 +1306,7 @@ fn get_launcher_html() -> &'static str {
     <label>Version Profile</label>
     <select id="new-inst-profile">
       <option value="sawbyte-26.3">sawbyte-26.3 (Protocol 777 - Verified Parity)</option>
+      <option value="fabric-26.3">fabric-26.3 (Fabric Client Bridge - Graphical & Mod Support)</option>
       <option value="sawbyte-26.2">sawbyte-26.2 (Protocol 776)</option>
     </select>
     <label>Runtime Mode</label>
@@ -939,6 +1352,7 @@ function switchTab(tabId) {
   document.getElementById('tab-' + tabId).style.display = 'block';
   event.target.classList.add('active');
   if (tabId === 'supervisor') loadInstanceLogs();
+  if (tabId === 'mods') loadMods();
 }
 
 function showCreateModal() { document.getElementById('create-modal').style.display = 'flex'; }
@@ -950,6 +1364,51 @@ function genRandomUuid() {
   document.getElementById('new-acc-uuid').value = hex;
 }
 
+function checkCliStatus() {
+  fetch('/api/cli/status')
+    .then(r => r.json())
+    .then(data => {
+      const badge = document.getElementById('cli-status-badge');
+      const btn = document.getElementById('btn-install-cli');
+      if (data.installed && data.in_path) {
+        badge.className = 'badge badge-green';
+        badge.innerText = 'CLI: Installed in PATH';
+        btn.innerText = 'Reinstall CLI';
+      } else if (data.installed) {
+        badge.className = 'badge badge-blue';
+        badge.innerText = 'CLI: Installed (~/.local/bin)';
+        btn.innerText = 'Add to PATH / Reinstall';
+      } else {
+        badge.className = 'badge badge-red';
+        badge.innerText = 'CLI: Not Installed';
+        btn.innerText = 'Install CLI to System';
+      }
+    })
+    .catch(console.error);
+}
+
+function installCliToSystem() {
+  const btn = document.getElementById('btn-install-cli');
+  btn.disabled = true;
+  btn.innerText = 'Installing...';
+  fetch('/api/cli/install', { method: 'POST' })
+    .then(r => r.json())
+    .then(res => {
+      btn.disabled = false;
+      if (res.ok) {
+        alert(res.message);
+      } else {
+        alert('Install error: ' + (res.error || 'Unknown error'));
+      }
+      checkCliStatus();
+    })
+    .catch(err => {
+      btn.disabled = false;
+      alert('Network error: ' + err);
+      checkCliStatus();
+    });
+}
+
 function refreshStatus() {
   fetch('/api/status')
     .then(r => r.json())
@@ -959,6 +1418,7 @@ function refreshStatus() {
       renderAccounts(data.accounts || []);
       renderProfiles(data.version_profiles || []);
       updateSupervisorDropdown(data.instances || []);
+      updateModsDropdown(data.instances || []);
     })
     .catch(console.error);
 }
@@ -1031,7 +1491,19 @@ function updateSupervisorDropdown(instances) {
   const sel = document.getElementById('supervisor-instance');
   const current = sel.value;
   sel.innerHTML = instances.map(i => `<option value="${i.name}">${i.name} (${i.running ? 'PID ' + i.pid : 'Offline'})</option>`).join('');
-  if (current) sel.value = current;
+  if (current && instances.some(i => i.name === current)) sel.value = current;
+}
+
+function updateModsDropdown(instances) {
+  const sel = document.getElementById('mods-instance');
+  const current = sel.value;
+  sel.innerHTML = instances.map(i => `<option value="${i.name}">${i.name} [${i.profile}]</option>`).join('');
+  if (current && instances.some(i => i.name === current)) {
+    sel.value = current;
+  } else if (instances.length > 0) {
+    sel.value = instances[0].name;
+    loadMods();
+  }
 }
 
 function submitCreateInstance() {
@@ -1161,8 +1633,162 @@ function loadInstanceLogs() {
     .catch(console.error);
 }
 
+// Mods Management Functions
+function loadMods() {
+  const instName = document.getElementById('mods-instance').value;
+  if (!instName) return;
+  fetch(`/api/mods/list?instance=${encodeURIComponent(instName)}`)
+    .then(r => r.json())
+    .then(data => {
+      const bridgeBadge = document.getElementById('bridge-status-badge');
+      if (data.bridge_installed) {
+        bridgeBadge.className = 'badge badge-green';
+        bridgeBadge.innerText = 'Sawbyte Bridge: Active';
+      } else {
+        bridgeBadge.className = 'badge badge-blue';
+        bridgeBadge.innerText = 'Sawbyte Bridge: Not Installed';
+      }
+
+      const tbody = document.getElementById('installed-mods-tbody');
+      const mods = data.mods || [];
+      if (mods.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="color:var(--sub); padding:8px;">No mods installed in this instance yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = mods.map(m => `
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:6px; font-family:monospace; font-size:11px;">${m.filename}</td>
+          <td>${(m.size_bytes / 1024).toFixed(1)} KiB</td>
+          <td>${m.is_bridge ? '<span class="badge badge-purple">Bridge Mod</span>' : '<span class="badge badge-blue">Fabric Mod</span>'}</td>
+          <td style="text-align:right;">
+            <button class="btn btn-secondary btn-red" style="padding:2px 8px; font-size:11px;" onclick="removeMod('${m.filename}')">Remove</button>
+          </td>
+        </tr>
+      `).join('');
+    })
+    .catch(console.error);
+}
+
+function injectBridge() {
+  const instName = document.getElementById('mods-instance').value;
+  if (!instName) return alert('Select an instance first');
+  fetch('/api/mods/inject_bridge', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ instance: instName })
+  }).then(r => r.json()).then(res => {
+    alert(res.ok ? res.message : 'Error: ' + res.error);
+    loadMods();
+  });
+}
+
+function searchMods() {
+  const q = document.getElementById('mod-search-input').value.trim();
+  if (!q) return;
+  const container = document.getElementById('mod-search-results');
+  container.innerHTML = '<div style="color:var(--sub); font-size:12px;">Querying Modrinth API v2...</div>';
+
+  fetch(`/api/mods/search?query=${encodeURIComponent(q)}`)
+    .then(r => r.json())
+    .then(data => {
+      const hits = data.hits || [];
+      if (hits.length === 0) {
+        container.innerHTML = '<div style="color:var(--sub); font-size:12px;">No matching Fabric mods found.</div>';
+        return;
+      }
+      container.innerHTML = hits.map(h => `
+        <div style="background:#090d16; border:1px solid var(--border); border-radius:6px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center;">
+          <div style="max-width:70%;">
+            <div style="font-weight:600; color:#fff;">${h.title} <span style="font-size:10px; color:var(--sub); font-family:monospace;">(${h.slug})</span></div>
+            <div style="font-size:11px; color:var(--sub); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${h.description || ''}</div>
+            <div style="font-size:10px; color:var(--accent); margin-top:2px;">Downloads: ${h.downloads || 0}</div>
+          </div>
+          <button class="btn" style="padding:4px 10px; font-size:11px;" onclick="installMod('${h.slug}')">Install</button>
+        </div>
+      `).join('');
+    })
+    .catch(err => {
+      container.innerHTML = `<div style="color:var(--red); font-size:12px;">Search failed: ${err}</div>`;
+    });
+}
+
+function installMod(slug) {
+  const instName = document.getElementById('mods-instance').value;
+  if (!instName) return alert('Select an instance first');
+  const withDeps = document.getElementById('mod-auto-deps').checked;
+
+  const btn = event ? event.target : null;
+  if (btn) { btn.disabled = true; btn.innerText = 'Installing...'; }
+
+  fetch('/api/mods/install', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ instance: instName, slug: slug, with_deps: withDeps })
+  }).then(r => r.json()).then(res => {
+    if (btn) { btn.disabled = false; btn.innerText = 'Installed'; }
+    if (res.ok) {
+      alert(`Success! Installed: ${res.installed ? res.installed.join(', ') : slug}`);
+      loadMods();
+    } else {
+      alert('Installation failed: ' + res.error);
+    }
+  }).catch(err => {
+    if (btn) { btn.disabled = false; btn.innerText = 'Install'; }
+    alert('Error installing mod: ' + err);
+  });
+}
+
+function removeMod(filename) {
+  const instName = document.getElementById('mods-instance').value;
+  if (!confirm(`Remove mod '${filename}' from instance '${instName}'?`)) return;
+  fetch('/api/mods/remove', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ instance: instName, filename: filename })
+  }).then(r => r.json()).then(res => {
+    if (!res.ok) alert('Error: ' + res.error);
+    loadMods();
+  });
+}
+
+// Terminal Shell Functions
+function runTerminalPreset(cmd) {
+  document.getElementById('terminal-cmd-input').value = cmd;
+  executeTerminalCmd();
+}
+
+function clearTerminal() {
+  document.getElementById('terminal-console').innerText = 'Sawbyte Interactive CLI Shell v0.3.1\n$ ';
+}
+
+function executeTerminalCmd() {
+  const input = document.getElementById('terminal-cmd-input');
+  const cmd = input.value.trim();
+  if (!cmd) return;
+  const consoleEl = document.getElementById('terminal-console');
+  consoleEl.innerText += `\n$ ${cmd}\n`;
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+
+  fetch('/api/terminal/execute', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ command: cmd })
+  }).then(r => r.json()).then(res => {
+    if (res.ok) {
+      consoleEl.innerText += (res.output || '(No output returned)') + `\n[Process exited with code ${res.exit_code}]\n`;
+    } else {
+      consoleEl.innerText += `Error: ${res.error}\n`;
+    }
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }).catch(err => {
+    consoleEl.innerText += `Communication failure: ${err}\n`;
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  });
+}
+
 setInterval(refreshStatus, 3000);
 refreshStatus();
+checkCliStatus();
 </script>
 
 </body>

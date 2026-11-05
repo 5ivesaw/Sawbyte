@@ -31,20 +31,39 @@
 
 ## Cross-Platform Graphical Launcher & Bot Supervisor
 
-The Sawbyte Graphical Launcher provides an embedded desktop web interface and supervision server on `http://127.0.0.1:8767` with automatic default browser invocation.
+The Sawbyte Graphical Launcher provides an embedded desktop interface and supervision server on `http://127.0.0.1:8767` with automatic default browser invocation.
 
 ```text
-+---------------------------------------------------------------------------------------+
-|  SAWBYTE DESKTOP SUPERVISOR (127.0.0.1:8767)                                          |
-+---------------------------------------------------------------------------------------+
-|  Instances           Accounts               Supervisor Console        Benchmarks      |
-+---------------------------------------------------------------------------------------+
-|  bot-01 [RUNNING]    SawBot_Alpha (Offline) > inspect.status          Crucible: 6/6   |
-|  - FOV: 90           UUID: 00000000...0001  Pos: (12.4, -60.0, 4.2)   Universal: 18/18|
-|  - RenderDist: 12    Status: LOCKED (PID 4) Health: 20.0 Food: 20.0   Peak RSS: 8.2MB |
-|  [Backup] [Settings] [Stop Process]         [Send Command] [View Logs]               |
-+---------------------------------------------------------------------------------------+
++---------------------------------------------------------------------------------------------------+
+|  SAWBYTE DESKTOP SUPERVISOR (127.0.0.1:8767)                        [Install CLI to System PATH]  |
++---------------------------------------------------------------------------------------------------+
+|  Instances      Mods & Addons     Live Supervisor     Terminal & CLI     Accounts     Profiles    |
++---------------------------------------------------------------------------------------------------+
+|  bot-01         Modrinth Search:  > inspect.status    $ sawbyte --help   SawBot_01    777 (26.3)  |
+|  - FOV: 90      [fabric-api]      Pos: (12.4,-60,4.2) Implemented: ...   Status: IDLE Parity: 1:1 |
+|  - Mode: native [lithium]         Health: 20.0        Process code: 0                             |
+|  [Launch Bot]   [Inject Bridge]   [Send Live Action]  [Run Subcommand]   [Add User]   [Bench: 6/6]|
++---------------------------------------------------------------------------------------------------+
 ```
+
+### Installation & System Integration
+
+You can install the `sawbyte` binary and desktop shortcuts permanently into your system PATH with a single command or one click in the launcher:
+
+- **Linux & macOS (One-Line Installer)**:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/packaging/install.sh | bash
+  ```
+  *Installs binary to `~/.local/bin/sawbyte`, creates `~/.local/share/applications/sawbyte.desktop`, and adds the directory to your shell PATH.*
+
+- **Windows (One-Click Installer)**:
+  Download the release zip and run `packaging\install.bat` (or double-click `Sawbyte Launcher.bat`). Automatically installs to `%LOCALAPPDATA%\Programs\Sawbyte` and configures User PATH.
+
+- **From Within the Launcher or CLI**:
+  - Click the **"Install CLI to PATH"** button in the top right header of the Sawbyte Desktop Launcher.
+  - Or run `sawbyte install` (or `sawbyte install --system` for global `/usr/local/bin`).
+
+---
 
 ### Launching the Desktop Launcher
 
@@ -57,19 +76,28 @@ The Sawbyte Graphical Launcher provides an embedded desktop web interface and su
 ### Launcher Capabilities
 
 1. **Instance Manager**:
-   - Create, list, configure, and delete headless client instances.
+   - Create, list, configure, and delete client instances for both Native (zero-graphics) and Fabric (graphical) profiles.
    - Edit Minecraft settings (`options.txt`, `fov`, `renderDistance`, `gamma`, keybinds).
    - Point-in-time snapshot backup and instant one-click rollback.
-2. **Account Manager**:
-   - Add offline development accounts with deterministic or randomized UUIDs.
-   - Microsoft OAuth2 Device Code authentication flow display.
-   - Atomic per-instance account locking to prevent concurrent session collisions.
-3. **Live Bot Supervisor & Console**:
+2. **Fabric 26.3 Mod Manager & Modrinth API Integration**:
+   - Live query and search of Modrinth API v2 for Fabric 26.3 compatible mods.
+   - One-click mod download and installation directly into `<instance>/mods/`.
+   - Automatic recursive dependency resolution (e.g. Fabric API, Cloth Config, Architectury).
+   - One-click **"Inject Sawbyte Framework Bridge Mod"** (`sawbyte-bridge-0.3.1.jar`) to bind graphical Fabric clients directly into the Sawbyte RPC network.
+3. **Interactive In-Browser Terminal & CLI Console**:
+   - Built-in interactive command terminal directly inside the browser.
+   - Execute any `sawbyte` CLI subcommand or debug script with real-time output and exit codes.
+   - Built-in preset shortcuts: `sawbyte --help`, `sawbyte capabilities`, `sawbyte version`, `sawbyte launcher status`, and mod queries.
+4. **Live Bot Supervisor & Console**:
    - One-click launch and termination of live `sawbyte-play` background processes.
    - Live process monitor displaying PID, uptime, server address, and control socket.
    - Interactive command console: execute `inspect.status`, `chat.send`, `wait.ticks`, or custom scripts in real time.
    - Real-time live log viewer streaming from `logs/latest.log`.
-4. **Profiles & Parity Verification**:
+5. **Account Manager**:
+   - Add offline development accounts with deterministic or randomized UUIDs.
+   - Microsoft OAuth2 Device Code authentication flow display.
+   - Atomic per-instance account locking to prevent concurrent session collisions.
+6. **Profiles & Parity Verification**:
    - Inspect version profiles, block registry palettes, and view live parity benchmark reports.
 
 ---
@@ -123,8 +151,26 @@ In addition to the Crucible parity benchmarks, Sawbyte includes an extended univ
 Manage instances and launch headless bots directly from the command line:
 
 ```bash
+# Install the 'sawbyte' CLI binary to system PATH (~/.local/bin)
+sawbyte install
+
+# Or install system-wide to /usr/local/bin (requires sudo/root)
+sawbyte install --system
+
 # Create an instance named "bot-01" with the native 26.3 runtime
 sawbyte launcher create bot-01 sawbyte-26.3 native
+
+# Search Modrinth for Fabric 26.3 mods
+sawbyte launcher mods search fabric-api
+
+# Install a mod and its dependencies into an instance
+sawbyte launcher mods install bot-01 fabric-api --with-deps
+
+# Inject the Sawbyte Framework Bridge mod into an instance
+sawbyte launcher mods add-bridge bot-01
+
+# List installed mods in an instance
+sawbyte launcher mods list bot-01
 
 # Configure instance settings (options.txt)
 sawbyte launcher set-setting bot-01 fov 90

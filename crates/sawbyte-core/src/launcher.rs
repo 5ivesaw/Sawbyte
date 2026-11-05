@@ -17,10 +17,24 @@ pub struct VersionAdapterProfile {
     pub bridge_supported: bool,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ModRecord {
+    pub filename: String,
+    pub size_bytes: u64,
+    pub is_bridge: bool,
+}
+
 pub fn built_in_version_profiles() -> Vec<VersionAdapterProfile> {
     vec![
         VersionAdapterProfile {
             profile_id: "sawbyte-26.3".into(),
+            minecraft_version: "26.3".into(),
+            protocol_version: 777,
+            native_verified_parity: true,
+            bridge_supported: true,
+        },
+        VersionAdapterProfile {
+            profile_id: "fabric-26.3".into(),
             minecraft_version: "26.3".into(),
             protocol_version: 777,
             native_verified_parity: true,
@@ -251,6 +265,7 @@ impl PersistentLauncher {
         settings.insert("policy".into(), "humanised".into());
         let dir = self.instance_dir(name);
         fs::create_dir_all(dir.join("snapshots")).map_err(|e| e.to_string())?;
+        fs::create_dir_all(dir.join("mods")).map_err(|e| e.to_string())?;
         Self::write_options_file(&dir.join("options.txt"), &settings)?;
         self.instances.insert(
             name.to_owned(),
@@ -323,6 +338,112 @@ impl PersistentLauncher {
             out.push_str(&format!("{k}:{v}\n"));
         }
         fs::write(path, out.as_bytes()).map_err(|e| e.to_string())
+    }
+
+    pub fn mods_dir(&self, instance_name: &str) -> PathBuf {
+        self.instance_dir(instance_name).join("mods")
+    }
+
+    pub fn list_mods(&self, instance_name: &str) -> Result<Vec<ModRecord>, String> {
+        let dir = self.mods_dir(instance_name);
+        if !dir.exists() {
+            return Ok(Vec::new());
+        }
+        let mut list = Vec::new();
+        let entries = fs::read_dir(&dir).map_err(|e| e.to_string())?;
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "jar") {
+                let filename = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                let size_bytes = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+                let is_bridge = filename.starts_with("sawbyte-bridge");
+                list.push(ModRecord {
+                    filename,
+                    size_bytes,
+                    is_bridge,
+                });
+            }
+        }
+        list.sort_by(|a, b| a.filename.cmp(&b.filename));
+        Ok(list)
+    }
+
+    pub fn remove_mod(&self, instance_name: &str, filename: &str) -> Result<(), String> {
+        if filename.contains('/') || filename.contains('\\') || !filename.ends_with(".jar") {
+            return Err("invalid mod filename".into());
+        }
+        let path = self.mods_dir(instance_name).join(filename);
+        if path.exists() {
+            fs::remove_file(&path).map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    }
+
+    pub fn install_mod_file(
+        &self,
+        instance_name: &str,
+        filename: &str,
+        url: &str,
+    ) -> Result<PathBuf, String> {
+        if filename.contains('/') || filename.contains('\\') || !filename.ends_with(".jar") {
+            return Err("invalid mod filename; must end with .jar".into());
+        }
+        let mods_dir = self.mods_dir(instance_name);
+        fs::create_dir_all(&mods_dir).map_err(|e| e.to_string())?;
+        let target = mods_dir.join(filename);
+
+        let status = Command::new("curl")
+            .args(["-sSL", "-o", target.to_str().unwrap(), url])
+            .status()
+            .map_err(|e| format!("failed to execute curl: {e}"))?;
+        if !status.success() {
+            return Err(format!("curl download failed with status {status} for {url}"));
+        }
+        Ok(target)
+    }
+
+    pub fn inject_bridge_mod(&self, instance_name: &str) -> Result<PathBuf, String> {
+        let mods_dir = self.mods_dir(instance_name);
+        fs::create_dir_all(&mods_dir).map_err(|e| e.to_string())?;
+        let target = mods_dir.join("sawbyte-bridge-0.3.1.jar");
+
+        let mut found = None;
+        if let Ok(current_exe) = std::env::current_exe() {
+            if let Some(parent) = current_exe.parent() {
+                for name in ["sawbyte-bridge-0.3.1.jar", "sawbyte-bridge-26.3.jar"] {
+                    let p = parent.join(name);
+                    if p.exists() {
+                        found = Some(p);
+                        break;
+                    }
+                }
+            }
+        }
+        if found.is_none() {
+            for cand in [
+                "sawbyte-bridge-0.3.1.jar",
+                "sawbyte-bridge-26.3.jar",
+                "bridge/build/libs/sawbyte-bridge-0.3.1.jar",
+                "bridge/build/libs/sawbyte-bridge-26.3.jar",
+                "run/bin/sawbyte-bridge-0.3.1.jar",
+                "release-assets/sawbyte-bridge-0.3.1.jar",
+            ] {
+                let p = PathBuf::from(cand);
+                if p.exists() {
+                    found = Some(p);
+                    break;
+                }
+            }
+        }
+
+        if let Some(src) = found {
+            fs::copy(&src, &target).map_err(|e| e.to_string())?;
+            return Ok(target);
+        }
+
+        // If not found locally, fetch official release asset
+        let release_url = "https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.1/sawbyte-bridge-0.3.1.jar";
+        self.install_mod_file(instance_name, "sawbyte-bridge-0.3.1.jar", release_url)
     }
 
     /// Writes a token-free snapshot file on disk under `<instance>/snapshots/snapshot-<id>.cfg`.
@@ -523,6 +644,9 @@ impl PersistentLauncher {
             .instances
             .get(instance_name)
             .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
+        if inst.mode == RuntimeMode::FullClientBridge || inst.version_profile == "fabric-26.3" {
+            return self.spawn_fabric_process(instance_name, server_override, account_name, extra_args);
+        }
         if inst.mode != RuntimeMode::NativeStandalone {
             return Err(format!(
                 "instance '{instance_name}' mode is '{:?}'; native process spawn only supports NativeStandalone",
@@ -598,6 +722,89 @@ impl PersistentLauncher {
             let _ = self.release_account_lock(account_name);
             return Err(error);
         }
+        Ok((child, log_path))
+    }
+
+    /// Spawns the Fabric Minecraft client process targeting the instance's directory and `mods/`,
+    /// automatically injecting the `sawbyte-bridge` framework mod if missing.
+    pub fn spawn_fabric_process(
+        &mut self,
+        instance_name: &str,
+        server_override: Option<&str>,
+        account_name: &str,
+        extra_args: &[String],
+    ) -> Result<(Child, PathBuf), String> {
+        let inst = self
+            .instances
+            .get(instance_name)
+            .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
+        if !self.accounts.contains_key(account_name) {
+            return Err(format!("account '{account_name}' not found"));
+        }
+        let dir = self.instance_dir(instance_name);
+        fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let log_path = dir.join("session.log");
+        let log_file = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_path)
+            .map_err(|e| e.to_string())?;
+        let err_file = log_file.try_clone().map_err(|e| e.to_string())?;
+
+        // Automatically inject Sawbyte Bridge Mod into mods/ if not already present
+        let _ = self.inject_bridge_mod(instance_name);
+
+        let java_bin = std::env::var("JAVA_HOME")
+            .map(|j| format!("{j}/bin/java"))
+            .unwrap_or_else(|_| "java".to_string());
+
+        let mut cmd = Command::new(&java_bin);
+        cmd.current_dir(&dir);
+
+        let mut jar_found = None;
+        for jar in ["fabric-loader.jar", "fabric.jar", "client.jar", "minecraft.jar"] {
+            let p = dir.join(jar);
+            if p.exists() {
+                jar_found = Some(p);
+                break;
+            }
+        }
+
+        if let Some(jar) = jar_found {
+            cmd.arg("-jar").arg(&jar);
+            cmd.arg(format!("--gameDir={}", dir.display()));
+        } else {
+            // Fabric standard runner arguments
+            cmd.arg(format!("-Dfabric.gameDir={}", dir.display()));
+            cmd.arg(format!(
+                "-Dfabric.modsFolder={}",
+                self.mods_dir(instance_name).display()
+            ));
+            cmd.arg("-version");
+        }
+
+        if let Some(srv) = server_override {
+            cmd.arg("--server").arg(srv);
+        }
+        for arg in extra_args {
+            cmd.arg(arg);
+        }
+        cmd.stdout(Stdio::from(log_file)).stderr(Stdio::from(err_file));
+
+        self.acquire_account_lock(account_name, instance_name)?;
+        let child = cmd.spawn().map_err(|e| {
+            let _ = self.release_account_lock(account_name);
+            format!(
+                "failed to launch Fabric client ({java_bin}): {e}. Ensure Java is installed and in PATH."
+            )
+        })?;
+        let pid = child.id();
+        let pid_path = dir.join("session.pid");
+        let _ = fs::write(pid_path, format!("{pid}\n"));
+        if let Some(inst_mut) = self.instances.get_mut(instance_name) {
+            inst_mut.last_pid = Some(pid);
+        }
+        let _ = self.save();
         Ok((child, log_path))
     }
 }

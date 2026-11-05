@@ -6,9 +6,11 @@ use sawbyte_core::mcp::{
 use sawbyte_core::{
     Action, Backend, Button, Capability, Direct, Humanised, InputFrame, InputPolicy, Scheduler,
 };
+use std::fs;
 use std::io::{self, BufRead, Write};
 use std::net::ToSocketAddrs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::Duration;
 
 const HELP: &str = "Sawbyte 0.3.1 — standalone headless Rust client launcher & MCP control bridge
@@ -16,6 +18,7 @@ const HELP: &str = "Sawbyte 0.3.1 — standalone headless Rust client launcher &
 Usage:
   sawbyte --help
   sawbyte --version
+  sawbyte install [--system]
   sawbyte gui [--port <port>]
   sawbyte launcher gui [--port <port>]
   sawbyte capabilities
@@ -30,11 +33,18 @@ Usage:
   sawbyte launcher rollback <name> <id>
   sawbyte launcher add-account <username> <uuid-hex> [token-file]
   sawbyte launcher launch <instance> <server:port> <account> <blocks.json> [--wait]
+  sawbyte launcher mods list <instance>
+  sawbyte launcher mods search <query> [minecraft-version]
+  sawbyte launcher mods install <instance> <mod-slug-or-id> [--with-deps]
+  sawbyte launcher mods remove <instance> <filename.jar>
+  sawbyte launcher mods add-bridge <instance>
+  sawbyte launcher install-cli [--system]
   sawbyte eval <script> [--connect <ip:port>]
   sawbyte benchmark
 
+install      Install the 'sawbyte' CLI binary and desktop entry to system PATH (~/.local/bin or /usr/local/bin).
 gui          Launch the cross-platform interactive graphical desktop launcher in your browser.
-launcher     Persistently manage instances, options.txt, snapshots, accounts, and launch sawbyte-play.
+launcher     Persistently manage instances, options.txt, mods, snapshots, accounts, and launch clients.
 demo         Print a scheduled input trace; does not connect to Minecraft.
 tape         Write the movement fixture shared by native/reference player tests.
 status       Query a Java server's status and ping, with a 5-second deadline.
@@ -121,6 +131,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     match args.first().map(String::as_str) {
         None | Some("--help" | "-h") if args.len() <= 1 => println!("{HELP}"),
         Some("--version") if args.len() == 1 => println!("sawbyte {}", env!("CARGO_PKG_VERSION")),
+        Some("install") => {
+            let msg = install_cli_to_system(args.iter().any(|a| a == "--system"))?;
+            println!("{msg}");
+        }
         Some("capabilities") if args.len() == 1 => println!(
             "Implemented: typed input scheduler, smooth & bounded humanised camera policies, discrete sub-tick events, status/ping.\n\
              Headless Rust client (`sawbyte-play`): live 20 TPS session (`sawbyte-play live`) + deterministic `.sbif` parity replay (`max_position_error_blocks = 3.41e-7`, `4,380 KiB` peak RSS on 26.3).\n\
@@ -299,6 +313,75 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                 }
+                Some("install-cli") => {
+                    let msg = install_cli_to_system(args.iter().any(|a| a == "--system"))?;
+                    println!("{msg}");
+                }
+                Some("mods") => {
+                    match args.get(2).map(String::as_str) {
+                        Some("list") if args.len() == 4 => {
+                            let instance = &args[3];
+                            let mods = launcher.list_mods(instance)?;
+                            println!(
+                                "Mods installed in instance '{instance}' ({} total):",
+                                mods.len()
+                            );
+                            for m in mods {
+                                let badge = if m.is_bridge {
+                                    " [Sawbyte Bridge Mod]"
+                                } else {
+                                    ""
+                                };
+                                println!(
+                                    "  - {} ({:.2} KiB){badge}",
+                                    m.filename,
+                                    m.size_bytes as f64 / 1024.0
+                                );
+                            }
+                        }
+                        Some("remove") if args.len() == 5 => {
+                            let instance = &args[3];
+                            let filename = &args[4];
+                            launcher.remove_mod(instance, filename)?;
+                            println!("Removed mod '{filename}' from instance '{instance}'");
+                        }
+                        Some("add-bridge") if args.len() == 4 => {
+                            let instance = &args[3];
+                            let p = launcher.inject_bridge_mod(instance)?;
+                            println!(
+                                "Injected Sawbyte Bridge Mod into instance '{instance}': {}",
+                                p.display()
+                            );
+                        }
+                        Some("search") if args.len() >= 4 => {
+                            let query = &args[3];
+                            let mc_ver = args.get(4).map(String::as_str).unwrap_or("26.3");
+                            println!(
+                                "Searching Modrinth for '{query}' (loader=fabric, version={mc_ver})..."
+                            );
+                            search_and_print_mods(query, mc_ver)?;
+                        }
+                        Some("install") if args.len() >= 5 => {
+                            let instance = &args[3];
+                            let slug = &args[4];
+                            let with_deps = args.iter().any(|a| a == "--with-deps");
+                            println!(
+                                "Fetching and installing mod '{slug}' into '{instance}' (with_deps={with_deps})..."
+                            );
+                            install_mod_with_dependencies(&launcher, instance, slug, with_deps)?;
+                        }
+                        _ => {
+                            println!("Usage:");
+                            println!("  sawbyte launcher mods list <instance>");
+                            println!("  sawbyte launcher mods search <query> [minecraft-version]");
+                            println!(
+                                "  sawbyte launcher mods install <instance> <mod-slug-or-id> [--with-deps]"
+                            );
+                            println!("  sawbyte launcher mods remove <instance> <filename.jar>");
+                            println!("  sawbyte launcher mods add-bridge <instance>");
+                        }
+                    }
+                }
                 _ => return Err("invalid launcher subcommand; use sawbyte --help".into()),
             }
         }
@@ -344,6 +427,287 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         _ => return Err("invalid arguments; use sawbyte --help".into()),
+    }
+    Ok(())
+}
+
+pub fn check_cli_status() -> (bool, String, bool) {
+    let path_env = std::env::var("PATH").unwrap_or_default();
+
+    #[cfg(unix)]
+    {
+        let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
+        let user_bin = PathBuf::from(&home).join(".local/bin/sawbyte");
+        let sys_bin = PathBuf::from("/usr/local/bin/sawbyte");
+        let usr_bin = PathBuf::from("/usr/bin/sawbyte");
+
+        for cand in [&sys_bin, &usr_bin, &user_bin] {
+            if cand.exists() {
+                let parent = cand.parent().unwrap_or(cand);
+                let in_path = path_env.split(':').any(|p| Path::new(p) == parent);
+                return (true, cand.to_string_lossy().to_string(), in_path);
+            }
+        }
+        (false, String::new(), false)
+    }
+
+    #[cfg(windows)]
+    {
+        let local_app_data =
+            std::env::var("LOCALAPPDATA").unwrap_or_else(|_| "C:\\ProgramData".into());
+        let target = PathBuf::from(local_app_data)
+            .join("Programs")
+            .join("Sawbyte")
+            .join("sawbyte.exe");
+        if target.exists() {
+            let parent = target.parent().unwrap_or(&target);
+            let in_path = path_env.split(';').any(|p| Path::new(p) == parent);
+            return (true, target.to_string_lossy().to_string(), in_path);
+        }
+        (false, String::new(), false)
+    }
+}
+
+pub fn install_cli_to_system(system_mode: bool) -> Result<String, String> {
+    let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    let exe_dir = current_exe
+        .parent()
+        .ok_or_else(|| "cannot find executable directory".to_string())?;
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
+        let can_write_usr = fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open("/usr/local/bin/.sawbyte_probe")
+            .is_ok();
+        let _ = fs::remove_file("/usr/local/bin/.sawbyte_probe");
+
+        let bin_dir = if system_mode || can_write_usr {
+            PathBuf::from("/usr/local/bin")
+        } else {
+            PathBuf::from(&home).join(".local/bin")
+        };
+
+        fs::create_dir_all(&bin_dir).map_err(|e| e.to_string())?;
+        let target_sawbyte = bin_dir.join("sawbyte");
+        fs::copy(&current_exe, &target_sawbyte).map_err(|e| e.to_string())?;
+        let _ = fs::set_permissions(&target_sawbyte, fs::Permissions::from_mode(0o755));
+
+        let sibling_play = exe_dir.join("sawbyte-play");
+        if sibling_play.exists() {
+            let target_play = bin_dir.join("sawbyte-play");
+            let _ = fs::copy(&sibling_play, &target_play);
+            let _ = fs::set_permissions(&target_play, fs::Permissions::from_mode(0o755));
+        }
+
+        let is_system = bin_dir == PathBuf::from("/usr/local/bin");
+        let apps_dir = if is_system {
+            PathBuf::from("/usr/share/applications")
+        } else {
+            PathBuf::from(&home).join(".local/share/applications")
+        };
+        let icons_dir = if is_system {
+            PathBuf::from("/usr/share/icons/hicolor/256x256/apps")
+        } else {
+            PathBuf::from(&home).join(".local/share/icons/hicolor/256x256/apps")
+        };
+        let _ = fs::create_dir_all(&apps_dir);
+        let _ = fs::create_dir_all(&icons_dir);
+
+        let icon_target = icons_dir.join("sawbyte.png");
+        for icand in [
+            exe_dir.join("sawbyte.png"),
+            exe_dir.join("assets").join("sawbyte.png"),
+            PathBuf::from("assets/sawbyte.png"),
+        ] {
+            if icand.exists() {
+                let _ = fs::copy(&icand, &icon_target);
+                break;
+            }
+        }
+
+        let desktop_content = format!(
+            "[Desktop Entry]\n\
+             Type=Application\n\
+             Name=Sawbyte Launcher\n\
+             Comment=Sawbyte Zero-Graphics Minecraft Automation & Headless Client Launcher\n\
+             Exec={} launcher gui\n\
+             Icon=sawbyte\n\
+             Terminal=false\n\
+             Categories=Game;Development;Utility;\n\
+             StartupNotify=true\n",
+            target_sawbyte.display()
+        );
+        let _ = fs::write(apps_dir.join("sawbyte.desktop"), desktop_content);
+
+        let path_env = std::env::var("PATH").unwrap_or_default();
+        let in_path = path_env.split(':').any(|p| Path::new(p) == bin_dir);
+
+        let mut msg = format!(
+            "Installed 'sawbyte' CLI to {}",
+            target_sawbyte.display()
+        );
+        if in_path {
+            msg.push_str(" (PATH verified: OK)");
+        } else {
+            msg.push_str(&format!(
+                "\nNote: {} is not yet in your PATH. Add it to ~/.bashrc or ~/.zshrc.",
+                bin_dir.display()
+            ));
+        }
+        Ok(msg)
+    }
+
+    #[cfg(windows)]
+    {
+        let local_app_data =
+            std::env::var("LOCALAPPDATA").unwrap_or_else(|_| "C:\\ProgramData".into());
+        let target_dir = PathBuf::from(local_app_data).join("Programs").join("Sawbyte");
+        fs::create_dir_all(&target_dir).map_err(|e| e.to_string())?;
+        let target_sawbyte = target_dir.join("sawbyte.exe");
+        fs::copy(&current_exe, &target_sawbyte).map_err(|e| e.to_string())?;
+
+        let sibling_play = exe_dir.join("sawbyte-play.exe");
+        if sibling_play.exists() {
+            let target_play = target_dir.join("sawbyte-play.exe");
+            let _ = fs::copy(&sibling_play, &target_play);
+        }
+
+        let ps_cmd = format!(
+            "[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', [EnvironmentVariableTarget]::User) + ';{}', [EnvironmentVariableTarget]::User)",
+            target_dir.display()
+        );
+        let _ = Command::new("powershell")
+            .args(["-NoProfile", "-Command", &ps_cmd])
+            .output();
+
+        Ok(format!(
+            "Installed 'sawbyte.exe' to {} and updated user PATH",
+            target_sawbyte.display()
+        ))
+    }
+}
+
+fn url_encode(input: &str) -> String {
+    let mut out = String::new();
+    for b in input.bytes() {
+        match b {
+            b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(b as char);
+            }
+            _ => out.push_str(&format!("%{:02X}", b)),
+        }
+    }
+    out
+}
+
+fn search_and_print_mods(query: &str, _mc_version: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let url = format!(
+        "https://api.modrinth.com/v2/search?query={}&facets=[[\"categories:fabric\"]]&limit=10",
+        url_encode(query)
+    );
+    let out = Command::new("curl").args(["-sSL", &url]).output()?;
+    if !out.status.success() {
+        return Err("failed to query Modrinth API".into());
+    }
+    let body = String::from_utf8_lossy(&out.stdout);
+    let json = sawbyte_core::json::JsonValue::parse(&body)
+        .map_err(|e| format!("json parse error: {e}"))?;
+    let hits = json
+        .get("hits")
+        .and_then(|h| h.as_array())
+        .ok_or("invalid Modrinth response")?;
+    println!("--------------------------------------------------------------------------------");
+    println!(
+        "{:<24} {:<16} {:<12} {}",
+        "TITLE", "SLUG / ID", "DOWNLOADS", "DESCRIPTION"
+    );
+    println!("--------------------------------------------------------------------------------");
+    for hit in hits {
+        let title = hit
+            .get("title")
+            .and_then(|t| t.as_str())
+            .unwrap_or("Untitled");
+        let slug = hit.get("slug").and_then(|s| s.as_str()).unwrap_or("unknown");
+        let downloads = hit.get("downloads").and_then(|d| d.as_u64()).unwrap_or(0);
+        let desc = hit.get("description").and_then(|d| d.as_str()).unwrap_or("");
+        let short_desc: String = desc.chars().take(45).collect();
+        println!(
+            "{:<24} {:<16} {:<12} {}...",
+            title.chars().take(22).collect::<String>(),
+            slug,
+            downloads,
+            short_desc
+        );
+    }
+    println!("--------------------------------------------------------------------------------");
+    println!("To install: sawbyte launcher mods install <instance> <slug> --with-deps");
+    Ok(())
+}
+
+fn install_mod_with_dependencies(
+    launcher: &PersistentLauncher,
+    instance: &str,
+    slug: &str,
+    with_deps: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let url = format!(
+        "https://api.modrinth.com/v2/project/{}/version?loaders=[\"fabric\"]",
+        url_encode(slug)
+    );
+    let out = Command::new("curl").args(["-sSL", &url]).output()?;
+    if !out.status.success() {
+        return Err(format!("failed to fetch versions for '{slug}'").into());
+    }
+    let body = String::from_utf8_lossy(&out.stdout);
+    let versions = sawbyte_core::json::JsonValue::parse(&body)
+        .map_err(|e| format!("json parse error: {e}"))?;
+    let v_arr = versions
+        .as_array()
+        .ok_or_else(|| format!("no versions found for '{slug}'"))?;
+    if v_arr.is_empty() {
+        return Err(format!("no Fabric versions found on Modrinth for '{slug}'").into());
+    }
+    let latest = &v_arr[0];
+    let files = latest
+        .get("files")
+        .and_then(|f| f.as_array())
+        .ok_or("version has no files")?;
+    if files.is_empty() {
+        return Err("version has no downloadable files".into());
+    }
+    let file_url = files[0]
+        .get("url")
+        .and_then(|u| u.as_str())
+        .ok_or("file has no url")?;
+    let filename = files[0]
+        .get("filename")
+        .and_then(|f| f.as_str())
+        .ok_or("file has no filename")?;
+
+    println!("Downloading {filename}...");
+    let saved = launcher.install_mod_file(instance, filename, file_url)?;
+    println!("Installed mod: {}", saved.display());
+
+    if with_deps {
+        if let Some(deps) = latest.get("dependencies").and_then(|d| d.as_array()) {
+            for dep in deps {
+                let dep_type = dep
+                    .get("dependency_type")
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("");
+                if dep_type == "required" {
+                    if let Some(dep_proj) = dep.get("project_id").and_then(|p| p.as_str()) {
+                        println!("Fetching required dependency: {dep_proj}...");
+                        let _ =
+                            install_mod_with_dependencies(launcher, instance, dep_proj, false);
+                    }
+                }
+            }
+        }
     }
     Ok(())
 }
