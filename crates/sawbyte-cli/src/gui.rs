@@ -975,12 +975,7 @@ fn send_rpc_command(connect: &str, cmd: &str) -> Result<String, String> {
     Ok(reply.trim().to_string())
 }
 
-fn handle_visualizer_frame(
-    instance: &str,
-    w: &str,
-    h: &str,
-    mode: &str,
-) -> Result<String, String> {
+fn handle_visualizer_frame(instance: &str, w: &str, h: &str, mode: &str) -> Result<String, String> {
     let endpoint = get_instance_rpc_endpoint(instance)?;
     let cmd = format!("inspect.frame {w} {h} {mode}");
     let reply = send_rpc_command(&endpoint, &cmd)?;

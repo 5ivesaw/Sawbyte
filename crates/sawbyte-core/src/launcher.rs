@@ -439,7 +439,11 @@ impl PersistentLauncher {
         let mut found = None;
         if let Ok(current_exe) = std::env::current_exe() {
             if let Some(parent) = current_exe.parent() {
-                for name in ["sawbyte-bridge-0.3.2.jar", "sawbyte-bridge-0.3.1.jar", "sawbyte-bridge-26.3.jar"] {
+                for name in [
+                    "sawbyte-bridge-0.3.2.jar",
+                    "sawbyte-bridge-0.3.1.jar",
+                    "sawbyte-bridge-26.3.jar",
+                ] {
                     let p = parent.join(name);
                     if p.exists() {
                         found = Some(p);
