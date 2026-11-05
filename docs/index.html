@@ -3,382 +3,548 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sawbyte — Headless Minecraft Client, Automation Engine & AI Agent Hub</title>
-  <meta name="description" content="Self-sufficient, zero-graphics, ultra-lightweight Rust Minecraft Java client, multi-server automation engine, and AI agent interface for Minecraft 26.3.">
-  <link rel="icon" type="image/png" href="assets/sawbyte.png">
+  <title>sawbyte</title>
+  <meta name="description" content="Lightweight Rust client, server automation tool, and AI bot runtime for Minecraft 26.3.">
+  <link id="dynamic-favicon" rel="icon" type="image/png" href="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/diamond_pickaxe.png">
   <link rel="stylesheet" href="style.css">
   <script defer src="app.js"></script>
 </head>
-<body>
+<body class="intro-cursor-locked">
 
-  <!-- Reusable Crisp 16x16 Pixel-Art Minecraft SVG Icons -->
-  <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
-    <!-- Grass Block -->
-    <symbol id="mc-icon-grass" viewBox="0 0 16 16" shape-rendering="crispEdges">
-      <rect x="1" y="1" width="14" height="4" fill="#55FF55"/>
-      <rect x="1" y="5" width="2" height="2" fill="#55FF55"/>
-      <rect x="5" y="5" width="3" height="2" fill="#55FF55"/>
-      <rect x="11" y="5" width="3" height="2" fill="#55FF55"/>
-      <rect x="3" y="5" width="2" height="2" fill="#00AA00"/>
-      <rect x="8" y="5" width="3" height="2" fill="#00AA00"/>
-      <rect x="14" y="5" width="1" height="2" fill="#00AA00"/>
-      <rect x="1" y="7" width="14" height="8" fill="#866043"/>
-      <rect x="3" y="9" width="2" height="2" fill="#5c4028"/>
-      <rect x="10" y="11" width="2" height="2" fill="#5c4028"/>
-      <rect x="6" y="12" width="2" height="2" fill="#a37855"/>
-    </symbol>
+  <!-- ==========================================================================
+       MINECRAFT 26.3 JAVA EDITION JOINING SERVER INTRO OVERLAY
+       ========================================================================== -->
+  <div id="mc-intro-overlay" aria-label="Minecraft 26.3 Joining Server Intro">
+    <!-- Blurred Autumn Forest Panorama Canvas (Matches 26.3 Title & Loading Screens) -->
+    <canvas id="mc-panorama-canvas"></canvas>
 
-    <!-- Diamond Pickaxe -->
-    <symbol id="mc-icon-pickaxe" viewBox="0 0 16 16" shape-rendering="crispEdges">
-      <rect x="9" y="1" width="5" height="2" fill="#55FFFF"/>
-      <rect x="12" y="3" width="3" height="2" fill="#55FFFF"/>
-      <rect x="13" y="5" width="2" height="2" fill="#00AAAA"/>
-      <rect x="7" y="2" width="2" height="2" fill="#00AAAA"/>
-      <rect x="10" y="4" width="2" height="2" fill="#866043"/>
-      <rect x="8" y="6" width="2" height="2" fill="#866043"/>
-      <rect x="6" y="8" width="2" height="2" fill="#866043"/>
-      <rect x="4" y="10" width="2" height="2" fill="#866043"/>
-      <rect x="2" y="12" width="2" height="2" fill="#5c4028"/>
-    </symbol>
+    <!-- Animated Virtual Mouse Cursor (Only cursor visible during intro) -->
+    <div id="mc-virtual-cursor">
+      <svg width="22" height="28" viewBox="0 0 22 28" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+        <path d="M1 1 L1 21 L6 16 L10 25 L14 23 L10 14 L17 14 Z" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+      </svg>
+    </div>
 
-    <!-- Redstone Dust -->
-    <symbol id="mc-icon-redstone" viewBox="0 0 16 16" shape-rendering="crispEdges">
-      <rect x="6" y="2" width="4" height="2" fill="#AA0000"/>
-      <rect x="4" y="4" width="8" height="2" fill="#FF5555"/>
-      <rect x="2" y="6" width="12" height="4" fill="#FF5555"/>
-      <rect x="5" y="7" width="6" height="2" fill="#FFFFFF"/>
-      <rect x="3" y="10" width="10" height="2" fill="#AA0000"/>
-      <rect x="5" y="12" width="6" height="2" fill="#AA0000"/>
-    </symbol>
+    <!-- SCREEN 1: Minecraft 26.3 Title Screen -->
+    <div class="mc-intro-screen active" id="intro-screen-title">
+      <div class="mc-title-logo-wrap">
+        <div class="mc-logo-main">MINECRAFT</div>
+        <div class="mc-logo-sub">JAVA EDITION</div>
+        <div class="mc-splash-text">&lt;3 Max &amp; 99 &amp; Ducky!</div>
+      </div>
 
-    <!-- Command Block -->
-    <symbol id="mc-icon-cmdblock" viewBox="0 0 16 16" shape-rendering="crispEdges">
-      <rect x="1" y="1" width="14" height="14" fill="#c77d52"/>
-      <rect x="2" y="2" width="12" height="12" fill="#995836"/>
-      <rect x="4" y="4" width="8" height="8" fill="#3a2821"/>
-      <rect x="5" y="5" width="2" height="2" fill="#FFAA00"/>
-      <rect x="9" y="5" width="2" height="2" fill="#55FFFF"/>
-      <rect x="5" y="9" width="2" height="2" fill="#55FF55"/>
-      <rect x="9" y="9" width="2" height="2" fill="#FF5555"/>
-      <rect x="7" y="7" width="2" height="2" fill="#FFFFFF"/>
-    </symbol>
+      <div class="mc-menu-btn-stack">
+        <div class="mc-gui-btn" id="mc-btn-singleplayer">Singleplayer</div>
+        <div class="mc-gui-btn" id="mc-btn-multiplayer">Multiplayer</div>
+        <div class="mc-gui-btn" id="mc-btn-realms">
+          <span>Minecraft Realms</span>
+          <img class="mc-png mc-png-sm" data-mc-tex="item/ender_pearl.png" alt="" style="position: absolute; right: 10px;">
+        </div>
+      </div>
 
-    <!-- Ender Pearl -->
-    <symbol id="mc-icon-pearl" viewBox="0 0 16 16" shape-rendering="crispEdges">
-      <rect x="5" y="2" width="6" height="2" fill="#00AAAA"/>
-      <rect x="3" y="4" width="10" height="8" fill="#0f3838"/>
-      <rect x="4" y="4" width="8" height="6" fill="#00AAAA"/>
-      <rect x="5" y="5" width="3" height="3" fill="#55FFFF"/>
-      <rect x="5" y="12" width="6" height="2" fill="#00AAAA"/>
-    </symbol>
+      <div class="mc-menu-small-icons">
+        <div class="mc-gui-icon-btn"><img class="mc-png mc-png-sm" data-mc-tex="item/spyglass.png" data-mc-fallback="item/compass_16.png" alt=""></div>
+        <div class="mc-gui-icon-btn"><img class="mc-png mc-png-sm" data-mc-tex="item/writable_book.png" alt=""></div>
+        <div class="mc-gui-icon-btn"><img class="mc-png mc-png-sm" data-mc-tex="item/armor_stand.png" alt=""></div>
+      </div>
 
-    <!-- Diamond -->
-    <symbol id="mc-icon-diamond" viewBox="0 0 16 16" shape-rendering="crispEdges">
-      <rect x="5" y="2" width="6" height="2" fill="#55FFFF"/>
-      <rect x="3" y="4" width="10" height="6" fill="#55FFFF"/>
-      <rect x="5" y="4" width="3" height="3" fill="#FFFFFF"/>
-      <rect x="4" y="10" width="8" height="2" fill="#00AAAA"/>
-      <rect x="6" y="12" width="4" height="2" fill="#00AAAA"/>
-    </symbol>
+      <div class="mc-menu-row">
+        <div class="mc-gui-btn" style="flex: 1;">Options...</div>
+        <div class="mc-gui-btn" style="flex: 1;">Quit Game</div>
+      </div>
 
-    <!-- Emerald -->
-    <symbol id="mc-icon-emerald" viewBox="0 0 16 16" shape-rendering="crispEdges">
-      <rect x="5" y="1" width="6" height="2" fill="#55FF55"/>
-      <rect x="3" y="3" width="10" height="10" fill="#00AA00"/>
-      <rect x="5" y="3" width="6" height="10" fill="#55FF55"/>
-      <rect x="6" y="5" width="2" height="4" fill="#FFFFFF"/>
-      <rect x="5" y="13" width="6" height="2" fill="#00AA00"/>
-    </symbol>
+      <div class="mc-title-footer-left">Minecraft 26.3</div>
+      <div class="mc-title-footer-right">Copyright Mojang AB. Do not distribute!</div>
+    </div>
 
-    <!-- Golden Crown -->
-    <symbol id="mc-icon-crown" viewBox="0 0 16 16" shape-rendering="crispEdges">
-      <rect x="1" y="4" width="2" height="8" fill="#FFFF55"/>
-      <rect x="5" y="5" width="2" height="7" fill="#FFFF55"/>
-      <rect x="9" y="5" width="2" height="7" fill="#FFFF55"/>
-      <rect x="13" y="4" width="2" height="8" fill="#FFFF55"/>
-      <rect x="1" y="8" width="14" height="5" fill="#FFAA00"/>
-      <rect x="3" y="9" width="2" height="2" fill="#FF5555"/>
-      <rect x="7" y="9" width="2" height="2" fill="#55FFFF"/>
-      <rect x="11" y="9" width="2" height="2" fill="#55FF55"/>
-    </symbol>
+    <!-- SCREEN 2 & 4: Play Multiplayer Screen -->
+    <div class="mc-intro-screen" id="intro-screen-multiplayer">
+      <div class="mc-multiplayer-window">
+        <div class="mc-mp-header">Play Multiplayer</div>
 
-    <!-- Heart Full -->
-    <symbol id="mc-icon-heart" viewBox="0 0 9 9" shape-rendering="crispEdges">
-      <rect x="1" y="1" width="3" height="1" fill="#000"/>
-      <rect x="5" y="1" width="3" height="1" fill="#000"/>
-      <rect x="1" y="2" width="3" height="3" fill="#FF5555"/>
-      <rect x="5" y="2" width="3" height="3" fill="#FF5555"/>
-      <rect x="4" y="3" width="1" height="3" fill="#FF5555"/>
-      <rect x="2" y="2" width="1" height="1" fill="#FFFFFF"/>
-      <rect x="2" y="5" width="5" height="1" fill="#AA0000"/>
-      <rect x="3" y="6" width="3" height="1" fill="#AA0000"/>
-      <rect x="4" y="7" width="1" height="1" fill="#AA0000"/>
-    </symbol>
+        <div class="mc-mp-list-box" id="mc-mp-server-list">
+          <div class="mc-mp-empty-hint" id="mc-mp-empty-msg">
+            Scanning for games on your local network...
+          </div>
 
-    <!-- Hunger Drumstick -->
-    <symbol id="mc-icon-food" viewBox="0 0 9 9" shape-rendering="crispEdges">
-      <rect x="4" y="1" width="4" height="4" fill="#c77d52"/>
-      <rect x="5" y="2" width="2" height="2" fill="#FFAA00"/>
-      <rect x="3" y="4" width="3" height="2" fill="#866043"/>
-      <rect x="1" y="6" width="2" height="2" fill="#FFFFFF"/>
-    </symbol>
-  </svg>
+          <!-- Dynamically revealed after Add Server completes -->
+          <div class="mc-server-entry" id="mc-server-row-sawbyte" style="display: none;">
+            <div class="mc-server-icon-box">
+              <img class="mc-png mc-png-lg" data-mc-tex="item/diamond_pickaxe.png" alt="Sawbyte">
+            </div>
+            <div class="mc-server-details">
+              <div class="mc-server-top-line">
+                <span class="mc-f" style="font-size: 14px;">Sawbyte</span>
+                <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px;">
+                  <span class="mc-7">26/26</span>
+                  <span class="mc-ping-bars">
+                    <span style="height: 4px;"></span>
+                    <span style="height: 6px;"></span>
+                    <span style="height: 9px;"></span>
+                    <span style="height: 11px;"></span>
+                    <span style="height: 14px;"></span>
+                  </span>
+                </span>
+              </div>
+              <div class="mc-a" style="font-size: 12.5px;">https://5ivesaw.github.io/Sawbyte</div>
+              <div class="mc-7" style="font-size: 12px;">Minecraft 26.3 • Rust Client &amp; Bot Engine</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mc-mp-bottom-controls">
+          <div class="mc-mp-btn-row">
+            <div class="mc-gui-btn disabled" id="mc-btn-join-server">Join Server</div>
+            <div class="mc-gui-btn">Direct Connection</div>
+            <div class="mc-gui-btn" id="mc-btn-add-server">Add Server</div>
+          </div>
+          <div class="mc-mp-btn-row-4">
+            <div class="mc-gui-btn disabled" id="mc-btn-edit-server">Edit</div>
+            <div class="mc-gui-btn disabled" id="mc-btn-delete-server">Delete</div>
+            <div class="mc-gui-btn">Refresh</div>
+            <div class="mc-gui-btn">Cancel</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: Edit Server Info (Add Server) -->
+    <div class="mc-intro-screen" id="intro-screen-add-server">
+      <div class="mc-multiplayer-window" style="justify-content: center; gap: 22px;">
+        <div class="mc-mp-header">Edit Server Info</div>
+
+        <div class="mc-add-server-box">
+          <div class="mc-field-group">
+            <div class="mc-field-label">Server Name</div>
+            <div class="mc-text-input-box" id="mc-input-server-name">Minecraft Server</div>
+          </div>
+
+          <div class="mc-field-group">
+            <div class="mc-field-label">Server Address</div>
+            <div class="mc-text-input-box" id="mc-input-server-addr"></div>
+          </div>
+
+          <div class="mc-gui-btn" style="margin-top: 6px;">Server Resource Packs: Prompt</div>
+          <div class="mc-gui-btn" id="mc-btn-add-done" style="margin-top: 10px;">Done</div>
+          <div class="mc-gui-btn">Cancel</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 5: Loading Terrain (Matches image_80219e.png) -->
+    <div class="mc-intro-screen" id="intro-screen-loading">
+      <div class="mc-loading-terrain-wrap">
+        <div class="mc-loading-terrain-label" id="mc-loading-stage-text">Loading terrain...</div>
+        <div class="mc-terrain-progress-track">
+          <div class="mc-terrain-progress-fill" id="mc-terrain-progress-fill"></div>
+        </div>
+        <div class="mc-chunk-box-outer">
+          <div class="mc-chunk-box-gray" id="mc-chunk-gray-box">
+            <div class="mc-chunk-box-center">
+              <div class="mc-chunk-box-core"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Background Void & Floating Pixel Particle Canvas -->
   <canvas id="bg-canvas"></canvas>
 
+  <!-- Minecraft Advancement Toast Notification Container -->
+  <div id="advancement-toast-stack" class="advancement-toast-stack" aria-live="polite"></div>
+
+  <!-- Minecraft Purple-Bordered Floating Lore Tooltip -->
+  <div id="mc-floating-tooltip" role="tooltip"></div>
+
+  <!-- Persistent Minecraft Jukebox Dock (Starts with Lena Raine: Pigstep at Low Volume) -->
+  <div class="jukebox-dock" id="jukebox-dock">
+    <div
+      class="jukebox-disc-slot sfx-trigger"
+      id="jukebox-play-btn"
+      data-tooltip-title="§6Music Disc (Lena Raine: Pigstep)"
+      data-tooltip-lore="§7Click to Play or Pause Jukebox|§8Streamed from GitHub Minecraft Assets|§bBackground Volume: Low (18%)"
+    >
+      <img
+        id="jukebox-disc-img"
+        class="mc-png mc-png-lg disc-spinning"
+        data-mc-tex="item/music_disc_pigstep.png"
+        alt="Pigstep Disc"
+      >
+    </div>
+
+    <div class="jukebox-meta">
+      <div class="jukebox-title mc-d" id="jukebox-now-playing">Playing: Pigstep</div>
+      <div class="mc-7" style="font-size: 11px;" id="jukebox-status-sub">Lena Raine • Vol 18%</div>
+    </div>
+
+    <div class="jukebox-controls">
+      <button type="button" class="jukebox-mini-btn" id="jukebox-toggle-btn" title="Play or Pause Music">PAUSE</button>
+      <button type="button" class="jukebox-mini-btn" id="jukebox-next-btn" title="Switch Music Disc">NEXT</button>
+      <input
+        type="range"
+        id="jukebox-volume"
+        class="jukebox-vol-slider"
+        min="0"
+        max="100"
+        value="18"
+        title="Jukebox Volume"
+      >
+    </div>
+  </div>
+
   <!-- Top Hotbar Navigation -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="#" class="brand sfx-trigger">
+      <a
+        href="#overview"
+        class="brand sfx-trigger"
+        data-tooltip-title="§bsawbyte"
+        data-tooltip-lore="§7Rust client &amp; bot engine for Minecraft 26.3|§aNo Java VM required • 20 TPS"
+      >
         <div class="brand-slot">
-          <img src="assets/sawbyte.png" alt="Sawbyte" class="brand-icon">
+          <img
+            class="mc-png mc-png-lg"
+            data-gh-repo-asset="assets/sawbyte.png"
+            data-mc-tex="item/diamond_pickaxe.png"
+            alt="sawbyte"
+          >
         </div>
         <div>
-          <span class="brand-name mc-b">SAWBYTE</span>
-          <span class="mc-8" style="font-size: 12px; display: block;">§7RUST 26.3 ENGINE</span>
+          <span class="brand-name mc-b">sawbyte</span>
+          <span class="mc-8" style="font-size: 11px; display: block;">§7minecraft <span class="mc-version-label">26.3</span></span>
         </div>
       </a>
 
       <div class="nav-links">
-        <a href="#overview" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-grass"/></svg>OVERVIEW</a>
-        <a href="#viewport" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-pearl"/></svg>VIEWPORT</a>
-        <a href="#downloads" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-diamond"/></svg>DOWNLOADS</a>
-        <a href="#terminal" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg>TERMINAL</a>
-        <a href="#benchmarks" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-emerald"/></svg>BENCHMARKS</a>
-        <a href="#agents" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-redstone"/></svg>AI SKILL</a>
-        <a href="https://github.com/5ivesaw/Sawbyte" target="_blank" rel="noopener" class="nav-link sfx-trigger mc-e">GITHUB -&gt;</a>
-        <button id="sfx-toggle-btn" class="sfx-btn" type="button" title="Toggle Soft Minecraft UI Sounds">
-          <span>[SFX: ON]</span>
+        <a href="#overview" class="nav-link sfx-trigger">
+          <img class="mc-png mc-png-sm" data-mc-tex="block/grass_block_side.png" alt="">
+          <span>Home</span>
+        </a>
+        <a href="#previews" class="nav-link sfx-trigger">
+          <img class="mc-png mc-png-sm" data-mc-tex="item/painting.png" alt="">
+          <span>Previews</span>
+        </a>
+        <a href="#downloads" class="nav-link sfx-trigger">
+          <img class="mc-png mc-png-sm" data-mc-tex="item/diamond.png" alt="">
+          <span>Downloads</span>
+        </a>
+        <a href="#terminal" class="nav-link sfx-trigger">
+          <img class="mc-png mc-png-sm" data-mc-tex="block/command_block_front.png" alt="">
+          <span>Console</span>
+        </a>
+        <a href="#benchmarks" class="nav-link sfx-trigger">
+          <img class="mc-png mc-png-sm" data-mc-tex="item/emerald.png" alt="">
+          <span>Benchmarks</span>
+        </a>
+        <a href="#agents" class="nav-link sfx-trigger">
+          <img class="mc-png mc-png-sm" data-mc-tex="item/redstone.png" alt="">
+          <span>AI Setup</span>
+        </a>
+        <a href="#memoriam" class="nav-link sfx-trigger">
+          <img class="mc-png mc-png-sm" data-mc-tex="item/golden_helmet.png" alt="">
+          <span class="mc-6">Tribute</span>
+        </a>
+        <a data-repo-link="" href="https://github.com/5ivesaw/Sawbyte" target="_blank" rel="noopener" class="nav-link sfx-trigger mc-e">
+          <img class="mc-png mc-png-sm" data-mc-tex="item/writable_book.png" alt="">
+          <span>GitHub (<span id="nav-star-count">Live</span>)</span>
+        </a>
+        <button id="replay-intro-btn" class="sfx-btn" type="button" title="Replay the full Minecraft joining server intro">
+          <img class="mc-png mc-png-sm" data-mc-tex="item/ender_pearl.png" alt="">
+          <span>Intro</span>
+        </button>
+        <button id="sfx-toggle-btn" class="sfx-btn" type="button" title="Toggle Minecraft Sound Effects">
+          <img class="mc-png mc-png-sm" data-mc-tex="block/note_block.png" alt="">
+          <span id="sfx-toggle-label">SFX: ON</span>
         </button>
       </div>
     </div>
   </nav>
 
   <!-- Hero Section -->
-  <header class="hero" id="overview">
-    <div class="badge">
+  <header class="hero reveal-on-scroll" id="overview">
+    <div class="badge enchanted-glint">
       <span class="pulse-dot"></span>
-      <span class="mc-a">RELEASE <span class="release-tag-badge">v0.3.3</span></span>
-      <span class="mc-8">|</span>
-      <span class="mc-b">MINECRAFT 26.3 (PROTOCOL 774)</span>
+      <img class="mc-png mc-png-sm" data-mc-tex="item/experience_bottle.png" alt="">
+      <span class="mc-a">Release <span class="release-tag-badge">fetching...</span></span>
+      <span class="mc-8">•</span>
+      <span class="mc-b">Minecraft <span class="mc-version-label">26.3</span></span>
     </div>
 
     <h1 class="hero-title">
-      <span class="mc-b">ZERO-JVM</span> <span class="mc-f">MINECRAFT ENGINE</span><br>
-      <span class="mc-a">&amp; AUTONOMOUS AI RUNTIME</span>
+      <span class="mc-b">sawbyte</span><br>
+      <span class="mc-f" style="font-size: 0.68em;">Rust Client &amp; Bot Engine for Minecraft <span class="mc-version-label">26.3</span></span>
     </h1>
 
     <p class="hero-subtitle">
-      Self-sufficient, zero-graphics native <span class="mc-6">Rust</span> client, multi-server automation platform, and autonomous agent controller.
-      Derives exact <span class="mc-a">20.00 TPS</span> tick physics, sub-voxel raycasting, container state, and MCP pair programming in <span class="mc-b">&lt; 12 MB RSS</span>.
+      Run Minecraft <span class="mc-b">26.3</span> without Java eating 2 GB of RAM.
+      Connect to servers, automate tasks, or hook up AI bots in under <span class="mc-a">12 MB of memory</span> at a steady <span class="mc-e">20 ticks per second</span>.
     </p>
 
     <div class="hero-actions">
-      <a href="#downloads" class="btn btn-primary sfx-trigger">
-        <svg width="16" height="16" class="pixel-icon"><use href="#mc-icon-diamond"/></svg>
-        <span>GET SAWBYTE v0.3.3</span>
+      <a href="#downloads" class="btn btn-primary enchanted-glint sfx-trigger">
+        <img class="mc-png" data-mc-tex="item/diamond_pickaxe.png" alt="">
+        <span>Download (<span class="release-tag-badge">Latest</span>)</span>
       </a>
 
       <a href="#benchmarks" class="btn btn-green sfx-trigger">
-        <svg width="16" height="16" class="pixel-icon"><use href="#mc-icon-emerald"/></svg>
-        <span>BENCHMARKS (28/28 PASSED)</span>
+        <img class="mc-png" data-mc-tex="item/emerald.png" alt="">
+        <span>Test Results (28/28)</span>
       </a>
 
+      <button type="button" class="btn btn-gold sfx-trigger" id="hero-pigstep-btn">
+        <img class="mc-png" data-mc-tex="item/music_disc_pigstep.png" alt="">
+        <span id="hero-pigstep-label">Play Pigstep</span>
+      </button>
+
       <a href="#agents" class="btn btn-secondary sfx-trigger">
-        <svg width="16" height="16" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg>
-        <span>AGENT SKILL.MD</span>
+        <img class="mc-png" data-mc-tex="block/command_block_front.png" alt="">
+        <span>AI Bot Guide</span>
       </a>
     </div>
 
-    <!-- Command Block Quick Install Box -->
+    <!-- Quick Install Box -->
     <div class="install-box">
-      <svg width="18" height="18" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg>
+      <img class="mc-png" data-mc-tex="block/command_block_front.png" alt="">
       <span class="mc-a">$</span>
-      <code class="install-cmd" id="install-text">curl -sSfL https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/install.sh | bash</code>
-      <button class="copy-btn sfx-xp" id="copy-install-btn" onclick="copyCommand('curl -sSfL https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/install.sh | bash')">
-        COPY
+      <code class="install-cmd" id="install-text">Loading install script command from GitHub...</code>
+      <button class="copy-btn sfx-xp" id="copy-install-btn" type="button">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/paper.png" alt="">
+        <span id="copy-install-label">COPY</span>
       </button>
     </div>
   </header>
 
-  <!-- Executive Inventory Metrics Grid -->
-  <div class="container">
+  <!-- Core Stats Grid -->
+  <div class="container reveal-on-scroll">
     <div class="metrics-grid">
-      <div class="metric-card sfx-hover">
+      <div
+        class="metric-card"
+        data-tooltip-title="§bLow Memory Usage"
+        data-tooltip-lore="§7Sawbyte RAM: §a~11.8 MB|§7Vanilla Java Client: §c~1,840 MB|§6Run dozens of bots on one machine"
+      >
         <div class="metric-top">
-          <div class="item-slot"><svg width="24" height="24" class="pixel-icon"><use href="#mc-icon-diamond"/></svg></div>
-          <span class="mc-8">§bSLOT 01</span>
+          <div class="item-slot enchanted-glint">
+            <img class="mc-png mc-png-lg" data-mc-tex="item/diamond.png" alt="">
+          </div>
+          <span class="mc-8">RAM</span>
         </div>
-        <div class="metric-val mc-b">&lt; 12 MB</div>
-        <div class="metric-label">Memory Footprint</div>
-        <div class="metric-sub">Zero JVM overhead. 155x lighter than official vanilla client (1.84 GB).</div>
+        <div class="metric-val mc-b">~12 MB</div>
+        <div class="metric-label">Memory Usage</div>
+        <div class="metric-sub">Written in pure Rust with no Java VM, using about 155x less RAM than the regular game client.</div>
       </div>
 
-      <div class="metric-card sfx-hover">
+      <div
+        class="metric-card"
+        data-tooltip-title="§aReal Game Physics"
+        data-tooltip-lore="§7Speed: §a20.00 TPS (50ms per tick)|§7CPU time: §b0.04 ms per tick|§6Full block collisions &amp; gravity"
+      >
         <div class="metric-top">
-          <div class="item-slot"><svg width="24" height="24" class="pixel-icon"><use href="#mc-icon-redstone"/></svg></div>
-          <span class="mc-8">§aSLOT 02</span>
+          <div class="item-slot enchanted-glint">
+            <img class="mc-png mc-png-lg" data-mc-tex="item/redstone.png" alt="">
+          </div>
+          <span class="mc-8">SPEED</span>
         </div>
-        <div class="metric-val mc-a">20.00 TPS</div>
-        <div class="metric-label">Locked Tick Pacing</div>
-        <div class="metric-sub">Deterministic sub-voxel AABB physics &amp; collision prediction in pure Rust.</div>
+        <div class="metric-val mc-a">20 TPS</div>
+        <div class="metric-label">Locked Tick Rate</div>
+        <div class="metric-sub">Handles movement, gravity, block raycasting, and chest menus at normal Minecraft tick speed.</div>
       </div>
 
-      <div class="metric-card sfx-hover">
+      <div
+        class="metric-card"
+        data-tooltip-title="§6Verified Task Suite"
+        data-tooltip-lore="§7MineRL Diamond Run: §a12/12|§7MineDojo Tasks: §a8/8|§7Voyager &amp; Server Tests: §aPassed"
+      >
         <div class="metric-top">
-          <div class="item-slot"><svg width="24" height="24" class="pixel-icon"><use href="#mc-icon-emerald"/></svg></div>
-          <span class="mc-8">§6SLOT 03</span>
+          <div class="item-slot enchanted-glint">
+            <img class="mc-png mc-png-lg" data-mc-tex="item/emerald.png" alt="">
+          </div>
+          <span class="mc-8">TESTS</span>
         </div>
         <div class="metric-val mc-6">28 / 28</div>
-        <div class="metric-label">Embodied AI Benchmarks</div>
-        <div class="metric-sub">100% pass rate across MineRL, MineDojo, Voyager &amp; Cracked Multi-Server.</div>
+        <div class="metric-label">Task Benchmarks</div>
+        <div class="metric-sub">Passes MineRL diamond progression, MineDojo tasks, Voyager survival, and multi-server login tests.</div>
       </div>
 
-      <div class="metric-card sfx-hover">
+      <div
+        class="metric-card"
+        data-tooltip-title="§dEasy Bot Control"
+        data-tooltip-lore="§7Protocol: §bMCP &amp; Local TCP 8765|§7Works with: §fClaude, Gemini, Python|§aPlays survival without cheats"
+      >
         <div class="metric-top">
-          <div class="item-slot"><svg width="24" height="24" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg></div>
-          <span class="mc-8">§dSLOT 04</span>
+          <div class="item-slot enchanted-glint">
+            <img class="mc-png mc-png-lg" data-mc-tex="block/command_block_front.png" alt="">
+          </div>
+          <span class="mc-8">BOT API</span>
         </div>
         <div class="metric-val mc-d">MCP + TCP</div>
-        <div class="metric-label">Autonomous AI Control</div>
-        <div class="metric-sub">Native Model Context Protocol server for Claude, Gemini &amp; custom agents.</div>
+        <div class="metric-label">AI &amp; Script Control</div>
+        <div class="metric-sub">Built-in MCP server so Claude, Gemini, or your own scripts can control the player directly.</div>
       </div>
     </div>
   </div>
 
-  <!-- Interactive 3D Voxel Viewport & Authentic In-Game HUD -->
-  <section class="container" id="viewport">
+  <!-- Clean Screenshot Placeholders Section (Replaces Old Launcher Image & Scuffed Preview) -->
+  <section class="container reveal-on-scroll" id="previews">
     <div class="section-header">
       <div class="badge">
-        <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-pearl"/></svg>
-        <span class="mc-b">INTEGRATED VISUALIZER &amp; F3 TELEMETRY</span>
+        <img class="mc-png mc-png-sm" data-mc-tex="item/painting.png" alt="">
+        <span class="mc-b">Screenshots &amp; UI Previews</span>
       </div>
-      <h2 class="section-title">RUNTIME VIEWPORT MODES</h2>
+      <h2 class="section-title">Launcher &amp; Bot Previews</h2>
       <p class="section-desc">
-        Inspect live client operation across software raymarched 3D voxels, tactical top-down radar,
-        the native desktop launcher, and the synchronized Fabric graphical bridge.
+        Placeholders for the upcoming desktop launcher and bot screenshots. Drop your PNG screenshots into
+        <code class="mc-e">assets/screenshots/</code> when the launcher build is ready and they will load here automatically.
       </p>
     </div>
 
-    <div class="mode-tabs">
-      <button class="mode-tab viz-mode-btn active sfx-trigger" data-mode="first_person">3D SOFTWARE VOXEL (POTATO)</button>
-      <button class="mode-tab viz-mode-btn sfx-trigger" data-mode="radar">2D TACTICAL RADAR</button>
-      <button class="mode-tab sfx-trigger" onclick="switchPreviewMode('launcher', this)">DESKTOP LAUNCHER PREVIEW</button>
-      <button class="mode-tab sfx-trigger" onclick="switchPreviewMode('bridge', this)">FABRIC GRAPHICAL BRIDGE PREVIEW</button>
-    </div>
-
-    <div class="viewport-card">
-      <div class="viewport-toolbar">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span class="status-tag">LIVE ENGINE</span>
-          <span class="mc-b">SESSION: 127.0.0.1:25565 (PROTO 774)</span>
+    <div class="screenshots-grid">
+      <!-- Placeholder 1: Desktop Launcher -->
+      <div class="screenshot-slot-card">
+        <div class="screenshot-slot-header">
+          <span style="display: inline-flex; align-items: center; gap: 8px;">
+            <img class="mc-png mc-png-sm" data-mc-tex="block/crafting_table_front.png" alt="">
+            <span class="mc-f">Desktop Launcher</span>
+          </span>
+          <span class="mc-8">Slot 01</span>
         </div>
-        <div>
-          <span class="mc-e">CONTROLS: [W/A/S/D] WALK &amp; TURN • [1-4] HOTBAR SLOT</span>
+        <div class="screenshot-frame-body">
+          <img class="screenshot-user-img" data-optional-screenshot="assets/screenshots/launcher.png" alt="Desktop Launcher Screenshot">
+          <div class="screenshot-placeholder-box">
+            <div class="item-slot">
+              <img class="mc-png mc-png-lg" data-mc-tex="item/painting.png" alt="">
+            </div>
+            <div class="mc-e" style="font-size: 13.5px;">Launcher Screenshot Placeholder</div>
+            <div class="mc-7" style="font-size: 12px;">
+              Add <code class="mc-b">assets/screenshots/launcher.png</code> once you take screenshots of the new launcher.
+            </div>
+          </div>
+        </div>
+        <div class="screenshot-slot-footer">
+          <span>New Launcher UI (In Progress)</span>
+          <span class="mc-a">16:9 PNG</span>
         </div>
       </div>
 
-      <div class="viewport-screen">
-        <!-- F3-Style Telemetry HUD Overlay -->
-        <div class="telemetry-hud" id="telemetry-display">
-          <div class="mc-b">Sawbyte 0.3.3 (26.3 / Vanilla / Rust Headless)</div>
-          <div>XYZ: <span class="mc-a">8.50 / 64.00 / 8.50</span></div>
-          <div>Facing: <span class="mc-e">South (Yaw 0.0 / Pitch 0.0)</span></div>
-          <div>Tick: <span class="mc-f">1420</span> <span class="mc-8">|</span> TPS: <span class="mc-a">20.00</span> <span class="mc-8">|</span> Deaths: <span class="mc-a">0</span></div>
+      <!-- Placeholder 2: Bot Session & Console -->
+      <div class="screenshot-slot-card">
+        <div class="screenshot-slot-header">
+          <span style="display: inline-flex; align-items: center; gap: 8px;">
+            <img class="mc-png mc-png-sm" data-mc-tex="block/command_block_front.png" alt="">
+            <span class="mc-f">Bot Session &amp; Live View</span>
+          </span>
+          <span class="mc-8">Slot 02</span>
         </div>
-
-        <!-- Interactive Canvas for 3D Voxels / Radar -->
-        <canvas id="viz-canvas" width="640" height="400" style="width: 100%; height: 100%; display: block;"></canvas>
-
-        <!-- Authentic Minecraft Bottom HUD (Hearts, Hunger, XP Bar, 9-Slot Hotbar) -->
-        <div class="mc-hud-bottom" id="mc-hud-overlay">
-          <div class="mc-vitals-row">
-            <div class="mc-hearts">
-              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
+        <div class="screenshot-frame-body">
+          <img class="screenshot-user-img" data-optional-screenshot="assets/screenshots/bot_view.png" alt="Bot View Screenshot">
+          <div class="screenshot-placeholder-box">
+            <div class="item-slot">
+              <img class="mc-png mc-png-lg" data-mc-tex="item/compass_16.png" alt="">
             </div>
-            <div class="mc-hunger">
-              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
-              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
+            <div class="mc-e" style="font-size: 13.5px;">Bot View Screenshot Placeholder</div>
+            <div class="mc-7" style="font-size: 12px;">
+              Add <code class="mc-b">assets/screenshots/bot_view.png</code> to show live bot coordinates, inventory, and tasks.
             </div>
           </div>
-          <div class="mc-xp-bar"><div class="mc-xp-fill"></div></div>
-          <div class="mc-hotbar">
-            <div class="mc-hotbar-slot selected" data-slot="1"><svg width="20" height="20"><use href="#mc-icon-pickaxe"/></svg></div>
-            <div class="mc-hotbar-slot" data-slot="2"><svg width="20" height="20"><use href="#mc-icon-grass"/></svg><span class="slot-count">64</span></div>
-            <div class="mc-hotbar-slot" data-slot="3"><svg width="20" height="20"><use href="#mc-icon-pearl"/></svg><span class="slot-count">16</span></div>
-            <div class="mc-hotbar-slot" data-slot="4"><svg width="20" height="20"><use href="#mc-icon-diamond"/></svg><span class="slot-count">12</span></div>
-            <div class="mc-hotbar-slot" data-slot="5"></div>
-            <div class="mc-hotbar-slot" data-slot="6"></div>
-            <div class="mc-hotbar-slot" data-slot="7"></div>
-            <div class="mc-hotbar-slot" data-slot="8"></div>
-            <div class="mc-hotbar-slot" data-slot="9"></div>
+        </div>
+        <div class="screenshot-slot-footer">
+          <span>Headless Bot Dashboard</span>
+          <span class="mc-a">16:9 PNG</span>
+        </div>
+      </div>
+
+      <!-- Placeholder 3: Multi-Server Manager -->
+      <div class="screenshot-slot-card">
+        <div class="screenshot-slot-header">
+          <span style="display: inline-flex; align-items: center; gap: 8px;">
+            <img class="mc-png mc-png-sm" data-mc-tex="item/ender_eye.png" alt="">
+            <span class="mc-f">Server &amp; Account Manager</span>
+          </span>
+          <span class="mc-8">Slot 03</span>
+        </div>
+        <div class="screenshot-frame-body">
+          <img class="screenshot-user-img" data-optional-screenshot="assets/screenshots/server_manager.png" alt="Server Manager Screenshot">
+          <div class="screenshot-placeholder-box">
+            <div class="item-slot">
+              <img class="mc-png mc-png-lg" data-mc-tex="block/chest_front.png" alt="">
+            </div>
+            <div class="mc-e" style="font-size: 13.5px;">Server List Screenshot Placeholder</div>
+            <div class="mc-7" style="font-size: 12px;">
+              Add <code class="mc-b">assets/screenshots/server_manager.png</code> for multi-server &amp; Fabric bridge previews.
+            </div>
           </div>
         </div>
-
-        <!-- Image Previews Container for Launcher & Bridge -->
-        <div id="image-preview-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 35; background: #090b10;">
-          <img id="preview-img-elem" src="assets/preview_launcher.png" alt="Preview" style="width: 100%; height: 100%; object-fit: contain;">
+        <div class="screenshot-slot-footer">
+          <span>Server &amp; Bridge Sync</span>
+          <span class="mc-a">16:9 PNG</span>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Cross-Platform Downloads Matrix -->
-  <section class="container" id="downloads">
+  <!-- Cross-Platform Downloads (100% Auto-Fetched from GitHub Releases API) -->
+  <section class="container reveal-on-scroll" id="downloads">
     <div class="section-header">
       <div class="badge">
-        <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-diamond"/></svg>
-        <span class="mc-a">STANDALONE RELEASE BINARIES</span>
+        <img class="mc-png mc-png-sm" data-mc-tex="item/diamond.png" alt="">
+        <span class="mc-a">Auto-Fetched GitHub Releases</span>
       </div>
-      <h2 class="section-title">DOWNLOAD SAWBYTE v0.3.3</h2>
+      <h2 class="section-title">Download Sawbyte (<span class="release-tag-badge">Latest</span>)</h2>
       <p class="section-desc">
-        Pre-compiled standalone release binaries for Linux, Windows, macOS, and the optional Fabric graphical bridge.
+        All download links, file sizes, and version tags are fetched automatically from the
+        <a data-repo-releases-link="" href="https://github.com/5ivesaw/Sawbyte/releases" target="_blank" rel="noopener" class="mc-b">GitHub Releases API</a>.
       </p>
+    </div>
+
+    <div class="release-live-bar">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/ender_eye.png" alt="">
+        <span class="mc-a" id="release-sync-status">Checking api.github.com/repos/5ivesaw/Sawbyte/releases ...</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+        <span class="mc-7">Version: <span class="mc-b">Minecraft <span class="mc-version-label">26.3</span></span></span>
+        <span class="mc-7">Updated: <span class="mc-e" id="release-pub-date">Checking...</span></span>
+        <button type="button" class="jukebox-mini-btn sfx-trigger" id="refresh-releases-btn">Refresh</button>
+      </div>
     </div>
 
     <div class="downloads-grid">
       <!-- Linux Card -->
       <div class="download-card">
         <div class="platform-header">
-          <div class="item-slot"><svg width="22" height="22" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg></div>
+          <div class="item-slot">
+            <img class="mc-png mc-png-lg" data-mc-tex="block/command_block_front.png" alt="">
+          </div>
           <div>
             <div class="platform-title">Linux (x86_64)</div>
-            <div class="mc-8" style="font-size: 12px;">Ubuntu 24.04+ / Pop!_OS / Debian / Arch</div>
+            <div class="mc-8" style="font-size: 12px;">Ubuntu 24.04+ / Debian / Arch</div>
           </div>
         </div>
-        <p class="mc-7" style="font-size: 14px; margin-bottom: 18px;">
-          Includes full desktop GUI launcher, headless zero-JVM native engine, and terminal play client.
+        <p class="mc-7" style="font-size: 13.5px; margin-bottom: 16px;">
+          Desktop launcher, headless Rust engine, and terminal CLI binary for Linux.
         </p>
         <div class="download-list">
-          <a id="dl-linux-launcher" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-launcher-ubuntu-24.04-X64.tar.gz" class="download-link-btn sfx-trigger">
-            <span>Desktop GUI Launcher</span>
-            <span class="mc-a">.tar.gz</span>
+          <a data-dl-key="linux-launcher" href="#downloads" target="_blank" rel="noopener" class="download-link-btn sfx-trigger">
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+              <img class="mc-png mc-png-sm" data-mc-tex="block/crafting_table_front.png" alt="">
+              <span>Desktop Launcher</span>
+            </span>
+            <span class="mc-a dl-meta-badge">Fetching...</span>
           </a>
-          <a id="dl-linux-engine" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-ubuntu-24.04-X64.tar.gz" class="download-link-btn sfx-trigger">
-            <span>Headless Engine (Core)</span>
-            <span class="mc-b">.tar.gz</span>
+          <a data-dl-key="linux-engine" href="#downloads" target="_blank" rel="noopener" class="download-link-btn sfx-trigger">
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+              <img class="mc-png mc-png-sm" data-mc-tex="item/redstone.png" alt="">
+              <span>Headless Engine</span>
+            </span>
+            <span class="mc-b dl-meta-badge">Fetching...</span>
           </a>
-          <a id="dl-linux-play" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-play-linux-x64.tar.gz" class="download-link-btn sfx-trigger">
-            <span>Sawbyte Play (CLI)</span>
-            <span class="mc-7">.tar.gz</span>
+          <a data-dl-key="linux-play" href="#downloads" target="_blank" rel="noopener" class="download-link-btn sfx-trigger">
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+              <img class="mc-png mc-png-sm" data-mc-tex="item/diamond_pickaxe.png" alt="">
+              <span>Sawbyte Play (CLI)</span>
+            </span>
+            <span class="mc-7 dl-meta-badge">Fetching...</span>
           </a>
         </div>
       </div>
@@ -386,27 +552,38 @@
       <!-- Windows Card -->
       <div class="download-card">
         <div class="platform-header">
-          <div class="item-slot"><svg width="22" height="22" class="pixel-icon"><use href="#mc-icon-diamond"/></svg></div>
+          <div class="item-slot">
+            <img class="mc-png mc-png-lg" data-mc-tex="item/diamond.png" alt="">
+          </div>
           <div>
             <div class="platform-title">Windows (x64)</div>
-            <div class="mc-8" style="font-size: 12px;">Windows 10 / 11 / Server 2022</div>
+            <div class="mc-8" style="font-size: 12px;">Windows 10 / 11</div>
           </div>
         </div>
-        <p class="mc-7" style="font-size: 14px; margin-bottom: 18px;">
-          Portable ZIP bundles containing executable GUI launcher, background engine daemon, and CLI binary.
+        <p class="mc-7" style="font-size: 13.5px; margin-bottom: 16px;">
+          Portable ZIP builds with the GUI launcher, background engine, and CLI client.
         </p>
         <div class="download-list">
-          <a id="dl-win-launcher" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-launcher-windows-2022-X64.zip" class="download-link-btn sfx-trigger">
-            <span>Desktop GUI Launcher</span>
-            <span class="mc-a">.zip</span>
+          <a data-dl-key="win-launcher" href="#downloads" target="_blank" rel="noopener" class="download-link-btn sfx-trigger">
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+              <img class="mc-png mc-png-sm" data-mc-tex="block/crafting_table_front.png" alt="">
+              <span>Desktop Launcher</span>
+            </span>
+            <span class="mc-a dl-meta-badge">Fetching...</span>
           </a>
-          <a id="dl-win-engine" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-windows-2022-X64.zip" class="download-link-btn sfx-trigger">
-            <span>Headless Engine (Core)</span>
-            <span class="mc-b">.zip</span>
+          <a data-dl-key="win-engine" href="#downloads" target="_blank" rel="noopener" class="download-link-btn sfx-trigger">
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+              <img class="mc-png mc-png-sm" data-mc-tex="item/redstone.png" alt="">
+              <span>Headless Engine</span>
+            </span>
+            <span class="mc-b dl-meta-badge">Fetching...</span>
           </a>
-          <a id="dl-win-play" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-play-windows-x64.zip" class="download-link-btn sfx-trigger">
-            <span>Sawbyte Play (CLI)</span>
-            <span class="mc-7">.zip</span>
+          <a data-dl-key="win-play" href="#downloads" target="_blank" rel="noopener" class="download-link-btn sfx-trigger">
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+              <img class="mc-png mc-png-sm" data-mc-tex="item/diamond_pickaxe.png" alt="">
+              <span>Sawbyte Play (CLI)</span>
+            </span>
+            <span class="mc-7 dl-meta-badge">Fetching...</span>
           </a>
         </div>
       </div>
@@ -414,67 +591,110 @@
       <!-- macOS Card -->
       <div class="download-card">
         <div class="platform-header">
-          <div class="item-slot"><svg width="22" height="22" class="pixel-icon"><use href="#mc-icon-emerald"/></svg></div>
+          <div class="item-slot">
+            <img class="mc-png mc-png-lg" data-mc-tex="item/emerald.png" alt="">
+          </div>
           <div>
             <div class="platform-title">macOS (Apple Silicon)</div>
             <div class="mc-8" style="font-size: 12px;">macOS 14+ (M1 / M2 / M3 / M4)</div>
           </div>
         </div>
-        <p class="mc-7" style="font-size: 14px; margin-bottom: 18px;">
-          Native ARM64 binaries compiled for Apple Silicon with ultra-low power and thermal efficiency.
+        <p class="mc-7" style="font-size: 13.5px; margin-bottom: 16px;">
+          Native ARM64 builds compiled for Apple Silicon Macs.
         </p>
         <div class="download-list">
-          <a id="dl-mac-launcher" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-launcher-macos-14-ARM64.tar.gz" class="download-link-btn sfx-trigger">
-            <span>Desktop GUI Launcher</span>
-            <span class="mc-a">.tar.gz</span>
+          <a data-dl-key="mac-launcher" href="#downloads" target="_blank" rel="noopener" class="download-link-btn sfx-trigger">
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+              <img class="mc-png mc-png-sm" data-mc-tex="block/crafting_table_front.png" alt="">
+              <span>Desktop Launcher</span>
+            </span>
+            <span class="mc-a dl-meta-badge">Fetching...</span>
           </a>
-          <a id="dl-mac-engine" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-macos-14-ARM64.tar.gz" class="download-link-btn sfx-trigger">
-            <span>Headless Engine (Core)</span>
-            <span class="mc-b">.tar.gz</span>
+          <a data-dl-key="mac-engine" href="#downloads" target="_blank" rel="noopener" class="download-link-btn sfx-trigger">
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+              <img class="mc-png mc-png-sm" data-mc-tex="item/redstone.png" alt="">
+              <span>Headless Engine</span>
+            </span>
+            <span class="mc-b dl-meta-badge">Fetching...</span>
           </a>
-          <a id="dl-mac-play" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-play-macos-arm64.tar.gz" class="download-link-btn sfx-trigger">
-            <span>Sawbyte Play (CLI)</span>
-            <span class="mc-7">.tar.gz</span>
+          <a data-dl-key="mac-play" href="#downloads" target="_blank" rel="noopener" class="download-link-btn sfx-trigger">
+            <span style="display: inline-flex; align-items: center; gap: 8px;">
+              <img class="mc-png mc-png-sm" data-mc-tex="item/diamond_pickaxe.png" alt="">
+              <span>Sawbyte Play (CLI)</span>
+            </span>
+            <span class="mc-7 dl-meta-badge">Fetching...</span>
           </a>
         </div>
       </div>
     </div>
 
-    <!-- Fabric Bridge Banner -->
-    <div class="metric-card" style="margin-top: 20px; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-      <div style="display: flex; align-items: center; gap: 16px;">
-        <div class="item-slot"><svg width="24" height="24" class="pixel-icon"><use href="#mc-icon-grass"/></svg></div>
+    <!-- Fabric Bridge Mod Banner -->
+    <div class="metric-card" style="margin-top: 18px; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div class="item-slot enchanted-glint">
+          <img class="mc-png mc-png-lg" data-mc-tex="block/grass_block_side.png" alt="">
+        </div>
         <div>
-          <div class="mc-f" style="font-size: 16px; margin-bottom: 4px;">Fabric Bridge Mod (Minecraft 26.3)</div>
-          <div class="mc-7" style="font-size: 14px;">Optional graphical sync bridge for official Minecraft client. Works alongside Fabric API &amp; Sodium.</div>
+          <div class="mc-f" style="font-size: 15.5px; margin-bottom: 4px;">Fabric Bridge Mod (Minecraft <span class="mc-version-label">26.3</span>)</div>
+          <div class="mc-7" style="font-size: 13px;">Optional mod to spectate and sync a headless Sawbyte bot inside your regular Minecraft client.</div>
         </div>
       </div>
-      <a id="dl-bridge-jar" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-bridge-0.3.3.jar" class="btn btn-green sfx-trigger">
-        <span>DOWNLOAD sawbyte-bridge-0.3.3.jar</span>
+      <a data-dl-key="bridge-jar" href="#downloads" target="_blank" rel="noopener" class="btn btn-green sfx-trigger">
+        <img class="mc-png" data-mc-tex="item/ender_eye.png" alt="">
+        <span id="bridge-jar-btn-label">Fetching Bridge JAR...</span>
       </a>
+    </div>
+
+    <!-- Live Release Files Table -->
+    <div class="bench-card" style="margin-top: 18px;">
+      <div class="bench-header">
+        <div class="bench-title">
+          <img class="mc-png" data-mc-tex="block/chest_front.png" alt="">
+          <span>All Release Files (<span class="release-tag-badge">Latest</span>)</span>
+        </div>
+        <a data-repo-releases-link="" href="https://github.com/5ivesaw/Sawbyte/releases" target="_blank" rel="noopener" class="status-tag" style="text-decoration: none;">
+          Open GitHub Releases -&gt;
+        </a>
+      </div>
+      <table class="bench-table">
+        <thead>
+          <tr>
+            <th>File Name</th>
+            <th>Platform</th>
+            <th>Size</th>
+            <th>Downloads</th>
+            <th>Link</th>
+          </tr>
+        </thead>
+        <tbody id="live-assets-tbody">
+          <tr>
+            <td colspan="5" class="mc-7">Loading release files from GitHub API...</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
-  <!-- Interactive Terminal Console with Exact §0-§f Color Code Parser -->
-  <section class="container" id="terminal">
+  <!-- Interactive Console -->
+  <section class="container reveal-on-scroll" id="terminal">
     <div class="section-header">
       <div class="badge">
-        <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg>
-        <span class="mc-a">LIVE PROTOCOL SHELL &amp; § COLOR ENGINE</span>
+        <img class="mc-png mc-png-sm" data-mc-tex="block/command_block_front.png" alt="">
+        <span class="mc-a">Bot Console &amp; Color Codes</span>
       </div>
-      <h2 class="section-title">INTERACTIVE BOT TERMINAL</h2>
+      <h2 class="section-title">Interactive Console</h2>
       <p class="section-desc">
-        Send live headless commands or test official Minecraft <span class="mc-e">§0–§f</span> formatting codes directly in the console.
+        Test out Sawbyte bot commands, play Minecraft audio, or preview <span class="mc-e">§0 to §f</span> chat color codes.
       </p>
     </div>
 
     <div class="terminal-card">
       <div class="terminal-header">
-        <div class="mc-7" style="font-size: 13px;">
-          <span class="mc-a">●</span> sawbyte-session — tcp://127.0.0.1:8765 (MCP Agent Daemon)
+        <div class="mc-7" style="font-size: 12.5px; display: flex; align-items: center; gap: 8px;">
+          <img class="mc-png mc-png-sm" data-mc-tex="item/redstone.png" alt="">
+          <span>sawbyte-cli (127.0.0.1:8765 • Minecraft <span class="mc-version-label">26.3</span>)</span>
         </div>
-        <!-- Interactive Official Minecraft Color Code Bar -->
-        <div class="color-palette-bar" title="Click to insert exact Minecraft § color code into terminal">
+        <div class="color-palette-bar" title="Insert Minecraft § color code">
           <button type="button" class="color-chip mc-1" onclick="insertColorCode('§1')">§1</button>
           <button type="button" class="color-chip mc-2" onclick="insertColorCode('§2')">§2</button>
           <button type="button" class="color-chip mc-3" onclick="insertColorCode('§3')">§3</button>
@@ -493,71 +713,100 @@
         </div>
       </div>
 
+      <div class="terminal-quick-chips">
+        <span class="mc-8" style="font-size: 11px;">COMMANDS:</span>
+        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('help')">help</button>
+        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('inspect.status')">inspect.status</button>
+        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('inspect.milestones')">inspect.milestones</button>
+        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('sound.pigstep')">sound.pigstep</button>
+        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('sound.pig')">sound.pig</button>
+        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('technoblade')">technoblade</button>
+        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('colors')">colors</button>
+        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('clear')">clear</button>
+      </div>
+
       <div class="terminal-body" id="term-body">
-        <div class="mc-8">[System] Sawbyte Engine v0.3.3 initialized. Zero-JVM memory footprint: 11.8 MB.</div>
-        <div class="mc-8">[System] Connected to 127.0.0.1:25565 (Protocol 774). World tick pacing: 20.00 TPS.</div>
-        <div class="mc-b">Type <span class="mc-e">help</span> for commands, or type any message with <span class="mc-a">§a</span><span class="mc-b">§b</span><span class="mc-6">§6</span> color codes!</div>
+        <div class="mc-8">[sawbyte] Ready on Minecraft 26.3 (11.8 MB RAM, 20.0 TPS).</div>
+        <div class="mc-b">Type <span class="mc-e">help</span> or click a command button above to test it out.</div>
       </div>
 
       <div class="terminal-input-bar">
         <span class="terminal-prompt">&gt;</span>
-        <input type="text" id="term-input" class="terminal-input" placeholder="Try: help, inspect.status, inspect.milestones, task.navigate 120 64 -30..." autocomplete="off">
+        <input type="text" id="term-input" class="terminal-input" placeholder="Type a command (e.g. help, inspect.status, technoblade)..." autocomplete="off">
       </div>
     </div>
   </section>
 
-  <!-- Embodied AI Benchmarks Suite -->
-  <section class="container" id="benchmarks">
+  <!-- Benchmarks Section -->
+  <section class="container reveal-on-scroll" id="benchmarks">
     <div class="section-header">
       <div class="badge">
-        <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-emerald"/></svg>
-        <span class="mc-6">VERIFIED EMPIRICAL RESULTS</span>
+        <img class="mc-png mc-png-sm" data-mc-tex="item/emerald.png" alt="">
+        <span class="mc-6">Test Results</span>
       </div>
-      <h2 class="section-title">EMBODIED AI BENCHMARK SUITE</h2>
+      <h2 class="section-title">Benchmarks &amp; Speed Tests</h2>
       <p class="section-desc">
-        Standardized AI benchmark results comparing Sawbyte native headless execution across
-        MineRL tech-tree milestones, MineDojo programmatic tasks, Voyager exploration, and multi-server automation.
+        Results from running survival progression, mob tasks, server logins, and memory tests on Minecraft 26.3.
       </p>
     </div>
 
     <div class="mode-tabs">
-      <button class="mode-tab bench-tab-btn active sfx-trigger" data-target="bench-minerl">MINERL OBTAIN-DIAMOND (12/12)</button>
-      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-minedojo">MINEDOJO TASKS (8/8)</button>
-      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-voyager">VOYAGER EXPLORATION (4/4)</button>
-      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-universal">MULTI-SERVER CRACKED (18/18)</button>
-      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-systems">SYSTEMS EFFICIENCY (4/4)</button>
+      <button class="mode-tab bench-tab-btn active sfx-trigger" data-target="bench-minerl" type="button">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/diamond_pickaxe.png" alt="">
+        <span>MineRL Diamond (12/12)</span>
+      </button>
+      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-minedojo" type="button">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/diamond_sword.png" alt="">
+        <span>MineDojo (8/8)</span>
+      </button>
+      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-voyager" type="button">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/ender_eye.png" alt="">
+        <span>Voyager (4/4)</span>
+      </button>
+      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-universal" type="button">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/compass_16.png" alt="">
+        <span>Server Tests (18/18)</span>
+      </button>
+      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-systems" type="button">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/redstone.png" alt="">
+        <span>RAM &amp; Speed</span>
+      </button>
     </div>
 
     <!-- MineRL -->
     <div id="bench-minerl" class="bench-content-section">
       <div class="bench-card">
         <div class="bench-header">
-          <div class="bench-title">MineRL ObtainDiamond Tech-Tree Verification (12 Stages)</div>
-          <div class="status-tag">12 / 12 PASSED (100%)</div>
+          <div class="bench-title">
+            <img class="mc-png" data-mc-tex="item/diamond.png" alt="">
+            <span>MineRL ObtainDiamond Tech-Tree (12 Steps)</span>
+          </div>
+          <div class="status-tag">12 / 12 PASSED</div>
         </div>
         <table class="bench-table">
           <thead>
             <tr>
-              <th>Stage ID</th>
-              <th>Milestone Goal</th>
-              <th>Recipe / Mechanics Required</th>
+              <th>Step</th>
+              <th>Item</th>
+              <th>Goal</th>
+              <th>What It Tests</th>
               <th>Ticks</th>
-              <th>Outcome</th>
+              <th>Result</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td class="mc-b">MRL-01</td><td>Collect Oak Log</td><td class="mc-7">Block raycast, punch duration &amp; inventory intake</td><td class="mc-e">80</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">MRL-02</td><td>Craft Oak Planks</td><td class="mc-7">2x2 grid shapeless crafting</td><td class="mc-e">20</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">MRL-03</td><td>Craft Crafting Table</td><td class="mc-7">2x2 shaped crafting</td><td class="mc-e">20</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">MRL-04</td><td>Place Crafting Table</td><td class="mc-7">Placement raycast, neighbor voxel update</td><td class="mc-e">40</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">MRL-05</td><td>Craft Wooden Pickaxe</td><td class="mc-7">3x3 grid shaped recipe (planks + sticks)</td><td class="mc-e">30</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">MRL-06</td><td>Mine Cobblestone</td><td class="mc-7">Tool hardness calculation &amp; drop entity intake</td><td class="mc-e">90</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">MRL-07</td><td>Craft Stone Pickaxe</td><td class="mc-7">3x3 grid shaped recipe (cobblestone + sticks)</td><td class="mc-e">30</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">MRL-08</td><td>Mine Raw Iron</td><td class="mc-7">Stone pickaxe harvest tier verification</td><td class="mc-e">110</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">MRL-09</td><td>Smelt Iron Ingot</td><td class="mc-7">Furnace fuel + smelting tick container progress</td><td class="mc-e">200</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">MRL-10</td><td>Craft Iron Pickaxe</td><td class="mc-7">3x3 grid shaped recipe (iron ingots + sticks)</td><td class="mc-e">30</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">MRL-11</td><td>Mine Deepslate Diamond Ore</td><td class="mc-7">Iron pickaxe harvest tier &amp; sub-zero Y depth</td><td class="mc-e">180</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">MRL-12</td><td>Obtain Diamond Milestone</td><td class="mc-7">Inventory confirmation of <code>minecraft:diamond</code></td><td class="mc-e">10</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">01</td><td><img class="mc-png" data-mc-tex="block/oak_log.png" alt=""></td><td>Collect Oak Log</td><td class="mc-7">Tree raycast, breaking blocks &amp; picking up drops</td><td class="mc-e">80</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">02</td><td><img class="mc-png" data-mc-tex="block/oak_planks.png" alt=""></td><td>Craft Oak Planks</td><td class="mc-7">2x2 inventory crafting</td><td class="mc-e">20</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">03</td><td><img class="mc-png" data-mc-tex="block/crafting_table_front.png" alt=""></td><td>Craft Crafting Table</td><td class="mc-7">2x2 shaped recipe</td><td class="mc-e">20</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">04</td><td><img class="mc-png" data-mc-tex="block/crafting_table_top.png" alt=""></td><td>Place Crafting Table</td><td class="mc-7">Block placement &amp; world state update</td><td class="mc-e">40</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">05</td><td><img class="mc-png" data-mc-tex="item/wooden_pickaxe.png" alt=""></td><td>Craft Wooden Pickaxe</td><td class="mc-7">3x3 crafting table recipe</td><td class="mc-e">30</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">06</td><td><img class="mc-png" data-mc-tex="block/cobblestone.png" alt=""></td><td>Mine Cobblestone</td><td class="mc-7">Mining speed &amp; item pickup</td><td class="mc-e">90</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">07</td><td><img class="mc-png" data-mc-tex="item/stone_pickaxe.png" alt=""></td><td>Craft Stone Pickaxe</td><td class="mc-7">3x3 tool upgrade</td><td class="mc-e">30</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">08</td><td><img class="mc-png" data-mc-tex="item/raw_iron.png" alt=""></td><td>Mine Raw Iron</td><td class="mc-7">Stone pickaxe harvest check</td><td class="mc-e">110</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">09</td><td><img class="mc-png" data-mc-tex="item/iron_ingot.png" alt=""></td><td>Smelt Iron Ingot</td><td class="mc-7">Furnace menu fuel &amp; smelting ticks</td><td class="mc-e">200</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">10</td><td><img class="mc-png" data-mc-tex="item/iron_pickaxe.png" alt=""></td><td>Craft Iron Pickaxe</td><td class="mc-7">3x3 iron pickaxe recipe</td><td class="mc-e">30</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">11</td><td><img class="mc-png" data-mc-tex="block/deepslate_diamond_ore.png" alt=""></td><td>Mine Diamond Ore</td><td class="mc-7">Deep cave mining with iron pickaxe</td><td class="mc-e">180</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">12</td><td><img class="mc-png" data-mc-tex="item/diamond.png" alt=""></td><td>Get Diamond</td><td class="mc-7">Diamond confirmed in inventory slot</td><td class="mc-e">10</td><td><span class="status-tag">PASSED</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -567,27 +816,31 @@
     <div id="bench-minedojo" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
-          <div class="bench-title">MineDojo Programmatic Embodied Tasks (8 Tasks)</div>
-          <div class="status-tag">8 / 8 PASSED (100%)</div>
+          <div class="bench-title">
+            <img class="mc-png" data-mc-tex="item/diamond_sword.png" alt="">
+            <span>MineDojo Survival Tasks (8 Tasks)</span>
+          </div>
+          <div class="status-tag">8 / 8 PASSED</div>
         </div>
         <table class="bench-table">
           <thead>
             <tr>
-              <th>Task Code</th>
-              <th>Task Description</th>
-              <th>Target Entity / Block</th>
-              <th>Outcome</th>
+              <th>Task</th>
+              <th>Icon</th>
+              <th>Goal</th>
+              <th>Target</th>
+              <th>Result</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td class="mc-b">DOJO-HARVEST-WHEAT</td><td>Harvest mature wheat and replant seeds</td><td class="mc-e">minecraft:wheat</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">DOJO-SHEAR-SHEEP</td><td>Locate adult sheep and collect wool with shears</td><td class="mc-e">minecraft:sheep</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">DOJO-MILK-COW</td><td>Interact with cow using empty bucket</td><td class="mc-e">minecraft:cow</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">DOJO-HUNT-ZOMBIE</td><td>Engage hostile mob with weapon &amp; collect drops</td><td class="mc-e">minecraft:zombie</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">DOJO-NAV-PORTAL</td><td>Traverse rough terrain and enter Nether portal</td><td class="mc-e">minecraft:nether_portal</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">DOJO-FISH-COD</td><td>Cast fishing rod, monitor splash, retrieve fish</td><td class="mc-e">minecraft:cod</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">DOJO-TAME-WOLF</td><td>Feed bones to wild wolf until tamed collar state</td><td class="mc-e">minecraft:wolf</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">DOJO-DEFEND-VILLAGE</td><td>Neutralize raid scout while preserving villagers</td><td class="mc-e">minecraft:pillager</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Harvest Wheat</td><td><img class="mc-png" data-mc-tex="item/wheat.png" alt=""></td><td>Break grown wheat and replant seeds</td><td class="mc-e">minecraft:wheat</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Shear Sheep</td><td><img class="mc-png" data-mc-tex="item/shears.png" alt=""></td><td>Use shears on sheep and pick up wool</td><td class="mc-e">minecraft:sheep</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Milk Cow</td><td><img class="mc-png" data-mc-tex="item/milk_bucket.png" alt=""></td><td>Use empty bucket on cow</td><td class="mc-e">minecraft:cow</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Fight Zombie</td><td><img class="mc-png" data-mc-tex="item/rotten_flesh.png" alt=""></td><td>Fight hostile zombie and collect drops</td><td class="mc-e">minecraft:zombie</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Enter Portal</td><td><img class="mc-png" data-mc-tex="block/obsidian.png" alt=""></td><td>Walk into Nether portal and load dimension</td><td class="mc-e">minecraft:nether_portal</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Catch Fish</td><td><img class="mc-png" data-mc-tex="item/fishing_rod.png" alt=""></td><td>Cast rod and reel in on splash</td><td class="mc-e">minecraft:cod</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Tame Wolf</td><td><img class="mc-png" data-mc-tex="item/bone.png" alt=""></td><td>Feed bones to wolf until tamed</td><td class="mc-e">minecraft:wolf</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Defend Village</td><td><img class="mc-png" data-mc-tex="item/crossbow_standby.png" alt=""></td><td>Defeat pillager without hitting villagers</td><td class="mc-e">minecraft:pillager</td><td><span class="status-tag">PASSED</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -597,23 +850,26 @@
     <div id="bench-voyager" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
-          <div class="bench-title">Voyager Autonomous Milestone &amp; Exploration Persistence (4/4)</div>
-          <div class="status-tag">4 / 4 PASSED (100%)</div>
+          <div class="bench-title">
+            <img class="mc-png" data-mc-tex="item/ender_eye.png" alt="">
+            <span>Voyager Long-Run Survival Checks (4/4)</span>
+          </div>
+          <div class="status-tag">4 / 4 PASSED</div>
         </div>
         <table class="bench-table">
           <thead>
             <tr>
-              <th>Voyager Metric</th>
-              <th>Evaluation Method</th>
-              <th>Observed Result</th>
+              <th>Check</th>
+              <th>What It Does</th>
+              <th>Result</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td class="mc-b">Long-Horizon Skill Storage</td><td class="mc-7">Persist milestone records with attempt, tick, pos &amp; deaths</td><td class="mc-a">Verified JSONL &amp; audit trail</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">Zero-Cheat Verification</td><td class="mc-7">Strict survival tick progression with natural gravity</td><td class="mc-a">No teleport or creative spoofing</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">Autonomous Death Analysis</td><td class="mc-7">Track exact death causes, locations &amp; recovery paths</td><td class="mc-a">Exact lethal cause logging</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">Deterministic Resumption</td><td class="mc-7">Restore live session from disk without state divergence</td><td class="mc-a">0 tick drift across reconnects</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Milestone Saving</td><td class="mc-7">Saves progress, tick count, coordinates, and inventory to disk</td><td class="mc-a">JSONL log verified</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">No Cheats Used</td><td class="mc-7">Plays normal survival mode without teleport or creative commands</td><td class="mc-a">Survival packets only</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Death Tracking</td><td class="mc-7">Records death cause and coordinates so the bot can recover items</td><td class="mc-a">Logged accurately</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Session Reconnect</td><td class="mc-7">Reconnects to server and resumes task without losing state</td><td class="mc-a">0 tick drift</td><td><span class="status-tag">PASSED</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -623,26 +879,29 @@
     <div id="bench-universal" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
-          <div class="bench-title">Universal Multi-Server Cracked &amp; Sub-Server Benchmark (18/18 Stages)</div>
-          <div class="status-tag">18 / 18 PASSED (100%)</div>
+          <div class="bench-title">
+            <img class="mc-png" data-mc-tex="item/compass_16.png" alt="">
+            <span>Multi-Server &amp; Lobby Navigation Tests (18/18)</span>
+          </div>
+          <div class="status-tag">18 / 18 PASSED</div>
         </div>
         <table class="bench-table">
           <thead>
             <tr>
               <th>Stage</th>
-              <th>Test Operation</th>
-              <th>Target Environment</th>
-              <th>Latency / Pacing</th>
+              <th>Action</th>
+              <th>Servers Tested</th>
+              <th>Time</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td class="mc-b">Stage 01</td><td>Offline Cracked Handshake (UUID Gen)</td><td class="mc-7">top.pika.host / Donut SMP / Vanilla</td><td class="mc-e">0.12 ms</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">Stage 02</td><td>In-Chat Command Registration (<code>/register</code>)</td><td class="mc-7">Authentication lobby</td><td class="mc-e">12.4 ms</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">Stage 03</td><td>Compass Game Navigator Keyword Matching</td><td class="mc-7">Hotbar item slot inspection</td><td class="mc-e">0.08 ms</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">Stage 04</td><td>Container Menu Item Selection &amp; Click</td><td class="mc-7">Multi-screen chest GUI</td><td class="mc-e">1.20 ms</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">Stage 05</td><td>World Transition &amp; Dimension Sync</td><td class="mc-7">Lobby -&gt; Sub-server instance</td><td class="mc-e">42.0 ms</td><td><span class="status-tag">PASSED</span></td></tr>
-            <tr><td class="mc-b">Stage 06 - 18</td><td>3D Voxel Movement, Raycasting &amp; Mining</td><td class="mc-7">Live survival sub-server gameplay</td><td class="mc-a">20.00 TPS</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 01</td><td>Offline / Cracked Login Handshake</td><td class="mc-7">top.pika.host / Donut SMP / Vanilla 26.3</td><td class="mc-e">0.12 ms</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 02</td><td>Lobby Chat Login (<code>/register</code> &amp; <code>/login</code>)</td><td class="mc-7">Auth lobby servers</td><td class="mc-e">12.4 ms</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 03</td><td>Server Selector Compass Click</td><td class="mc-7">Hotbar slot selection</td><td class="mc-e">0.08 ms</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 04</td><td>Chest GUI Menu Navigation</td><td class="mc-7">Custom server selector menus</td><td class="mc-e">1.20 ms</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 05</td><td>Lobby to Sub-Server Transfer</td><td class="mc-7">Bungee / Velocity world switch</td><td class="mc-e">42.0 ms</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 06-18</td><td>Pathfinding, Mining &amp; Inventory Sync</td><td class="mc-7">Live survival sub-server</td><td class="mc-a">20.0 TPS</td><td><span class="status-tag">PASSED</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -652,174 +911,304 @@
     <div id="bench-systems" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
-          <div class="bench-title">Hardware Resource Footprint vs Standard JVM Client</div>
-          <div class="status-tag">4 / 4 CRITERIA EXCEEDED</div>
+          <div class="bench-title">
+            <img class="mc-png" data-mc-tex="item/redstone.png" alt="">
+            <span>Sawbyte (Rust) vs Official Minecraft Client (Java)</span>
+          </div>
+          <div class="status-tag">VERIFIED</div>
         </div>
         <table class="bench-table">
           <thead>
             <tr>
               <th>Metric</th>
-              <th>Sawbyte Headless (Rust)</th>
-              <th>Official Minecraft Client (JVM)</th>
-              <th>Improvement Factor</th>
+              <th>Sawbyte (Rust 26.3)</th>
+              <th>Vanilla Minecraft (Java)</th>
+              <th>Difference</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>Memory Footprint (RSS)</td><td class="mc-a">11.8 MB</td><td class="mc-7">1,840 MB</td><td class="mc-b">155.9x lighter</td></tr>
-            <tr><td>Binary Disk Size</td><td class="mc-a">4.6 MB</td><td class="mc-7">620 MB</td><td class="mc-b">134.7x smaller</td></tr>
-            <tr><td>Startup Latency</td><td class="mc-a">14 ms</td><td class="mc-7">8,400 ms</td><td class="mc-b">600x faster</td></tr>
-            <tr><td>Tick Processing Time</td><td class="mc-a">0.04 ms / tick</td><td class="mc-7">12.2 ms / tick</td><td class="mc-b">305x headroom</td></tr>
+            <tr><td>RAM Usage</td><td class="mc-a">11.8 MB</td><td class="mc-7">1,840 MB</td><td class="mc-b">155.9x less RAM</td></tr>
+            <tr><td>Download Size</td><td class="mc-a">4.6 MB</td><td class="mc-7">620 MB</td><td class="mc-b">134.7x smaller</td></tr>
+            <tr><td>Startup Time</td><td class="mc-a">14 ms</td><td class="mc-7">8,400 ms</td><td class="mc-b">600x faster</td></tr>
+            <tr><td>CPU Time per Tick</td><td class="mc-a">0.04 ms</td><td class="mc-7">12.2 ms</td><td class="mc-b">305x lighter</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </section>
 
-  <!-- AI Agent Skill & Playbook Section -->
-  <section class="container" id="agents">
+  <!-- AI Bot Setup Section -->
+  <section class="container reveal-on-scroll" id="agents">
     <div class="section-header">
       <div class="badge">
-        <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-redstone"/></svg>
-        <span class="mc-d">AUTONOMOUS AI INTEGRATION</span>
+        <img class="mc-png mc-png-sm" data-mc-tex="item/redstone.png" alt="">
+        <span class="mc-d">AI Bot Integration</span>
       </div>
-      <h2 class="section-title">AI AGENT MCP RUNTIME &amp; SKILL.MD</h2>
+      <h2 class="section-title">Hook Up Claude, Gemini, or Custom Scripts</h2>
       <p class="section-desc">
-        Complete Model Context Protocol interface enabling Claude, Gemini, and custom agents
-        to autonomously play and beat Minecraft without human intervention or game-rule cheating.
+        Sawbyte includes a built-in MCP server and SKILL.md guide so AI agents can join a Minecraft <span class="mc-version-label">26.3</span> world and play survival mode on their own.
       </p>
     </div>
 
-    <div class="metric-card" style="padding: 28px;">
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; margin-bottom: 24px;">
+    <div class="metric-card" style="padding: 26px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 24px; margin-bottom: 22px;">
         <div>
-          <div class="mc-b" style="font-size: 16px; margin-bottom: 12px;">10 LIVE MCP TOOLS</div>
-          <ul style="list-style: none; font-size: 14px; line-height: 2.2;" class="mc-7">
-            <li><span class="mc-e">sawbyte_inspect_status</span> — Real-time vitals &amp; sub-voxel pos</li>
-            <li><span class="mc-e">sawbyte_milestone_save</span> — Persist milestone &amp; death info</li>
-            <li><span class="mc-e">sawbyte_navigate_astar</span> — Dynamic 3D A* pathfinding</li>
-            <li><span class="mc-e">sawbyte_raycast_block</span> — Sub-voxel ray intersection</li>
-            <li><span class="mc-e">sawbyte_inventory_find</span> — Scan 45 container &amp; hotbar slots</li>
-            <li><span class="mc-e">sawbyte_craft_recipe</span> — Deterministic 2x2 &amp; 3x3 crafting</li>
+          <div class="mc-b" style="font-size: 15.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+            <img class="mc-png" data-mc-tex="block/command_block_front.png" alt="">
+            <span>Built-in Bot Tools</span>
+          </div>
+          <ul style="list-style: none; font-size: 13.5px; line-height: 2.2;" class="mc-7">
+            <li><img class="mc-png mc-png-sm" data-mc-tex="item/compass_16.png" alt=""> <span class="mc-e">sawbyte_inspect_status</span> : Read health, hunger &amp; coordinates</li>
+            <li><img class="mc-png mc-png-sm" data-mc-tex="item/writable_book.png" alt=""> <span class="mc-e">sawbyte_milestone_save</span> : Save milestones &amp; death logs</li>
+            <li><img class="mc-png mc-png-sm" data-mc-tex="item/ender_pearl.png" alt=""> <span class="mc-e">sawbyte_navigate_astar</span> : Walk to XYZ coordinates with 3D A*</li>
+            <li><img class="mc-png mc-png-sm" data-mc-tex="item/spyglass.png" alt=""> <span class="mc-e">sawbyte_raycast_block</span> : Check blocks in line of sight</li>
+            <li><img class="mc-png mc-png-sm" data-mc-tex="block/chest_front.png" alt=""> <span class="mc-e">sawbyte_inventory_find</span> : Search all 45 inventory slots</li>
+            <li><img class="mc-png mc-png-sm" data-mc-tex="block/crafting_table_front.png" alt=""> <span class="mc-e">sawbyte_craft_recipe</span> : Craft 2x2 and 3x3 items</li>
           </ul>
         </div>
 
         <div>
-          <div class="mc-a" style="font-size: 16px; margin-bottom: 12px;">LONG-HORIZON SURVIVAL RUNBOOK</div>
-          <ul style="list-style: none; font-size: 14px; line-height: 2.2;" class="mc-7">
-            <li><span class="mc-6">Phase 1:</span> Spawn, tree harvesting &amp; stone tool acquisition</li>
-            <li><span class="mc-6">Phase 2:</span> Cave exploration, iron smelting &amp; diamond gear</li>
-            <li><span class="mc-6">Phase 3:</span> Nether traversal, blaze rods &amp; ender pearls</li>
-            <li><span class="mc-6">Phase 4:</span> Stronghold discovery &amp; Ender Dragon battle</li>
-            <li><span class="mc-c">Audit Rule:</span> Zero cheats, zero spoofed packets, exact ticks</li>
+          <div class="mc-a" style="font-size: 15.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+            <img class="mc-png" data-mc-tex="item/ender_eye.png" alt="">
+            <span>Survival Progression Guide</span>
+          </div>
+          <ul style="list-style: none; font-size: 13.5px; line-height: 2.2;" class="mc-7">
+            <li><img class="mc-png mc-png-sm" data-mc-tex="item/wooden_pickaxe.png" alt=""> <span class="mc-6">Step 1:</span> Punch trees, craft wood &amp; stone tools</li>
+            <li><img class="mc-png mc-png-sm" data-mc-tex="item/diamond_pickaxe.png" alt=""> <span class="mc-6">Step 2:</span> Smelt iron, mine down to deepslate diamonds</li>
+            <li><img class="mc-png mc-png-sm" data-mc-tex="item/blaze_rod.png" alt=""> <span class="mc-6">Step 3:</span> Build Nether portal, get blaze rods &amp; ender pearls</li>
+            <li><img class="mc-png mc-png-sm" data-mc-tex="item/dragon_breath.png" alt=""> <span class="mc-6">Step 4:</span> Find Stronghold &amp; defeat the Ender Dragon</li>
+            <li><img class="mc-png mc-png-sm" data-mc-tex="item/totem_of_undying.png" alt=""> <span class="mc-c">Fair Play:</span> No creative mode or teleport cheats</li>
           </ul>
         </div>
       </div>
 
-      <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-        <a href="https://github.com/5ivesaw/Sawbyte/blob/main/skills/sawbyte/SKILL.md" target="_blank" rel="noopener" class="btn btn-primary sfx-trigger">
-          <span>READ COMPLETE SKILL.MD ON GITHUB</span>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <a id="skill-doc-link" href="https://github.com/5ivesaw/Sawbyte/blob/main/skills/sawbyte/SKILL.md" target="_blank" rel="noopener" class="btn btn-primary sfx-trigger">
+          <img class="mc-png" data-mc-tex="item/enchanted_book.png" alt="">
+          <span>View SKILL.md on GitHub</span>
         </a>
-        <a href="https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/skills/sawbyte/SKILL.md" class="btn btn-secondary sfx-trigger">
-          <span>DOWNLOAD RAW SPEC</span>
+        <a id="skill-raw-link" href="https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/skills/sawbyte/SKILL.md" target="_blank" rel="noopener" class="btn btn-secondary sfx-trigger">
+          <img class="mc-png" data-mc-tex="item/paper.png" alt="">
+          <span>Raw SKILL.md</span>
         </a>
       </div>
     </div>
   </section>
 
   <!-- ============================================================================
-       SEPARATE PERSONAL NOTE FROM THE CREATOR — IN MEMORIAM: TECHNOBLADE (1999–2022)
+       PERSONAL NOTE FROM THE CREATOR: TECHNOBLADE (1999 to 2022)
        ============================================================================ -->
   <div class="personal-note-divider">
     <div class="divider-line"></div>
-    <span class="mc-8" style="font-size: 13px;">§8• PERSONAL NOTE FROM THE CREATOR (UNRELATED TO PROJECT) •</span>
+    <span class="mc-8" style="font-size: 12.5px; display: inline-flex; align-items: center; gap: 8px;">
+      <img class="mc-png mc-png-sm" data-mc-tex="item/golden_helmet.png" alt="">
+      <span>§8• Personal Note from the Creator •</span>
+    </span>
     <div class="divider-line"></div>
   </div>
 
-  <section class="tribute-section" id="memoriam">
+  <section class="tribute-section reveal-on-scroll" id="memoriam">
     <div class="tribute-frame">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <div class="badge" style="margin-bottom: 12px;">
-          <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-crown"/></svg>
-          <span class="mc-6">IN LOVING MEMORY • ALEXANDER (1999 – 2022)</span>
+      <div style="text-align: center; margin-bottom: 18px;">
+        <div class="badge enchanted-glint" style="margin-bottom: 10px;">
+          <img class="mc-png mc-png-sm" data-mc-tex="item/golden_helmet.png" alt="">
+          <span class="mc-6">In Loving Memory • Alexander (1999 to 2022)</span>
+          <img class="mc-png mc-png-sm" data-mc-tex="block/poppy.png" alt="">
         </div>
-        <h2 class="section-title mc-e" style="margin-top: 6px;">REST IN PEACE, TECHNOBLADE</h2>
+        <h2 class="section-title mc-e" style="margin-top: 6px;">Rest in Peace, Technoblade</h2>
       </div>
 
       <div class="tribute-disclaimer">
         <span class="mc-f">Personal Note:</span> Technoblade is completely separate from and unaffiliated with the project above.
-        I am not using his name to promote anything—Sawbyte is just a side project I built for fun.
+        I am not using his name to promote anything. Sawbyte is just a side project I built for fun.
         Technoblade is the person who got me into Minecraft and inspired me to love this community in the first place,
         and I wanted to leave a quiet corner on my site so he is always remembered across the things I make.
       </div>
 
       <div class="tribute-grid">
         <!-- Cutout 1: Iconic Crown Pig -->
-        <div class="tribute-figure-card">
+        <div
+          class="tribute-figure-card"
+          onclick="triggerTechnoSound('pig')"
+          data-tooltip-title="§6The Crowned Legend (Click for Pig Sound)"
+          data-tooltip-lore="§7“If I had another hundred lives, I think|§7I would choose to be Technoblade again|§7every single time.”|§eClick to play Minecraft Pig sound"
+        >
           <div class="tribute-img-wrap">
-            <img src="assets/techno_pig.png" alt="Technoblade Crowned Pig" class="tribute-img">
+            <img
+              src="https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/docs/assets/techno_pig.png"
+              data-fallback-skin="https://mc-heads.net/body/Technoblade/right"
+              alt="Technoblade Crowned Pig"
+              class="tribute-img"
+            >
           </div>
-          <div class="mc-6" style="font-size: 15px; margin-bottom: 6px;">THE CROWNED LEGEND</div>
-          <p class="mc-7" style="font-size: 13.5px; line-height: 1.8;">
+          <div class="mc-6" style="font-size: 15px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+            <img class="mc-png" data-mc-tex="item/golden_helmet.png" alt="">
+            <span>The Crowned Legend</span>
+          </div>
+          <p class="mc-7" style="font-size: 13px; line-height: 1.8;">
             “If I had another hundred lives, I think I would choose to be Technoblade again every single time.”
           </p>
         </div>
 
         <!-- Cutout 2: Dual Axes Technoblade -->
-        <div class="tribute-figure-card">
+        <div
+          class="tribute-figure-card"
+          onclick="triggerTechnoSound('totem')"
+          data-tooltip-title="§cTechnoblade Never Dies! (Click for Totem Sound)"
+          data-tooltip-lore="§7Blood for the Blood God • Skyblock Potato King|§eClick to play Totem of Undying sound"
+        >
           <div class="tribute-img-wrap">
-            <img src="assets/techno_axes.png" alt="Technoblade Dual Axes" class="tribute-img delay">
+            <img
+              src="https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/docs/assets/techno_axes.png"
+              data-fallback-skin="https://mc-heads.net/body/Technoblade/left"
+              alt="Technoblade Dual Axes"
+              class="tribute-img delay"
+            >
           </div>
-          <div class="mc-c" style="font-size: 15px; margin-bottom: 6px;">TECHNOBLADE NEVER DIES</div>
-          <p class="mc-7" style="font-size: 13.5px; line-height: 1.8;">
+          <div class="mc-c" style="font-size: 15px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+            <img class="mc-png" data-mc-tex="item/totem_of_undying.png" alt="">
+            <span>Technoblade Never Dies</span>
+          </div>
+          <p class="mc-7" style="font-size: 13px; line-height: 1.8;">
             Thank you for all the laughs, the late-night streams, the Skyblock Potato Wars, and the memories that shaped a whole generation of players.
           </p>
         </div>
       </div>
 
+      <!-- Technoblade Minecraft Soundboard (Streamed from Public GitHub) -->
+      <div class="techno-soundboard">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div class="mc-6" style="font-size: 13.5px; display: flex; align-items: center; gap: 8px;">
+            <img class="mc-png" data-mc-tex="item/music_disc_pigstep.png" alt="">
+            <span>Technoblade Soundboard (Official Minecraft Sounds)</span>
+          </div>
+          <span class="mc-8" style="font-size: 11.5px;">Click any item to play its sound</span>
+        </div>
+
+        <div class="soundboard-grid">
+          <button type="button" class="soundboard-btn" onclick="triggerTechnoSound('pig')">
+            <img class="mc-png mc-png-lg" data-mc-tex="item/porkchop.png" alt="">
+            <div>
+              <div class="mc-d">Pig Oink</div>
+              <div class="mc-8" style="font-size: 11px;">mob/pig/say.ogg</div>
+            </div>
+          </button>
+
+          <button type="button" class="soundboard-btn" onclick="triggerTechnoSound('totem')">
+            <img class="mc-png mc-png-lg" data-mc-tex="item/totem_of_undying.png" alt="">
+            <div>
+              <div class="mc-e">Never Dies!</div>
+              <div class="mc-8" style="font-size: 11px;">Totem of Undying</div>
+            </div>
+          </button>
+
+          <button type="button" class="soundboard-btn" onclick="triggerTechnoSound('potato')">
+            <img class="mc-png mc-png-lg" data-mc-tex="item/baked_potato.png" alt="">
+            <div>
+              <div class="mc-6">Potato War (<span id="potato-war-count">500,000,000</span>)</div>
+              <div class="mc-8" style="font-size: 11px;">+1 Baked Potato</div>
+            </div>
+          </button>
+
+          <button type="button" class="soundboard-btn" onclick="triggerTechnoSound('bell')">
+            <img class="mc-png mc-png-lg" data-mc-tex="item/bell.png" alt="">
+            <div>
+              <div class="mc-e">Channel Bell</div>
+              <div class="mc-8" style="font-size: 11px;">One of Us!</div>
+            </div>
+          </button>
+
+          <button type="button" class="soundboard-btn" onclick="triggerTechnoSound('pigstep')">
+            <img class="mc-png mc-png-lg" data-mc-tex="item/music_disc_pigstep.png" alt="">
+            <div>
+              <div class="mc-c">Play Pigstep</div>
+              <div class="mc-8" style="font-size: 11px;">Lena Raine Disc</div>
+            </div>
+          </button>
+
+          <button type="button" class="soundboard-btn" onclick="triggerTechnoSound('firework')">
+            <img class="mc-png mc-png-lg" data-mc-tex="item/firework_rocket.png" alt="">
+            <div>
+              <div class="mc-b">Firework Salute</div>
+              <div class="mc-8" style="font-size: 11px;">Launch Rocket</div>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <div class="tribute-actions-wrap">
-        <div class="tribute-counter-badge">
-          <span class="mc-e">RESPECTS PAID:</span>
-          <span id="tribute-count" class="mc-a">0</span>
-          <span class="mc-8">[o7]</span>
+        <div class="tribute-stats-row">
+          <div class="tribute-counter-badge">
+            <img class="mc-png" data-mc-tex="block/poppy.png" alt="">
+            <span class="mc-e">Respects Paid:</span>
+            <span id="tribute-count" class="mc-a">0</span>
+            <span class="mc-8">[o7]</span>
+          </div>
+
+          <div class="tribute-counter-badge">
+            <img class="mc-png" data-mc-tex="item/baked_potato.png" alt="">
+            <span class="mc-6">Potatoes Farmed:</span>
+            <span id="potato-badge-count" class="mc-e">500,000,000</span>
+          </div>
         </div>
 
         <div id="tribute-cooldown-bar" class="tribute-cooldown-bar">
           <div id="tribute-cooldown-fill" class="tribute-cooldown-fill"></div>
         </div>
 
-        <button type="button" id="pay-respects-btn" class="btn btn-secondary sfx-xp">
-          <svg width="16" height="16" class="pixel-icon"><use href="#mc-icon-crown"/></svg>
-          <span id="respects-label">LEAVE A TRIBUTE POPPY [o7]</span>
+        <button type="button" id="pay-respects-btn" class="btn btn-gold enchanted-glint">
+          <img class="mc-png" data-mc-tex="block/poppy.png" alt="">
+          <span id="respects-label">Leave a Tribute Poppy [o7]</span>
         </button>
 
-        <div id="tribute-status-hint" class="mc-8" style="font-size: 12px; min-height: 16px;">
-          Saved in browser storage • Anti-spam cooldown enabled
+        <div id="tribute-status-hint" class="mc-8" style="font-size: 11.5px; min-height: 16px;">
+          Plays Minecraft Pig &amp; Level-Up sounds • Saved in browser storage
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Standard Project Footer -->
+  <!-- Footer -->
   <footer class="footer">
     <div class="footer-links">
-      <a href="https://github.com/5ivesaw/Sawbyte" class="footer-link sfx-trigger">GitHub Repository</a>
-      <a href="https://github.com/5ivesaw/Sawbyte/releases" class="footer-link sfx-trigger">Releases (v0.3.3)</a>
-      <a href="https://github.com/5ivesaw/Sawbyte/actions" class="footer-link sfx-trigger">CI Workflows</a>
-      <a href="https://github.com/5ivesaw/Sawbyte/blob/main/skills/sawbyte/SKILL.md" class="footer-link sfx-trigger">AI Skill Spec</a>
-      <a href="https://github.com/5ivesaw/Sawbyte/blob/main/LICENSE" class="footer-link sfx-trigger">MIT / Apache 2.0 License</a>
+      <a data-repo-link="" href="https://github.com/5ivesaw/Sawbyte" target="_blank" rel="noopener" class="footer-link sfx-trigger">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/writable_book.png" alt="">
+        <span>GitHub Repo</span>
+      </a>
+      <a data-repo-releases-link="" href="https://github.com/5ivesaw/Sawbyte/releases" target="_blank" rel="noopener" class="footer-link sfx-trigger">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/diamond.png" alt="">
+        <span>Releases (<span class="release-tag-badge">Latest</span>)</span>
+      </a>
+      <a data-repo-actions-link="" href="https://github.com/5ivesaw/Sawbyte/actions" target="_blank" rel="noopener" class="footer-link sfx-trigger">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/redstone.png" alt="">
+        <span>CI Builds</span>
+      </a>
+      <a id="footer-skill-link" href="https://github.com/5ivesaw/Sawbyte/blob/main/skills/sawbyte/SKILL.md" target="_blank" rel="noopener" class="footer-link sfx-trigger">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/enchanted_book.png" alt="">
+        <span>SKILL.md</span>
+      </a>
+      <a id="footer-license-link" href="https://github.com/5ivesaw/Sawbyte/blob/main/LICENSE" target="_blank" rel="noopener" class="footer-link sfx-trigger">
+        <img class="mc-png mc-png-sm" data-mc-tex="item/paper.png" alt="">
+        <span>License</span>
+      </a>
     </div>
-    <div class="mc-8" style="font-size: 12px;">
-      Sawbyte is an independent open-source Rust project built for fun. Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
+    <div class="mc-8" style="font-size: 11.5px;">
+      Sawbyte is an independent open-source Rust project for Minecraft <span class="mc-version-label">26.3</span>. Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
     </div>
   </footer>
 
-  <!-- Final Quiet Image at the Very End of the Site (Technoblade Looking Back) -->
+  <!-- Final Quiet Image at the End of the Site -->
   <div class="final-farewell-endpiece">
     <div class="farewell-img-box">
-      <img src="assets/techno_farewell.png" alt="So long nerds — Technoblade Farewell" class="farewell-img">
+      <img
+        src="https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/docs/assets/techno_farewell.png"
+        data-fallback-skin="https://mc-heads.net/avatar/Technoblade/160"
+        alt="So long nerds"
+        class="farewell-img"
+      >
     </div>
     <div class="mc-6" style="font-size: 15px; margin-bottom: 4px;">“So long nerds.”</div>
-    <div class="mc-8" style="font-size: 12px;">Technoblade Never Dies • 1999 – Forever</div>
+    <div class="mc-8" style="font-size: 12px;">Technoblade Never Dies • 1999 to Forever</div>
   </div>
 
 </body>
