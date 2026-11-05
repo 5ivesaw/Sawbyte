@@ -26,7 +26,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import localMapping from '../../../assets/locales.json'
+import localMapping from '@/assets/locales/index.json'
 
 defineProps<{ modelValue: string }>()
 
