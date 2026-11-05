@@ -43,7 +43,7 @@
         "@xmcl/file-transfer": "workspace:*",
         "@xmcl/installer": "workspace:*",
         "@xmcl/multiplayer-core": "workspace:*",
-        "@xmcl/nat-api": "workspace:*",
+        "@xmcl/nat-api": "^0.4.5",
         "@xmcl/oxlint-config": "workspace:*",
         "@xmcl/resource": "workspace:*",
         "@xmcl/runtime": "workspace:*",

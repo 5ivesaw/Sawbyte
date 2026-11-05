@@ -21,7 +21,7 @@
     "@xmcl/asm": "workspace:^",
     "@xmcl/core": "workspace:^",
     "@xmcl/file-transfer": "workspace:^",
-    "@xmcl/forge-site-parser": "workspace:^",
+    "@xmcl/forge-site-parser": "^2.0.9",
     "@xmcl/unzip": "workspace:^",
     "@xmcl/yauzl": "workspace:^",
     "tar-stream": "^3.1.7",

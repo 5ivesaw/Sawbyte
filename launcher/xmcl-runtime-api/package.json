@@ -32,7 +32,7 @@
         "@xmcl/file-transfer": "workspace:*",
         "@xmcl/core": "workspace:*",
         "@xmcl/curseforge": "workspace:*",
-        "@xmcl/forge-site-parser": "workspace:*",
+        "@xmcl/forge-site-parser": "^2.0.9",
         "@xmcl/game-data": "workspace:*",
         "@xmcl/gamesetting": "workspace:*",
         "@xmcl/installer": "workspace:*",
