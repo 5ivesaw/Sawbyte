@@ -617,8 +617,7 @@ function initBenchmarkTabs() {
 function initRespectsButton() {
   const btn = document.getElementById('pay-respects-btn');
   const label = document.getElementById('respects-label');
-  const totalCountEl = document.getElementById('tribute-total-count');
-  const personalCountEl = document.getElementById('tribute-personal-count');
+  const countEl = document.getElementById('tribute-count');
   const cooldownBar = document.getElementById('tribute-cooldown-bar');
   const cooldownFill = document.getElementById('tribute-cooldown-fill');
   const statusHint = document.getElementById('tribute-status-hint');
@@ -626,10 +625,8 @@ function initRespectsButton() {
 
   if (!btn || !label) return;
 
-  const STORAGE_KEY_PERSONAL = 'sawbyte_techno_personal_tributes';
-  const STORAGE_KEY_TOTAL = 'sawbyte_techno_total_tributes';
+  const STORAGE_KEY_COUNT = 'sawbyte_techno_tributes';
   const STORAGE_KEY_LAST_TIME = 'sawbyte_techno_last_tribute_ts';
-  const BASE_COMMUNITY = 23410;
   const COOLDOWN_MS = 4000;
 
   function safeStorageGet(key, fallback) {
@@ -651,18 +648,16 @@ function initRespectsButton() {
     return Number(num).toLocaleString('en-US');
   }
 
-  let personalCount = parseInt(safeStorageGet(STORAGE_KEY_PERSONAL, '0'), 10) || 0;
-  let totalCount = parseInt(safeStorageGet(STORAGE_KEY_TOTAL, String(BASE_COMMUNITY + personalCount)), 10) || (BASE_COMMUNITY + personalCount);
+  let tributeCount = parseInt(safeStorageGet(STORAGE_KEY_COUNT, '0'), 10) || 0;
   let lastTributeTime = parseInt(safeStorageGet(STORAGE_KEY_LAST_TIME, '0'), 10) || 0;
   let cooldownTimer = null;
   let isCooldown = false;
 
   function updateDisplay() {
-    if (totalCountEl) totalCountEl.textContent = formatNumber(totalCount);
-    if (personalCountEl) personalCountEl.textContent = formatNumber(personalCount);
+    if (countEl) countEl.textContent = formatNumber(tributeCount);
 
-    if (personalCount > 0) {
-      label.innerHTML = `<span class="mc-e">[POPPY] RESPECTS PAID (o7 × ${personalCount}) — TECHNOBLADE NEVER DIES</span>`;
+    if (tributeCount > 0) {
+      label.innerHTML = `<span class="mc-e">[POPPY] RESPECTS PAID (o7 × ${tributeCount}) — TECHNOBLADE NEVER DIES</span>`;
     } else {
       label.innerHTML = 'LEAVE A TRIBUTE POPPY [o7]';
     }
@@ -713,7 +708,7 @@ function initRespectsButton() {
         btn.removeAttribute('aria-disabled');
         if (cooldownBar) cooldownBar.style.display = 'none';
         if (cooldownFill) cooldownFill.style.width = '0%';
-        if (statusHint) statusHint.textContent = 'Persisted locally across sessions • Anti-spam cooldown enabled';
+        if (statusHint) statusHint.textContent = 'Saved in browser storage • Anti-spam cooldown enabled';
         updateDisplay();
       }
     }, 80);
@@ -741,7 +736,7 @@ function initRespectsButton() {
           if (isCooldown) {
             statusHint.textContent = 'Cooldown active • Anti-spam protection';
           } else {
-            statusHint.textContent = 'Persisted locally across sessions • Anti-spam cooldown enabled';
+            statusHint.textContent = 'Saved in browser storage • Anti-spam cooldown enabled';
           }
         }, 1500);
       }
@@ -749,12 +744,10 @@ function initRespectsButton() {
     }
 
     // Valid tribute
-    personalCount++;
-    totalCount++;
+    tributeCount++;
     lastTributeTime = now;
 
-    safeStorageSet(STORAGE_KEY_PERSONAL, personalCount);
-    safeStorageSet(STORAGE_KEY_TOTAL, totalCount);
+    safeStorageSet(STORAGE_KEY_COUNT, tributeCount);
     safeStorageSet(STORAGE_KEY_LAST_TIME, lastTributeTime);
 
     if (typeof playMcXpChime === 'function') {
