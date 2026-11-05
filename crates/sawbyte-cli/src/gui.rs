@@ -30,25 +30,6 @@ struct ActiveProcess {
 type ProcessMap = Arc<Mutex<HashMap<String, ActiveProcess>>>;
 
 pub fn run_launcher_gui(port_opt: Option<u16>) -> Result<(), Box<dyn std::error::Error>> {
-    // If standalone compiled Electron desktop launcher binary exists, launch it directly
-    let cur_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    let candidates = [
-        cur_dir.join("launcher/xmcl-electron-app/dist/linux-unpacked/sawbyte-launcher"),
-        cur_dir.join("launcher/xmcl-electron-app/dist/win-unpacked/sawbyte-launcher.exe"),
-        cur_dir.join("launcher/xmcl-electron-app/dist/mac/Sawbyte Launcher.app/Contents/MacOS/Sawbyte Launcher"),
-        cur_dir.join("sawbyte-launcher-bin"),
-    ];
-    for cand in &candidates {
-        if cand.is_file() {
-            println!("Launching native desktop Electron application: {}", cand.display());
-            if let Ok(s) = Command::new(cand).status() {
-                if s.success() {
-                    return Ok(());
-                }
-            }
-        }
-    }
-
     let mut port = port_opt.unwrap_or(8767);
     let listener = loop {
         match TcpListener::bind(format!("127.0.0.1:{port}")) {
