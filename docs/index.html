@@ -11,114 +11,249 @@
 </head>
 <body>
 
-  <!-- Background Particle & Void Stars Canvas -->
+  <!-- Reusable Crisp 16x16 Pixel-Art Minecraft SVG Icons -->
+  <svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+    <!-- Grass Block -->
+    <symbol id="mc-icon-grass" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect x="1" y="1" width="14" height="4" fill="#55FF55"/>
+      <rect x="1" y="5" width="2" height="2" fill="#55FF55"/>
+      <rect x="5" y="5" width="3" height="2" fill="#55FF55"/>
+      <rect x="11" y="5" width="3" height="2" fill="#55FF55"/>
+      <rect x="3" y="5" width="2" height="2" fill="#00AA00"/>
+      <rect x="8" y="5" width="3" height="2" fill="#00AA00"/>
+      <rect x="14" y="5" width="1" height="2" fill="#00AA00"/>
+      <rect x="1" y="7" width="14" height="8" fill="#866043"/>
+      <rect x="3" y="9" width="2" height="2" fill="#5c4028"/>
+      <rect x="10" y="11" width="2" height="2" fill="#5c4028"/>
+      <rect x="6" y="12" width="2" height="2" fill="#a37855"/>
+    </symbol>
+
+    <!-- Diamond Pickaxe -->
+    <symbol id="mc-icon-pickaxe" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect x="9" y="1" width="5" height="2" fill="#55FFFF"/>
+      <rect x="12" y="3" width="3" height="2" fill="#55FFFF"/>
+      <rect x="13" y="5" width="2" height="2" fill="#00AAAA"/>
+      <rect x="7" y="2" width="2" height="2" fill="#00AAAA"/>
+      <rect x="10" y="4" width="2" height="2" fill="#866043"/>
+      <rect x="8" y="6" width="2" height="2" fill="#866043"/>
+      <rect x="6" y="8" width="2" height="2" fill="#866043"/>
+      <rect x="4" y="10" width="2" height="2" fill="#866043"/>
+      <rect x="2" y="12" width="2" height="2" fill="#5c4028"/>
+    </symbol>
+
+    <!-- Redstone Dust -->
+    <symbol id="mc-icon-redstone" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect x="6" y="2" width="4" height="2" fill="#AA0000"/>
+      <rect x="4" y="4" width="8" height="2" fill="#FF5555"/>
+      <rect x="2" y="6" width="12" height="4" fill="#FF5555"/>
+      <rect x="5" y="7" width="6" height="2" fill="#FFFFFF"/>
+      <rect x="3" y="10" width="10" height="2" fill="#AA0000"/>
+      <rect x="5" y="12" width="6" height="2" fill="#AA0000"/>
+    </symbol>
+
+    <!-- Command Block -->
+    <symbol id="mc-icon-cmdblock" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect x="1" y="1" width="14" height="14" fill="#c77d52"/>
+      <rect x="2" y="2" width="12" height="12" fill="#995836"/>
+      <rect x="4" y="4" width="8" height="8" fill="#3a2821"/>
+      <rect x="5" y="5" width="2" height="2" fill="#FFAA00"/>
+      <rect x="9" y="5" width="2" height="2" fill="#55FFFF"/>
+      <rect x="5" y="9" width="2" height="2" fill="#55FF55"/>
+      <rect x="9" y="9" width="2" height="2" fill="#FF5555"/>
+      <rect x="7" y="7" width="2" height="2" fill="#FFFFFF"/>
+    </symbol>
+
+    <!-- Ender Pearl -->
+    <symbol id="mc-icon-pearl" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect x="5" y="2" width="6" height="2" fill="#00AAAA"/>
+      <rect x="3" y="4" width="10" height="8" fill="#0f3838"/>
+      <rect x="4" y="4" width="8" height="6" fill="#00AAAA"/>
+      <rect x="5" y="5" width="3" height="3" fill="#55FFFF"/>
+      <rect x="5" y="12" width="6" height="2" fill="#00AAAA"/>
+    </symbol>
+
+    <!-- Diamond -->
+    <symbol id="mc-icon-diamond" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect x="5" y="2" width="6" height="2" fill="#55FFFF"/>
+      <rect x="3" y="4" width="10" height="6" fill="#55FFFF"/>
+      <rect x="5" y="4" width="3" height="3" fill="#FFFFFF"/>
+      <rect x="4" y="10" width="8" height="2" fill="#00AAAA"/>
+      <rect x="6" y="12" width="4" height="2" fill="#00AAAA"/>
+    </symbol>
+
+    <!-- Emerald -->
+    <symbol id="mc-icon-emerald" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect x="5" y="1" width="6" height="2" fill="#55FF55"/>
+      <rect x="3" y="3" width="10" height="10" fill="#00AA00"/>
+      <rect x="5" y="3" width="6" height="10" fill="#55FF55"/>
+      <rect x="6" y="5" width="2" height="4" fill="#FFFFFF"/>
+      <rect x="5" y="13" width="6" height="2" fill="#00AA00"/>
+    </symbol>
+
+    <!-- Golden Crown -->
+    <symbol id="mc-icon-crown" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect x="1" y="4" width="2" height="8" fill="#FFFF55"/>
+      <rect x="5" y="5" width="2" height="7" fill="#FFFF55"/>
+      <rect x="9" y="5" width="2" height="7" fill="#FFFF55"/>
+      <rect x="13" y="4" width="2" height="8" fill="#FFFF55"/>
+      <rect x="1" y="8" width="14" height="5" fill="#FFAA00"/>
+      <rect x="3" y="9" width="2" height="2" fill="#FF5555"/>
+      <rect x="7" y="9" width="2" height="2" fill="#55FFFF"/>
+      <rect x="11" y="9" width="2" height="2" fill="#55FF55"/>
+    </symbol>
+
+    <!-- Heart Full -->
+    <symbol id="mc-icon-heart" viewBox="0 0 9 9" shape-rendering="crispEdges">
+      <rect x="1" y="1" width="3" height="1" fill="#000"/>
+      <rect x="5" y="1" width="3" height="1" fill="#000"/>
+      <rect x="1" y="2" width="3" height="3" fill="#FF5555"/>
+      <rect x="5" y="2" width="3" height="3" fill="#FF5555"/>
+      <rect x="4" y="3" width="1" height="3" fill="#FF5555"/>
+      <rect x="2" y="2" width="1" height="1" fill="#FFFFFF"/>
+      <rect x="2" y="5" width="5" height="1" fill="#AA0000"/>
+      <rect x="3" y="6" width="3" height="1" fill="#AA0000"/>
+      <rect x="4" y="7" width="1" height="1" fill="#AA0000"/>
+    </symbol>
+
+    <!-- Hunger Drumstick -->
+    <symbol id="mc-icon-food" viewBox="0 0 9 9" shape-rendering="crispEdges">
+      <rect x="4" y="1" width="4" height="4" fill="#c77d52"/>
+      <rect x="5" y="2" width="2" height="2" fill="#FFAA00"/>
+      <rect x="3" y="4" width="3" height="2" fill="#866043"/>
+      <rect x="1" y="6" width="2" height="2" fill="#FFFFFF"/>
+    </symbol>
+  </svg>
+
+  <!-- Background Void & Floating Pixel Particle Canvas -->
   <canvas id="bg-canvas"></canvas>
 
-  <!-- Navigation Bar -->
+  <!-- Top Hotbar Navigation -->
   <nav class="navbar">
     <div class="nav-container">
-      <a href="#" class="brand">
-        <img src="assets/sawbyte.png" alt="Sawbyte Icon" class="brand-icon">
-        <span class="brand-name">SAWBYTE</span>
+      <a href="#" class="brand sfx-trigger">
+        <div class="brand-slot">
+          <img src="assets/sawbyte.png" alt="Sawbyte" class="brand-icon">
+        </div>
+        <div>
+          <span class="brand-name mc-b">SAWBYTE</span>
+          <span class="mc-8" style="font-size: 10px; display: block;">§7RUST 26.3 ENGINE</span>
+        </div>
       </a>
+
       <div class="nav-links">
-        <a href="#overview" class="nav-link">OVERVIEW</a>
-        <a href="#viewport" class="nav-link">VIEWPORT</a>
-        <a href="#downloads" class="nav-link">DOWNLOADS</a>
-        <a href="#benchmarks" class="nav-link">BENCHMARKS</a>
-        <a href="#terminal" class="nav-link">TERMINAL</a>
-        <a href="#agents" class="nav-link">AI SKILL</a>
-        <a href="https://github.com/5ivesaw/Sawbyte" target="_blank" rel="noopener" class="nav-link">GITHUB</a>
+        <a href="#overview" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-grass"/></svg>OVERVIEW</a>
+        <a href="#viewport" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-pearl"/></svg>VIEWPORT</a>
+        <a href="#downloads" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-diamond"/></svg>DOWNLOADS</a>
+        <a href="#terminal" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg>TERMINAL</a>
+        <a href="#benchmarks" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-emerald"/></svg>BENCHMARKS</a>
+        <a href="#agents" class="nav-link sfx-trigger"><svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-redstone"/></svg>AI SKILL</a>
+        <a href="https://github.com/5ivesaw/Sawbyte" target="_blank" rel="noopener" class="nav-link sfx-trigger mc-e">GITHUB -&gt;</a>
+        <button id="sfx-toggle-btn" class="sfx-btn" type="button" title="Toggle Soft Minecraft UI Sounds">
+          <span>[SFX: ON]</span>
+        </button>
       </div>
     </div>
   </nav>
 
   <!-- Hero Section -->
   <header class="hero" id="overview">
-    <div class="badge badge-green" style="margin-bottom: 16px;">
+    <div class="badge">
       <span class="pulse-dot"></span>
-      <span>RELEASE <span class="release-tag-badge">v0.3.2</span> READY</span>
-      <span style="color: var(--text-dim); margin: 0 4px;">|</span>
-      <span>MINECRAFT 26.3 (PROTOCOL 774)</span>
+      <span class="mc-a">RELEASE <span class="release-tag-badge">v0.3.2</span></span>
+      <span class="mc-8">|</span>
+      <span class="mc-b">MINECRAFT 26.3 (PROTOCOL 774)</span>
     </div>
 
-    <h1 class="hero-title">ZERO-JVM MINECRAFT ENGINE &amp; AI AGENT RUNTIME</h1>
+    <h1 class="hero-title">
+      <span class="mc-b">ZERO-JVM</span> <span class="mc-f">MINECRAFT ENGINE</span><br>
+      <span class="mc-a">&amp; AUTONOMOUS AI RUNTIME</span>
+    </h1>
 
     <p class="hero-subtitle">
-      A self-sufficient, zero-graphics Rust client, multi-server automation platform, and autonomous agent controller.
-      Derives exact tick physics, sub-voxel raycasting, container state, and AI MCP pair programming with <strong>&lt; 12 MB RSS</strong>.
+      Self-sufficient, zero-graphics native <span class="mc-6">Rust</span> client, multi-server automation platform, and autonomous agent controller.
+      Derives exact <span class="mc-a">20.00 TPS</span> tick physics, sub-voxel raycasting, container state, and MCP pair programming in <span class="mc-b">&lt; 12 MB RSS</span>.
     </p>
 
     <div class="hero-actions">
-      <a href="#downloads" class="btn btn-primary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
+      <a href="#downloads" class="btn btn-primary sfx-trigger">
+        <svg width="16" height="16" class="pixel-icon"><use href="#mc-icon-diamond"/></svg>
         <span>GET SAWBYTE v0.3.2</span>
       </a>
 
-      <a href="#benchmarks" class="btn btn-green">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-        </svg>
+      <a href="#benchmarks" class="btn btn-green sfx-trigger">
+        <svg width="16" height="16" class="pixel-icon"><use href="#mc-icon-emerald"/></svg>
         <span>BENCHMARKS (28/28 PASSED)</span>
       </a>
 
-      <a href="#agents" class="btn btn-secondary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-          <line x1="12" y1="17" x2="12.01" y2="17"></line>
-        </svg>
-        <span>AGENT SKILL SPEC</span>
+      <a href="#agents" class="btn btn-secondary sfx-trigger">
+        <svg width="16" height="16" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg>
+        <span>AGENT SKILL.MD</span>
       </a>
     </div>
 
-    <!-- Quick Install Command Box -->
+    <!-- Command Block Quick Install Box -->
     <div class="install-box">
-      <span style="color: var(--mc-green); font-family: var(--font-mono); font-weight: 700;">$</span>
+      <svg width="18" height="18" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg>
+      <span class="mc-a">$</span>
       <code class="install-cmd" id="install-text">curl -sSfL https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/install.sh | bash</code>
-      <button class="copy-btn" id="copy-install-btn" onclick="copyCommand('curl -sSfL https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/install.sh | bash')">
+      <button class="copy-btn sfx-xp" id="copy-install-btn" onclick="copyCommand('curl -sSfL https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/install.sh | bash')">
         COPY
       </button>
     </div>
   </header>
 
-  <!-- Executive Metrics Grid -->
+  <!-- Executive Inventory Metrics Grid -->
   <div class="container">
     <div class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-val">&lt; 12 MB</div>
+      <div class="metric-card sfx-hover">
+        <div class="metric-top">
+          <div class="item-slot"><svg width="24" height="24" class="pixel-icon"><use href="#mc-icon-diamond"/></svg></div>
+          <span class="mc-8">§bSLOT 01</span>
+        </div>
+        <div class="metric-val mc-b">&lt; 12 MB</div>
         <div class="metric-label">Memory Footprint</div>
-        <div class="metric-sub">Zero JVM. 150x lighter than standard vanilla client (1.8 GB).</div>
+        <div class="metric-sub">Zero JVM overhead. 155x lighter than official vanilla client (1.84 GB).</div>
       </div>
 
-      <div class="metric-card">
-        <div class="metric-val">20.00 TPS</div>
+      <div class="metric-card sfx-hover">
+        <div class="metric-top">
+          <div class="item-slot"><svg width="24" height="24" class="pixel-icon"><use href="#mc-icon-redstone"/></svg></div>
+          <span class="mc-8">§aSLOT 02</span>
+        </div>
+        <div class="metric-val mc-a">20.00 TPS</div>
         <div class="metric-label">Locked Tick Pacing</div>
-        <div class="metric-sub">Deterministic sub-voxel physics &amp; collision prediction in Rust.</div>
+        <div class="metric-sub">Deterministic sub-voxel AABB physics &amp; collision prediction in pure Rust.</div>
       </div>
 
-      <div class="metric-card">
-        <div class="metric-val">28 / 28</div>
+      <div class="metric-card sfx-hover">
+        <div class="metric-top">
+          <div class="item-slot"><svg width="24" height="24" class="pixel-icon"><use href="#mc-icon-emerald"/></svg></div>
+          <span class="mc-8">§6SLOT 03</span>
+        </div>
+        <div class="metric-val mc-6">28 / 28</div>
         <div class="metric-label">Embodied AI Benchmarks</div>
-        <div class="metric-sub">100% pass across MineRL, MineDojo, Voyager &amp; Multi-Server.</div>
+        <div class="metric-sub">100% pass rate across MineRL, MineDojo, Voyager &amp; Cracked Multi-Server.</div>
       </div>
 
-      <div class="metric-card">
-        <div class="metric-val">MCP + TCP</div>
+      <div class="metric-card sfx-hover">
+        <div class="metric-top">
+          <div class="item-slot"><svg width="24" height="24" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg></div>
+          <span class="mc-8">§dSLOT 04</span>
+        </div>
+        <div class="metric-val mc-d">MCP + TCP</div>
         <div class="metric-label">Autonomous AI Control</div>
-        <div class="metric-sub">Native Model Context Protocol server for Claude, Gemini &amp; AGY.</div>
+        <div class="metric-sub">Native Model Context Protocol server for Claude, Gemini &amp; custom agents.</div>
       </div>
     </div>
   </div>
 
-  <!-- Interactive 3D Voxel Viewport & Mode Showcase -->
+  <!-- Interactive 3D Voxel Viewport & Authentic In-Game HUD -->
   <section class="container" id="viewport">
     <div class="section-header">
-      <div class="badge badge-blue" style="margin-bottom: 8px;">INTEGRATED VISUALIZER &amp; TELEMETRY</div>
+      <div class="badge">
+        <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-pearl"/></svg>
+        <span class="mc-b">INTEGRATED VISUALIZER &amp; F3 TELEMETRY</span>
+      </div>
       <h2 class="section-title">RUNTIME VIEWPORT MODES</h2>
       <p class="section-desc">
         Inspect live client operation across software raymarched 3D voxels, tactical top-down radar,
@@ -126,56 +261,96 @@
       </p>
     </div>
 
-    <!-- Mode Selector Tabs -->
     <div class="mode-tabs">
-      <button class="mode-tab viz-mode-btn active" data-mode="first_person">3D SOFTWARE VOXEL (POTATO)</button>
-      <button class="mode-tab viz-mode-btn" data-mode="radar">2D TACTICAL RADAR</button>
-      <button class="mode-tab" onclick="switchPreviewMode('launcher')">DESKTOP LAUNCHER PREVIEW</button>
-      <button class="mode-tab" onclick="switchPreviewMode('bridge')">FABRIC GRAPHICAL BRIDGE PREVIEW</button>
+      <button class="mode-tab viz-mode-btn active sfx-trigger" data-mode="first_person">3D SOFTWARE VOXEL (POTATO)</button>
+      <button class="mode-tab viz-mode-btn sfx-trigger" data-mode="radar">2D TACTICAL RADAR</button>
+      <button class="mode-tab sfx-trigger" onclick="switchPreviewMode('launcher', this)">DESKTOP LAUNCHER PREVIEW</button>
+      <button class="mode-tab sfx-trigger" onclick="switchPreviewMode('bridge', this)">FABRIC GRAPHICAL BRIDGE PREVIEW</button>
     </div>
 
     <div class="viewport-card">
       <div class="viewport-toolbar">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span class="status-tag pass">LIVE ENGINE</span>
-          <span style="color: var(--mc-diamond); font-weight: 600;">SESSION: 127.0.0.1:25565 (PROTO 774)</span>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="status-tag">LIVE ENGINE</span>
+          <span class="mc-b">SESSION: 127.0.0.1:25565 (PROTO 774)</span>
         </div>
         <div>
-          <span>CONTROLS: <strong>W/A/S/D</strong> TO WALK &amp; ROTATE</span>
+          <span class="mc-e">CONTROLS: [W/A/S/D] WALK &amp; TURN • [1-4] HOTBAR SLOT</span>
         </div>
       </div>
 
       <div class="viewport-screen">
-        <!-- CRT Scanline Overlay -->
-        <div class="scanlines"></div>
-
-        <!-- Telemetry HUD Overlay -->
+        <!-- F3-Style Telemetry HUD Overlay -->
         <div class="telemetry-hud" id="telemetry-display">
-          <div>POS: (8.50, 64.0, 8.50)</div>
-          <div>YAW: 0.0&deg; | PITCH: 0.0&deg;</div>
-          <div>HEALTH: 20.0 | FOOD: 20</div>
-          <div>TICK: 1420 | ATTEMPT: #1 | DEATHS: 0</div>
+          <div class="mc-b">Sawbyte 0.3.2 (26.3 / Vanilla / Rust Headless)</div>
+          <div>XYZ: <span class="mc-a">8.50 / 64.00 / 8.50</span></div>
+          <div>Facing: <span class="mc-e">South (Yaw 0.0 / Pitch 0.0)</span></div>
+          <div>Tick: <span class="mc-f">1420</span> <span class="mc-8">|</span> TPS: <span class="mc-a">20.00</span> <span class="mc-8">|</span> Deaths: <span class="mc-a">0</span></div>
         </div>
 
         <!-- Interactive Canvas for 3D Voxels / Radar -->
         <canvas id="viz-canvas" width="640" height="400" style="width: 100%; height: 100%; display: block;"></canvas>
 
+        <!-- Authentic Minecraft Bottom HUD (Hearts, Hunger, XP Bar, 9-Slot Hotbar) -->
+        <div class="mc-hud-bottom" id="mc-hud-overlay">
+          <div class="mc-vitals-row">
+            <div class="mc-hearts">
+              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-heart"/></svg>
+            </div>
+            <div class="mc-hunger">
+              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
+              <svg width="13" height="13"><use href="#mc-icon-food"/></svg>
+            </div>
+          </div>
+          <div class="mc-xp-bar"><div class="mc-xp-fill"></div></div>
+          <div class="mc-hotbar">
+            <div class="mc-hotbar-slot selected" data-slot="1"><svg width="20" height="20"><use href="#mc-icon-pickaxe"/></svg></div>
+            <div class="mc-hotbar-slot" data-slot="2"><svg width="20" height="20"><use href="#mc-icon-grass"/></svg><span class="slot-count">64</span></div>
+            <div class="mc-hotbar-slot" data-slot="3"><svg width="20" height="20"><use href="#mc-icon-pearl"/></svg><span class="slot-count">16</span></div>
+            <div class="mc-hotbar-slot" data-slot="4"><svg width="20" height="20"><use href="#mc-icon-diamond"/></svg><span class="slot-count">12</span></div>
+            <div class="mc-hotbar-slot" data-slot="5"></div>
+            <div class="mc-hotbar-slot" data-slot="6"></div>
+            <div class="mc-hotbar-slot" data-slot="7"></div>
+            <div class="mc-hotbar-slot" data-slot="8"></div>
+            <div class="mc-hotbar-slot" data-slot="9"></div>
+          </div>
+        </div>
+
         <!-- Image Previews Container for Launcher & Bridge -->
-        <div id="image-preview-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 15; background: #07090e;">
+        <div id="image-preview-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 35; background: #090b10;">
           <img id="preview-img-elem" src="assets/preview_launcher.png" alt="Preview" style="width: 100%; height: 100%; object-fit: contain;">
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Downloads Matrix Section -->
+  <!-- Cross-Platform Downloads Matrix -->
   <section class="container" id="downloads">
     <div class="section-header">
-      <div class="badge badge-purple" style="margin-bottom: 8px;">CROSS-PLATFORM BUILDS</div>
+      <div class="badge">
+        <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-diamond"/></svg>
+        <span class="mc-a">STANDALONE RELEASE BINARIES</span>
+      </div>
       <h2 class="section-title">DOWNLOAD SAWBYTE v0.3.2</h2>
       <p class="section-desc">
-        Pre-compiled standalone release binaries and installers for Linux, Windows, macOS, and the Fabric bridge.
-        Includes desktop GUI launcher, headless engine, and terminal CLI.
+        Pre-compiled standalone release binaries for Linux, Windows, macOS, and the optional Fabric graphical bridge.
       </p>
     </div>
 
@@ -183,33 +358,27 @@
       <!-- Linux Card -->
       <div class="download-card">
         <div class="platform-header">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--mc-diamond);">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-            <line x1="8" y1="21" x2="16" y2="21"></line>
-            <line x1="12" y1="17" x2="12" y2="21"></line>
-          </svg>
+          <div class="item-slot"><svg width="22" height="22" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg></div>
           <div>
             <div class="platform-title">Linux (x86_64)</div>
-            <div style="font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);">Ubuntu 24.04+ / Debian / Fedora / Arch</div>
+            <div class="mc-8" style="font-size: 10px;">Ubuntu 24.04+ / Pop!_OS / Debian / Arch</div>
           </div>
         </div>
-
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+        <p class="mc-7" style="font-size: 12px; margin-bottom: 18px;">
           Includes full desktop GUI launcher, headless zero-JVM native engine, and terminal play client.
         </p>
-
         <div class="download-list">
-          <a id="dl-linux-launcher" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-launcher-ubuntu-24.04-X64.tar.gz" class="download-link-btn">
+          <a id="dl-linux-launcher" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-launcher-ubuntu-24.04-X64.tar.gz" class="download-link-btn sfx-trigger">
             <span>Desktop GUI Launcher</span>
-            <span style="color: var(--mc-green); font-weight: 700;">.tar.gz</span>
+            <span class="mc-a">.tar.gz</span>
           </a>
-          <a id="dl-linux-engine" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-ubuntu-24.04-X64.tar.gz" class="download-link-btn">
+          <a id="dl-linux-engine" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-ubuntu-24.04-X64.tar.gz" class="download-link-btn sfx-trigger">
             <span>Headless Engine (Core)</span>
-            <span style="color: var(--mc-diamond); font-weight: 700;">.tar.gz</span>
+            <span class="mc-b">.tar.gz</span>
           </a>
-          <a id="dl-linux-play" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-play-linux-x64.tar.gz" class="download-link-btn">
+          <a id="dl-linux-play" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-play-linux-x64.tar.gz" class="download-link-btn sfx-trigger">
             <span>Sawbyte Play (CLI)</span>
-            <span style="color: var(--text-dim);">.tar.gz</span>
+            <span class="mc-7">.tar.gz</span>
           </a>
         </div>
       </div>
@@ -217,34 +386,27 @@
       <!-- Windows Card -->
       <div class="download-card">
         <div class="platform-header">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #60a5fa;">
-            <polygon points="2 4 10 3 10 11 2 11 2 4"></polygon>
-            <polygon points="12 2.8 22 1.5 22 11 12 11 12 2.8"></polygon>
-            <polygon points="2 13 10 13 10 21 2 20 2 13"></polygon>
-            <polygon points="12 13 22 13 22 22.5 12 21.2 12 13"></polygon>
-          </svg>
+          <div class="item-slot"><svg width="22" height="22" class="pixel-icon"><use href="#mc-icon-diamond"/></svg></div>
           <div>
             <div class="platform-title">Windows (x64)</div>
-            <div style="font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);">Windows 10 / 11 / Server 2022</div>
+            <div class="mc-8" style="font-size: 10px;">Windows 10 / 11 / Server 2022</div>
           </div>
         </div>
-
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+        <p class="mc-7" style="font-size: 12px; margin-bottom: 18px;">
           Portable ZIP bundles containing executable GUI launcher, background engine daemon, and CLI binary.
         </p>
-
         <div class="download-list">
-          <a id="dl-win-launcher" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-launcher-windows-2022-X64.zip" class="download-link-btn">
+          <a id="dl-win-launcher" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-launcher-windows-2022-X64.zip" class="download-link-btn sfx-trigger">
             <span>Desktop GUI Launcher</span>
-            <span style="color: var(--mc-green); font-weight: 700;">.zip</span>
+            <span class="mc-a">.zip</span>
           </a>
-          <a id="dl-win-engine" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-windows-2022-X64.zip" class="download-link-btn">
+          <a id="dl-win-engine" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-windows-2022-X64.zip" class="download-link-btn sfx-trigger">
             <span>Headless Engine (Core)</span>
-            <span style="color: var(--mc-diamond); font-weight: 700;">.zip</span>
+            <span class="mc-b">.zip</span>
           </a>
-          <a id="dl-win-play" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-play-windows-x64.zip" class="download-link-btn">
+          <a id="dl-win-play" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-play-windows-x64.zip" class="download-link-btn sfx-trigger">
             <span>Sawbyte Play (CLI)</span>
-            <span style="color: var(--text-dim);">.zip</span>
+            <span class="mc-7">.zip</span>
           </a>
         </div>
       </div>
@@ -252,125 +414,126 @@
       <!-- macOS Card -->
       <div class="download-card">
         <div class="platform-header">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #c084fc;">
-            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
-            <path d="M12 6v6l4 2"></path>
-          </svg>
+          <div class="item-slot"><svg width="22" height="22" class="pixel-icon"><use href="#mc-icon-emerald"/></svg></div>
           <div>
             <div class="platform-title">macOS (Apple Silicon)</div>
-            <div style="font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);">macOS 14+ (M1 / M2 / M3 / M4)</div>
+            <div class="mc-8" style="font-size: 10px;">macOS 14+ (M1 / M2 / M3 / M4)</div>
           </div>
         </div>
-
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
-          Native ARM64 binaries compiled for Apple Silicon with low power usage and thermal efficiency.
+        <p class="mc-7" style="font-size: 12px; margin-bottom: 18px;">
+          Native ARM64 binaries compiled for Apple Silicon with ultra-low power and thermal efficiency.
         </p>
-
         <div class="download-list">
-          <a id="dl-mac-launcher" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-launcher-macos-14-ARM64.tar.gz" class="download-link-btn">
+          <a id="dl-mac-launcher" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-launcher-macos-14-ARM64.tar.gz" class="download-link-btn sfx-trigger">
             <span>Desktop GUI Launcher</span>
-            <span style="color: var(--mc-green); font-weight: 700;">.tar.gz</span>
+            <span class="mc-a">.tar.gz</span>
           </a>
-          <a id="dl-mac-engine" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-macos-14-ARM64.tar.gz" class="download-link-btn">
+          <a id="dl-mac-engine" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-macos-14-ARM64.tar.gz" class="download-link-btn sfx-trigger">
             <span>Headless Engine (Core)</span>
-            <span style="color: var(--mc-diamond); font-weight: 700;">.tar.gz</span>
+            <span class="mc-b">.tar.gz</span>
           </a>
-          <a id="dl-mac-play" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-play-macos-arm64.tar.gz" class="download-link-btn">
+          <a id="dl-mac-play" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-play-macos-arm64.tar.gz" class="download-link-btn sfx-trigger">
             <span>Sawbyte Play (CLI)</span>
-            <span style="color: var(--text-dim);">.tar.gz</span>
+            <span class="mc-7">.tar.gz</span>
           </a>
         </div>
       </div>
     </div>
 
-    <!-- Fabric Bridge Card (Full Width) -->
-    <div style="margin-top: 20px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 24px;">
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-        <div style="display: flex; align-items: center; gap: 16px;">
-          <div style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; padding: 12px;">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--mc-green);">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-              <line x1="12" y1="22.08" x2="12" y2="12"></line>
-            </svg>
-          </div>
-          <div>
-            <div style="font-family: var(--font-pixel); font-size: 14px; color: #ffffff; margin-bottom: 4px;">Fabric Bridge Mod (Minecraft 26.3)</div>
-            <div style="font-size: 13px; color: var(--text-muted); font-family: var(--font-mono);">
-              Optional graphical reference bridge for official Minecraft client. Works alongside Fabric API and Sodium.
-            </div>
-          </div>
+    <!-- Fabric Bridge Banner -->
+    <div class="metric-card" style="margin-top: 20px; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="item-slot"><svg width="24" height="24" class="pixel-icon"><use href="#mc-icon-grass"/></svg></div>
+        <div>
+          <div class="mc-f" style="font-size: 14px; margin-bottom: 4px;">Fabric Bridge Mod (Minecraft 26.3)</div>
+          <div class="mc-7" style="font-size: 12px;">Optional graphical sync bridge for official Minecraft client. Works alongside Fabric API &amp; Sodium.</div>
         </div>
-
-        <a id="dl-bridge-jar" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-bridge-0.3.2.jar" class="btn btn-green">
-          <span>DOWNLOAD sawbyte-bridge-0.3.2.jar</span>
-        </a>
       </div>
+      <a id="dl-bridge-jar" href="https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.2/sawbyte-bridge-0.3.2.jar" class="btn btn-green sfx-trigger">
+        <span>DOWNLOAD sawbyte-bridge-0.3.2.jar</span>
+      </a>
     </div>
   </section>
 
-  <!-- Interactive Terminal Console -->
+  <!-- Interactive Terminal Console with Exact §0-§f Color Code Parser -->
   <section class="container" id="terminal">
     <div class="section-header">
-      <div class="badge badge-green" style="margin-bottom: 8px;">LIVE PROTOCOL SHELL</div>
+      <div class="badge">
+        <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-cmdblock"/></svg>
+        <span class="mc-a">LIVE PROTOCOL SHELL &amp; § COLOR ENGINE</span>
+      </div>
       <h2 class="section-title">INTERACTIVE BOT TERMINAL</h2>
       <p class="section-desc">
-        Directly send live headless commands to the in-memory simulation engine.
-        Try inspecting status, listing recorded milestones, searching inventory, or querying deaths.
+        Send live headless commands or test official Minecraft <span class="mc-e">§0–§f</span> formatting codes directly in the console.
       </p>
     </div>
 
     <div class="terminal-card">
       <div class="terminal-header">
-        <div class="window-dots">
-          <div class="dot dot-red"></div>
-          <div class="dot dot-yellow"></div>
-          <div class="dot dot-green"></div>
+        <div class="mc-7" style="font-size: 11px;">
+          <span class="mc-a">●</span> sawbyte-session — tcp://127.0.0.1:8765 (MCP Agent Daemon)
         </div>
-        <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin-left: 12px;">
-          sawbyte-session — tcp://127.0.0.1:8765 (MCP Agent Daemon)
+        <!-- Interactive Official Minecraft Color Code Bar -->
+        <div class="color-palette-bar" title="Click to insert exact Minecraft § color code into terminal">
+          <button type="button" class="color-chip mc-1" onclick="insertColorCode('§1')">§1</button>
+          <button type="button" class="color-chip mc-2" onclick="insertColorCode('§2')">§2</button>
+          <button type="button" class="color-chip mc-3" onclick="insertColorCode('§3')">§3</button>
+          <button type="button" class="color-chip mc-4" onclick="insertColorCode('§4')">§4</button>
+          <button type="button" class="color-chip mc-5" onclick="insertColorCode('§5')">§5</button>
+          <button type="button" class="color-chip mc-6" onclick="insertColorCode('§6')">§6</button>
+          <button type="button" class="color-chip mc-7" onclick="insertColorCode('§7')">§7</button>
+          <button type="button" class="color-chip mc-8" onclick="insertColorCode('§8')">§8</button>
+          <button type="button" class="color-chip mc-9" onclick="insertColorCode('§9')">§9</button>
+          <button type="button" class="color-chip mc-a" onclick="insertColorCode('§a')">§a</button>
+          <button type="button" class="color-chip mc-b" onclick="insertColorCode('§b')">§b</button>
+          <button type="button" class="color-chip mc-c" onclick="insertColorCode('§c')">§c</button>
+          <button type="button" class="color-chip mc-d" onclick="insertColorCode('§d')">§d</button>
+          <button type="button" class="color-chip mc-e" onclick="insertColorCode('§e')">§e</button>
+          <button type="button" class="color-chip mc-f" onclick="insertColorCode('§f')">§f</button>
         </div>
       </div>
 
       <div class="terminal-body" id="term-body">
-        <div style="color: #64748b; margin-bottom: 8px;">[System] Sawbyte Engine v0.3.2 initialized. Connection established.</div>
-        <div style="color: #64748b; margin-bottom: 8px;">[System] Connected to 127.0.0.1:25565 (Protocol 774). World tick pacing: 20.00 TPS.</div>
-        <div style="color: #38bdf8; margin-bottom: 8px;">Type <span style="color: #ffffff; font-weight: 700;">help</span> to see available live commands.</div>
+        <div class="mc-8">[System] Sawbyte Engine v0.3.2 initialized. Zero-JVM memory footprint: 11.8 MB.</div>
+        <div class="mc-8">[System] Connected to 127.0.0.1:25565 (Protocol 774). World tick pacing: 20.00 TPS.</div>
+        <div class="mc-b">Type <span class="mc-e">help</span> for commands, or type any message with <span class="mc-a">§a</span><span class="mc-b">§b</span><span class="mc-6">§6</span> color codes!</div>
       </div>
 
       <div class="terminal-input-bar">
         <span class="terminal-prompt">&gt;</span>
-        <input type="text" id="term-input" class="terminal-input" placeholder="Type a command (e.g. inspect.status, inspect.milestones, inventory.find)..." autocomplete="off">
+        <input type="text" id="term-input" class="terminal-input" placeholder="Try: help, inspect.status, inspect.milestones, task.navigate 120 64 -30..." autocomplete="off">
       </div>
     </div>
   </section>
 
-  <!-- Embodied AI Benchmarks Visualizer -->
+  <!-- Embodied AI Benchmarks Suite -->
   <section class="container" id="benchmarks">
     <div class="section-header">
-      <div class="badge badge-blue" style="margin-bottom: 8px;">VERIFIED EMPIRICAL RESULTS</div>
+      <div class="badge">
+        <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-emerald"/></svg>
+        <span class="mc-6">VERIFIED EMPIRICAL RESULTS</span>
+      </div>
       <h2 class="section-title">EMBODIED AI BENCHMARK SUITE</h2>
       <p class="section-desc">
         Standardized AI benchmark results comparing Sawbyte native headless execution across
-        MineRL tech-tree milestones, MineDojo programmatic tasks, Voyager autonomous exploration, and multi-server automation.
+        MineRL tech-tree milestones, MineDojo programmatic tasks, Voyager exploration, and multi-server automation.
       </p>
     </div>
 
-    <!-- Benchmark Tabs -->
-    <div class="mode-tabs" style="margin-bottom: 24px;">
-      <button class="mode-tab bench-tab-btn active" data-target="bench-minerl">MINERL OBTAIN-DIAMOND (12/12)</button>
-      <button class="mode-tab bench-tab-btn" data-target="bench-minedojo">MINEDOJO TASKS (8/8)</button>
-      <button class="mode-tab bench-tab-btn" data-target="bench-voyager">VOYAGER EXPLORATION (4/4)</button>
-      <button class="mode-tab bench-tab-btn" data-target="bench-universal">MULTI-SERVER CRACKED (18/18)</button>
-      <button class="mode-tab bench-tab-btn" data-target="bench-systems">SYSTEMS EFFICIENCY (4/4)</button>
+    <div class="mode-tabs">
+      <button class="mode-tab bench-tab-btn active sfx-trigger" data-target="bench-minerl">MINERL OBTAIN-DIAMOND (12/12)</button>
+      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-minedojo">MINEDOJO TASKS (8/8)</button>
+      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-voyager">VOYAGER EXPLORATION (4/4)</button>
+      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-universal">MULTI-SERVER CRACKED (18/18)</button>
+      <button class="mode-tab bench-tab-btn sfx-trigger" data-target="bench-systems">SYSTEMS EFFICIENCY (4/4)</button>
     </div>
 
-    <!-- MineRL Tab Content -->
+    <!-- MineRL -->
     <div id="bench-minerl" class="bench-content-section">
       <div class="bench-card">
         <div class="bench-header">
           <div class="bench-title">MineRL ObtainDiamond Tech-Tree Verification (12 Stages)</div>
-          <div class="status-tag pass">12 / 12 PASSED (100%)</div>
+          <div class="status-tag">12 / 12 PASSED (100%)</div>
         </div>
         <table class="bench-table">
           <thead>
@@ -379,33 +542,33 @@
               <th>Milestone Goal</th>
               <th>Recipe / Mechanics Required</th>
               <th>Ticks</th>
-              <th>Outcome Status</th>
+              <th>Outcome</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>MRL-01</td><td>Collect Oak Log</td><td>Block raycast, punch duration &amp; inventory intake</td><td>80</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>MRL-02</td><td>Craft Oak Planks</td><td>2x2 grid shapeless crafting</td><td>20</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>MRL-03</td><td>Craft Crafting Table</td><td>2x2 shaped crafting</td><td>20</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>MRL-04</td><td>Place Crafting Table</td><td>Placement raycast, neighbor voxel update</td><td>40</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>MRL-05</td><td>Craft Wooden Pickaxe</td><td>3x3 grid shaped recipe (planks + sticks)</td><td>30</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>MRL-06</td><td>Mine Cobblestone</td><td>Tool hardness calculation &amp; block drop entity intake</td><td>90</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>MRL-07</td><td>Craft Stone Pickaxe</td><td>3x3 grid shaped recipe (cobblestone + sticks)</td><td>30</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>MRL-08</td><td>Mine Raw Iron</td><td>Stone pickaxe harvest tier verification</td><td>110</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>MRL-09</td><td>Smelt Iron Ingot</td><td>Furnace fuel + smelting tick container progress</td><td>200</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>MRL-10</td><td>Craft Iron Pickaxe</td><td>3x3 grid shaped recipe (iron ingots + sticks)</td><td>30</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>MRL-11</td><td>Mine Deepslate Diamond Ore</td><td>Iron pickaxe harvest tier &amp; sub-zero Y level depth</td><td>180</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>MRL-12</td><td>Obtain Diamond Milestone</td><td>Inventory confirmation of item <code>minecraft:diamond</code></td><td>10</td><td><span class="status-tag pass">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-01</td><td>Collect Oak Log</td><td class="mc-7">Block raycast, punch duration &amp; inventory intake</td><td class="mc-e">80</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-02</td><td>Craft Oak Planks</td><td class="mc-7">2x2 grid shapeless crafting</td><td class="mc-e">20</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-03</td><td>Craft Crafting Table</td><td class="mc-7">2x2 shaped crafting</td><td class="mc-e">20</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-04</td><td>Place Crafting Table</td><td class="mc-7">Placement raycast, neighbor voxel update</td><td class="mc-e">40</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-05</td><td>Craft Wooden Pickaxe</td><td class="mc-7">3x3 grid shaped recipe (planks + sticks)</td><td class="mc-e">30</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-06</td><td>Mine Cobblestone</td><td class="mc-7">Tool hardness calculation &amp; drop entity intake</td><td class="mc-e">90</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-07</td><td>Craft Stone Pickaxe</td><td class="mc-7">3x3 grid shaped recipe (cobblestone + sticks)</td><td class="mc-e">30</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-08</td><td>Mine Raw Iron</td><td class="mc-7">Stone pickaxe harvest tier verification</td><td class="mc-e">110</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-09</td><td>Smelt Iron Ingot</td><td class="mc-7">Furnace fuel + smelting tick container progress</td><td class="mc-e">200</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-10</td><td>Craft Iron Pickaxe</td><td class="mc-7">3x3 grid shaped recipe (iron ingots + sticks)</td><td class="mc-e">30</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-11</td><td>Mine Deepslate Diamond Ore</td><td class="mc-7">Iron pickaxe harvest tier &amp; sub-zero Y depth</td><td class="mc-e">180</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">MRL-12</td><td>Obtain Diamond Milestone</td><td class="mc-7">Inventory confirmation of <code>minecraft:diamond</code></td><td class="mc-e">10</td><td><span class="status-tag">PASSED</span></td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- MineDojo Tab Content -->
+    <!-- MineDojo -->
     <div id="bench-minedojo" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
           <div class="bench-title">MineDojo Programmatic Embodied Tasks (8 Tasks)</div>
-          <div class="status-tag pass">8 / 8 PASSED (100%)</div>
+          <div class="status-tag">8 / 8 PASSED (100%)</div>
         </div>
         <table class="bench-table">
           <thead>
@@ -413,29 +576,29 @@
               <th>Task Code</th>
               <th>Task Description</th>
               <th>Target Entity / Block</th>
-              <th>Outcome Status</th>
+              <th>Outcome</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>DOJO-HARVEST-WHEAT</td><td>Harvest mature wheat and replant seeds</td><td><code>minecraft:wheat</code></td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>DOJO-SHEAR-SHEEP</td><td>Locate adult sheep and collect wool with shears</td><td><code>minecraft:sheep</code></td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>DOJO-MILK-COW</td><td>Interact with cow using empty bucket</td><td><code>minecraft:cow</code></td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>DOJO-HUNT-ZOMBIE</td><td>Engage hostile mob with weapon &amp; collect rotten flesh</td><td><code>minecraft:zombie</code></td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>DOJO-NAV-PORTAL</td><td>Traverse rough terrain and enter Nether portal</td><td><code>minecraft:nether_portal</code></td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>DOJO-FISH-COD</td><td>Cast fishing rod, monitor bobber splash, retrieve fish</td><td><code>minecraft:cod</code></td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>DOJO-TAME-WOLF</td><td>Feed bones to wild wolf until tamed collar state</td><td><code>minecraft:wolf</code></td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>DOJO-DEFEND-VILLAGE</td><td>Neutralize raid scout while preserving villagers</td><td><code>minecraft:pillager</code></td><td><span class="status-tag pass">PASSED</span></td></tr>
+            <tr><td class="mc-b">DOJO-HARVEST-WHEAT</td><td>Harvest mature wheat and replant seeds</td><td class="mc-e">minecraft:wheat</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">DOJO-SHEAR-SHEEP</td><td>Locate adult sheep and collect wool with shears</td><td class="mc-e">minecraft:sheep</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">DOJO-MILK-COW</td><td>Interact with cow using empty bucket</td><td class="mc-e">minecraft:cow</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">DOJO-HUNT-ZOMBIE</td><td>Engage hostile mob with weapon &amp; collect drops</td><td class="mc-e">minecraft:zombie</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">DOJO-NAV-PORTAL</td><td>Traverse rough terrain and enter Nether portal</td><td class="mc-e">minecraft:nether_portal</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">DOJO-FISH-COD</td><td>Cast fishing rod, monitor splash, retrieve fish</td><td class="mc-e">minecraft:cod</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">DOJO-TAME-WOLF</td><td>Feed bones to wild wolf until tamed collar state</td><td class="mc-e">minecraft:wolf</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">DOJO-DEFEND-VILLAGE</td><td>Neutralize raid scout while preserving villagers</td><td class="mc-e">minecraft:pillager</td><td><span class="status-tag">PASSED</span></td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Voyager Tab Content -->
+    <!-- Voyager -->
     <div id="bench-voyager" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
           <div class="bench-title">Voyager Autonomous Milestone &amp; Exploration Persistence (4/4)</div>
-          <div class="status-tag pass">4 / 4 PASSED (100%)</div>
+          <div class="status-tag">4 / 4 PASSED (100%)</div>
         </div>
         <table class="bench-table">
           <thead>
@@ -447,21 +610,21 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td>Long-Horizon Skill Storage</td><td>Persist milestone records with attempt, tick, pos &amp; deaths to disk</td><td>Verified JSONL &amp; audit trail</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>Zero-Cheat Verification</td><td>Strict survival tick progression with natural gravity &amp; collision</td><td>No teleport or creative spoofing</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>Autonomous Death Analysis</td><td>Track exact death causes, locations, and inventory recovery paths</td><td>Exact lethal cause logging</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>Deterministic Resumption</td><td>Restore live session from disk without state divergence</td><td>0 tick drift across reconnects</td><td><span class="status-tag pass">PASSED</span></td></tr>
+            <tr><td class="mc-b">Long-Horizon Skill Storage</td><td class="mc-7">Persist milestone records with attempt, tick, pos &amp; deaths</td><td class="mc-a">Verified JSONL &amp; audit trail</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Zero-Cheat Verification</td><td class="mc-7">Strict survival tick progression with natural gravity</td><td class="mc-a">No teleport or creative spoofing</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Autonomous Death Analysis</td><td class="mc-7">Track exact death causes, locations &amp; recovery paths</td><td class="mc-a">Exact lethal cause logging</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Deterministic Resumption</td><td class="mc-7">Restore live session from disk without state divergence</td><td class="mc-a">0 tick drift across reconnects</td><td><span class="status-tag">PASSED</span></td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Multi-Server Tab Content -->
+    <!-- Multi-Server -->
     <div id="bench-universal" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
-          <div class="bench-title">Universal Multi-Server Cracked &amp; Donut/Pika Benchmark (18/18 Stages)</div>
-          <div class="status-tag pass">18 / 18 PASSED (100%)</div>
+          <div class="bench-title">Universal Multi-Server Cracked &amp; Sub-Server Benchmark (18/18 Stages)</div>
+          <div class="status-tag">18 / 18 PASSED (100%)</div>
         </div>
         <table class="bench-table">
           <thead>
@@ -474,23 +637,23 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td>Stage 01</td><td>Offline Cracked Handshake (UUID Gen)</td><td>top.pika.host / Donut SMP / Vanilla</td><td>0.12 ms</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>Stage 02</td><td>In-Chat Command Registration (<code>/register</code>)</td><td>Authentication lobby</td><td>12.4 ms</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>Stage 03</td><td>Compass Game Navigator Keyword Matching</td><td>Hotbar item slot inspection</td><td>0.08 ms</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>Stage 04</td><td>Container Menu Item Selection &amp; Click</td><td>Multi-screen chest GUI</td><td>1.20 ms</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>Stage 05</td><td>World Transition &amp; Dimension Sync</td><td>Lobby -> Sub-server instance</td><td>42.0 ms</td><td><span class="status-tag pass">PASSED</span></td></tr>
-            <tr><td>Stage 06 - 18</td><td>3D Voxel Movement, Raycasting &amp; Mining</td><td>Live survival sub-server gameplay</td><td>20.00 TPS</td><td><span class="status-tag pass">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 01</td><td>Offline Cracked Handshake (UUID Gen)</td><td class="mc-7">top.pika.host / Donut SMP / Vanilla</td><td class="mc-e">0.12 ms</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 02</td><td>In-Chat Command Registration (<code>/register</code>)</td><td class="mc-7">Authentication lobby</td><td class="mc-e">12.4 ms</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 03</td><td>Compass Game Navigator Keyword Matching</td><td class="mc-7">Hotbar item slot inspection</td><td class="mc-e">0.08 ms</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 04</td><td>Container Menu Item Selection &amp; Click</td><td class="mc-7">Multi-screen chest GUI</td><td class="mc-e">1.20 ms</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 05</td><td>World Transition &amp; Dimension Sync</td><td class="mc-7">Lobby -&gt; Sub-server instance</td><td class="mc-e">42.0 ms</td><td><span class="status-tag">PASSED</span></td></tr>
+            <tr><td class="mc-b">Stage 06 - 18</td><td>3D Voxel Movement, Raycasting &amp; Mining</td><td class="mc-7">Live survival sub-server gameplay</td><td class="mc-a">20.00 TPS</td><td><span class="status-tag">PASSED</span></td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Systems Efficiency Tab Content -->
+    <!-- Systems Efficiency -->
     <div id="bench-systems" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
           <div class="bench-title">Hardware Resource Footprint vs Standard JVM Client</div>
-          <div class="status-tag pass">4 / 4 CRITERIA EXCEEDED</div>
+          <div class="status-tag">4 / 4 CRITERIA EXCEEDED</div>
         </div>
         <table class="bench-table">
           <thead>
@@ -502,10 +665,10 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td>Memory Footprint (RSS)</td><td><strong>11.8 MB</strong></td><td>1,840 MB</td><td><strong>155.9x lighter</strong></td></tr>
-            <tr><td>Binary Disk Size</td><td><strong>4.6 MB</strong></td><td>620 MB</td><td><strong>134.7x smaller</strong></td></tr>
-            <tr><td>Startup Latency</td><td><strong>14 ms</strong></td><td>8,400 ms</td><td><strong>600x faster</strong></td></tr>
-            <tr><td>Tick Processing Time</td><td><strong>0.04 ms / tick</strong></td><td>12.2 ms / tick</td><td><strong>305x headroom</strong></td></tr>
+            <tr><td>Memory Footprint (RSS)</td><td class="mc-a">11.8 MB</td><td class="mc-7">1,840 MB</td><td class="mc-b">155.9x lighter</td></tr>
+            <tr><td>Binary Disk Size</td><td class="mc-a">4.6 MB</td><td class="mc-7">620 MB</td><td class="mc-b">134.7x smaller</td></tr>
+            <tr><td>Startup Latency</td><td class="mc-a">14 ms</td><td class="mc-7">8,400 ms</td><td class="mc-b">600x faster</td></tr>
+            <tr><td>Tick Processing Time</td><td class="mc-a">0.04 ms / tick</td><td class="mc-7">12.2 ms / tick</td><td class="mc-b">305x headroom</td></tr>
           </tbody>
         </table>
       </div>
@@ -515,90 +678,135 @@
   <!-- AI Agent Skill & Playbook Section -->
   <section class="container" id="agents">
     <div class="section-header">
-      <div class="badge badge-purple" style="margin-bottom: 8px;">AUTONOMOUS AI INTEGRATION</div>
+      <div class="badge">
+        <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-redstone"/></svg>
+        <span class="mc-d">AUTONOMOUS AI INTEGRATION</span>
+      </div>
       <h2 class="section-title">AI AGENT MCP RUNTIME &amp; SKILL.MD</h2>
       <p class="section-desc">
-        Complete Model Context Protocol interface enabling Claude, Gemini, and Antigravity agents
-        to autonomously beat Minecraft without human intervention or game-rule cheating.
+        Complete Model Context Protocol interface enabling Claude, Gemini, and custom agents
+        to autonomously play and beat Minecraft without human intervention or game-rule cheating.
       </p>
     </div>
 
-    <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 28px; margin-bottom: 24px;">
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 24px;">
+    <div class="metric-card" style="padding: 28px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; margin-bottom: 24px;">
         <div>
-          <div style="font-family: var(--font-pixel); font-size: 13px; color: var(--mc-diamond); margin-bottom: 12px;">10 MCP LIVE TOOLS</div>
-          <ul style="list-style: none; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); line-height: 2;">
-            <li><code>sawbyte_inspect_status</code> — Real-time vitals &amp; sub-voxel pos</li>
-            <li><code>sawbyte_milestone_save</code> — Persist milestone, attempt &amp; death info</li>
-            <li><code>sawbyte_navigate_astar</code> — Dynamic 3D pathfinding with obstacle avoidance</li>
-            <li><code>sawbyte_raycast_block</code> — Sub-voxel ray intersection &amp; face normal</li>
-            <li><code>sawbyte_inventory_find</code> — Scan 45 container &amp; hotbar slots</li>
-            <li><code>sawbyte_craft_recipe</code> — Deterministic 2x2 &amp; 3x3 recipe crafting</li>
+          <div class="mc-b" style="font-size: 14px; margin-bottom: 12px;">10 LIVE MCP TOOLS</div>
+          <ul style="list-style: none; font-size: 12px; line-height: 2.1;" class="mc-7">
+            <li><span class="mc-e">sawbyte_inspect_status</span> — Real-time vitals &amp; sub-voxel pos</li>
+            <li><span class="mc-e">sawbyte_milestone_save</span> — Persist milestone &amp; death info</li>
+            <li><span class="mc-e">sawbyte_navigate_astar</span> — Dynamic 3D A* pathfinding</li>
+            <li><span class="mc-e">sawbyte_raycast_block</span> — Sub-voxel ray intersection</li>
+            <li><span class="mc-e">sawbyte_inventory_find</span> — Scan 45 container &amp; hotbar slots</li>
+            <li><span class="mc-e">sawbyte_craft_recipe</span> — Deterministic 2x2 &amp; 3x3 crafting</li>
           </ul>
         </div>
 
         <div>
-          <div style="font-family: var(--font-pixel); font-size: 13px; color: var(--mc-green); margin-bottom: 12px;">LONG-HORIZON RUNBOOK</div>
-          <ul style="list-style: none; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); line-height: 2;">
-            <li><strong>Phase 1:</strong> Spawn, tree harvesting &amp; stone tool acquisition</li>
-            <li><strong>Phase 2:</strong> Cave exploration, iron smelting &amp; diamond gear</li>
-            <li><strong>Phase 3:</strong> Nether traversal, blaze rods &amp; ender pearls</li>
-            <li><strong>Phase 4:</strong> Stronghold discovery &amp; Ender Dragon battle</li>
-            <li><strong>Audit Rule:</strong> Zero cheats, zero spoofed packets, exact natural ticks</li>
+          <div class="mc-a" style="font-size: 14px; margin-bottom: 12px;">LONG-HORIZON SURVIVAL RUNBOOK</div>
+          <ul style="list-style: none; font-size: 12px; line-height: 2.1;" class="mc-7">
+            <li><span class="mc-6">Phase 1:</span> Spawn, tree harvesting &amp; stone tool acquisition</li>
+            <li><span class="mc-6">Phase 2:</span> Cave exploration, iron smelting &amp; diamond gear</li>
+            <li><span class="mc-6">Phase 3:</span> Nether traversal, blaze rods &amp; ender pearls</li>
+            <li><span class="mc-6">Phase 4:</span> Stronghold discovery &amp; Ender Dragon battle</li>
+            <li><span class="mc-c">Audit Rule:</span> Zero cheats, zero spoofed packets, exact ticks</li>
           </ul>
         </div>
       </div>
 
-      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-        <a href="https://github.com/5ivesaw/Sawbyte/blob/main/skills/sawbyte/SKILL.md" target="_blank" rel="noopener" class="btn btn-primary">
+      <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+        <a href="https://github.com/5ivesaw/Sawbyte/blob/main/skills/sawbyte/SKILL.md" target="_blank" rel="noopener" class="btn btn-primary sfx-trigger">
           <span>READ COMPLETE SKILL.MD ON GITHUB</span>
         </a>
-        <a href="https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/skills/sawbyte/SKILL.md" class="btn btn-secondary">
+        <a href="https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/skills/sawbyte/SKILL.md" class="btn btn-secondary sfx-trigger">
           <span>DOWNLOAD RAW SPEC</span>
         </a>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
+  <!-- ============================================================================
+       SEPARATE PERSONAL NOTE FROM THE CREATOR — IN MEMORIAM: TECHNOBLADE (1999–2022)
+       ============================================================================ -->
+  <div class="personal-note-divider">
+    <div class="divider-line"></div>
+    <span class="mc-8" style="font-size: 11px;">§8• PERSONAL NOTE FROM THE CREATOR (UNRELATED TO PROJECT) •</span>
+    <div class="divider-line"></div>
+  </div>
+
+  <section class="tribute-section" id="memoriam">
+    <div class="tribute-frame">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div class="badge" style="margin-bottom: 12px;">
+          <svg width="14" height="14" class="pixel-icon"><use href="#mc-icon-crown"/></svg>
+          <span class="mc-6">IN LOVING MEMORY • ALEXANDER (1999 – 2022)</span>
+        </div>
+        <h2 class="section-title mc-e" style="margin-top: 6px;">REST IN PEACE, TECHNOBLADE</h2>
+      </div>
+
+      <div class="tribute-disclaimer">
+        <span class="mc-f">Personal Note:</span> Technoblade is completely separate from and unaffiliated with the project above.
+        I am not using his name to promote anything—Sawbyte is just a side project I built for fun.
+        Technoblade is the person who got me into Minecraft and inspired me to love this community in the first place,
+        and I wanted to leave a quiet corner on my site so he is always remembered across the things I make.
+      </div>
+
+      <div class="tribute-grid">
+        <!-- Cutout 1: Iconic Crown Pig -->
+        <div class="tribute-figure-card">
+          <div class="tribute-img-wrap">
+            <img src="assets/techno_pig.png" alt="Technoblade Crowned Pig" class="tribute-img">
+          </div>
+          <div class="mc-6" style="font-size: 13px; margin-bottom: 6px;">THE CROWNED LEGEND</div>
+          <p class="mc-7" style="font-size: 11px; line-height: 1.7;">
+            “If I had another hundred lives, I think I would choose to be Technoblade again every single time.”
+          </p>
+        </div>
+
+        <!-- Cutout 2: Dual Axes Technoblade -->
+        <div class="tribute-figure-card">
+          <div class="tribute-img-wrap">
+            <img src="assets/techno_axes.png" alt="Technoblade Dual Axes" class="tribute-img delay">
+          </div>
+          <div class="mc-c" style="font-size: 13px; margin-bottom: 6px;">TECHNOBLADE NEVER DIES</div>
+          <p class="mc-7" style="font-size: 11px; line-height: 1.7;">
+            Thank you for all the laughs, the late-night streams, the Skyblock Potato Wars, and the memories that shaped a whole generation of players.
+          </p>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 28px;">
+        <button type="button" id="pay-respects-btn" class="btn btn-secondary sfx-xp">
+          <svg width="16" height="16" class="pixel-icon"><use href="#mc-icon-crown"/></svg>
+          <span id="respects-label">LEAVE A TRIBUTE ROSE [o7]</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Standard Project Footer -->
   <footer class="footer">
     <div class="footer-links">
-      <a href="https://github.com/5ivesaw/Sawbyte" class="footer-link">GitHub Repository</a>
-      <a href="https://github.com/5ivesaw/Sawbyte/releases" class="footer-link">Releases (v0.3.2)</a>
-      <a href="https://github.com/5ivesaw/Sawbyte/actions" class="footer-link">CI Workflows</a>
-      <a href="https://github.com/5ivesaw/Sawbyte/blob/main/skills/sawbyte/SKILL.md" class="footer-link">AI Skill Spec</a>
-      <a href="https://github.com/5ivesaw/Sawbyte/blob/main/LICENSE" class="footer-link">MIT / Apache 2.0 License</a>
+      <a href="https://github.com/5ivesaw/Sawbyte" class="footer-link sfx-trigger">GitHub Repository</a>
+      <a href="https://github.com/5ivesaw/Sawbyte/releases" class="footer-link sfx-trigger">Releases (v0.3.2)</a>
+      <a href="https://github.com/5ivesaw/Sawbyte/actions" class="footer-link sfx-trigger">CI Workflows</a>
+      <a href="https://github.com/5ivesaw/Sawbyte/blob/main/skills/sawbyte/SKILL.md" class="footer-link sfx-trigger">AI Skill Spec</a>
+      <a href="https://github.com/5ivesaw/Sawbyte/blob/main/LICENSE" class="footer-link sfx-trigger">MIT / Apache 2.0 License</a>
     </div>
-    <div style="margin-top: 12px; font-size: 11px; color: var(--text-dim);">
-      Sawbyte is an independent native Rust Minecraft Java Edition engine. Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
+    <div class="mc-8" style="font-size: 10px;">
+      Sawbyte is an independent open-source Rust project built for fun. Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
     </div>
   </footer>
 
-  <script>
-    function switchPreviewMode(mode) {
-      const overlay = document.getElementById('image-preview-overlay');
-      const img = document.getElementById('preview-img-elem');
-      const canvas = document.getElementById('viz-canvas');
-      
-      document.querySelectorAll('.viz-mode-btn').forEach(b => b.classList.remove('active'));
-      
-      if (mode === 'launcher') {
-        overlay.style.display = 'block';
-        img.src = 'assets/preview_launcher.png';
-      } else if (mode === 'bridge') {
-        overlay.style.display = 'block';
-        img.src = 'assets/preview_graphical_bridge.png';
-      } else {
-        overlay.style.display = 'none';
-      }
-    }
-
-    document.querySelectorAll('.viz-mode-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.getElementById('image-preview-overlay').style.display = 'none';
-      });
-    });
-  </script>
+  <!-- Final Quiet Image at the Very End of the Site (Technoblade Looking Back) -->
+  <div class="final-farewell-endpiece">
+    <div class="farewell-img-box">
+      <img src="assets/techno_farewell.png" alt="So long nerds — Technoblade Farewell" class="farewell-img">
+    </div>
+    <div class="mc-6" style="font-size: 13px; margin-bottom: 4px;">“So long nerds.”</div>
+    <div class="mc-8" style="font-size: 10px;">Technoblade Never Dies • 1999 – Forever</div>
+  </div>
 
 </body>
 </html>

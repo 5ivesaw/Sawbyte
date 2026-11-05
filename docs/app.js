@@ -1,18 +1,136 @@
 /**
- * Sawbyte Official Portal Interactive Application Engine
- * Starry Void Canvas, 3D Voxel Raymarcher Simulator, Live Terminal & Benchmarks
+ * Sawbyte Official Portal Interactive Engine
+ * - Soft Procedural Web Audio Minecraft UI Sound Synthesizer (with Mute Toggle)
+ * - Exact §0–§f Minecraft Color Code Parser
+ * - 3D Software Voxel Raymarcher & 2D Radar Simulator + Hotbar Slot Control
+ * - Live Terminal Shell & Dynamic GitHub Release Downloader
  */
 
+let sfxEnabled = true;
+let audioCtx = null;
+
 document.addEventListener('DOMContentLoaded', () => {
+  initSoundEngine();
   initParticleCanvas();
   initReleaseDownloader();
   initVisualizerSimulator();
   initTerminalConsole();
   initBenchmarkTabs();
+  initRespectsButton();
 });
 
 // ==============================================================================
-// 1. Starry Night & Floating Void Particle Canvas
+// 1. Soft Procedural Minecraft Web Audio Synthesizer
+// ==============================================================================
+
+function ensureAudioCtx() {
+  if (!sfxEnabled) return null;
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) audioCtx = new AudioContextClass();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
+  return audioCtx;
+}
+
+function playMcClick(pitch = 1.0) {
+  const ctx = ensureAudioCtx();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+
+  // Soft wooden/stone Minecraft UI click
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(190 * pitch, now);
+  osc.frequency.exponentialRampToValueAtTime(65 * pitch, now + 0.045);
+
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(950, now);
+
+  gain.gain.setValueAtTime(0.08, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start(now);
+  osc.stop(now + 0.05);
+}
+
+function playMcHoverTick() {
+  const ctx = ensureAudioCtx();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(320, now);
+  osc.frequency.exponentialRampToValueAtTime(220, now + 0.02);
+
+  gain.gain.setValueAtTime(0.02, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.025);
+}
+
+function playMcXpChime() {
+  const ctx = ensureAudioCtx();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+
+  const freqs = [587.33, 783.99, 987.77, 1174.66];
+  freqs.forEach((f, idx) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    const start = now + idx * 0.045;
+    osc.frequency.setValueAtTime(f, start);
+    gain.gain.setValueAtTime(0.06, start);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(start);
+    osc.stop(start + 0.24);
+  });
+}
+
+function initSoundEngine() {
+  const toggleBtn = document.getElementById('sfx-toggle-btn');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      sfxEnabled = !sfxEnabled;
+      toggleBtn.classList.toggle('muted', !sfxEnabled);
+      toggleBtn.innerHTML = sfxEnabled ? '<span>[SFX: ON]</span>' : '<span>[SFX: OFF]</span>';
+      if (sfxEnabled) playMcClick(1.15);
+    });
+  }
+
+  document.querySelectorAll('.sfx-trigger').forEach((el) => {
+    el.addEventListener('click', () => playMcClick(1.0));
+    el.addEventListener('mouseenter', () => playMcHoverTick());
+  });
+
+  document.querySelectorAll('.sfx-hover').forEach((el) => {
+    el.addEventListener('mouseenter', () => playMcHoverTick());
+  });
+
+  document.querySelectorAll('.sfx-xp').forEach((el) => {
+    el.addEventListener('click', () => playMcXpChime());
+  });
+}
+
+// ==============================================================================
+// 2. Soft Starry Void & Pixel Particle Canvas
 // ==============================================================================
 
 function initParticleCanvas() {
@@ -29,18 +147,24 @@ function initParticleCanvas() {
   });
 
   const particles = [];
-  const COUNT = Math.floor((width * height) / 14000);
+  const COUNT = Math.floor((width * height) / 16000);
+  const palette = [
+    'rgba(85, 255, 255, ', // §b Aqua
+    'rgba(85, 255, 85, ',  // §a Green
+    'rgba(255, 170, 0, ',  // §6 Gold
+    'rgba(170, 170, 170, ' // §7 Gray
+  ];
 
   for (let i = 0; i < COUNT; i++) {
     particles.push({
       x: Math.random() * width,
       y: Math.random() * height,
-      size: Math.random() * 2 + 1,
-      vy: -(Math.random() * 0.4 + 0.1),
-      vx: (Math.random() - 0.5) * 0.2,
-      alpha: Math.random() * 0.6 + 0.2,
-      pulse: Math.random() * 0.02 + 0.01,
-      color: Math.random() > 0.4 ? 'rgba(56, 189, 248, ' : 'rgba(34, 197, 94, ',
+      size: Math.random() > 0.65 ? 3 : 2,
+      vy: -(Math.random() * 0.3 + 0.08),
+      vx: (Math.random() - 0.5) * 0.15,
+      alpha: Math.random() * 0.5 + 0.15,
+      pulse: Math.random() * 0.015 + 0.005,
+      color: palette[Math.floor(Math.random() * palette.length)],
     });
   }
 
@@ -49,8 +173,8 @@ function initParticleCanvas() {
     for (const p of particles) {
       p.y += p.vy;
       p.x += p.vx;
-      p.alpha += Math.sin(Date.now() * p.pulse) * 0.01;
-      const clampedAlpha = Math.max(0.1, Math.min(0.85, p.alpha));
+      p.alpha += Math.sin(Date.now() * p.pulse) * 0.006;
+      const clampedAlpha = Math.max(0.08, Math.min(0.65, p.alpha));
 
       if (p.y < 0) {
         p.y = height;
@@ -68,7 +192,7 @@ function initParticleCanvas() {
 }
 
 // ==============================================================================
-// 2. Dynamic GitHub Release Fetcher & Fallback
+// 3. Dynamic GitHub Release Fetcher & Copy Command
 // ==============================================================================
 
 function initReleaseDownloader() {
@@ -88,20 +212,17 @@ function initReleaseDownloader() {
     "bridge-jar": `${BASE_URL}/sawbyte-bridge-0.3.2.jar`,
   };
 
-  // Populate download button hrefs
   for (const [id, url] of Object.entries(platformMap)) {
     const el = document.getElementById(`dl-${id}`);
     if (el) el.href = url;
   }
 
-  // Attempt live API query for up-to-date downloads
   fetch('https://api.github.com/repos/5ivesaw/Sawbyte/releases/latest')
     .then((res) => (res.ok ? res.json() : null))
     .then((release) => {
       if (!release || !release.assets) return;
       const releaseTag = release.tag_name || LATEST_TAG;
-      const tagBadges = document.querySelectorAll('.release-tag-badge');
-      tagBadges.forEach((b) => (b.innerText = releaseTag));
+      document.querySelectorAll('.release-tag-badge').forEach((b) => (b.innerText = releaseTag));
 
       for (const asset of release.assets) {
         const name = asset.name;
@@ -115,9 +236,7 @@ function initReleaseDownloader() {
         else if (name.includes('bridge')) setHref('dl-bridge-jar', url);
       }
     })
-    .catch(() => {
-      // Offline or rate-limited; fallback intact
-    });
+    .catch(() => {});
 
   function setHref(id, url) {
     const el = document.getElementById(id);
@@ -125,76 +244,118 @@ function initReleaseDownloader() {
   }
 }
 
-// Copy Command Functionality
 window.copyCommand = function (text) {
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.getElementById('copy-install-btn');
     if (btn) {
       btn.innerText = 'COPIED!';
-      btn.style.color = '#4ade80';
+      btn.className = 'copy-btn mc-a';
       setTimeout(() => {
         btn.innerText = 'COPY';
-        btn.style.color = '';
+        btn.className = 'copy-btn';
       }, 2000);
     }
   });
 };
 
 // ==============================================================================
-// 3. Interactive Pure-Rust 3D Software Rasterizer Simulator
+// 4. Interactive 3D Software Rasterizer & Tactical Radar Simulator
 // ==============================================================================
+
+window.switchPreviewMode = function (mode, btnElem) {
+  const overlay = document.getElementById('image-preview-overlay');
+  const hud = document.getElementById('mc-hud-overlay');
+  const img = document.getElementById('preview-img-elem');
+
+  document.querySelectorAll('#viewport .mode-tab').forEach((b) => b.classList.remove('active'));
+  if (btnElem) btnElem.classList.add('active');
+
+  if (mode === 'launcher') {
+    overlay.style.display = 'block';
+    if (hud) hud.style.display = 'none';
+    img.src = 'assets/preview_launcher.png';
+  } else if (mode === 'bridge') {
+    overlay.style.display = 'block';
+    if (hud) hud.style.display = 'none';
+    img.src = 'assets/preview_graphical_bridge.png';
+  }
+};
 
 function initVisualizerSimulator() {
   const canvas = document.getElementById('viz-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  let mode = 'first_person'; // first_person, third_person, radar
+  let mode = 'first_person';
   let yaw = 0;
   let pitch = 0;
   let posX = 8.5, posY = 64.0, posZ = 8.5;
   let tick = 1420;
-  let health = 20.0;
-  let food = 20;
 
   const modeButtons = document.querySelectorAll('.viz-mode-btn');
   modeButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
-      modeButtons.forEach((b) => b.classList.remove('active'));
+      document.querySelectorAll('#viewport .mode-tab').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       mode = btn.dataset.mode;
+      const overlay = document.getElementById('image-preview-overlay');
+      const hud = document.getElementById('mc-hud-overlay');
+      if (overlay) overlay.style.display = 'none';
+      if (hud) hud.style.display = mode === 'first_person' ? 'flex' : 'none';
     });
   });
 
-  // Keyboard navigation & look controls
+  // Hotbar slot clicks & number keys 1-9
+  const slots = document.querySelectorAll('.mc-hotbar-slot');
+  slots.forEach((slot) => {
+    slot.addEventListener('click', () => {
+      slots.forEach((s) => s.classList.remove('selected'));
+      slot.classList.add('selected');
+      playMcClick(1.2);
+    });
+  });
+
   window.addEventListener('keydown', (e) => {
     if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+    if (e.key >= '1' && e.key <= '9') {
+      const idx = parseInt(e.key, 10) - 1;
+      if (slots[idx]) {
+        slots.forEach((s) => s.classList.remove('selected'));
+        slots[idx].classList.add('selected');
+        playMcClick(1.2);
+      }
+      return;
+    }
+
     const rad = (yaw * Math.PI) / 180;
     const speed = 0.4;
-    if (e.key === 'w' || e.key === 'ArrowUp') {
+    if (e.key === 'w' || e.key === 'W') {
       posX -= Math.sin(rad) * speed;
       posZ += Math.cos(rad) * speed;
       tick++;
-    } else if (e.key === 's' || e.key === 'ArrowDown') {
+      updateTelemetry();
+    } else if (e.key === 's' || e.key === 'S') {
       posX += Math.sin(rad) * speed;
       posZ -= Math.cos(rad) * speed;
       tick++;
-    } else if (e.key === 'a' || e.key === 'ArrowLeft') {
-      yaw -= 4;
-    } else if (e.key === 'd' || e.key === 'ArrowRight') {
-      yaw += 4;
+      updateTelemetry();
+    } else if (e.key === 'a' || e.key === 'A') {
+      yaw -= 5;
+      updateTelemetry();
+    } else if (e.key === 'd' || e.key === 'D') {
+      yaw += 5;
+      updateTelemetry();
     }
-    updateTelemetry();
   });
 
   function updateTelemetry() {
     const hud = document.getElementById('telemetry-display');
     if (hud) {
       hud.innerHTML = `
-        <div>POS: (${posX.toFixed(2)}, ${posY.toFixed(1)}, ${posZ.toFixed(2)})</div>
-        <div>YAW: ${yaw.toFixed(1)}&deg; | PITCH: ${pitch.toFixed(1)}&deg;</div>
-        <div>HEALTH: ${health.toFixed(1)} | FOOD: ${food}</div>
-        <div>TICK: ${tick} | ATTEMPT: #1 | DEATHS: 0</div>
+        <div class="mc-b">Sawbyte 0.3.2 (26.3 / Vanilla / Rust Headless)</div>
+        <div>XYZ: <span class="mc-a">${posX.toFixed(2)} / ${posY.toFixed(2)} / ${posZ.toFixed(2)}</span></div>
+        <div>Facing: <span class="mc-e">Yaw ${yaw.toFixed(1)}° / Pitch ${pitch.toFixed(1)}°</span></div>
+        <div>Tick: <span class="mc-f">${tick}</span> <span class="mc-8">|</span> TPS: <span class="mc-a">20.00</span> <span class="mc-8">|</span> Deaths: <span class="mc-a">0</span></div>
       `;
     }
   }
@@ -202,122 +363,110 @@ function initVisualizerSimulator() {
   function renderVisualizer() {
     const w = canvas.width;
     const h = canvas.height;
-
     if (mode === 'radar') {
       renderRadar(ctx, w, h);
     } else {
       render3DVoxels(ctx, w, h);
     }
-
     requestAnimationFrame(renderVisualizer);
   }
 
   function renderRadar(ctx, w, h) {
-    ctx.fillStyle = '#07090e';
+    ctx.fillStyle = '#090b10';
     ctx.fillRect(0, 0, w, h);
-
     const cx = w / 2;
     const cy = h / 2;
 
-    // Grid circles
-    ctx.strokeStyle = '#1e293b';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#1e2430';
+    ctx.lineWidth = 2;
     for (let r = 40; r <= 160; r += 40) {
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    // Radar sweep line
     const sweepAngle = (Date.now() * 0.002) % (Math.PI * 2);
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+    ctx.strokeStyle = 'rgba(85, 255, 255, 0.45)';
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + Math.cos(sweepAngle) * 160, cy + Math.sin(sweepAngle) * 160);
     ctx.stroke();
 
-    // Player heading arrow
     const rad = (-yaw * Math.PI) / 180;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(cx - 3, cy - 3, 6, 6);
 
-    ctx.strokeStyle = '#38bdf8';
+    ctx.strokeStyle = '#55FFFF';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + Math.sin(rad) * 20, cy - Math.cos(rad) * 20);
+    ctx.lineTo(cx + Math.sin(rad) * 22, cy - Math.cos(rad) * 22);
     ctx.stroke();
 
-    // Entity Blips
-    // Zombie (Red)
-    ctx.fillStyle = '#ef4444';
-    ctx.fillRect(cx + 45, cy - 60, 6, 6);
-    // Sheep (Green)
-    ctx.fillStyle = '#22c55e';
-    ctx.fillRect(cx - 55, cy + 30, 6, 6);
-    // Diamond Item Drop (Gold)
-    ctx.fillStyle = '#f59e0b';
-    ctx.fillRect(cx + 80, cy + 40, 5, 5);
+    // Entities (Hostile Red, Passive Green, Diamond Drop Gold)
+    ctx.fillStyle = '#FF5555';
+    ctx.fillRect(cx + 45, cy - 60, 8, 8);
+    ctx.fillStyle = '#55FF55';
+    ctx.fillRect(cx - 55, cy + 30, 8, 8);
+    ctx.fillStyle = '#FFAA00';
+    ctx.fillRect(cx + 80, cy + 40, 6, 6);
   }
 
   function render3DVoxels(ctx, w, h) {
-    // Sky
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, h / 2);
-    skyGrad.addColorStop(0, '#090d16');
-    skyGrad.addColorStop(1, '#1e293b');
-    ctx.fillStyle = skyGrad;
+    // Crisp Night Sky
+    ctx.fillStyle = '#0b0e17';
     ctx.fillRect(0, 0, w, h / 2);
 
-    // Ground Plane
-    const groundGrad = ctx.createLinearGradient(0, h / 2, 0, h);
-    groundGrad.addColorStop(0, '#15803d');
-    groundGrad.addColorStop(1, '#052e16');
-    ctx.fillStyle = groundGrad;
+    // Pixel Stars in Sky
+    ctx.fillStyle = '#555555';
+    ctx.fillRect(90, 40, 3, 3);
+    ctx.fillRect(240, 70, 3, 3);
+    ctx.fillRect(480, 35, 3, 3);
+    ctx.fillRect(550, 95, 3, 3);
+
+    // Blocky Moon
+    ctx.fillStyle = '#FFFF55';
+    ctx.fillRect(500, 36, 28, 28);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(504, 40, 20, 20);
+
+    // Grass Ground Plane
+    ctx.fillStyle = '#14381c';
     ctx.fillRect(0, h / 2, w, h / 2);
 
-    // Voxel Blocks Raymarching Simulation
     const cx = w / 2;
     const cy = h / 2;
-    const timeFactor = Math.sin(Date.now() * 0.001) * 10;
+    const shift = ((yaw % 360) / 360) * 120 + Math.sin(Date.now() * 0.0012) * 8;
 
-    // Draw voxel perspective pillars
+    // Voxel Grass Blocks
     for (let i = -5; i <= 5; i++) {
-      const bx = cx + (i * 55) + timeFactor;
-      const by = cy + 20;
-      const bSize = 36;
+      const bx = Math.floor(cx + i * 56 - shift);
+      const by = cy + 12;
+      const bSize = 40;
 
-      // Top face (Grass green)
-      ctx.fillStyle = '#22c55e';
-      ctx.fillRect(bx - bSize / 2, by - bSize / 2, bSize, bSize / 2);
+      // Top Grass Face (§a)
+      ctx.fillStyle = '#00AA00';
+      ctx.fillRect(bx - bSize / 2, by - bSize / 2, bSize, 12);
+      ctx.fillStyle = '#55FF55';
+      ctx.fillRect(bx - bSize / 2 + 2, by - bSize / 2 + 2, bSize - 4, 6);
 
-      // Side face (Dirt brown)
-      ctx.fillStyle = '#92400e';
-      ctx.fillRect(bx - bSize / 2, by, bSize, bSize);
+      // Side Dirt Face
+      ctx.fillStyle = '#6e4c30';
+      ctx.fillRect(bx - bSize / 2, by - bSize / 2 + 12, bSize, bSize - 4);
+      ctx.fillStyle = '#4f3520';
+      ctx.fillRect(bx - bSize / 2 + 6, by + 4, 8, 8);
+      ctx.fillRect(bx + 4, by + 12, 6, 6);
 
-      ctx.strokeStyle = '#0a0d14';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(bx - bSize / 2, by - bSize / 2, bSize, bSize * 1.5);
+      // Crisp Voxel Outline
+      ctx.strokeStyle = '#060709';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(bx - bSize / 2, by - bSize / 2, bSize, bSize + 8);
     }
 
-    // Hostile Mob Billboard (Zombie)
-    const zx = cx + 80;
-    const zy = cy - 10;
-    ctx.fillStyle = '#16a34a'; // head
-    ctx.fillRect(zx - 8, zy - 24, 16, 16);
-    ctx.fillStyle = '#2563eb'; // shirt
-    ctx.fillRect(zx - 10, zy - 8, 20, 20);
-
-    // Crosshair
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx - 8, cy);
-    ctx.lineTo(cx + 8, cy);
-    ctx.moveTo(cx, cy - 8);
-    ctx.lineTo(cx, cy + 8);
-    ctx.stroke();
+    // Crisp Minecraft Crosshair
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(cx - 8, cy - 1, 16, 2);
+    ctx.fillRect(cx - 1, cy - 8, 2, 16);
   }
 
   updateTelemetry();
@@ -325,16 +474,50 @@ function initVisualizerSimulator() {
 }
 
 // ==============================================================================
-// 4. Interactive In-Browser Live Terminal Shell
+// 5. Interactive Terminal Shell & Exact §0-§f Color Code Parser
 // ==============================================================================
+
+const MC_CODE_MAP = {
+  '0': 'mc-0', '1': 'mc-1', '2': 'mc-2', '3': 'mc-3',
+  '4': 'mc-4', '5': 'mc-5', '6': 'mc-6', '7': 'mc-7',
+  '8': 'mc-8', '9': 'mc-9', 'a': 'mc-a', 'b': 'mc-b',
+  'c': 'mc-c', 'd': 'mc-d', 'e': 'mc-e', 'f': 'mc-f'
+};
+
+function parseMinecraftColorText(rawText, defaultClass = 'mc-7') {
+  const container = document.createElement('div');
+  container.style.marginBottom = '6px';
+
+  const parts = rawText.split(/(§[0-9a-frA-FR])/g);
+  let currentClass = defaultClass;
+
+  for (const part of parts) {
+    if (part.startsWith('§') && part.length === 2) {
+      const code = part[1].toLowerCase();
+      if (code === 'r') currentClass = defaultClass;
+      else if (MC_CODE_MAP[code]) currentClass = MC_CODE_MAP[code];
+    } else if (part.length > 0) {
+      const span = document.createElement('span');
+      span.className = currentClass;
+      span.textContent = part;
+      container.appendChild(span);
+    }
+  }
+  return container;
+}
+
+window.insertColorCode = function (code) {
+  const input = document.getElementById('term-input');
+  if (!input) return;
+  input.value += code;
+  input.focus();
+  playMcClick(1.25);
+};
 
 function initTerminalConsole() {
   const input = document.getElementById('term-input');
   const body = document.getElementById('term-body');
   if (!input || !body) return;
-
-  const history = [];
-  let histIdx = 0;
 
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
@@ -342,73 +525,79 @@ function initTerminalConsole() {
       input.value = '';
       if (!cmd) return;
 
-      history.push(cmd);
-      histIdx = history.length;
-      appendLine(`$ ${cmd}`, '#ffffff');
+      playMcClick(1.1);
+      appendFormattedLine(`§a$ §f${cmd}`);
       handleCommand(cmd);
     }
   });
 
-  function appendLine(text, color = '#38bdf8') {
-    const div = document.createElement('div');
-    div.style.color = color;
-    div.style.marginBottom = '4px';
-    div.innerText = text;
-    body.appendChild(div);
+  function appendFormattedLine(text, defaultClass = 'mc-7') {
+    const lineElem = parseMinecraftColorText(text, defaultClass);
+    body.appendChild(lineElem);
     body.scrollTop = body.scrollHeight;
   }
 
   function handleCommand(cmd) {
+    if (cmd.includes('§')) {
+      appendFormattedLine(`§8[Chat Preview] §r${cmd}`);
+      return;
+    }
+
     const parts = cmd.split(' ');
     const root = parts[0].toLowerCase();
 
     switch (root) {
       case 'help':
-        appendLine('Available Sawbyte live commands:');
-        appendLine('  inspect.status                 - Query coordinates, vitals & tick');
-        appendLine('  inspect.milestones             - View recorded autonomous milestones');
-        appendLine('  inspect.deaths                 - View death count and exact causes');
-        appendLine('  milestone.save <name> [notes]  - Record new milestone to disk');
-        appendLine('  inventory.find <keyword>       - Search inventory for item');
-        appendLine('  task.navigate <x> <y> <z>      - 3D A* pathfinding to coordinates');
-        appendLine('  clear                          - Clear terminal output');
+        appendFormattedLine('§6Available Sawbyte Live Commands:');
+        appendFormattedLine('  §binspect.status                 §7- Query coordinates, vitals & tick');
+        appendFormattedLine('  §binspect.milestones             §7- View recorded autonomous milestones');
+        appendFormattedLine('  §binspect.deaths                 §7- View death count and exact causes');
+        appendFormattedLine('  §bmilestone.save <name> [notes]  §7- Record new milestone to disk');
+        appendFormattedLine('  §binventory.find <keyword>       §7- Search 45 inventory slots');
+        appendFormattedLine('  §btask.navigate <x> <y> <z>      §7- 3D A* pathfinding to coordinates');
+        appendFormattedLine('  §bcolors                         §7- Preview all 16 official §0-§f color codes');
+        appendFormattedLine('  §bclear                          §7- Clear terminal console');
+        break;
+      case 'colors':
+        appendFormattedLine('§0§0Black §1§1DarkBlue §2§2DarkGreen §3§3DarkAqua §4§4DarkRed §5§5Purple §6§6Gold §7§7Gray');
+        appendFormattedLine('§8§8DarkGray §9§9Blue §a§aGreen §b§bAqua §c§cRed §d§dLightPurple §e§eYellow §f§fWhite');
         break;
       case 'inspect.status':
-        appendLine('pos=(8.50, 64.00, 8.50) yaw=0.0 pitch=0.0 health=20.0 food=20 tick=1420 status=live');
+        appendFormattedLine('§apos=(8.50, 64.00, 8.50) §eyaw=0.0 pitch=0.0 §chealth=20.0 §6food=20 §btick=1420 status=live');
         break;
       case 'inspect.milestones':
-        appendLine('milestones total=3:');
-        appendLine('  - [World Spawn] attempt #1 deaths=0 tick=40 pos=(8.5, 64.0, 8.5) notes="Spawning in Plains"');
-        appendLine('  - [Crafted Wooden Pickaxe] attempt #1 deaths=0 tick=320 pos=(12.0, 64.0, 9.2) notes="3x3 recipe verified"');
-        appendLine('  - [Iron Ingot Smelted] attempt #1 deaths=0 tick=840 pos=(18.4, 52.0, 4.0) notes="Furnace cycle complete"');
+        appendFormattedLine('§6milestones total=3:');
+        appendFormattedLine('  §a[OK] [World Spawn] §7attempt #1 deaths=0 tick=40 pos=(8.5, 64.0, 8.5)');
+        appendFormattedLine('  §a[OK] [Crafted Wooden Pickaxe] §7attempt #1 deaths=0 tick=320 pos=(12.0, 64.0, 9.2)');
+        appendFormattedLine('  §a[OK] [Iron Ingot Smelted] §7attempt #1 deaths=0 tick=840 pos=(18.4, 52.0, 4.0)');
         break;
       case 'inspect.deaths':
-        appendLine('death_records total=0 (attempt #1 active; zero lethal encounters)');
+        appendFormattedLine('§adeath_records total=0 §7(attempt #1 active; zero lethal encounters)');
         break;
       case 'milestone.save':
       case 'milestone.record':
-        const name = parts[1] || 'Custom Milestone';
-        const notes = parts.slice(2).join(' ') || 'Recorded via portal terminal';
-        appendLine(`milestone_recorded name="${name}" attempt=1 deaths=0 tick=1420 pos=(8.50, 64.00, 8.50) health=20.0 food=20 inventory=[oak_log:4, iron_pickaxe:1]`, '#4ade80');
+        const name = parts[1] || 'Custom_Milestone';
+        playMcXpChime();
+        appendFormattedLine(`§amilestone_recorded §fname="${name}" §7attempt=1 deaths=0 tick=1420 health=20.0`);
         break;
       case 'inventory.find':
-        const q = parts[1] || 'iron';
-        appendLine(`{"ok": true, "match": {"slot": 36, "id": "minecraft:${q}", "count": 1}}`);
+        const q = parts[1] || 'diamond_pickaxe';
+        appendFormattedLine(`§b{"ok": true, "match": {"slot": 36, "id": "minecraft:${q}", "count": 1}}`);
         break;
       case 'task.navigate':
-        appendLine(`live 3D A* path active (14 waypoints) from (8, 64, 8) -> (${parts[1]||10}, ${parts[2]||64}, ${parts[3]||10})`, '#a855f7');
+        appendFormattedLine(`§dlive 3D A* path active (14 waypoints) -> (${parts[1] || 120}, ${parts[2] || 64}, ${parts[3] || -30})`);
         break;
       case 'clear':
         body.innerHTML = '';
         break;
       default:
-        appendLine(`unknown live command '${cmd}'. Type 'help' for command reference.`, '#ef4444');
+        appendFormattedLine(`§cUnknown command '${cmd}'. Type §ehelp §cfor command reference.`);
     }
   }
 }
 
 // ==============================================================================
-// 5. Interactive Benchmark Visualizer Tabs & Simulator
+// 6. Benchmark Tabs & Personal Tribute Respects Button
 // ==============================================================================
 
 function initBenchmarkTabs() {
@@ -422,5 +611,17 @@ function initBenchmarkTabs() {
       const target = document.getElementById(tab.dataset.target);
       if (target) target.style.display = 'block';
     });
+  });
+}
+
+function initRespectsButton() {
+  const btn = document.getElementById('pay-respects-btn');
+  const label = document.getElementById('respects-label');
+  if (!btn || !label) return;
+
+  let count = 1;
+  btn.addEventListener('click', () => {
+    label.innerHTML = `<span class="mc-e">[POPPY] RESPECTS PAID (o7 × ${count}) — TECHNOBLADE NEVER DIES</span>`;
+    count++;
   });
 }
