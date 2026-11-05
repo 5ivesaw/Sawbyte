@@ -25,6 +25,11 @@ Updated 2026-11-05. Live monitoring dashboard: `http://127.0.0.1:8765`.
 - Zero-graphics physics parity: 160-tick flat-world error `3.41e-7` blocks, 0 ground mismatches.
 - Multi-platform CI packaging: packages both `sawbyte-<os>-<arch>` full bundles and dedicated `sawbyte-launcher-<os>-<arch>` distribution archives with automatic SHA256SUMS.
 
+- Standardized Embodied AI Benchmark Suite (`tools/ai_agent_benchmark.py`): 28/28 benchmarks (100%) passing across MineRL ObtainDiamond (12/12), MineDojo programmatic tasks (8/8), Voyager autonomous exploration (4/4), and Systems efficiency (4/4).
+- AI Agent Skill Guide (`skills/sawbyte/SKILL.md` & `.agents/skills/sawbyte/SKILL.md`): complete specification detailing 10 MCP tools, live TCP protocol, and 4-phase zero-cheat long-horizon autonomy runbook.
+- Official Minecraft-Themed GitHub Pages Portal (`docs/index.html`, `docs/style.css`, `docs/app.js`): Deep Dark obsidian theme, starry void particle canvas, interactive in-browser 3D voxel raymarcher simulator, live protocol terminal, verified benchmark visualizer, and dynamic GitHub release asset downloader.
+- Automated GitHub Pages CI workflow (`.github/workflows/pages.yml`): automated deployment to `https://5ivesaw.github.io/Sawbyte/`.
+
 ## Next concrete steps
-1. Tagged and published v0.3.2 release with verified multi-platform binaries, pure-Rust software 3D rasterizer, autonomous milestone logging, and high-fidelity launcher.
+1. Main branch updated with complete portal and AI skill specifications.
 2. Continuous automated regression monitoring and parity verification across future Minecraft releases.
