@@ -11,7 +11,7 @@ use std::net::ToSocketAddrs;
 use std::path::Path;
 use std::time::Duration;
 
-const HELP: &str = "Sawbyte 0.3.0 — standalone headless Rust client launcher & MCP control bridge
+const HELP: &str = "Sawbyte 0.3.1 — standalone headless Rust client launcher & MCP control bridge
 
 Usage:
   sawbyte --help

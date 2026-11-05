@@ -41,7 +41,7 @@ pub fn run_launcher_gui(port_opt: Option<u16>) -> Result<(), Box<dyn std::error:
 
     let url = format!("http://127.0.0.1:{port}");
     println!("========================================================================");
-    println!("        🚀 SAWBYTE GRAPHICAL DESKTOP LAUNCHER v0.3.0");
+    println!("        SAWBYTE GRAPHICAL DESKTOP LAUNCHER v0.3.1");
     println!("========================================================================");
     println!("  URL:           {url}");
     let root = PersistentLauncher::resolve_home();
@@ -272,7 +272,7 @@ fn build_api_status(processes: &ProcessMap) -> String {
         "\"root_dir\":{},",
         escape_json(&launcher.root_dir.to_string_lossy())
     ));
-    json.push_str("\"version\":\"0.3.0\",");
+    json.push_str("\"version\":\"0.3.1\",");
 
     // Version profiles
     json.push_str("\"version_profiles\":[");
@@ -774,7 +774,7 @@ fn get_launcher_html() -> &'static str {
   <div class="brand">
     <img src="/sawbyte.png" alt="Sawbyte Icon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>'">
     <div>
-      <h1>Sawbyte Desktop Launcher <span class="badge badge-purple" style="vertical-align:middle;">v0.3.0</span></h1>
+      <h1>Sawbyte Desktop Launcher <span class="badge badge-purple" style="vertical-align:middle;">v0.3.1</span></h1>
       <div class="sub">Zero-Graphics Headless Minecraft Client & Automation Engine</div>
     </div>
   </div>
@@ -872,7 +872,7 @@ fn get_launcher_html() -> &'static str {
         </table>
       </div>
       <div class="card">
-        <h3>Measured Crucible Benchmarks (v0.3.0)</h3>
+        <h3>Measured Crucible Benchmarks (v0.3.1)</h3>
         <p style="color:var(--sub); font-size:12px;">All 6 Crucible Stages verified on both Native and Fabric backends with server RCON ground truth:</p>
         <ul style="color:var(--text); line-height:1.7;">
           <li><strong>Memory (Peak RSS):</strong> ~8.2 MiB (Native) vs ~614 MiB (Fabric) — <strong>~98.7% reduction</strong></li>

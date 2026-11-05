@@ -23,5 +23,5 @@ Updated 2026-11-05. Live monitoring dashboard: `http://127.0.0.1:8765`.
 - Multi-platform CI packaging: packages both `sawbyte-<os>-<arch>` full bundles and dedicated `sawbyte-launcher-<os>-<arch>` distribution archives with automatic SHA256SUMS.
 
 ## Next concrete steps
-1. Tag and publish v0.3.0 release with verified multi-platform binaries and launcher packages.
+1. Tagged and published v0.3.1 release with verified multi-platform binaries, universal capabilities test suite, and launcher packages.
 2. Continuous automated regression monitoring and parity verification across future Minecraft releases.

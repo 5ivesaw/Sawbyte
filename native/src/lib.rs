@@ -2845,7 +2845,7 @@ impl Session {
                     "id": id,
                     "result": {
                         "protocolVersion": "2025-06-18",
-                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.3.0" },
+                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.3.1" },
                         "capabilities": { "tools": { "listChanged": false }, "resources": { "listChanged": false } }
                     }
                 })
