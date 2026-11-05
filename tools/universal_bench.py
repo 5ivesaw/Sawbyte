@@ -697,6 +697,7 @@ def main() -> None:
     parser.add_argument("--target", choices=["harness", "live"], default="harness")
     parser.add_argument("--server", type=str, default="127.0.0.1:25565")
     parser.add_argument("--control-port", type=int, default=25580)
+    parser.add_argument("--native-bin", type=Path, default=None)
     parser.add_argument("--report", type=Path, default=REPORTS_DIR / "universal_report.json")
     args = parser.parse_args()
 
@@ -710,9 +711,20 @@ def main() -> None:
         harness.start()
         time.sleep(0.3)
 
-    native_bin = ROOT / "native" / "target" / "release" / "sawbyte-play"
-    if not native_bin.exists():
-        native_bin = ROOT / "target" / "release" / "sawbyte-play"
+    native_bin = args.native_bin
+    if not native_bin or not native_bin.exists():
+        for candidate in [
+            ROOT / "run" / "bin" / "sawbyte-play",
+            ROOT / "native" / "target" / "release" / "sawbyte-play",
+            ROOT / "target" / "release" / "sawbyte-play",
+            ROOT / "dist" / "sawbyte-play",
+        ]:
+            if candidate.exists():
+                native_bin = candidate
+                break
+
+    if not native_bin or not native_bin.exists():
+        raise RuntimeError("Could not find sawbyte-play binary; specify with --native-bin")
 
     block_profile_path = ROOT / "block-profile.json"
     if not block_profile_path.exists():
