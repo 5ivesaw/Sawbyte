@@ -48,15 +48,15 @@ export const config = {
   artifactName: 'sawbyte-launcher-${version}-${platform}-${arch}.${ext}',
   appx: {
     displayName: 'Sawbyte Launcher',
-    applicationId: 'xmcl',
-    identityName: 'xmcl',
+    applicationId: 'sawbyte',
+    identityName: 'sawbyte',
     backgroundColor: 'transparent',
     publisher: process.env.PUBLISHER,
-    publisherDisplayName: 'CI010',
+    publisherDisplayName: 'Sawbyte',
     setBuildNumber: true,
   },
   dmg: {
-    artifactName: 'xmcl-${version}-${arch}.${ext}',
+    artifactName: 'sawbyte-launcher-${version}-${arch}.${ext}',
     contents: [
       {
         x: 410,
@@ -81,7 +81,7 @@ export const config = {
       },
     ],
     extendInfo: {
-      NSLocalNetworkUsageDescription: 'XMCL and Minecraft need access to your local network to discover and connect to LAN games and servers.',
+      NSLocalNetworkUsageDescription: 'Sawbyte Launcher and Minecraft need access to your local network to discover and connect to LAN games and servers.',
       NSMicrophoneUsageDescription: 'A Minecraft mod wants to access your microphone.',
       NSCameraUsageDescription: 'Please give us access to your camera',
       'com.apple.security.device.audio-input': true,
@@ -91,7 +91,7 @@ export const config = {
   win: {
     signtoolOptions: {
       certificateFile: undefined as string | undefined,
-      publisherName: 'CI010',
+      publisherName: 'Sawbyte',
     },
     icon: 'icons/dark.ico',
     electronLanguages: ['en-US'],
@@ -107,17 +107,17 @@ export const config = {
     ],
   },
   linux: {
-    executableName: 'xmcl',
+    executableName: 'sawbyte-launcher',
     electronLanguages: ['en-US'],
     desktop: {
       entry: {
-        MimeType: 'x-scheme-handler/xmcl',
-        StartupWMClass: 'xmcl',
+        MimeType: 'x-scheme-handler/sawbyte',
+        StartupWMClass: 'sawbyte-launcher',
       },
     },
     category: 'Game',
     icon: 'icons/dark.icns',
-    artifactName: 'xmcl-${version}-${arch}.${ext}',
+    artifactName: 'sawbyte-launcher-${version}-${arch}.${ext}',
     target: [
       { target: 'deb', arch: ['x64', 'arm64'] },
       { target: 'rpm', arch: ['x64', 'arm64'] },

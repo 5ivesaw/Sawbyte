@@ -2,12 +2,12 @@
 set -eu
 
 die() {
-    echo "XMCL installation failed: $*" >&2
+    echo "Sawbyte Launcher installation failed: $*" >&2
     exit 1
 }
 
 # A root-owned helper is unsafe if an unprivileged user can replace its parent.
-for directory in / /opt /opt/xmcl; do
+for directory in / /opt /opt/sawbyte-launcher; do
     if [ -L "$directory" ] || [ ! -d "$directory" ]; then
         die "$directory must be a real directory"
     fi
@@ -18,7 +18,7 @@ for directory in / /opt /opt/xmcl; do
     fi
 done
 
-sandbox='/opt/xmcl/chrome-sandbox'
+sandbox='/opt/sawbyte-launcher/chrome-sandbox'
 if [ -L "$sandbox" ] || [ ! -f "$sandbox" ]; then
     die "$sandbox must be a regular file, not a symbolic link"
 fi
@@ -31,26 +31,26 @@ permissions="$(stat -c '%u:%g:%a' "$sandbox")" || die "cannot inspect sandbox pe
 [ "$permissions" = "0:0:4755" ] || die "sandbox must be owned by root:root with mode 4755"
 
 if command -v update-alternatives >/dev/null 2>&1; then
-    if [ -L '/usr/bin/xmcl' ] && [ -e '/usr/bin/xmcl' ] &&
-        [ "$(readlink '/usr/bin/xmcl')" != '/etc/alternatives/xmcl' ]; then
-        rm -f '/usr/bin/xmcl'
+    if [ -L '/usr/bin/sawbyte-launcher' ] && [ -e '/usr/bin/sawbyte-launcher' ] &&
+        [ "$(readlink '/usr/bin/sawbyte-launcher')" != '/etc/alternatives/sawbyte-launcher' ]; then
+        rm -f '/usr/bin/sawbyte-launcher'
     fi
-    update-alternatives --install '/usr/bin/xmcl' 'xmcl' '/opt/xmcl/xmcl' 100 ||
+    update-alternatives --install '/usr/bin/sawbyte-launcher' 'sawbyte-launcher' '/opt/sawbyte-launcher/sawbyte-launcher' 100 ||
         die "cannot register the launcher executable"
 else
-    ln -sf '/opt/xmcl/xmcl' '/usr/bin/xmcl'
+    ln -sf '/opt/sawbyte-launcher/sawbyte-launcher' '/usr/bin/sawbyte-launcher'
 fi
 
 if command -v update-mime-database >/dev/null 2>&1; then
-    update-mime-database /usr/share/mime || echo "XMCL: could not update the MIME database" >&2
+    update-mime-database /usr/share/mime || echo "Sawbyte Launcher: could not update the MIME database" >&2
 fi
 if command -v update-desktop-database >/dev/null 2>&1; then
-    update-desktop-database /usr/share/applications || echo "XMCL: could not update the desktop database" >&2
+    update-desktop-database /usr/share/applications || echo "Sawbyte Launcher: could not update the desktop database" >&2
 fi
 
 if command -v apparmor_status >/dev/null 2>&1 && apparmor_status --enabled >/dev/null 2>&1; then
-    source='/opt/xmcl/resources/apparmor-profile'
-    target='/etc/apparmor.d/xmcl'
+    source='/opt/sawbyte-launcher/resources/apparmor-profile'
+    target='/etc/apparmor.d/sawbyte-launcher'
     [ -f "$source" ] || die "the bundled AppArmor profile is missing"
     command -v apparmor_parser >/dev/null 2>&1 || die "apparmor_parser is missing"
 
@@ -59,9 +59,9 @@ if command -v apparmor_status >/dev/null 2>&1 && apparmor_status --enabled >/dev
         cp -f "$source" "$target"
         if ! { command -v ischroot >/dev/null 2>&1 && ischroot; }; then
             apparmor_parser --replace --write-cache --skip-read-cache "$target" ||
-                die "cannot load the XMCL AppArmor profile"
+                die "cannot load the Sawbyte Launcher AppArmor profile"
         fi
     else
-        echo "XMCL: skipping the unsupported AppArmor profile; the SUID sandbox remains configured"
+        echo "Sawbyte Launcher: skipping the unsupported AppArmor profile; the SUID sandbox remains configured"
     fi
 fi
