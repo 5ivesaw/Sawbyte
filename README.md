@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/ci.yml?branch=main&style=for-the-badge&label=Build&labelColor=161b22&color=238636" alt="Build and verify status" /></a>
   <a href="https://github.com/5ivesaw/Sawbyte/actions/workflows/player.yml"><img src="https://img.shields.io/github/actions/workflow/status/5ivesaw/Sawbyte/player.yml?branch=main&style=for-the-badge&label=Movement%20Lab&labelColor=161b22&color=238636" alt="Movement lab parity status" /></a>
-  <a href="https://github.com/5ivesaw/Sawbyte/releases/tag/v0.3.0"><img src="https://img.shields.io/badge/Release-v0.3.0-1f6feb?style=for-the-badge&labelColor=161b22" alt="Version 0.3.0" /></a>
+  <a href="https://github.com/5ivesaw/Sawbyte/releases/tag/v0.3.1"><img src="https://img.shields.io/badge/Release-v0.3.1-1f6feb?style=for-the-badge&labelColor=161b22" alt="Version 0.3.1" /></a>
   <img src="https://img.shields.io/badge/Minecraft-26.3%20(Protocol%20777)-8c5230?style=for-the-badge&labelColor=161b22" alt="Minecraft Protocol 777" />
   <img src="https://img.shields.io/badge/Platforms-Linux%20%7C%20Windows%20%7C%20macOS-388bfd?style=for-the-badge&labelColor=161b22" alt="Supported Platforms" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-6e7681?style=for-the-badge&labelColor=161b22" alt="License MIT" /></a>
@@ -260,7 +260,7 @@ console.log(wf.compileScript());
 
 ## Distribution & Downloads
 
-Pre-built, self-contained binaries are published on the [Releases](https://github.com/5ivesaw/Sawbyte/releases/tag/v0.3.0) page:
+Pre-built, self-contained binaries are published on the [Releases](https://github.com/5ivesaw/Sawbyte/releases/tag/v0.3.1) page:
 
 | Operating System | Full Engine Archive (CLI + Play + Launcher) | Dedicated Launcher Package |
 |:---|:---|:---|

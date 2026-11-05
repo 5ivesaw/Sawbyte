@@ -9,7 +9,7 @@ Updated 2026-11-05. Live monitoring dashboard: `http://127.0.0.1:8765`.
 - Local download budget: 3 GB/month (logged in `run/status/downloads.jsonl`).
 
 ## Current reviewed baseline
-- Branch: `main`. Version: `v0.3.0`. Primary product: zero-graphics Rust Minecraft 26.3 client (`native/sawbyte-play`) + automation runtime (`crates/sawbyte-core`).
+- Branch: `main`. Version: `v0.3.1`. Primary product: zero-graphics Rust Minecraft 26.3 client (`native/sawbyte-play`) + automation runtime (`crates/sawbyte-core`).
 - Reference bridge: optional Fabric 26.3 client (`bridge/`).
 - Cross-platform Graphical Desktop Launcher: embedded desktop web UI and supervision server (`crates/sawbyte-cli/src/gui.rs`), CLI integration (`sawbyte gui` / `sawbyte launcher gui`), and platform-native startup scripts:
   - Linux: `packaging/sawbyte-launcher` (executable) + `packaging/sawbyte.desktop`
