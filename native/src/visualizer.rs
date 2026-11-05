@@ -296,7 +296,7 @@ impl LowPolyVisualizer {
                 let mut found_color = 0x111827; // void dark
                 for dy in (-3..=3).rev() {
                     let y = center_y + dy;
-                    if let Ok(Some(state)) = world.block_state(world_x, y, world_z) {
+                    if let Ok(state) = world.block_state(world_x, y, world_z) {
                         if state != 0 {
                             let base = get_block_base_color(state, y);
                             let depth_factor = match dy {
@@ -404,7 +404,7 @@ impl LowPolyVisualizer {
         let mut normal = [0i8, 1, 0];
 
         while dist < max_dist {
-            if let Ok(Some(block_id)) = world.block_state(x, y, z) {
+            if let Ok(block_id) = world.block_state(x, y, z) {
                 if block_id != 0 {
                     return Some(([x, y, z], normal, dist, block_id));
                 }

@@ -220,7 +220,7 @@ pub struct MilestoneRecord {
     pub death_count: u32,
     pub pos: [f64; 3],
     pub health: f32,
-    pub food: u8,
+    pub food: i32,
     pub xp_level: i32,
     pub inventory_summary: String,
     pub timestamp_epoch_secs: u64,
