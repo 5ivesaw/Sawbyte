@@ -283,7 +283,7 @@ impl LowPolyVisualizer {
         let center_x = player.pos[0];
         let center_y = player.pos[1].floor() as i32;
         let center_z = player.pos[2];
-        let radius = (self.width.min(self.height) / 2) as i32;
+        let _radius = (self.width.min(self.height) / 2) as i32;
 
         for py in 0..self.height {
             let rel_z = (py as i32) - (self.height as i32 / 2);
@@ -500,7 +500,7 @@ fn scale_color(color: u32, scale: f64) -> u32 {
 
 fn base64_encode(data: &[u8]) -> String {
     const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut out = String::with_capacity((data.len() + 2) / 3 * 4);
+    let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     let mut chunks = data.chunks_exact(3);
     for chunk in &mut chunks {
         let n = ((chunk[0] as u32) << 16) | ((chunk[1] as u32) << 8) | (chunk[2] as u32);
@@ -533,10 +533,7 @@ mod tests {
     #[test]
     fn visualizer_renders_valid_bmp() {
         let player = Player::default();
-        let block_profile: serde_json::Value = serde_json::json!({
-            "air": [0],
-            "solid": [1, 2, 3]
-        });
+        let block_profile = crate::world::default_26_3_profile();
         let world = World::new(&block_profile).unwrap();
         let viz = LowPolyVisualizer::new(80, 50, CameraMode::FirstPerson);
         let frame = viz.render(&player, &world, &[]);

@@ -334,12 +334,10 @@ impl Session {
 
     pub fn summarize_inventory(&self) -> String {
         let mut items = Vec::new();
-        for slot_opt in &self.state_table.inventory_slots {
-            if let Some(stack) = slot_opt {
-                if stack.count > 0 && !stack.id.is_empty() {
-                    let short_id = stack.id.strip_prefix("minecraft:").unwrap_or(&stack.id);
-                    items.push(format!("{short_id}:{}", stack.count));
-                }
+        for stack in self.state_table.inventory_slots.iter().flatten() {
+            if stack.count > 0 && !stack.id.is_empty() {
+                let short_id = stack.id.strip_prefix("minecraft:").unwrap_or(&stack.id);
+                items.push(format!("{short_id}:{}", stack.count));
             }
         }
         if items.is_empty() {
