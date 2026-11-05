@@ -617,11 +617,152 @@ function initBenchmarkTabs() {
 function initRespectsButton() {
   const btn = document.getElementById('pay-respects-btn');
   const label = document.getElementById('respects-label');
+  const totalCountEl = document.getElementById('tribute-total-count');
+  const personalCountEl = document.getElementById('tribute-personal-count');
+  const cooldownBar = document.getElementById('tribute-cooldown-bar');
+  const cooldownFill = document.getElementById('tribute-cooldown-fill');
+  const statusHint = document.getElementById('tribute-status-hint');
+  const wrap = document.querySelector('.tribute-actions-wrap');
+
   if (!btn || !label) return;
 
-  let count = 1;
-  btn.addEventListener('click', () => {
-    label.innerHTML = `<span class="mc-e">[POPPY] RESPECTS PAID (o7 × ${count}) — TECHNOBLADE NEVER DIES</span>`;
-    count++;
+  const STORAGE_KEY_PERSONAL = 'sawbyte_techno_personal_tributes';
+  const STORAGE_KEY_TOTAL = 'sawbyte_techno_total_tributes';
+  const STORAGE_KEY_LAST_TIME = 'sawbyte_techno_last_tribute_ts';
+  const BASE_COMMUNITY = 23410;
+  const COOLDOWN_MS = 4000;
+
+  function safeStorageGet(key, fallback) {
+    try {
+      const v = localStorage.getItem(key);
+      return v !== null ? v : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function safeStorageSet(key, value) {
+    try {
+      localStorage.setItem(key, String(value));
+    } catch (_) {}
+  }
+
+  function formatNumber(num) {
+    return Number(num).toLocaleString('en-US');
+  }
+
+  let personalCount = parseInt(safeStorageGet(STORAGE_KEY_PERSONAL, '0'), 10) || 0;
+  let totalCount = parseInt(safeStorageGet(STORAGE_KEY_TOTAL, String(BASE_COMMUNITY + personalCount)), 10) || (BASE_COMMUNITY + personalCount);
+  let lastTributeTime = parseInt(safeStorageGet(STORAGE_KEY_LAST_TIME, '0'), 10) || 0;
+  let cooldownTimer = null;
+  let isCooldown = false;
+
+  function updateDisplay() {
+    if (totalCountEl) totalCountEl.textContent = formatNumber(totalCount);
+    if (personalCountEl) personalCountEl.textContent = formatNumber(personalCount);
+
+    if (personalCount > 0) {
+      label.innerHTML = `<span class="mc-e">[POPPY] RESPECTS PAID (o7 × ${personalCount}) — TECHNOBLADE NEVER DIES</span>`;
+    } else {
+      label.innerHTML = 'LEAVE A TRIBUTE POPPY [o7]';
+    }
+  }
+
+  function spawnFloatingPoppy() {
+    if (!wrap) return;
+    const poppy = document.createElement('div');
+    poppy.className = 'tribute-floating-poppy';
+    poppy.textContent = '+1 Poppy [o7]';
+
+    const offset = (Math.random() - 0.5) * 80;
+    poppy.style.transform = `translateX(${offset}px)`;
+    poppy.style.top = '10px';
+
+    wrap.appendChild(poppy);
+    setTimeout(() => {
+      if (poppy.parentNode) poppy.parentNode.removeChild(poppy);
+    }, 1600);
+  }
+
+  function startCooldown(remainingMs) {
+    isCooldown = true;
+    btn.classList.add('tribute-btn-disabled');
+    btn.setAttribute('aria-disabled', 'true');
+    if (cooldownBar) cooldownBar.style.display = 'block';
+
+    const startTime = Date.now() - (COOLDOWN_MS - remainingMs);
+
+    if (cooldownTimer) clearInterval(cooldownTimer);
+
+    cooldownTimer = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const left = Math.max(0, COOLDOWN_MS - elapsed);
+      const pct = Math.min(100, (elapsed / COOLDOWN_MS) * 100);
+
+      if (cooldownFill) cooldownFill.style.width = pct + '%';
+
+      const secsLeft = Math.ceil(left / 1000);
+      label.innerHTML = `<span class="mc-8">[COOLDOWN: ${secsLeft}s]</span> <span class="mc-7">• TECHNOBLADE NEVER DIES</span>`;
+      if (statusHint) statusHint.textContent = `Cooldown active (${secsLeft}s remaining) • Anti-spam protection`;
+
+      if (left <= 0) {
+        clearInterval(cooldownTimer);
+        cooldownTimer = null;
+        isCooldown = false;
+        btn.classList.remove('tribute-btn-disabled');
+        btn.removeAttribute('aria-disabled');
+        if (cooldownBar) cooldownBar.style.display = 'none';
+        if (cooldownFill) cooldownFill.style.width = '0%';
+        if (statusHint) statusHint.textContent = 'Persisted locally across sessions • Anti-spam cooldown enabled';
+        updateDisplay();
+      }
+    }, 80);
+  }
+
+  // Restore initial state and check if cooldown is still active from prior visit/refresh
+  updateDisplay();
+  const elapsedSinceLast = Date.now() - lastTributeTime;
+  if (lastTributeTime > 0 && elapsedSinceLast < COOLDOWN_MS) {
+    startCooldown(COOLDOWN_MS - elapsedSinceLast);
+  }
+
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+
+    const now = Date.now();
+    const elapsed = now - lastTributeTime;
+
+    // Anti-spam guard: reject clicks during cooldown
+    if (isCooldown || (lastTributeTime > 0 && elapsed < COOLDOWN_MS)) {
+      if (typeof playMcClick === 'function') playMcClick(0.65);
+      if (statusHint) {
+        statusHint.innerHTML = '<span class="mc-c">[ANTI-SPAM] Please wait for cooldown to expire before paying respects again.</span>';
+        setTimeout(() => {
+          if (isCooldown) {
+            statusHint.textContent = 'Cooldown active • Anti-spam protection';
+          } else {
+            statusHint.textContent = 'Persisted locally across sessions • Anti-spam cooldown enabled';
+          }
+        }, 1500);
+      }
+      return;
+    }
+
+    // Valid tribute
+    personalCount++;
+    totalCount++;
+    lastTributeTime = now;
+
+    safeStorageSet(STORAGE_KEY_PERSONAL, personalCount);
+    safeStorageSet(STORAGE_KEY_TOTAL, totalCount);
+    safeStorageSet(STORAGE_KEY_LAST_TIME, lastTributeTime);
+
+    if (typeof playMcXpChime === 'function') {
+      playMcXpChime();
+    }
+    spawnFloatingPoppy();
+    updateDisplay();
+
+    startCooldown(COOLDOWN_MS);
   });
 }

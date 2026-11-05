@@ -776,11 +776,27 @@
         </div>
       </div>
 
-      <div style="text-align: center; margin-top: 28px;">
+      <div class="tribute-actions-wrap">
+        <div class="tribute-counter-badge">
+          <span class="mc-e">COMMUNITY TRIBUTES:</span>
+          <span id="tribute-total-count" class="mc-a">23,410</span>
+          <span class="mc-8">|</span>
+          <span class="mc-7">YOUR TRIBUTES:</span>
+          <span id="tribute-personal-count" class="mc-b">0</span>
+        </div>
+
+        <div id="tribute-cooldown-bar" class="tribute-cooldown-bar">
+          <div id="tribute-cooldown-fill" class="tribute-cooldown-fill"></div>
+        </div>
+
         <button type="button" id="pay-respects-btn" class="btn btn-secondary sfx-xp">
           <svg width="16" height="16" class="pixel-icon"><use href="#mc-icon-crown"/></svg>
-          <span id="respects-label">LEAVE A TRIBUTE ROSE [o7]</span>
+          <span id="respects-label">LEAVE A TRIBUTE POPPY [o7]</span>
         </button>
+
+        <div id="tribute-status-hint" class="mc-8" style="font-size: 10px; min-height: 14px;">
+          Persisted locally across sessions • Anti-spam cooldown enabled
+        </div>
       </div>
     </div>
   </section>
