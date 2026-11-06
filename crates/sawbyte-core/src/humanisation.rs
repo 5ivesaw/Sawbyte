@@ -1,8 +1,12 @@
 //! Configurable, seedable humanisation policies for camera aiming, GUI cursor travel,
-//! post-revision reaction delays, click cadence, and text typing.
+//! post-revision reaction delays, click cadence, text typing, and compensatory headless perception.
 //! Enabled by default with an explicit `Direct` bypass and custom `InputPolicy` hooks.
 
 use crate::InputPolicy;
+
+/// Vanilla survival interaction reach limits (strictly enforced when humanisation / fair-play is active).
+pub const VANILLA_ENTITY_INTERACT_REACH: f64 = 3.0;
+pub const VANILLA_BLOCK_INTERACT_REACH: f64 = 4.5;
 
 /// Deterministic SplitMix64 PRNG so seeded runs are 100% reproducible across platforms without external crates.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -28,6 +32,212 @@ impl DeterministicRng {
     /// Uniform float in `[0.0, 1.0)`.
     pub fn next_f64(&mut self) -> f64 {
         ((self.next_u64() >> 11) as f64) * (1.0 / ((1u64 << 53) as f64))
+    }
+}
+
+/// Epistemic classification of how a headless agent perceives a block, structure, or entity.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VisibilityTier {
+    /// Unobstructed line-of-sight inside the player's current camera frustum (FOV).
+    DirectFovLos,
+    /// Unobstructed line-of-sight or within acoustic footstep/sound radius (<=16m), but outside current camera FOV.
+    PeripheralAcousticLos,
+    /// Previously observed with direct line-of-sight earlier in the session or recalled from persistent memory.
+    MemoryRecalled,
+    /// Detected exclusively via compensatory through-wall ESP or through-block X-ray raycasting with no prior LOS.
+    PrivilegedThroughWallHint,
+}
+
+impl VisibilityTier {
+    pub const fn as_code(&self) -> &'static str {
+        match self {
+            Self::DirectFovLos => "DIRECT_FOV_LOS",
+            Self::PeripheralAcousticLos => "PERIPHERAL_ACOUSTIC_LOS",
+            Self::MemoryRecalled => "MEMORY_RECALLED",
+            Self::PrivilegedThroughWallHint => "PRIVILEGED_THROUGH_WALL_HINT",
+        }
+    }
+}
+
+/// Result of filtering a perceived entity or block through `HumanisedPerceptionPolicy`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PerceivedTargetGuidance {
+    pub tier: VisibilityTier,
+    /// Epistemic weight in `[0.0, 1.0]` indicating how strongly an agent should act on this target when humanised.
+    pub human_confidence: f64,
+    /// Whether immediate camera lock / direct interaction is natural and permitted.
+    pub direct_action_permitted: bool,
+    /// Recommended human-like action before engaging the target.
+    pub guidance: &'static str,
+    /// Coarse compass sector hint (e.g. `"North-East (~8m)"`) used when exact coordinates are masked by humanisation.
+    pub sector_hint: String,
+    /// Reaction delay ticks to wait after acquiring line of sight before attacking or clicking.
+    pub reaction_delay_ticks: u32,
+}
+
+/// Governs how compensatory headless perception (through-wall ESP, through-block awareness, long-range scans)
+/// interacts with humanisation and fair-play mechanics.
+///
+/// When `enabled == true` (default):
+/// 1. Enforces strict vanilla survival reach (`3.0` blocks for entity combat, `4.5` blocks for block interaction).
+/// 2. Prohibits snapping the crosshair onto or attacking `PrivilegedThroughWallHint` targets through walls.
+/// 3. Treats occluded through-wall detections as low-weight supplementary hints (`human_confidence = 0.18`),
+///    guiding the agent to explore or peek around corners naturally before acting.
+#[derive(Clone, Copy, Debug)]
+pub struct HumanisedPerceptionPolicy {
+    pub enabled: bool,
+    pub fov_horizontal_deg: f64,
+    pub fov_vertical_deg: f64,
+    pub acoustic_awareness_radius: f64,
+    pub max_entity_reach: f64,
+    pub max_block_reach: f64,
+    pub visual_acquisition_reaction_ticks: u32,
+}
+
+impl Default for HumanisedPerceptionPolicy {
+    fn default() -> Self {
+        Self::humanised()
+    }
+}
+
+impl HumanisedPerceptionPolicy {
+    pub const fn humanised() -> Self {
+        Self {
+            enabled: true,
+            fov_horizontal_deg: 75.0,
+            fov_vertical_deg: 55.0,
+            acoustic_awareness_radius: 16.0,
+            max_entity_reach: VANILLA_ENTITY_INTERACT_REACH,
+            max_block_reach: VANILLA_BLOCK_INTERACT_REACH,
+            visual_acquisition_reaction_ticks: 3,
+        }
+    }
+
+    pub const fn direct_unfiltered() -> Self {
+        Self {
+            enabled: false,
+            fov_horizontal_deg: 360.0,
+            fov_vertical_deg: 180.0,
+            acoustic_awareness_radius: 128.0,
+            max_entity_reach: VANILLA_ENTITY_INTERACT_REACH,
+            max_block_reach: VANILLA_BLOCK_INTERACT_REACH,
+            visual_acquisition_reaction_ticks: 0,
+        }
+    }
+
+    /// Classifies a target's `VisibilityTier` given line-of-sight status, relative bearing angles,
+    /// distance, and whether the target was previously seen with direct LOS.
+    pub fn classify_visibility(
+        &self,
+        has_line_of_sight: bool,
+        rel_yaw_deg: f64,
+        rel_pitch_deg: f64,
+        distance: f64,
+        previously_seen_los: bool,
+    ) -> VisibilityTier {
+        if has_line_of_sight {
+            if rel_yaw_deg.abs() <= self.fov_horizontal_deg * 0.5
+                && rel_pitch_deg.abs() <= self.fov_vertical_deg * 0.5
+            {
+                VisibilityTier::DirectFovLos
+            } else {
+                VisibilityTier::PeripheralAcousticLos
+            }
+        } else if previously_seen_los {
+            VisibilityTier::MemoryRecalled
+        } else if distance <= self.acoustic_awareness_radius * 0.5 {
+            VisibilityTier::PrivilegedThroughWallHint
+        } else {
+            VisibilityTier::PrivilegedThroughWallHint
+        }
+    }
+
+    /// Evaluates how an agent should treat a perceived target under the current humanisation mode.
+    pub fn evaluate_target(
+        &self,
+        has_line_of_sight: bool,
+        rel_yaw_deg: f64,
+        rel_pitch_deg: f64,
+        distance: f64,
+        previously_seen_los: bool,
+        cardinal_sector: &str,
+    ) -> PerceivedTargetGuidance {
+        let tier = self.classify_visibility(
+            has_line_of_sight,
+            rel_yaw_deg,
+            rel_pitch_deg,
+            distance,
+            previously_seen_los,
+        );
+        let approx_dist = ((distance / 4.0).round() as i32 * 4).max(4);
+        let sector_hint = format!("{cardinal_sector} (~{approx_dist}m)");
+
+        if !self.enabled {
+            return PerceivedTargetGuidance {
+                tier,
+                human_confidence: 1.0,
+                direct_action_permitted: has_line_of_sight,
+                guidance: if has_line_of_sight {
+                    "Direct mode: immediate interaction permitted within vanilla reach."
+                } else {
+                    "Direct mode: target occluded by solid blocks; navigate to clear LOS before interacting."
+                },
+                sector_hint,
+                reaction_delay_ticks: 0,
+            };
+        }
+
+        match tier {
+            VisibilityTier::DirectFovLos => PerceivedTargetGuidance {
+                tier,
+                human_confidence: 1.00,
+                direct_action_permitted: true,
+                guidance: "Visible in camera FOV with clear line of sight; safe to aim and interact.",
+                sector_hint,
+                reaction_delay_ticks: 0,
+            },
+            VisibilityTier::PeripheralAcousticLos => PerceivedTargetGuidance {
+                tier,
+                human_confidence: 0.78,
+                direct_action_permitted: true,
+                guidance: "Clear LOS or audible in periphery outside camera frustum; rotate camera smoothly first.",
+                sector_hint,
+                reaction_delay_ticks: self.visual_acquisition_reaction_ticks,
+            },
+            VisibilityTier::MemoryRecalled => PerceivedTargetGuidance {
+                tier,
+                human_confidence: 0.65,
+                direct_action_permitted: false,
+                guidance: "Recalled from prior visual contact; navigate to last known vantage point to re-verify.",
+                sector_hint,
+                reaction_delay_ticks: self.visual_acquisition_reaction_ticks,
+            },
+            VisibilityTier::PrivilegedThroughWallHint => PerceivedTargetGuidance {
+                tier,
+                human_confidence: 0.18,
+                direct_action_permitted: false,
+                guidance: "SUPPLEMENTARY HINT ONLY (occluded behind wall): Do NOT pre-aim or track through walls; explore natural corridors toward sector if relevant.",
+                sector_hint,
+                reaction_delay_ticks: self.visual_acquisition_reaction_ticks + 2,
+            },
+        }
+    }
+
+    /// Validates that a requested reach value does not exceed fair vanilla survival limits when humanisation is active.
+    pub fn clamp_fair_block_reach(&self, requested: f64) -> f64 {
+        if self.enabled {
+            requested.clamp(1.0, VANILLA_BLOCK_INTERACT_REACH)
+        } else {
+            requested.clamp(1.0, 6.0)
+        }
+    }
+
+    pub fn clamp_fair_entity_reach(&self, requested: f64) -> f64 {
+        if self.enabled {
+            requested.clamp(1.0, VANILLA_ENTITY_INTERACT_REACH)
+        } else {
+            requested.clamp(1.0, 6.0)
+        }
     }
 }
 
@@ -286,5 +496,23 @@ mod tests {
         assert_eq!(human_type.len(), 2);
         assert_eq!(human_type.last().unwrap().1, "6400");
         assert_eq!(direct_type, vec![(0, "6400".to_owned())]);
+    }
+
+    #[test]
+    fn humanised_perception_policy_gates_through_wall_esp_and_clamps_vanilla_reach() {
+        let policy = HumanisedPerceptionPolicy::humanised();
+        assert_eq!(policy.clamp_fair_entity_reach(6.0), 3.0);
+        assert_eq!(policy.clamp_fair_block_reach(6.0), 4.5);
+
+        let visible = policy.evaluate_target(true, 10.0, -5.0, 2.8, true, "North");
+        assert_eq!(visible.tier, VisibilityTier::DirectFovLos);
+        assert!(visible.direct_action_permitted);
+        assert_eq!(visible.human_confidence, 1.0);
+
+        let occluded = policy.evaluate_target(false, 5.0, 0.0, 7.5, false, "East");
+        assert_eq!(occluded.tier, VisibilityTier::PrivilegedThroughWallHint);
+        assert!(!occluded.direct_action_permitted);
+        assert!(occluded.human_confidence < 0.25);
+        assert!(occluded.guidance.contains("SUPPLEMENTARY HINT ONLY"));
     }
 }

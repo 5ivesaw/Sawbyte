@@ -97,6 +97,26 @@ class WorkflowBuilder:
         self.statements.append("task.cancel")
         return self
 
+    def observe_sensory(self) -> "WorkflowBuilder":
+        self.statements.append("inspect.sensory")
+        return self
+
+    def observe_svpe(self, rx: int = 8, ry: int = 4, rz: int = 8) -> "WorkflowBuilder":
+        self.statements.append(f"inspect.svpe {rx} {ry} {rz}")
+        return self
+
+    def observe_xray(self) -> "WorkflowBuilder":
+        self.statements.append("inspect.xray")
+        return self
+
+    def observe_viewport(self) -> "WorkflowBuilder":
+        self.statements.append("inspect.viewport")
+        return self
+
+    def save_memory(self) -> "WorkflowBuilder":
+        self.statements.append("memory.save")
+        return self
+
     def compile_script(self) -> str:
         return "\n".join(self.statements)
 
@@ -177,6 +197,39 @@ class SawbyteLiveTcpClient:
 
     def gui_close(self) -> str:
         return self.send_command("gui.close")
+
+    def inspect_sensory(self) -> str:
+        return self.send_command("inspect.sensory")
+
+    def inspect_sensory_json(self) -> Dict[str, Any]:
+        return json.loads(self.send_command("inspect.sensory.json"))
+
+    def inspect_sensory_delta(self) -> str:
+        return self.send_command("inspect.sensory.delta")
+
+    def inspect_svpe(self, rx: int = 8, ry: int = 4, rz: int = 8) -> str:
+        return self.send_command(f"inspect.svpe {rx} {ry} {rz}")
+
+    def inspect_svpe_height(self, radius: int = 12) -> str:
+        return self.send_command(f"inspect.svpe.height {radius}")
+
+    def inspect_viewport(self) -> str:
+        return self.send_command("inspect.viewport")
+
+    def inspect_xray(self) -> str:
+        return self.send_command("inspect.xray")
+
+    def inspect_long_range(self) -> str:
+        return self.send_command("inspect.long_range")
+
+    def inspect_small_map(self) -> str:
+        return self.send_command("inspect.small_map")
+
+    def memory_status(self) -> str:
+        return self.send_command("memory.status")
+
+    def memory_save(self, path: Optional[str] = None) -> str:
+        return self.send_command(f"memory.save {path}" if path else "memory.save")
 
 
 class SawbyteMcpClient:
@@ -326,3 +379,79 @@ class SawbyteEnv:
 
     def close(self) -> None:
         self.client.close()
+
+
+
+def rle_decode_svpe1_tokens(rle_str: str) -> List[str]:
+    """Decodes an SVPE-1 `<count><char>` RLE token stream into a flat list of single-character symbols."""
+    out: List[str] = []
+    count_acc = 0
+    for ch in rle_str:
+        if ch.isdigit():
+            count_acc = count_acc * 10 + int(ch)
+        else:
+            n = count_acc if count_acc > 0 else 1
+            out.extend([ch] * n)
+            count_acc = 0
+    return out
+
+
+def decode_svpe1_rle3d(encoded: str) -> Dict[str, Any]:
+    """Losslessly decodes an `SVPE1:RLE3D|origin=(ox,oy,oz)|dims=(dx,dy,dz)|...` string into a 3D volume dict."""
+    parts = encoded.strip().split("|")
+    if len(parts) < 6 or parts[0] != "SVPE1:RLE3D":
+        raise ValueError(f"Invalid SVPE1:RLE3D header: {encoded[:48]}")
+    origin = tuple(int(x) for x in parts[1].split("=", 1)[1].strip("()").split(","))
+    dims = tuple(int(x) for x in parts[2].split("=", 1)[1].strip("()").split(","))
+    dx, dy, dz = dims
+    slice_len = dx * dz
+    body = "|".join(parts[5:])
+    raw_layers = body.split("/")
+    if len(raw_layers) != dy:
+        raise ValueError(f"Expected {dy} Y-layers, got {len(raw_layers)}")
+    layers_2d: List[List[List[str]]] = []
+    prev_flat: List[str] = []
+    for layer_s in raw_layers:
+        flat = list(prev_flat) if layer_s == "@dup" else rle_decode_svpe1_tokens(layer_s)
+        if len(flat) != slice_len:
+            raise ValueError(f"Decoded slice length {len(flat)} != {slice_len}")
+        prev_flat = flat
+        rows = [flat[z * dx : (z + 1) * dx] for z in range(dz)]
+        layers_2d.append(rows)
+    return {
+        "origin": origin,
+        "dims": dims,
+        "layers_yzx": layers_2d,
+    }
+
+
+def decode_svpe1_hd25d(encoded: str) -> Dict[str, Any]:
+    """Decodes an `SVPE1:HD25D|center=(px,py,pz)|radius=R|...` 2.5D height-delta map into integer height offsets."""
+    parts = encoded.strip().split("|")
+    if len(parts) < 5 or parts[0] != "SVPE1:HD25D":
+        raise ValueError(f"Invalid SVPE1:HD25D header: {encoded[:48]}")
+    center = tuple(int(x) for x in parts[1].split("=", 1)[1].strip("()").split(","))
+    radius = int(parts[2].split("=", 1)[1])
+    rows_rle = parts[4].split("/")
+    grid_symbols: List[List[str]] = []
+    grid_deltas: List[List[Optional[int]]] = []
+    for row_s in rows_rle:
+        syms = rle_decode_svpe1_tokens(row_s)
+        grid_symbols.append(syms)
+        deltas: List[Optional[int]] = []
+        for s in syms:
+            if s == "=":
+                deltas.append(0)
+            elif "A" <= s <= "Z":
+                deltas.append(1 + (ord(s) - ord("A")))
+            elif "a" <= s <= "z":
+                deltas.append(-(1 + (ord(s) - ord("a"))))
+            else:
+                deltas.append(None)
+        grid_deltas.append(deltas)
+    return {
+        "center": center,
+        "radius": radius,
+        "symbols": grid_symbols,
+        "height_deltas": grid_deltas,
+    }

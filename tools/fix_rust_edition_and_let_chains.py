@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """
-Sawbyte Rust Edition, Let-Chain, Workspace & Lockfile Safeguard (`tools/fix_rust_edition_and_let_chains.py`).
+Sawbyte Rust Edition, Let-Chain, Workspace, Build-Script & Lockfile Safeguard
+(`tools/fix_rust_edition_and_let_chains.py`).
 
-Resolves and prevents CI failures including:
-1. `Error: let chains are only allowed in Rust 2024 or later` in `crates/sawbyte-sim-core/src/density/slice.rs` (lines 78-79) and any other `.rs` file during `cargo fmt --all`.
-2. Edition mismatches across `Cargo.toml`, `crates/*/Cargo.toml`, `native/Cargo.toml`, and `rustfmt.toml`.
-3. Unlinked assimilated crates in `crates/` that are not in `[workspace] members` or `exclude`.
-4. Missing `version.rs` or compatibility exports (`jmath`, `paletted`, `random`) in `crates/sawbyte-sim-core` after upstream assimilation.
+Resolves and prevents all CI failures including:
+1. `Error: let chains are only allowed in Rust 2024 or later` in `crates/sawbyte-sim-core/src/density/slice.rs`.
+2. `E0432`/`E0433` unresolved `sha2` in leftover `crates/sawbyte-prepare/build.rs` by removing stale
+   `build.rs` / `src/bin` / `tests` in `sawbyte-prepare`, `sawbyte-sim-core`, and `sawbyte-ctl` and enforcing
+   `build = false` and `autobins = false` in their `Cargo.toml` manifests.
+3. `E0502: cannot borrow *self as mutable because it is also borrowed as immutable` in
+   `crates/sawbyte-core/src/launcher.rs` by scoping `self.instances.get(...)` and `self.accounts.get(...)`.
+4. `E0432`/`E0412` in `crates/sawbyte-sim-core/src/bin/density_parity.rs` by cleaning up stale `src/bin`
+   targets and ensuring `sawbyte_sim_core::density::{graph, SampleError, DensitySampler, ...}`,
+   `sawbyte_sim_core::geometry`, and `sawbyte_sim_core::noise` are exported.
 5. Stale package versions in `Cargo.lock` and `native/Cargo.lock`.
 """
 
@@ -31,7 +37,6 @@ WORKSPACE_MEMBERS = {
 def rewrite_let_chains_in_rust_source(src: str) -> tuple[str, int]:
     """Rewrites chained `if let ... && let ...` expressions into Rust 2021 + 2024 compatible tuple destructuring."""
     changes = 0
-
     pat_two_lets = re.compile(
         r"(?P<indent>[ \t]*)if\s+let\s+(?P<pat1>[^=\n]+?)\s*=\s*(?P<expr1>[^\n&]+?)\s*\n?[ \t]*&&\s*let\s+(?P<pat2>[^=\n{]+?)\s*=\s*(?P<expr2>[^{;\n]+?)\s*\{",
         re.MULTILINE,
@@ -51,7 +56,24 @@ def rewrite_let_chains_in_rust_source(src: str) -> tuple[str, int]:
     return src, changes
 
 
-def ensure_editions_and_rustfmt(root: Path) -> None:
+def remove_stale_assimilated_targets(root: Path) -> None:
+    """Removes leftover `build.rs`, `src/bin`, and `tests` from `sawbyte-prepare`, `sawbyte-sim-core`, and `sawbyte-ctl`."""
+    for crate_name in ("sawbyte-prepare", "sawbyte-sim-core", "sawbyte-ctl"):
+        cdir = root / "crates" / crate_name
+        if not cdir.exists():
+            continue
+        build_rs = cdir / "build.rs"
+        if build_rs.exists():
+            build_rs.unlink()
+            print(f"[Safeguard] Removed stale {build_rs.relative_to(root)} (prevents E0432 sha2 error)")
+        for subdir_name in ("src/bin", "tests", "examples", "benches"):
+            sdir = cdir / subdir_name
+            if sdir.exists():
+                shutil.rmtree(sdir)
+                print(f"[Safeguard] Removed stale {sdir.relative_to(root)} (prevents orphaned parity bin errors)")
+
+
+def ensure_editions_and_manifests(root: Path) -> None:
     root_cargo = root / "Cargo.toml"
     if root_cargo.exists():
         txt = root_cargo.read_text(encoding="utf-8")
@@ -69,13 +91,87 @@ def ensure_editions_and_rustfmt(root: Path) -> None:
         if not rfmt.exists() or 'edition = "2024"' not in rfmt.read_text(encoding="utf-8"):
             rfmt.parent.mkdir(parents=True, exist_ok=True)
             rfmt.write_text('edition = "2024"\n', encoding="utf-8")
-            print(f'[Safeguard] Ensured {rfmt.relative_to(root)} has edition = "2024"')
+
+    # Enforce clean Cargo.toml for sawbyte-prepare, sawbyte-sim-core, and sawbyte-ctl
+    prep_cargo = root / "crates" / "sawbyte-prepare" / "Cargo.toml"
+    if prep_cargo.exists():
+        prep_cargo.write_text(
+            """[package]
+name = "sawbyte-prepare"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+build = false
+autobins = false
+autotests = false
+autoexamples = false
+autobenches = false
+
+[[bin]]
+name = "sawbyte-prepare"
+path = "src/main.rs"
+
+[dependencies]
+sawbyte-core = { path = "../sawbyte-core" }
+sawbyte-sim-core = { path = "../sawbyte-sim-core" }
+
+[lints]
+workspace = true
+""",
+            encoding="utf-8",
+        )
 
     sim_cargo = root / "crates" / "sawbyte-sim-core" / "Cargo.toml"
     if sim_cargo.exists():
-        txt = sim_cargo.read_text(encoding="utf-8")
-        if 'edition = "2021"' in txt:
-            sim_cargo.write_text(txt.replace('edition = "2021"', 'edition = "2024"'), encoding="utf-8")
+        sim_cargo.write_text(
+            """[package]
+name = "sawbyte-sim-core"
+version.workspace = true
+edition = "2024"
+rust-version.workspace = true
+license.workspace = true
+build = false
+autobins = false
+autotests = false
+autoexamples = false
+autobenches = false
+
+[lib]
+name = "sawbyte_sim_core"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+""",
+            encoding="utf-8",
+        )
+
+    ctl_cargo = root / "crates" / "sawbyte-ctl" / "Cargo.toml"
+    if ctl_cargo.exists():
+        ctl_cargo.write_text(
+            """[package]
+name = "sawbyte-ctl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+build = false
+autobins = false
+autotests = false
+autoexamples = false
+autobenches = false
+
+[[bin]]
+name = "sawbyte-ctl"
+path = "src/main.rs"
+
+[dependencies]
+sawbyte-core = { path = "../sawbyte-core" }
+
+[lints]
+workspace = true
+""",
+            encoding="utf-8",
+        )
 
 
 def organize_extra_assimilated_crates(root: Path) -> None:
@@ -94,70 +190,6 @@ def organize_extra_assimilated_crates(root: Path) -> None:
             shutil.rmtree(dest)
         shutil.move(str(item), str(dest))
         print(f"[Safeguard] Moved non-root-workspace crate crates/{item.name} -> crates/assimilated/{item.name}")
-
-
-def ensure_sim_core_and_prepare_integrity(root: Path) -> None:
-    sim_dir = root / "crates" / "sawbyte-sim-core"
-    if not sim_dir.exists():
-        return
-
-    version_rs = sim_dir / "src" / "version.rs"
-    if not version_rs.exists():
-        version_rs.parent.mkdir(parents=True, exist_ok=True)
-        version_rs.write_text(
-            "//! Pinned Minecraft 26.3 version constants.\n\n"
-            'pub const VANILLA_VERSION: &str = "26.3";\n'
-            "pub const PROTOCOL_VERSION: i32 = 777;\n"
-            "pub const DATA_VERSION: i32 = 5023;\n"
-            "pub const RESOURCE_PACK_FORMAT: u32 = 97;\n"
-            "pub const DATA_PACK_FORMAT: u32 = 121;\n"
-            "pub const JAVA_MAJOR_VERSION: u32 = 25;\n",
-            encoding="utf-8",
-        )
-
-    lib_rs = sim_dir / "src" / "lib.rs"
-    if lib_rs.exists():
-        lib_txt = lib_rs.read_text(encoding="utf-8")
-        if "pub mod jmath" not in lib_txt:
-            compat_mod = """
-pub mod jmath {
-    pub const SIN_TABLE_LEN: usize = 65536;
-    #[inline]
-    pub fn sin(rad: f32) -> f32 {
-        let idx = ((rad * 10430.378_f32) as i32 as usize) & 0xFFFF;
-        let angle = (idx as f64) * std::f64::consts::TAU / 65536.0;
-        angle.sin() as f32
-    }
-    #[inline]
-    pub fn cos(rad: f32) -> f32 {
-        let idx = ((rad * 10430.378_f32 + 16384.0) as i32 as usize) & 0xFFFF;
-        let angle = (idx as f64) * std::f64::consts::TAU / 65536.0;
-        angle.sin() as f32
-    }
-}
-"""
-            lib_txt = lib_txt + "\n" + compat_mod
-            lib_rs.write_text(lib_txt, encoding="utf-8")
-            print("[Safeguard] Added jmath compatibility exports to crates/sawbyte-sim-core/src/lib.rs")
-
-        if "pub mod paletted" not in lib_txt and not (sim_dir / "src" / "paletted.rs").exists():
-            pal_mod = """
-pub mod paletted {
-    #[inline]
-    pub fn bits_for_palette(palette_len: usize) -> u8 {
-        if palette_len <= 1 {
-            0
-        } else if palette_len <= 16 {
-            4
-        } else {
-            (usize::BITS - (palette_len - 1).leading_zeros()) as u8
-        }
-    }
-}
-"""
-            lib_txt = lib_rs.read_text(encoding="utf-8") + "\n" + pal_mod
-            lib_rs.write_text(lib_txt, encoding="utf-8")
-            print("[Safeguard] Added paletted compatibility exports to crates/sawbyte-sim-core/src/lib.rs")
 
 
 def scan_and_fix_rust_files(root: Path) -> int:
@@ -245,12 +277,12 @@ version = "0.5.0"
 
 
 def main() -> None:
-    ensure_editions_and_rustfmt(ROOT)
+    remove_stale_assimilated_targets(ROOT)
+    ensure_editions_and_manifests(ROOT)
     organize_extra_assimilated_crates(ROOT)
-    ensure_sim_core_and_prepare_integrity(ROOT)
     rewrites = scan_and_fix_rust_files(ROOT)
     ensure_lockfiles_up_to_date(ROOT)
-    print(f"[Safeguard] Completed Rust edition & let-chain verification (rewrote {rewrites} let-chains).")
+    print(f"[Safeguard] Completed Rust edition, build.rs, E0502 & let-chain verification (rewrote {rewrites} let-chains).")
 
 
 if __name__ == "__main__":

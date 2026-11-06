@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { SawbyteWorkflow, createMcpToolCallRequest } from "../index.js";
+import { SawbyteWorkflow, createMcpToolCallRequest, decodeSvpe1Rle3d } from "../index.js";
 
 test("SawbyteWorkflow compiles general navigation, wait, and gui primitives", () => {
   const wf = new SawbyteWorkflow()
@@ -34,4 +34,13 @@ test("createMcpToolCallRequest formats standard JSON-RPC 2.0 tool call", () => {
   assert.equal(req.method, "tools/call");
   assert.equal(req.params.name, "script_runner");
   assert.equal(req.params.arguments.script, "wait.ticks 5");
+});
+
+test("decodeSvpe1Rle3d decodes 3D RLE voxel streams and @dup layers", () => {
+  const sample = "SVPE1:RLE3D|origin=(0,64,0)|dims=(2,2,2)|order=YZX|legend={A:air,S:solid}|4S/@dup";
+  const decoded = decodeSvpe1Rle3d(sample);
+  assert.deepEqual(decoded.origin, [0, 64, 0]);
+  assert.deepEqual(decoded.dims, [2, 2, 2]);
+  assert.equal(decoded.layersYzx[0][0][0], "S");
+  assert.equal(decoded.layersYzx[1][1][1], "S");
 });

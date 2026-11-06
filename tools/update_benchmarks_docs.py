@@ -52,13 +52,21 @@ Each server benchmark script in `benchmarks/servers/bench_01_*.py` .. `bench_16_
 | :---: | :--- | :--- | :--- | :---: | :---: | :--- | :---: |
 {table_md}
 
-### "Seeing the Game with Words" (`inspect.sensory` / `see`)
+### "Seeing the Game with Words v2" & `SVPE-1` Compact Encoding (`docs/SENSORY_ENCODING.md`)
 
-Sawbyte v0.5.0 includes a dedicated natural-language + JSON sensory vision engine (`inspect.sensory`, `observe.words`, `see`, `inspect.sensory.json`) that describes every tick of the world in structured words:
-- **Self, Pose & Vitals**: Exact coordinates, block/chunk position, velocity (`m/s`), cardinal compass heading, ground/collision flags, HP, hunger, saturation, XP, and active effects.
-- **Crosshair & 360° Spatial Radar**: Exact block or NPC under the crosshair plus 8-direction horizontal raycasts (`Ahead 0°`, `±45°`, `±90°`, `180°`) detecting walls, 1-block jumpable steps, and void/drop edges up to 12m out.
-- **Full 46-Slot Inventory & Open GUI Containers**: Every populated inventory, hotbar, armor, offhand, and open chest GUI slot with `[row, col]`, item ID, count, custom `display_name`, and `lore` lines.
-- **Nearby Entities & Stacked Hologram NPCs**: Automatically associates floating ArmorStand/TextDisplay hologram lines above lobby NPCs (`entity.find` / `npc.interact`) with exact distance and relative bearing angle.
+Sawbyte v0.5.0 bridges the gap between human graphical vision and headless AI perception through a 10-section sensory engine (`inspect.sensory` / `see`) and the **Sawbyte Voxel Perception Encoding (`SVPE-1`)** format (see [docs/SENSORY_ENCODING.md](docs/SENSORY_ENCODING.md)):
+
+- **First-Person 24×11 Retinal ASCII Viewport & RLE Depth Buffer (`inspect.viewport`)**: Raycasts the player's `72°×44°` camera frustum into a 2D retinal grid showing sky, floors, distance-shaded walls (`#`/`=`/`-`/`:`), water (`~`), lava (`!`), entities (`@`/`M`), and crosshair center (`+`), paired with `SVPE1:DEPTH24x11` (`a..x` = `1..24m`).
+- **Lossless, Token-Efficient `SVPE-1` Spatial Encodings (~50x–100x Compression)**:
+  - **`SVPE1:RLE3D` (`inspect.svpe [rx ry rz]`)**: Encodes 3D voxel volumes in `Y -> Z -> X` order using `<count><symbol>` RLE (`A`=air, `S`=solid, `W`=water, `L`=lava, `C`=climbable, `h`/`t`=slab, `s`=stair, `f`=fence, `I`=ice, `O`=POI, `U`=unloaded) and `@dup` for repeated Y-layers. Decodable in 10 lines of Python (`sawbyte.decode_svpe1_rle3d`), TypeScript (`decodeSvpe1Rle3d`), or Rust (`inspect.svpe.decode`).
+  - **`SVPE1:HD25D` (`inspect.svpe.height [radius]`)**: Encodes a 2.5D surface elevation delta & hazard grid where `=` is level with player feet (`Δy=0`), `A..Z` is `+1..+26` blocks up, `a..z` is `-1..-26` blocks down, `~` is water, `!` is lava, and `_` is a bottomless void drop.
+  - **`SVPE1:DELTA` (`inspect.sensory.delta`)**: Emits only per-tick deltas (`dpos`, `dyaw`, `dpitch`, `dhp`, `new_chat`), cutting bandwidth by ~92% in 20 TPS loops.
+- **Compensatory Headless Perception (`inspect.xray`, `inspect.long_range`, `inspect.small_map`)**:
+  - **Through-Block Penetrating X-Ray (`inspect.xray`)**: Casts 16m multi-layer rays through solid walls and floors to reveal wall thickness, hidden cavities/rooms behind walls, and underground lava hazards.
+  - **Long-Range 64m 8-Sector Horizon Scanner (`inspect.long_range`)**: Detects void gaps, distant BedWars/SkyWars islands, and bridges up to 64m away.
+  - **Small-Map Full-Arena Inspector (`inspect.small_map`)**: Automatically detects small maps ($\le 49$ chunks) and encodes the entire arena footprint in `SVPE1:HD25D`.
+- **Humanisation & Fair-Play Perception Gate (`humanisation.perception [on|off|status]`)**: Enforces strict vanilla survival reach (`3.0m` entity combat, `4.5m` block interaction) and classifies all entities into 4 epistemic tiers (`DIRECT_FOV_LOS` `1.00`, `PERIPHERAL_ACOUSTIC_LOS` `0.78`, `MEMORY_RECALLED` `0.65`, and `PRIVILEGED_THROUGH_WALL_HINT` `0.18`), preventing unnatural pre-aiming or wall-tracking through solid blocks.
+- **Persistent Cross-Run World Memory (`SVMEM-1`, `memory.status|save|load|landmarks|mark|clear`)**: Automatically caches compact `SVPE1:HD25D` chunk surface tiles and discovered NPC/container landmarks across runs in `~/.sawbyte/memory/<world_id>.svmem.json` (< 100 KB on disk).
 
 ```bash
 # Run all 16 server benchmarks and auto-update README.md + website + push to GitHub:

@@ -8,6 +8,7 @@
 
 pub mod auth;
 pub mod inventory;
+pub mod perception;
 pub mod player;
 pub mod raycast;
 pub mod visualizer;
@@ -262,6 +263,8 @@ pub struct Session {
     index: usize,
     live_tick: u64,
     previous_buttons: u16,
+    pub humanised_perception: sawbyte_core::humanisation::HumanisedPerceptionPolicy,
+    pub world_memory: perception::PersistentWorldMemory,
 }
 
 impl WorkflowHost for Session {
@@ -534,6 +537,8 @@ impl Session {
             index: 0,
             live_tick: 0,
             previous_buttons: 0,
+            humanised_perception: sawbyte_core::humanisation::HumanisedPerceptionPolicy::humanised(),
+            world_memory: perception::PersistentWorldMemory::default(),
         })
     }
 
@@ -1414,7 +1419,7 @@ impl Session {
         self.abort_active_mine(None);
     }
 
-    /// Generates a rich "Seeing the Game with Words" natural-language + structured sensory report.
+    /// Generates a rich "Seeing the Game with Words v2" natural-language + SVPE-1 sensory report.
     pub fn render_sensory_words(&mut self) -> String {
         let px = self.player.pos[0];
         let py = self.player.pos[1];
@@ -1451,42 +1456,31 @@ impl Session {
             1 => "Creative",
             2 => "Adventure",
             3 => "Spectator",
-            other => {
-                let _ = other;
-                "Custom"
-            }
+            _ => "Custom",
         };
 
-        let mut report = String::with_capacity(4096);
-        report.push_str("================================================================================
-");
+        let mut report = String::with_capacity(8192);
+        report.push_str("================================================================================\n");
         report.push_str(&format!(
-            "SAWBYTE SENSORY VISION REPORT ("SEEING THE GAME WITH WORDS") | Tick {}
-",
+            "SAWBYTE SENSORY VISION REPORT (\"SEEING THE GAME WITH WORDS v2\") | Tick {}\n",
             self.live_tick
         ));
-        report.push_str("================================================================================
-");
-        report.push_str("[1. SELF, POSE & VITALS]
-");
+        report.push_str("================================================================================\n");
+        report.push_str("[1. SELF, POSE & VITALS]\n");
         report.push_str(&format!(
-            "  Position   : ({px:.3}, {py:.3}, {pz:.3}) | Block [{bx}, {by}, {bz}] | Chunk [{cx}, {cz}] (Loaded Chunks: {})
-",
+            "  Position   : ({px:.3}, {py:.3}, {pz:.3}) | Block [{bx}, {by}, {bz}] | Chunk [{cx}, {cz}] (Loaded Chunks: {})\n",
             self.world.chunks.len()
         ));
         report.push_str(&format!(
-            "  Velocity   : ({vx:.4}, {vy:.4}, {vz:.4}) | Speed: {speed_mps:.2} m/s | OnGround: {} | HorizCollision: {}
-",
+            "  Velocity   : ({vx:.4}, {vy:.4}, {vz:.4}) | Speed: {speed_mps:.2} m/s | OnGround: {} | HorizCollision: {}\n",
             self.player.ground, self.player.horizontal_collision
         ));
         report.push_str(&format!(
-            "  Orientation: Yaw={:.2} deg, Pitch={:.2} deg | Facing: {cardinal}
-",
+            "  Orientation: Yaw={:.2} deg, Pitch={:.2} deg | Facing: {cardinal}\n",
             self.player.yaw, self.player.pitch
         ));
         report.push_str(&format!(
-            "  Vitals     : HP={:.1}/20.0 ({:.1} hearts) | Food={}/20 | Saturation={:.1} | XP=Lvl {} ({:.0}%) | Mode={gm_str}
-",
+            "  Vitals     : HP={:.1}/20.0 ({:.1} hearts) | Food={}/20 | Saturation={:.1} | XP=Lvl {} ({:.0}%) | Mode={gm_str}\n",
             self.state_table.health,
             self.state_table.health * 0.5,
             self.state_table.food,
@@ -1495,9 +1489,7 @@ impl Session {
             self.state_table.xp_progress * 100.0
         ));
 
-        report.push_str("
-[2. CROSSHAIR & 360-DEGREE SPATIAL ENVIRONMENT]
-");
+        report.push_str("\n[2. CROSSHAIR & 360-DEGREE SPATIAL ENVIRONMENT]\n");
         let b_hit = raycast::raycast_block(&self.player, &self.world);
         let candidates: Vec<(i32, [f64; 6])> = self
             .state_table
@@ -1516,8 +1508,7 @@ impl Session {
                     .map(|e| e.kind_name.as_str())
                     .unwrap_or("entity");
                 report.push_str(&format!(
-                    "  Crosshair  : Pointing at Entity #{} ({kind}) at {:.2}m | Hologram/Name: {:?}
-",
+                    "  Crosshair  : Pointing at Entity #{} ({kind}) at {:.2}m | Hologram/Name: {:?}\n",
                     eh.entity_id, eh.distance, holo
                 ));
             }
@@ -1527,22 +1518,19 @@ impl Session {
                     .block_state(bh.block_pos[0], bh.block_pos[1], bh.block_pos[2])
                     .unwrap_or(0);
                 report.push_str(&format!(
-                    "  Crosshair  : Pointing at Block ({}, {}, {}) state_id={} face={:?} at {:.2}m
-",
+                    "  Crosshair  : Pointing at Block ({}, {}, {}) state_id={} face={:?} at {:.2}m\n",
                     bh.block_pos[0], bh.block_pos[1], bh.block_pos[2], bstate, bh.face, bh.distance
                 ));
             }
             (None, None) => {
-                report.push_str("  Crosshair  : Looking into open air (no block or entity within reach)
-");
+                report.push_str("  Crosshair  : Looking into open air (no block or entity within reach)\n");
             }
         }
 
         let under_feet = self.world.solid(bx, by - 1, bz).unwrap_or(false);
         let overhead = (2..=6).find(|dy| self.world.solid(bx, by + *dy, bz).unwrap_or(false));
         report.push_str(&format!(
-            "  Vertical   : Floor under feet ({bx}, {}, {bz}) is {} | Overhead ceiling: {}
-",
+            "  Vertical   : Floor under feet ({bx}, {}, {bz}) is {} | Overhead ceiling: {}\n",
             by - 1,
             if under_feet { "SOLID" } else { "AIR / DROP" },
             overhead.map_or_else(|| "Open Sky (>6m)".to_string(), |dy| format!("Solid roof at +{dy}m"))
@@ -1585,13 +1573,10 @@ impl Session {
                 (None, Some(drop_d)) => format!("Clear of walls, but DROP/VOID edge at {drop_d}m!"),
                 (None, None) => "Clear walkable ground for 12m+".to_string(),
             };
-            report.push_str(&format!("  Radar {:<18}: {summary}
-", label));
+            report.push_str(&format!("  Radar {:<18}: {summary}\n", label));
         }
 
-        report.push_str("
-[3. INVENTORY & HOTBAR (46 SLOTS)]
-");
+        report.push_str("\n[3. INVENTORY & HOTBAR (46 SLOTS)]\n");
         let held_summary = self
             .state_table
             .main_hand_item()
@@ -1603,8 +1588,7 @@ impl Session {
             })
             .unwrap_or_else(|| "Empty Hand".to_string());
         report.push_str(&format!(
-            "  Active Hotbar: Slot {} (raw slot {}) | Held: {}
-",
+            "  Active Hotbar: Slot {} (raw slot {}) | Held: {}\n",
             self.state_table.selected_hotbar,
             36 + self.state_table.selected_hotbar,
             held_summary
@@ -1623,24 +1607,19 @@ impl Session {
                     _ => format!("Slot[{idx}]"),
                 };
                 report.push_str(&format!(
-                    "    - {:<11} (slot {:>2}): {:>2}x {:<26} | Name: {:?} | Lore: {:?}
-",
+                    "    - {:<11} (slot {:>2}): {:>2}x {:<26} | Name: {:?} | Lore: {:?}\n",
                     region, idx, st.count, st.id, st.display_name, st.lore
                 ));
             }
         }
         if !any_inv {
-            report.push_str("    (All 46 inventory slots are currently empty)
-");
+            report.push_str("    (All 46 inventory slots are currently empty)\n");
         }
 
-        report.push_str("
-[4. OPEN GUI CONTAINER SCREEN]
-");
+        report.push_str("\n[4. OPEN GUI CONTAINER SCREEN]\n");
         if let Some(ref scr) = self.state_table.open_screen {
             report.push_str(&format!(
-                "  OPEN SCREEN: window_id={} state_id={} kind={:?} title="{}"
-",
+                "  OPEN SCREEN: window_id={} state_id={} kind={:?} title=\"{}\"\n",
                 scr.window_id, scr.state_id, scr.kind, scr.title
             ));
             for (sidx, opt_it) in scr.slots.iter().enumerate() {
@@ -1648,20 +1627,16 @@ impl Session {
                     let row = sidx / 9;
                     let col = sidx % 9;
                     report.push_str(&format!(
-                        "    - Slot {:>2} (Row {}, Col {}): {:>2}x {:<26} | Name: {:?} | Lore: {:?}
-",
+                        "    - Slot {:>2} (Row {}, Col {}): {:>2}x {:<26} | Name: {:?} | Lore: {:?}\n",
                         sidx, row, col, it.count, it.id, it.display_name, it.lore
                     ));
                 }
             }
         } else {
-            report.push_str("  (No chest/container GUI screen is currently open)
-");
+            report.push_str("  (No chest/container GUI screen is currently open)\n");
         }
 
-        report.push_str("
-[5. NEARBY ENTITIES, PLAYERS & HOLOGRAM NPCs]
-");
+        report.push_str("\n[5. NEARBY ENTITIES, PLAYERS & HOLOGRAM NPCs]\n");
         let mut ent_list: Vec<(f64, f64, i32)> = self
             .state_table
             .entities
@@ -1683,8 +1658,7 @@ impl Session {
             .collect();
         ent_list.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
         if ent_list.is_empty() {
-            report.push_str("  (No nearby entities or NPCs tracked)
-");
+            report.push_str("  (No nearby entities or NPCs tracked)\n");
         } else {
             for (dist, rel_angle, eid) in ent_list.iter().take(32) {
                 if let Some(ent) = self.state_table.entities.get(eid) {
@@ -1697,8 +1671,7 @@ impl Session {
                         "Left"
                     };
                     report.push_str(&format!(
-                        "  - Entity #{:<4} | {:<12} (type {:>3}) | Dist: {:>5.2}m ({:+.1}° {}) | Pos: ({:.2}, {:.2}, {:.2}) | Name/Holograms: {:?}
-",
+                        "  - Entity #{:<4} | {:<12} (type {:>3}) | Dist: {:>5.2}m ({:+.1}° {}) | Pos: ({:.2}, {:.2}, {:.2}) | Name/Holograms: {:?}\n",
                         ent.entity_id,
                         ent.kind_name,
                         ent.entity_type,
@@ -1714,24 +1687,132 @@ impl Session {
             }
         }
 
-        report.push_str("
-[6. HUD TITLES, ACTIONBAR & RECENT CHAT]
-");
+        // Update persistent world memory & direct-LOS entity tracking
+        let eye_pos = self.player.eye_position();
+        for ent in self.state_table.entities.values() {
+            let target_pt = [ent.pos[0], ent.pos[1] + ent.height * 0.5, ent.pos[2]];
+            if perception::count_occluding_blocks(eye_pos, target_pt, &self.world) == 0 {
+                self.world_memory.direct_los_seen_entities.insert(ent.entity_id);
+            }
+        }
+        self.world_memory
+            .observe_tick(self.live_tick, &self.player, &self.world, &self.state_table);
+
+        report.push_str("\n[6. FIRST-PERSON RETINAL VIEWPORT (24x11 FOV 72°x44°) & DEPTH BUFFER]\n");
+        let (retinal_ascii, depth_rle) =
+            perception::render_retinal_viewport_24x11(&self.player, &self.world, &self.state_table);
+        report.push_str(&retinal_ascii);
+        report.push('\n');
+        report.push_str(&format!("  Depth Stream : {depth_rle}\n"));
+
+        report.push_str("\n[7. COMPACT SVPE-1 SPATIAL ENCODINGS (3D VOLUME RLE & 2.5D HEIGHT DELTA)]\n");
+        let svpe_rle3d = perception::encode_svpe1_palette_rle(&self.world, [bx, by, bz], 6, 3, 6);
+        let svpe_hd25d = perception::encode_svpe1_height_delta(&self.world, self.player.pos, 10);
+        report.push_str(&format!("  SVPE-1 3D Volume (13x7x13) : {svpe_rle3d}\n"));
+        report.push_str(&format!("  SVPE-1 2.5D Surface (21x21): {svpe_hd25d}\n"));
+
+        report.push_str("\n[8. COMPENSATORY PERCEPTION: THROUGH-BLOCK X-RAY, ESP & LONG-RANGE HORIZON]\n");
         report.push_str(&format!(
-            "  Title: {:?} | Subtitle: {:?} | ActionBar: {:?}
-",
+            "  Humanisation & Fair-Play Gate: {} (Entity Reach={:.1}m, Block Reach={:.1}m)\n",
+            if self.humanised_perception.enabled {
+                "ENABLED (Occluded ESP treated as supplementary hints)"
+            } else {
+                "DIRECT/UNFILTERED"
+            },
+            self.player.max_entity_reach(),
+            self.player.max_block_reach()
+        ));
+        let pitch_rad = self.player.pitch.to_radians();
+        let yaw_rad = self.player.yaw.to_radians();
+        let look_dir = [
+            -(yaw_rad.sin() as f64) * (pitch_rad.cos() as f64),
+            -(pitch_rad.sin() as f64),
+            (yaw_rad.cos() as f64) * (pitch_rad.cos() as f64),
+        ];
+        let xray_look = perception::cast_penetrating_ray_layers(
+            eye_pos,
+            look_dir,
+            &self.world,
+            &self.state_table,
+            16.0,
+        );
+        let xray_down = perception::cast_penetrating_ray_layers(
+            self.player.pos,
+            [0.0, -1.0, 0.0],
+            &self.world,
+            &self.state_table,
+            12.0,
+        );
+        report.push_str(&format!("  Through-Block Look Ray (16m) : {xray_look}\n"));
+        report.push_str(&format!("  Subsurface Downward Ray (12m): {xray_down}\n"));
+
+        for (dist, rel_angle, eid) in ent_list.iter().take(16) {
+            if let Some(ent) = self.state_table.entities.get(eid) {
+                let target_pt = [ent.pos[0], ent.pos[1] + ent.height * 0.5, ent.pos[2]];
+                let wall_blocks = perception::count_occluding_blocks(eye_pos, target_pt, &self.world);
+                let has_los = wall_blocks == 0;
+                let prev_seen = self.world_memory.direct_los_seen_entities.contains(eid);
+                let sector = perception::cardinal_sector_from_bearing(self.player.yaw, *rel_angle);
+                let guidance = self.humanised_perception.evaluate_target(
+                    has_los,
+                    *rel_angle,
+                    0.0,
+                    *dist,
+                    prev_seen,
+                    sector,
+                );
+                report.push_str(&format!(
+                    "  ESP Entity #{:<4} ({:<10}): Tier={:<28} | WallBlocks={} | Confidence={:.2} | Sector={} | {}\n",
+                    eid,
+                    ent.kind_name,
+                    guidance.tier.as_code(),
+                    wall_blocks,
+                    guidance.human_confidence,
+                    guidance.sector_hint,
+                    guidance.guidance
+                ));
+            }
+        }
+
+        for sector_line in perception::scan_long_range_sectors(&self.player, &self.world) {
+            report.push_str(&format!("  Horizon 64m {sector_line}\n"));
+        }
+
+        report.push_str("\n[9. SMALL-MAP FULL-ARENA AWARENESS & PERSISTENT CROSS-RUN MEMORY]\n");
+        report.push_str(&format!(
+            "  {}\n",
+            perception::inspect_small_map_awareness(&self.world, self.player.pos)
+        ));
+        report.push_str(&format!("  Memory Status: {}\n", self.world_memory.summary_status()));
+        if !self.world_memory.landmarks.is_empty() {
+            let lm_strs: Vec<String> = self
+                .world_memory
+                .landmarks
+                .values()
+                .take(8)
+                .map(|l| {
+                    format!(
+                        "{} \"{}\" at ({},{},{})",
+                        l.kind, l.label, l.pos[0], l.pos[1], l.pos[2]
+                    )
+                })
+                .collect();
+            report.push_str(&format!("  Persisted Landmarks: [{}]\n", lm_strs.join("; ")));
+        }
+
+        report.push_str("\n[10. HUD TITLES, ACTIONBAR & RECENT CHAT]\n");
+        report.push_str(&format!(
+            "  Title: {:?} | Subtitle: {:?} | ActionBar: {:?}\n",
             self.state_table.title_text,
             self.state_table.subtitle_text,
             self.state_table.action_bar_text
         ));
         let recent_chat: Vec<&String> = self.state_table.chat_log.iter().rev().take(12).collect();
         if recent_chat.is_empty() {
-            report.push_str("  Chat Log: (no chat messages received yet)
-");
+            report.push_str("  Chat Log: (no chat messages received yet)\n");
         } else {
             for msg in recent_chat.into_iter().rev() {
-                report.push_str(&format!("  Chat > {msg}
-"));
+                report.push_str(&format!("  Chat > {msg}\n"));
             }
         }
         report
@@ -1743,6 +1824,7 @@ impl Session {
         let px = self.player.pos[0];
         let py = self.player.pos[1];
         let pz = self.player.pos[2];
+        let eye_pos = self.player.eye_position();
         let entities_rich: Vec<serde_json::Value> = self
             .state_table
             .entities
@@ -1759,6 +1841,19 @@ impl Session {
                 } else if rel_angle < -180.0 {
                     rel_angle += 360.0;
                 }
+                let target_pt = [e.pos[0], e.pos[1] + e.height * 0.5, e.pos[2]];
+                let wall_blocks = perception::count_occluding_blocks(eye_pos, target_pt, &self.world);
+                let has_los = wall_blocks == 0;
+                let prev_seen = self.world_memory.direct_los_seen_entities.contains(&e.entity_id);
+                let sector = perception::cardinal_sector_from_bearing(self.player.yaw, rel_angle);
+                let guidance = self.humanised_perception.evaluate_target(
+                    has_los,
+                    rel_angle,
+                    0.0,
+                    dist,
+                    prev_seen,
+                    sector,
+                );
                 let holos = self.state_table.entity_hologram_lines(e.entity_id);
                 serde_json::json!({
                     "id": e.entity_id,
@@ -1770,6 +1865,12 @@ impl Session {
                     "vel": e.velocity,
                     "distance": dist,
                     "relative_bearing_deg": rel_angle,
+                    "visibility_tier": guidance.tier.as_code(),
+                    "wall_blocks_between": wall_blocks,
+                    "human_confidence": guidance.human_confidence,
+                    "direct_action_permitted": guidance.direct_action_permitted,
+                    "sector_hint": guidance.sector_hint,
+                    "guidance": guidance.guidance,
                 })
             })
             .collect();
@@ -1819,6 +1920,8 @@ impl Session {
                 "slots": slots,
             })
         });
+        let (_, depth_rle) =
+            perception::render_retinal_viewport_24x11(&self.player, &self.world, &self.state_table);
         serde_json::json!({
             "ok": true,
             "tick": self.live_tick,
@@ -1840,6 +1943,27 @@ impl Session {
             "entities": entities_rich,
             "chat_log": self.state_table.chat_log,
             "events": self.state_table.received_events,
+            "svpe1_rle3d": perception::encode_svpe1_palette_rle(
+                &self.world,
+                [
+                    self.player.pos[0].floor() as i32,
+                    self.player.pos[1].floor() as i32,
+                    self.player.pos[2].floor() as i32,
+                ],
+                6,
+                3,
+                6,
+            ),
+            "svpe1_hd25d": perception::encode_svpe1_height_delta(&self.world, self.player.pos, 10),
+            "svpe1_depth24x11": depth_rle,
+            "humanisation_enabled": self.humanised_perception.enabled,
+            "persistent_memory": {
+                "enabled": self.world_memory.enabled,
+                "world_id": self.world_memory.world_id,
+                "run_count": self.world_memory.run_count,
+                "explored_chunks": self.world_memory.explored_chunk_tiles.len(),
+                "landmarks_count": self.world_memory.landmarks.len(),
+            },
             "vision_narrative": narrative,
         })
         .to_string()
@@ -3452,6 +3576,160 @@ impl Session {
                 }
                 ["inspect.sensory.json"] | ["observe.json"] => {
                     outputs.push(self.render_sensory_json());
+                }
+                ["inspect.sensory.delta"] | ["svpe.delta"] | ["observe.delta"] => {
+                    self.world_memory.observe_tick(self.live_tick, &self.player, &self.world, &self.state_table);
+                    outputs.push(self.world_memory.encode_delta_frame(self.live_tick, &self.player, &self.state_table));
+                }
+                ["inspect.svpe"] | ["inspect.svpe.rle"] | ["svpe.encode"] => {
+                    let center = [
+                        self.player.pos[0].floor() as i32,
+                        self.player.pos[1].floor() as i32,
+                        self.player.pos[2].floor() as i32,
+                    ];
+                    outputs.push(perception::encode_svpe1_palette_rle(&self.world, center, 8, 4, 8));
+                }
+                ["inspect.svpe", rx, ry, rz] | ["svpe.encode", rx, ry, rz] => {
+                    let rx_v: i32 = rx.parse().map_err(|_| "bad rx")?;
+                    let ry_v: i32 = ry.parse().map_err(|_| "bad ry")?;
+                    let rz_v: i32 = rz.parse().map_err(|_| "bad rz")?;
+                    let center = [
+                        self.player.pos[0].floor() as i32,
+                        self.player.pos[1].floor() as i32,
+                        self.player.pos[2].floor() as i32,
+                    ];
+                    outputs.push(perception::encode_svpe1_palette_rle(&self.world, center, rx_v, ry_v, rz_v));
+                }
+                ["inspect.svpe.decode", encoded] | ["svpe.decode", encoded] => {
+                    let vol = perception::decode_svpe1_palette_rle(encoded)?;
+                    let non_air = vol.symbols.iter().filter(|&&c| c != 'A' && c != 'U').count();
+                    outputs.push(format!(
+                        "svpe1_decoded origin=({},{},{}) dims=({},{},{}) total_voxels={} non_air_voxels={non_air}",
+                        vol.origin[0], vol.origin[1], vol.origin[2],
+                        vol.dims[0], vol.dims[1], vol.dims[2],
+                        vol.symbols.len()
+                    ));
+                }
+                ["inspect.svpe.height"] | ["svpe.height"] => {
+                    outputs.push(perception::encode_svpe1_height_delta(&self.world, self.player.pos, 12));
+                }
+                ["inspect.svpe.height", radius] | ["svpe.height", radius] => {
+                    let r: i32 = radius.parse().map_err(|_| "bad radius")?;
+                    outputs.push(perception::encode_svpe1_height_delta(&self.world, self.player.pos, r));
+                }
+                ["inspect.viewport"] | ["see.viewport"] => {
+                    let (vp, depth) = perception::render_retinal_viewport_24x11(&self.player, &self.world, &self.state_table);
+                    outputs.push(format!("{vp}\n{depth}"));
+                }
+                ["inspect.xray"] | ["see.xray"] => {
+                    let eye = self.player.eye_position();
+                    let pitch_rad = self.player.pitch.to_radians();
+                    let yaw_rad = self.player.yaw.to_radians();
+                    let look_dir = [
+                        -(yaw_rad.sin() as f64) * (pitch_rad.cos() as f64),
+                        -(pitch_rad.sin() as f64),
+                        (yaw_rad.cos() as f64) * (pitch_rad.cos() as f64),
+                    ];
+                    let look_ray = perception::cast_penetrating_ray_layers(eye, look_dir, &self.world, &self.state_table, 16.0);
+                    let down_ray = perception::cast_penetrating_ray_layers(self.player.pos, [0.0, -1.0, 0.0], &self.world, &self.state_table, 16.0);
+                    let north_ray = perception::cast_penetrating_ray_layers(eye, [0.0, 0.0, -1.0], &self.world, &self.state_table, 16.0);
+                    let south_ray = perception::cast_penetrating_ray_layers(eye, [0.0, 0.0, 1.0], &self.world, &self.state_table, 16.0);
+                    let east_ray = perception::cast_penetrating_ray_layers(eye, [1.0, 0.0, 0.0], &self.world, &self.state_table, 16.0);
+                    let west_ray = perception::cast_penetrating_ray_layers(eye, [-1.0, 0.0, 0.0], &self.world, &self.state_table, 16.0);
+                    outputs.push(format!(
+                        "Through-Block Penetrating X-Ray Awareness (16m):\n  Crosshair : {look_ray}\n  UnderFeet : {down_ray}\n  North(-Z) : {north_ray}\n  South(+Z) : {south_ray}\n  East (+X) : {east_ray}\n  West (-X) : {west_ray}"
+                    ));
+                }
+                ["inspect.long_range"] | ["see.horizon"] => {
+                    let lines = perception::scan_long_range_sectors(&self.player, &self.world);
+                    outputs.push(format!("Long-Range 64m 8-Sector Horizon Scan:\n  {}", lines.join("\n  ")));
+                }
+                ["inspect.small_map"] | ["see.small_map"] => {
+                    outputs.push(perception::inspect_small_map_awareness(&self.world, self.player.pos));
+                }
+                ["humanisation.perception"] | ["humanisation.perception", "status"] => {
+                    outputs.push(format!(
+                        "humanisation_perception enabled={} entity_reach={:.2} block_reach={:.2} fov=({:.0}x{:.0})",
+                        self.humanised_perception.enabled,
+                        self.player.max_entity_reach(),
+                        self.player.max_block_reach(),
+                        self.humanised_perception.fov_horizontal_deg,
+                        self.humanised_perception.fov_vertical_deg
+                    ));
+                }
+                ["humanisation.perception", mode] => {
+                    match *mode {
+                        "on" | "true" | "humanised" => {
+                            self.humanised_perception = sawbyte_core::humanisation::HumanisedPerceptionPolicy::humanised();
+                            self.player.attributes.entity_interaction_range =
+                                self.humanised_perception.clamp_fair_entity_reach(self.player.attributes.entity_interaction_range);
+                            self.player.attributes.block_interaction_range =
+                                self.humanised_perception.clamp_fair_block_reach(self.player.attributes.block_interaction_range);
+                            outputs.push("enabled humanised perception gate (vanilla reach 3.0m/4.5m enforced; occluded ESP downgraded to supplementary hints)".into());
+                        }
+                        "off" | "false" | "direct" => {
+                            self.humanised_perception = sawbyte_core::humanisation::HumanisedPerceptionPolicy::direct_unfiltered();
+                            outputs.push("switched perception gate to direct unfiltered mode".into());
+                        }
+                        other => return Err(format!("unknown humanisation.perception mode '{other}'; expected on|off|status")),
+                    }
+                }
+                ["memory.status"] => {
+                    self.world_memory.observe_tick(self.live_tick, &self.player, &self.world, &self.state_table);
+                    outputs.push(self.world_memory.summary_status());
+                }
+                ["memory.save"] => {
+                    self.world_memory.observe_tick(self.live_tick, &self.player, &self.world, &self.state_table);
+                    let path = self.world_memory.save()?;
+                    outputs.push(format!("saved persistent world memory to {}", path.display()));
+                }
+                ["memory.save", custom_path] => {
+                    self.world_memory.observe_tick(self.live_tick, &self.player, &self.world, &self.state_table);
+                    let p = std::path::Path::new(*custom_path);
+                    let saved = self.world_memory.save_to(p)?;
+                    outputs.push(format!("saved persistent world memory to {}", saved.display()));
+                }
+                ["memory.load", custom_path] => {
+                    let p = std::path::Path::new(*custom_path);
+                    self.world_memory.load_from(p)?;
+                    outputs.push(format!("loaded persistent world memory from {} ({})", p.display(), self.world_memory.summary_status()));
+                }
+                ["memory.landmarks"] => {
+                    let list: Vec<serde_json::Value> = self
+                        .world_memory
+                        .landmarks
+                        .values()
+                        .map(|l| {
+                            serde_json::json!({
+                                "kind": l.kind,
+                                "label": l.label,
+                                "pos": l.pos,
+                                "last_seen_tick": l.last_seen_tick,
+                            })
+                        })
+                        .collect();
+                    outputs.push(serde_json::json!({ "landmarks": list, "count": list.len() }).to_string());
+                }
+                ["memory.mark", kind, rest @ ..] if !rest.is_empty() => {
+                    let label = rest.join(" ");
+                    let pos = [
+                        self.player.pos[0].floor() as i32,
+                        self.player.pos[1].floor() as i32,
+                        self.player.pos[2].floor() as i32,
+                    ];
+                    self.world_memory.record_landmark(kind, &label, pos, self.live_tick);
+                    let _ = self.world_memory.save();
+                    outputs.push(format!("recorded persistent landmark kind=\"{kind}\" label=\"{label}\" at ({}, {}, {})", pos[0], pos[1], pos[2]));
+                }
+                ["memory.enable", flag] => {
+                    self.world_memory.enabled = matches!(*flag, "on" | "true" | "1");
+                    outputs.push(format!("set persistent_memory enabled={}", self.world_memory.enabled));
+                }
+                ["memory.clear"] => {
+                    self.world_memory.explored_chunk_tiles.clear();
+                    self.world_memory.landmarks.clear();
+                    self.world_memory.direct_los_seen_entities.clear();
+                    outputs.push("cleared in-memory persistent world map and landmarks".into());
                 }
                 ["chat.send", rest @ ..] if !rest.is_empty() => {
                     let msg = rest.join(" ");

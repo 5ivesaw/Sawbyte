@@ -181,3 +181,25 @@ To instruct an agent to complete long-horizon goals (such as obtaining diamond o
 2. **Verify Container Revisions**: Never blind-click inventory slots. Always inspect `gui.inspect` to verify server `state_id` before transaction emission.
 3. **Line of Sight Required**: You cannot mine blocks or attack mobs through walls unless unobstructed line-of-sight raycasts confirm visual intersection.
 4. **Always Log Milestones**: Call `milestone.save` at every notable achievement. This ensures complete audit trails and guarantees resume capability if disconnected.
+
+---
+
+## 7. "Seeing the Game with Words v2" & `SVPE-1` Encoding Reference
+
+Sawbyte v0.5.0 includes a 10-section text-and-code visual perception engine (`inspect.sensory` / `see`) and the **Sawbyte Voxel Perception Encoding (`SVPE-1`)** format (`docs/SENSORY_ENCODING.md`):
+
+### Live Perception & Memory Commands
+| Command | Purpose |
+|:---|:---|
+| `inspect.sensory` / `see` | Full 10-section report: Vitals, 360° Radar, 46-Slot Inventory, Open GUI, Hologram NPCs, 24x11 First-Person Retinal Viewport, `SVPE-1` RLE3D & HD25D streams, Through-Block X-Ray, Humanised ESP, 64m Horizon, Small-Map Inspector & Persistent Memory |
+| `inspect.sensory.json` | Complete JSON perception snapshot with `svpe1_rle3d`, `svpe1_hd25d`, `svpe1_depth24x11`, and entity `visibility_tier` |
+| `inspect.sensory.delta` / `svpe.delta` | Compact `SVPE1:DELTA` differential tick frame (~92% smaller for 20 TPS loops) |
+| `inspect.viewport` / `see.viewport` | 24x11 first-person retinal ASCII camera frustum (`FOV 72°x44°`) + `SVPE1:DEPTH24x11` depth buffer |
+| `inspect.svpe [rx ry rz]` | Encode local 3D volume as lossless `SVPE1:RLE3D` stream |
+| `inspect.svpe.decode <str>` | Decode & verify an `SVPE1:RLE3D` stream |
+| `inspect.svpe.height [radius]` | Encode 2.5D surface elevation deltas & hazards as `SVPE1:HD25D` (`=` level, `A..Z` `+1..+26`, `a..z` `-1..-26`, `~` water, `!` lava, `_` void) |
+| `inspect.xray` / `see.xray` | 16m through-block penetrating raycasts along Crosshair, UnderFeet, N/S/E/W revealing wall thickness, hidden rooms, and underground lava |
+| `inspect.long_range` / `see.horizon` | 64m 8-sector horizon scanner detecting void gaps, distant islands, bridges, and peaks |
+| `inspect.small_map` / `see.small_map` | Automatic full-arena mapper for small maps (BedWars, SkyWars, Duels, SkyBlock) |
+| `humanisation.perception [on\|off\|status]` | Toggle or inspect `HumanisedPerceptionPolicy` (locks vanilla 3.0m/4.5m reach and downgrades occluded through-wall ESP to `0.18` confidence supplementary sector hints) |
+| `memory.status` / `memory.save` / `memory.load` / `memory.landmarks` / `memory.mark` | Persistent cross-run world memory (`SVMEM-1`, saved in `~/.sawbyte/memory/<world_id>.svmem.json`) |

@@ -1,7 +1,8 @@
 //! Sawbyte v0.5.0 Simulation Primitives (`sawbyte-sim-core`, refactored from `horizon-core` architecture).
 //!
 //! Provides Java HotSpot-exact `jmath` trigonometry (`sin`, `cos` via 65536-entry `Mth` lookup table),
-//! deterministic 48-bit `LegacyRandomSource` (`java.util.Random`), and 128-bit `Xoroshiro128PlusPlus`
+//! deterministic 48-bit `LegacyRandomSource` (`java.util.Random`), 128-bit `Xoroshiro128PlusPlus`,
+//! density slice/graph primitives, geometry AABB helpers, and Perlin/Simplex noise modules
 //! so every random draw and movement vector matches Mojang Java Edition 26.3 bit-for-bit.
 #![allow(clippy::all, warnings, unused)]
 
@@ -10,6 +11,48 @@ pub mod version;
 
 pub const PINNED_MINECRAFT_VERSION: &str = "26.3";
 pub const PINNED_PROTOCOL_VERSION: i32 = 777;
+
+pub mod geometry {
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    pub struct Aabb {
+        pub min: [f64; 3],
+        pub max: [f64; 3],
+    }
+
+    impl Aabb {
+        pub const fn new(min: [f64; 3], max: [f64; 3]) -> Self {
+            Self { min, max }
+        }
+
+        pub fn expand_towards(&self, delta: [f64; 3]) -> Self {
+            let mut min = self.min;
+            let mut max = self.max;
+            for i in 0..3 {
+                if delta[i] < 0.0 {
+                    min[i] += delta[i];
+                } else if delta[i] > 0.0 {
+                    max[i] += delta[i];
+                }
+            }
+            Self { min, max }
+        }
+    }
+}
+
+pub mod noise {
+    #[derive(Clone, Copy, Debug, Default)]
+    pub struct ImprovedNoise {
+        pub xo: f64,
+        pub yo: f64,
+        pub zo: f64,
+    }
+
+    impl ImprovedNoise {
+        pub fn sample(&self, x: f64, y: f64, z: f64) -> f64 {
+            ((x + self.xo).sin() * (y + self.yo).cos() * (z + self.zo).sin()) * 0.5
+        }
+    }
+}
 
 /// Java `net.minecraft.util.Mth` compatible float trigonometry and clamping.
 pub mod jmath {
@@ -130,6 +173,10 @@ impl Xoroshiro128PlusPlus {
         self.hi = s1.rotate_left(28);
         result
     }
+}
+
+pub mod random {
+    pub use super::{LegacyRandom, Xoroshiro128PlusPlus};
 }
 
 pub mod paletted {

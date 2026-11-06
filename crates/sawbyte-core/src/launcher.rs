@@ -872,11 +872,18 @@ impl PersistentLauncher {
         blocks_profile_path: &Path,
         extra_args: &[String],
     ) -> Result<(Child, PathBuf), String> {
-        let inst = self
-            .instances
-            .get(instance_name)
-            .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
-        if inst.mode == RuntimeMode::FullClientBridge {
+        let (inst_mode, server, rpc_bind) = {
+            let inst = self
+                .instances
+                .get(instance_name)
+                .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
+            (
+                inst.mode,
+                server_override.unwrap_or(&inst.server).to_owned(),
+                inst.rpc_bind.clone(),
+            )
+        };
+        if inst_mode == RuntimeMode::FullClientBridge {
             return self.spawn_fabric_process(
                 instance_name,
                 server_override,
@@ -884,7 +891,7 @@ impl PersistentLauncher {
                 extra_args,
             );
         }
-        if inst.mode == RuntimeMode::HorizonRustEngine {
+        if inst_mode == RuntimeMode::HorizonRustEngine {
             if let Ok(res) = self.spawn_horizon_process(
                 instance_name,
                 server_override,
@@ -894,11 +901,13 @@ impl PersistentLauncher {
                 return Ok(res);
             }
         }
-        if !self.accounts.contains_key(account_name) {
-            return Err(format!("account '{account_name}' not found"));
-        }
-        let server = server_override.unwrap_or(&inst.server).to_owned();
-        let rpc_bind = inst.rpc_bind.clone();
+        let (acc_token_file, acc_username) = {
+            let acc = self
+                .accounts
+                .get(account_name)
+                .ok_or_else(|| format!("account '{account_name}' not found"))?;
+            (acc.token_file.clone(), acc.username.clone())
+        };
 
         let bin = self.ensure_sawbyte_play_binary()?;
         let dir = self.instance_dir(instance_name);
@@ -911,17 +920,12 @@ impl PersistentLauncher {
             .map_err(|e| e.to_string())?;
         let err_file = log_file.try_clone().map_err(|e| e.to_string())?;
 
-        let acc = self
-            .accounts
-            .get(account_name)
-            .ok_or_else(|| format!("account '{account_name}' not found"))?;
-
         let mut cmd = Command::new(&bin);
         cmd.arg("live").arg(&server);
-        if let Some(tok) = &acc.token_file {
+        if let Some(tok) = &acc_token_file {
             cmd.arg("--account").arg(tok);
         } else {
-            cmd.arg("--offline").arg(&acc.username);
+            cmd.arg("--offline").arg(&acc_username);
         }
         let resolved_profile = self.ensure_block_profile(blocks_profile_path);
         cmd.arg(&resolved_profile).arg("--listen").arg(&rpc_bind);
@@ -974,11 +978,16 @@ impl PersistentLauncher {
         account_name: &str,
         extra_args: &[String],
     ) -> Result<(Child, PathBuf), String> {
-        let inst = self
-            .instances
-            .get(instance_name)
-            .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
-        let target = server_override.unwrap_or(&inst.server).to_owned();
+        let (target, is_offscreen) = {
+            let inst = self
+                .instances
+                .get(instance_name)
+                .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
+            (
+                server_override.unwrap_or(&inst.server).to_owned(),
+                inst.settings.get("offscreen").map(String::as_str) == Some("true"),
+            )
+        };
         let dir = self.instance_dir(instance_name);
         fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
         let log_path = dir.join("session.log");
@@ -1017,7 +1026,7 @@ impl PersistentLauncher {
             let world_name = target.split_once(':').map(|x| x.1).unwrap_or("Sawbyte_26_3_World");
             cmd.arg("--world").arg(world_name);
         }
-        if inst.settings.get("offscreen").map(String::as_str) == Some("true") {
+        if is_offscreen {
             cmd.arg("--offscreen");
         }
         for arg in extra_args {

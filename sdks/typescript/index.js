@@ -96,6 +96,31 @@ export class SawbyteWorkflow {
     return this;
   }
 
+  observeSensory() {
+    this.statements.push("inspect.sensory");
+    return this;
+  }
+
+  observeSvpe(rx = 8, ry = 4, rz = 8) {
+    this.statements.push(`inspect.svpe ${rx} ${ry} ${rz}`);
+    return this;
+  }
+
+  observeXray() {
+    this.statements.push("inspect.xray");
+    return this;
+  }
+
+  observeViewport() {
+    this.statements.push("inspect.viewport");
+    return this;
+  }
+
+  saveMemory() {
+    this.statements.push("memory.save");
+    return this;
+  }
+
   compileScript() {
     return this.statements.join("\n");
   }
@@ -111,4 +136,53 @@ export function createMcpToolCallRequest(id, toolName, script) {
       arguments: { script },
     },
   });
+}
+
+
+export function rleDecodeSvpe1Tokens(rleStr) {
+  const out = [];
+  let countAcc = 0;
+  for (const ch of rleStr) {
+    if (ch >= "0" && ch <= "9") {
+      countAcc = countAcc * 10 + (ch.charCodeAt(0) - 48);
+    } else {
+      const n = countAcc > 0 ? countAcc : 1;
+      for (let i = 0; i < n; i++) out.push(ch);
+      countAcc = 0;
+    }
+  }
+  return out;
+}
+
+export function decodeSvpe1Rle3d(encoded) {
+  const parts = encoded.trim().split("|");
+  if (parts.length < 6 || parts[0] !== "SVPE1:RLE3D") {
+    throw new Error("Invalid SVPE1:RLE3D header");
+  }
+  const parseTriple = (s) =>
+    s
+      .split("=")[1]
+      .replace(/[()]/g, "")
+      .split(",")
+      .map((v) => parseInt(v.trim(), 10));
+  const origin = parseTriple(parts[1]);
+  const dims = parseTriple(parts[2]);
+  const [dx, dy, dz] = dims;
+  const sliceLen = dx * dz;
+  const rawLayers = parts.slice(5).join("|").split("/");
+  const layersYzx = [];
+  let prevFlat = [];
+  for (const layerStr of rawLayers) {
+    const flat = layerStr === "@dup" ? [...prevFlat] : rleDecodeSvpe1Tokens(layerStr);
+    if (flat.length !== sliceLen) {
+      throw new Error(`Decoded slice length ${flat.length} !== ${sliceLen}`);
+    }
+    prevFlat = flat;
+    const rows = [];
+    for (let z = 0; z < dz; z++) {
+      rows.push(flat.slice(z * dx, (z + 1) * dx));
+    }
+    layersYzx.push(rows);
+  }
+  return { origin, dims, layersYzx };
 }

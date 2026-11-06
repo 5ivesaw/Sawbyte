@@ -428,7 +428,8 @@ impl SawbyteControlBridge {
                 {{\"name\":\"player_interact\",\"description\":\"Forward live raycast block mining, block placement, and entity combat to `sawbyte-play live`.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
                 {{\"name\":\"gui_screen_automation\",\"description\":\"Inspect live server containers, click slots/items/widgets with state_id verification, and run live multi-screen workflows on `sawbyte-play live`.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
                 {{\"name\":\"task_and_navigation\",\"description\":\"Run live 3D A* pathfinding across the server's loaded chunk sections on `sawbyte-play live`.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
-                {{\"name\":\"world_inspector_and_profiler\",\"description\":\"Render the live 2D ASCII map from server chunks and query live player status.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
+                {{\"name\":\"world_inspector_and_profiler\",\"description\":\"Render the live 2D ASCII map, first-person 24x11 retinal viewport (`inspect.viewport`), compact SVPE-1 3D RLE volumes (`inspect.svpe`), 2.5D height delta grids (`inspect.svpe.height`), through-block X-ray raycasts (`inspect.xray`), 64m horizon scans (`inspect.long_range`), and full small-map arena layouts (`inspect.small_map`).\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
+                {{\"name\":\"sensory_vision_and_memory\",\"description\":\"Near-1:1 Seeing the Game with Words v2 perception & persistent cross-run world memory (SVMEM-1). Commands: `inspect.sensory` (10-section report with vitals, 360 radar, 46-slot inventory, GUI slots, hologram NPCs, 24x11 retinal viewport, SVPE-1 RLE3D/HD25D encodings, through-block X-ray, humanised ESP, 64m horizon, small-map inspector), `inspect.sensory.delta` (SVPE1:DELTA), `humanisation.perception [on|off|status]`, and `memory.status|save|load|landmarks|mark|clear`.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
                 {{\"name\":\"gym_step_and_observe\",\"description\":\"Step and observe the live `sawbyte-play` session for PyTorch/Gymnasium reinforcement learning.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
                 {{\"name\":\"agent_milestone_logger\",\"description\":\"Track autonomous agent progress, record game milestones (e.g. diamonds_found, nether_portal, dragon_slain) to milestones.log, and inspect death history and attempt counters without delays.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}},\
                 {{\"name\":\"code_execute\",\"description\":\"Execute multi-line SawbyteScript across the persistent disk launcher and live `sawbyte-play` session.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}}\
@@ -442,7 +443,10 @@ impl SawbyteControlBridge {
                 {{\"uri\":\"sawbyte://launcher/state\",\"name\":\"Persistent Disk Launcher State\",\"mimeType\":\"text/plain\"}},\
                 {{\"uri\":\"sawbyte://client/options\",\"name\":\"Persistent Client options.txt & Keybinds\",\"mimeType\":\"text/plain\"}},\
                 {{\"uri\":\"sawbyte://agent/milestones\",\"name\":\"Autonomous Agent Milestone Log\",\"mimeType\":\"text/plain\"}},\
-                {{\"uri\":\"sawbyte://world/map2d\",\"name\":\"Live Server 2D World Map\",\"mimeType\":\"text/plain\"}}\
+                {{\"uri\":\"sawbyte://world/map2d\",\"name\":\"Live Server 2D World Map\",\"mimeType\":\"text/plain\"}},\
+                {{\"uri\":\"sawbyte://world/sensory\",\"name\":\"Seeing the Game with Words v2 Full Sensory Report\",\"mimeType\":\"text/plain\"}},\
+                {{\"uri\":\"sawbyte://world/svpe\",\"name\":\"Compact SVPE-1 3D Volume & 2.5D Surface Encoding\",\"mimeType\":\"text/plain\"}},\
+                {{\"uri\":\"sawbyte://world/memory\",\"name\":\"Persistent Cross-Run World Memory & Landmarks (SVMEM-1)\",\"mimeType\":\"text/plain\"}}\
                 ]}}}}"
             ),
             "resources/read" => {
@@ -459,6 +463,18 @@ impl SawbyteControlBridge {
                     ),
                     "sawbyte://world/map2d" => Some(
                         self.forward_live_command("inspect.map")
+                            .unwrap_or_else(|e| e),
+                    ),
+                    "sawbyte://world/sensory" => Some(
+                        self.forward_live_command("inspect.sensory")
+                            .unwrap_or_else(|e| e),
+                    ),
+                    "sawbyte://world/svpe" => Some(
+                        self.forward_live_command("inspect.svpe")
+                            .unwrap_or_else(|e| e),
+                    ),
+                    "sawbyte://world/memory" => Some(
+                        self.forward_live_command("memory.status")
                             .unwrap_or_else(|e| e),
                     ),
                     "sawbyte://launcher/state" => Some(format!(
@@ -506,6 +522,7 @@ impl SawbyteControlBridge {
                         | "gui_screen_automation"
                         | "task_and_navigation"
                         | "world_inspector_and_profiler"
+                        | "sensory_vision_and_memory"
                         | "gym_step_and_observe"
                         | "agent_milestone_logger"
                         | "code_execute"

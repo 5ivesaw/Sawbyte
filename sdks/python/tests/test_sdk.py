@@ -7,7 +7,7 @@ import threading
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sawbyte import SawbyteEnv, SawbyteLiveTcpClient, SawbyteMcpClient, WorkflowBuilder
+from sawbyte import SawbyteEnv, SawbyteLiveTcpClient, SawbyteMcpClient, WorkflowBuilder, decode_svpe1_hd25d, decode_svpe1_rle3d
 
 
 def _start_mock_live_server():
@@ -132,6 +132,24 @@ class TestSawbytePythonSdk(unittest.TestCase):
                         self.assertIn("live_executed:wait.ticks 10", out)
         finally:
             srv.close()
+
+
+
+    def test_svpe1_decoders_roundtrip(self):
+        sample_rle = "SVPE1:RLE3D|origin=(-1,63,-1)|dims=(3,2,3)|order=YZX|legend={A:air,S:solid}|9S/4AS4A"
+        vol = decode_svpe1_rle3d(sample_rle)
+        self.assertEqual(vol["origin"], (-1, 63, -1))
+        self.assertEqual(vol["dims"], (3, 2, 3))
+        self.assertEqual(vol["layers_yzx"][0][1][1], "S")
+        self.assertEqual(vol["layers_yzx"][1][1][1], "S")
+        self.assertEqual(vol["layers_yzx"][1][0][0], "A")
+
+        sample_hd = "SVPE1:HD25D|center=(0,63,0)|radius=1|legend={=:level,A..Z:up,a..z:down}|3=/a=A/3_"
+        hd = decode_svpe1_hd25d(sample_hd)
+        self.assertEqual(hd["center"], (0, 63, 0))
+        self.assertEqual(hd["height_deltas"][0], [0, 0, 0])
+        self.assertEqual(hd["height_deltas"][1], [-1, 0, 1])
+        self.assertEqual(hd["height_deltas"][2], [None, None, None])
 
 
 if __name__ == "__main__":
