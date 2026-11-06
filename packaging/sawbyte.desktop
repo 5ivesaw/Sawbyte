@@ -2,7 +2,7 @@
 Type=Application
 Name=Sawbyte Launcher
 Comment=Sawbyte Zero-Graphics Minecraft Automation & Headless Client Launcher
-Exec=sawbyte launcher gui
+Exec=sawbyte-launcher
 Icon=sawbyte
 Terminal=false
 Categories=Game;Development;Utility;

@@ -5,7 +5,7 @@
 set -e
 
 REPO="5ivesaw/Sawbyte"
-TAG="v0.3.2"
+TAG="v0.3.3"
 INSTALL_DIR="$HOME/.local/bin"
 DESKTOP_DIR="$HOME/.local/share/applications"
 ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
@@ -67,6 +67,15 @@ fi
 
 chmod 755 "$INSTALL_DIR/sawbyte"
 
+# Install launcher runner and Electron app files if available
+if [ -n "$SCRIPT_DIR" ] && [ -x "$SCRIPT_DIR/sawbyte-launcher" ]; then
+    cp -f "$SCRIPT_DIR/sawbyte-launcher" "$INSTALL_DIR/sawbyte-launcher"
+    chmod 755 "$INSTALL_DIR/sawbyte-launcher"
+fi
+if [ -n "$SCRIPT_DIR" ] && [ -d "$SCRIPT_DIR/launcher/xmcl-electron-app/dist/linux-unpacked" ]; then
+    cp -rf "$SCRIPT_DIR/launcher/xmcl-electron-app/dist/linux-unpacked" "$INSTALL_DIR/launcher/"
+fi
+
 # Install Desktop Entry and Icon
 if [ -f "$SCRIPT_DIR/sawbyte.desktop" ]; then
     cp -f "$SCRIPT_DIR/sawbyte.desktop" "$DESKTOP_DIR/sawbyte.desktop"
@@ -78,7 +87,7 @@ else
 Type=Application
 Name=Sawbyte Launcher
 Comment=Sawbyte Zero-Graphics Minecraft Automation & Headless Client Launcher
-Exec=sawbyte launcher gui
+Exec=sawbyte-launcher
 Icon=sawbyte
 Terminal=false
 Categories=Game;Development;Utility;
@@ -87,7 +96,9 @@ EOF
 fi
 chmod 644 "$DESKTOP_DIR/sawbyte.desktop"
 
-if [ -f "$SCRIPT_DIR/../assets/sawbyte.png" ]; then
+if [ -f "$SCRIPT_DIR/sawbyte.png" ]; then
+    cp -f "$SCRIPT_DIR/sawbyte.png" "$ICON_DIR/sawbyte.png"
+elif [ -f "$SCRIPT_DIR/../assets/sawbyte.png" ]; then
     cp -f "$SCRIPT_DIR/../assets/sawbyte.png" "$ICON_DIR/sawbyte.png"
 elif [ -f "./assets/sawbyte.png" ]; then
     cp -f "./assets/sawbyte.png" "$ICON_DIR/sawbyte.png"
@@ -114,4 +125,4 @@ echo "[Sawbyte Installer] Installation complete!"
 echo "  Binary location: $INSTALL_DIR/sawbyte"
 echo "  Desktop entry:   $DESKTOP_DIR/sawbyte.desktop"
 echo "  CLI usage:       sawbyte --help"
-echo "  Launcher usage:  sawbyte launcher gui"
+echo "  Launcher usage:  sawbyte-launcher"
