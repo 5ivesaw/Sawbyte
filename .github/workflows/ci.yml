@@ -87,13 +87,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Build desktop launcher
+      - name: Install launcher deps
         shell: bash
         run: |
           cd launcher
           pnpm install --no-frozen-lockfile
           pnpm run build:renderer
           pnpm run build
+        env:
+          PNPM_CONFIG_APPROVED_BUILDS: electron,electron-winstaller
       - name: Package preview
         shell: bash
         run: |
