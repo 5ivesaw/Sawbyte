@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           cd launcher
-          pnpm install --no-frozen-lockfile --approved-builds electron,electron-winstaller
+          pnpm install --no-frozen-lockfile
           pnpm run build:renderer
           pnpm run build
       - name: Package preview
