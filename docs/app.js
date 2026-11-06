@@ -28,14 +28,22 @@ const SAWBYTE_REPO = '5ivesaw/Sawbyte';
 const TARGET_MC_VERSION = '26.3';
 
 const MC_ASSET_BRANCH_CANDIDATES = [
-  '1.21.4',
-  '1.21.1',
+  '1.20.1',
   '1.21',
-  '1.20.4',
   '1.19.3'
 ];
 
-let activeMcAssetBranch = '1.21.4';
+let activeMcAssetBranch = '1.20.1';
+
+const SKIN_DATA_URIS = {
+  techno: "data:image/png;base64,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",
+  techno_seated: "data:image/png;base64,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",
+  steve: "data:image/png;base64,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",
+  alex: "data:image/png;base64,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"
+};
+
+let BAKED_BLOCK_SPRITES = {};
+let worldIntroActive = true;
 let sfxEnabled = true;
 let audioCtx = null;
 
@@ -185,11 +193,59 @@ function attachMultiSourceImage(imgEl, urls) {
   tryNext();
 }
 
-function loadCachedTexture(key, urls) {
+function createTintedTextureCanvas(img, tintHex) {
+  const w = img.naturalWidth || 16;
+  const h = img.naturalHeight || 16;
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const cctx = c.getContext('2d');
+  cctx.imageSmoothingEnabled = false;
+  cctx.drawImage(img, 0, 0, w, h);
+  cctx.globalCompositeOperation = 'multiply';
+  cctx.fillStyle = tintHex;
+  cctx.fillRect(0, 0, w, h);
+  cctx.globalCompositeOperation = 'destination-in';
+  cctx.drawImage(img, 0, 0, w, h);
+  cctx.globalCompositeOperation = 'source-over';
+  return c;
+}
+
+function loadCachedTexture(key, urls, tintHex = null) {
   const img = new Image();
-  attachMultiSourceImage(img, urls);
+  let idx = 0;
+  img.crossOrigin = 'anonymous';
+  const tryNext = () => {
+    if (idx < urls.length) {
+      img.src = urls[idx++];
+    }
+  };
+  img.onload = () => {
+    if (tintHex && img.naturalWidth > 0) {
+      WORLD_TEX_IMAGES[key] = createTintedTextureCanvas(img, tintHex);
+    } else {
+      WORLD_TEX_IMAGES[key] = img;
+    }
+    BAKED_BLOCK_SPRITES = {};
+    if (typeof window.markWorldTerrainDirty === 'function') {
+      window.markWorldTerrainDirty();
+    }
+  };
+  img.onerror = tryNext;
   WORLD_TEX_IMAGES[key] = img;
+  tryNext();
   return img;
+}
+
+function isTexReady(texOrCanvas) {
+  if (!texOrCanvas) return false;
+  if (texOrCanvas instanceof HTMLCanvasElement) return texOrCanvas.width > 0;
+  return Boolean(texOrCanvas.complete && texOrCanvas.naturalWidth > 0);
+}
+
+function hydrateAllMinecraftTextures() {
+  // Placeholder: textures are hydrated via loadCachedTexture + WORLD_TEX_IMAGES
+  // Individual texture application is handled per-component as needed.
 }
 
 function initMcAssetRegistry() {
@@ -213,63 +269,75 @@ function initMcAssetRegistry() {
 
   hydrateAllMinecraftTextures();
 
-  // Preload 2.5D World Block Textures, Crack Stages 0..9, Items & Character Avatars
+  // Preload 100% Real Minecraft Block, Leaf, Log, Water, Sun, Throne, Crack & Item Textures
   const blockAssets = {
-    grass_side: 'block/grass_block_side.png',
-    grass_top: 'block/grass_block_top.png',
-    dirt: 'block/dirt.png',
-    oak_log: 'block/oak_log.png',
-    oak_leaves: 'block/azalea_flowering_leaves.png',
-    cherry_leaves: 'block/cherry_leaves.png',
-    stone: 'block/stone.png',
-    deepslate: 'block/deepslate.png',
-    cobblestone: 'block/cobblestone.png',
-    coal_ore: 'block/coal_ore.png',
-    iron_ore: 'block/iron_ore.png',
-    gold_ore: 'block/gold_ore.png',
-    redstone_ore: 'block/redstone_ore.png',
-    emerald_ore: 'block/emerald_ore.png',
-    diamond_ore: 'block/diamond_ore.png',
-    deepslate_diamond_ore: 'block/deepslate_diamond_ore.png',
-    crafting_table: 'block/crafting_table_front.png',
-    poppy: 'block/poppy.png',
-    crown: 'item/golden_helmet.png',
-    pickaxe: 'item/diamond_pickaxe.png',
-    sword: 'item/netherite_sword.png',
-    potato: 'item/baked_potato.png',
-    fishing_rod: 'item/fishing_rod.png',
-    totem: 'item/totem_of_undying.png',
-    diamond: 'item/diamond.png',
-    pigstep_disc: 'item/music_disc_pigstep.png'
+    grass_side: { path: 'block/grass_block_side.png' },
+    grass_top: { path: 'block/grass_block_top.png', tint: '#59c93c' },
+    dirt: { path: 'block/dirt.png' },
+    oak_log: { path: 'block/oak_log.png' },
+    oak_log_top: { path: 'block/oak_log_top.png' },
+    cherry_log: { path: 'block/cherry_log.png', fallback: 'block/oak_log.png' },
+    cherry_log_top: { path: 'block/cherry_log_top.png', fallback: 'block/oak_log_top.png' },
+    oak_leaves: { path: 'block/oak_leaves.png', tint: '#48b518' },
+    azalea_leaves: { path: 'block/azalea_leaves.png' },
+    flowering_azalea_leaves: { path: 'block/flowering_azalea_leaves.png' },
+    cherry_leaves: { path: 'block/cherry_leaves.png', fallback: 'block/flowering_azalea_leaves.png' },
+    water_still: { path: 'block/water_still.png', tint: '#3f76e4' },
+    sun: { path: 'environment/sun.png' },
+    stone: { path: 'block/stone.png' },
+    deepslate: { path: 'block/deepslate.png' },
+    cobblestone: { path: 'block/cobblestone.png' },
+    coal_ore: { path: 'block/coal_ore.png' },
+    iron_ore: { path: 'block/iron_ore.png' },
+    gold_ore: { path: 'block/gold_ore.png' },
+    redstone_ore: { path: 'block/redstone_ore.png' },
+    emerald_ore: { path: 'block/emerald_ore.png' },
+    diamond_ore: { path: 'block/diamond_ore.png' },
+    deepslate_diamond_ore: { path: 'block/deepslate_diamond_ore.png' },
+    gold_block: { path: 'block/gold_block.png' },
+    red_wool: { path: 'block/red_wool.png' },
+    obsidian: { path: 'block/obsidian.png' },
+    nether_bricks: { path: 'block/nether_bricks.png' },
+    diamond_block: { path: 'block/diamond_block.png' },
+    emerald_block: { path: 'block/emerald_block.png' },
+    crafting_table: { path: 'block/crafting_table_front.png' },
+    crafting_table_top: { path: 'block/crafting_table_top.png' },
+    crafting_table_side: { path: 'block/crafting_table_side.png' },
+    poppy: { path: 'block/poppy.png' },
+    crown: { path: 'item/golden_helmet.png' },
+    pickaxe: { path: 'item/diamond_pickaxe.png' },
+    sword: { path: 'item/netherite_sword.png' },
+    potato: { path: 'item/baked_potato.png' },
+    fishing_rod: { path: 'item/fishing_rod.png' },
+    totem: { path: 'item/totem_of_undying.png' },
+    diamond: { path: 'item/diamond.png' },
+    pigstep_disc: { path: 'item/music_disc_pigstep.png' }
   };
 
-  for (const [k, path] of Object.entries(blockAssets)) {
-    loadCachedTexture(k, getTextureUrls(path));
+  for (const [k, spec] of Object.entries(blockAssets)) {
+    const urls = getTextureUrls(spec.path);
+    if (spec.fallback) {
+      urls.push(...getTextureUrls(spec.fallback));
+    }
+    loadCachedTexture(k, urls, spec.tint || null);
   }
 
   for (let c = 0; c <= 9; c++) {
     loadCachedTexture(`crack_${c}`, getTextureUrls(`block/destroy_stage_${c}.png`));
   }
 
-  // Load Steve, Alex, and Technoblade Avatars from Public Minecraft Skin CDNs
-  loadCachedTexture('head_steve', [
-    'https://mc-heads.net/avatar/MHF_Steve/64',
-    'https://minotar.net/helm/MHF_Steve/64.png'
-  ]);
-  loadCachedTexture('head_alex', [
-    'https://mc-heads.net/avatar/MHF_Alex/64',
-    'https://minotar.net/helm/MHF_Alex/64.png'
-  ]);
-  loadCachedTexture('head_techno', [
-    'https://mc-heads.net/avatar/Technoblade/64',
-    'https://minotar.net/helm/Technoblade/64.png',
-    `https://raw.githubusercontent.com/${SAWBYTE_REPO}/main/docs/assets/techno_pig.png`
-  ]);
-  loadCachedTexture('techno_full', [
-    `https://raw.githubusercontent.com/${SAWBYTE_REPO}/main/docs/assets/techno_pig.png`,
-    'https://mc-heads.net/body/Technoblade/right',
-    'https://mc-heads.net/avatar/Technoblade/128'
-  ]);
+  // Load Uploaded Transparent Skins for Technoblade, Steve, and Alex
+  loadCachedTexture('skin_techno', [SKIN_DATA_URIS.techno]);
+  loadCachedTexture('skin_techno_seated', [SKIN_DATA_URIS.techno_seated]);
+  loadCachedTexture('skin_steve', [SKIN_DATA_URIS.steve]);
+  loadCachedTexture('skin_alex', [SKIN_DATA_URIS.alex]);
+  loadCachedTexture('head_techno', [SKIN_DATA_URIS.techno]);
+  loadCachedTexture('techno_full', [SKIN_DATA_URIS.techno]);
+
+  // Also ensure Tribute Card images fallback cleanly to the uploaded Technoblade skin
+  document.querySelectorAll('.tribute-img').forEach((img) => {
+    img.setAttribute('data-fallback-skin', SKIN_DATA_URIS.techno);
+  });
 
   // Fetch Minecraft Asset Index JSON from GitHub for SHA-1 Sound Resolution
   const indexUrls = [
@@ -297,37 +365,6 @@ function initMcAssetRegistry() {
       } catch (_) {}
     }
   })();
-}
-
-function hydrateAllMinecraftTextures() {
-  document.querySelectorAll('img[data-mc-tex]').forEach((img) => {
-    const texPath = img.getAttribute('data-mc-tex');
-    const fallbackTex = img.getAttribute('data-mc-fallback');
-    const repoAsset = img.getAttribute('data-gh-repo-asset');
-    const urls = [];
-    if (repoAsset) {
-      urls.push(`https://raw.githubusercontent.com/${SAWBYTE_REPO}/main/${repoAsset}`);
-      urls.push(`https://raw.githubusercontent.com/${SAWBYTE_REPO}/main/docs/${repoAsset}`);
-    }
-    urls.push(...getTextureUrls(texPath));
-    if (fallbackTex) {
-      urls.push(...getTextureUrls(fallbackTex));
-    }
-    attachMultiSourceImage(img, urls);
-  });
-
-  document.querySelectorAll('img[data-fallback-skin]').forEach((img) => {
-    const primary = img.getAttribute('src');
-    const fallback = img.getAttribute('data-fallback-skin');
-    const filename = primary.split('/').pop();
-    const urls = [
-      primary,
-      `https://raw.githubusercontent.com/${SAWBYTE_REPO}/main/assets/${filename}`,
-      `https://cdn.jsdelivr.net/gh/${SAWBYTE_REPO}@main/docs/assets/${filename}`,
-      fallback
-    ];
-    attachMultiSourceImage(img, urls);
-  });
 }
 
 function initOptionalScreenshots() {
@@ -530,12 +567,9 @@ function initMinecraftIntroSequence() {
 
           const img = WORLD_TEX_IMAGES[p.texKey];
           const sz = Math.floor(18 * (1 - easeConv * 0.35));
-          if (img && img.complete && img.naturalWidth > 0) {
+          if (isTexReady(img)) {
             vCtx.globalAlpha = 1 - easeConv * 0.55;
             vCtx.drawImage(img, Math.floor(px - sz / 2), Math.floor(py - sz / 2), sz, sz);
-          } else {
-            vCtx.fillStyle = '#FFAA00';
-            vCtx.fillRect(Math.floor(px - 6), Math.floor(py - 6), 12, 12);
           }
         }
         vCtx.globalAlpha = 1;
@@ -555,15 +589,11 @@ function initMinecraftIntroSequence() {
           vCtx.arc(cx, cy, 74, 0, Math.PI * 2);
           vCtx.fill();
 
-          const technoImg = WORLD_TEX_IMAGES.head_techno || WORLD_TEX_IMAGES.techno_full;
-          if (technoImg && technoImg.complete && technoImg.naturalWidth > 0) {
-            const avatarSize = Math.floor(68 * (0.7 + 0.3 * revealAlpha));
-            vCtx.drawImage(technoImg, Math.floor(cx - avatarSize / 2), Math.floor(cy - avatarSize / 2), avatarSize, avatarSize);
-          }
-
-          const crownImg = WORLD_TEX_IMAGES.crown;
-          if (crownImg && crownImg.complete && crownImg.naturalWidth > 0) {
-            vCtx.drawImage(crownImg, Math.floor(cx - 22), Math.floor(cy - 54), 44, 44);
+          const technoImg = WORLD_TEX_IMAGES.skin_techno || WORLD_TEX_IMAGES.head_techno;
+          if (isTexReady(technoImg)) {
+            const hSize = Math.floor(116 * (0.75 + 0.25 * revealAlpha));
+            const wSize = Math.floor(hSize * (78 / 150));
+            vCtx.drawImage(technoImg, Math.floor(cx - wSize / 2), Math.floor(cy - hSize / 2 - 4), wSize, hSize);
           }
 
           vCtx.fillStyle = '#FFFF55';
@@ -585,6 +615,7 @@ function initMinecraftIntroSequence() {
   }
 
   function finishIntro() {
+    worldIntroActive = false;
     overlay.classList.add('fade-out');
     document.body.classList.remove('intro-cursor-locked');
     setTimeout(() => {
@@ -596,6 +627,7 @@ function initMinecraftIntroSequence() {
   function runIntroSequence(fullMode) {
     clearAllIntroTimers();
     panoramaActive = true;
+    worldIntroActive = true;
     overlay.style.display = 'flex';
     overlay.classList.remove('fade-out');
     document.body.classList.add('intro-cursor-locked');
@@ -780,57 +812,8 @@ function initMinecraftIntroSequence() {
   }
 }
 
-function startPanoramaRenderer(isActiveFn) {
-  const canvas = document.getElementById('mc-panorama-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  canvas.width = 480;
-  canvas.height = 270;
-
-  function draw(t) {
-    if (!isActiveFn()) return;
-    const w = canvas.width;
-    const h = canvas.height;
-    const pan = (t * 0.012) % 160;
-
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.52);
-    skyGrad.addColorStop(0, '#5478c4');
-    skyGrad.addColorStop(1, '#9bb2db');
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, w, h * 0.55);
-
-    ctx.fillStyle = '#fff9d6';
-    ctx.fillRect(w * 0.54 - pan * 0.15, 16, 36, 32);
-
-    ctx.fillStyle = 'rgba(235, 240, 250, 0.78)';
-    for (let i = -1; i < 5; i++) {
-      const cx = ((i * 130 - pan * 0.4) % (w + 140)) - 40;
-      ctx.fillRect(cx, 26 + (i % 2) * 18, 68, 14);
-      ctx.fillRect(cx + 14, 18 + (i % 2) * 18, 42, 10);
-    }
-
-    ctx.fillStyle = '#485c3a';
-    ctx.fillRect(0, h * 0.46, w, h * 0.18);
-    ctx.fillStyle = '#526c7c';
-    ctx.fillRect(w * 0.28 - pan * 0.2, h * 0.5, 95, 22);
-
-    const groundGrad = ctx.createLinearGradient(0, h * 0.52, 0, h);
-    groundGrad.addColorStop(0, '#783a16');
-    groundGrad.addColorStop(1, '#54260c');
-    ctx.fillStyle = groundGrad;
-    ctx.fillRect(0, h * 0.55, w, h * 0.45);
-
-    ctx.fillStyle = '#6b1d14';
-    ctx.fillRect(28 - pan * 0.25, h * 0.28, 76, 52);
-    ctx.fillStyle = '#b57b1e';
-    ctx.fillRect(10 - pan * 0.3, h * 0.54, 130, 85);
-
-    ctx.fillStyle = '#334d24';
-    ctx.fillRect(w - 110 - pan * 0.2, h * 0.14, 115, 76);
-
-    requestAnimationFrame(draw);
-  }
-  requestAnimationFrame(draw);
+function startPanoramaRenderer() {
+  // Real panorama_0..5.png textures are rendered on the hardware-accelerated 3D cubemap faces (.mc-pano-face).
 }
 
 // ==============================================================================
@@ -1012,137 +995,344 @@ function synthToolSoundFallback(freq = 280, power = 1.0) {
 // ==============================================================================
 
 const WORLD_BLOCK_DEFS = {
-  grass: { name: 'Grass Block', tex: 'grass_side', topColor: '#48b535', hp: 14, cat: 'shovel', sound: 'dig/grass1.ogg' },
-  dirt: { name: 'Dirt', tex: 'dirt', topColor: '#79553a', hp: 12, cat: 'shovel', sound: 'dig/grass2.ogg' },
-  oak_log: { name: 'Oak Log', tex: 'oak_log', topColor: '#9c7f4e', hp: 18, cat: 'axe', sound: 'dig/wood1.ogg', dropTex: 'block/oak_log.png', dropLabel: '+1 Oak Log' },
-  oak_leaves: { name: 'Oak Leaves', tex: 'oak_leaves', topColor: '#3a9628', hp: 6, cat: 'hoe', sound: 'dig/grass3.ogg' },
-  cherry_leaves: { name: 'Cherry Leaves', tex: 'cherry_leaves', topColor: '#f29bc0', hp: 6, cat: 'hoe', sound: 'dig/grass3.ogg' },
-  stone: { name: 'Stone', tex: 'stone', topColor: '#7a7a7a', hp: 20, cat: 'pickaxe', sound: 'dig/stone1.ogg' },
-  deepslate: { name: 'Deepslate', tex: 'deepslate', topColor: '#4a4a52', hp: 24, cat: 'pickaxe', sound: 'dig/stone2.ogg' },
-  gold_ore: { name: 'Gold Ore', tex: 'gold_ore', topColor: '#facc15', hp: 26, cat: 'pickaxe', sound: 'dig/stone3.ogg', dropTex: 'item/raw_gold.png', dropLabel: '+1 Raw Gold', glow: 'rgba(255, 204, 21, 0.35)' },
-  redstone_ore: { name: 'Redstone Ore', tex: 'redstone_ore', topColor: '#ef4444', hp: 26, cat: 'pickaxe', sound: 'dig/stone4.ogg', dropTex: 'item/redstone.png', dropLabel: '+4 Redstone', glow: 'rgba(239, 68, 68, 0.38)' },
-  emerald_ore: { name: 'Emerald Ore', tex: 'emerald_ore', topColor: '#22c55e', hp: 28, cat: 'pickaxe', sound: 'dig/stone1.ogg', dropTex: 'item/emerald.png', dropLabel: '+1 Emerald', glow: 'rgba(34, 197, 94, 0.38)' },
-  diamond_ore: { name: 'Diamond Ore', tex: 'diamond_ore', topColor: '#38bdf8', hp: 30, cat: 'pickaxe', sound: 'dig/stone2.ogg', dropTex: 'item/diamond.png', dropLabel: '+1 Diamond', glow: 'rgba(56, 189, 248, 0.45)' },
-  crafting_table: { name: 'Crafting Table', tex: 'crafting_table', topColor: '#a37246', hp: 18, cat: 'axe', sound: 'dig/wood2.ogg' }
+  grass: { name: 'Grass Block', tex: 'grass_side', topTex: 'grass_top', sideTex: 'grass_side', hp: 14, cat: 'shovel', sound: 'dig/grass1.ogg' },
+  dirt: { name: 'Dirt', tex: 'dirt', topTex: 'dirt', sideTex: 'dirt', hp: 12, cat: 'shovel', sound: 'dig/grass2.ogg' },
+  oak_log: { name: 'Oak Log', tex: 'oak_log', topTex: 'oak_log_top', sideTex: 'oak_log', hp: 18, cat: 'axe', sound: 'dig/wood1.ogg', dropTex: 'block/oak_log.png', dropLabel: '+1 Oak Log' },
+  cherry_log: { name: 'Cherry Log', tex: 'cherry_log', topTex: 'cherry_log_top', sideTex: 'cherry_log', hp: 18, cat: 'axe', sound: 'dig/wood1.ogg', dropTex: 'block/cherry_log.png', dropLabel: '+1 Cherry Log' },
+  oak_leaves: { name: 'Oak Leaves', tex: 'oak_leaves', topTex: 'oak_leaves', sideTex: 'oak_leaves', hp: 6, cat: 'hoe', sound: 'dig/grass3.ogg', isLeaf: true },
+  azalea_leaves: { name: 'Azalea Leaves', tex: 'azalea_leaves', topTex: 'azalea_leaves', sideTex: 'azalea_leaves', hp: 6, cat: 'hoe', sound: 'dig/grass3.ogg', isLeaf: true },
+  flowering_azalea_leaves: { name: 'Flowering Azalea Leaves', tex: 'flowering_azalea_leaves', topTex: 'flowering_azalea_leaves', sideTex: 'flowering_azalea_leaves', hp: 6, cat: 'hoe', sound: 'dig/grass3.ogg', isLeaf: true },
+  cherry_leaves: { name: 'Cherry Leaves', tex: 'cherry_leaves', topTex: 'cherry_leaves', sideTex: 'cherry_leaves', hp: 6, cat: 'hoe', sound: 'dig/grass3.ogg', isLeaf: true },
+  stone: { name: 'Stone', tex: 'stone', topTex: 'stone', sideTex: 'stone', hp: 20, cat: 'pickaxe', sound: 'dig/stone1.ogg' },
+  deepslate: { name: 'Deepslate', tex: 'deepslate', topTex: 'deepslate', sideTex: 'deepslate', hp: 24, cat: 'pickaxe', sound: 'dig/stone2.ogg' },
+  gold_ore: { name: 'Gold Ore', tex: 'gold_ore', topTex: 'gold_ore', sideTex: 'gold_ore', hp: 26, cat: 'pickaxe', sound: 'dig/stone3.ogg', dropTex: 'item/raw_gold.png', dropLabel: '+1 Raw Gold', glow: 'rgba(255, 204, 21, 0.28)' },
+  redstone_ore: { name: 'Redstone Ore', tex: 'redstone_ore', topTex: 'redstone_ore', sideTex: 'redstone_ore', hp: 26, cat: 'pickaxe', sound: 'dig/stone4.ogg', dropTex: 'item/redstone.png', dropLabel: '+4 Redstone', glow: 'rgba(239, 68, 68, 0.30)' },
+  emerald_ore: { name: 'Emerald Ore', tex: 'emerald_ore', topTex: 'emerald_ore', sideTex: 'emerald_ore', hp: 28, cat: 'pickaxe', sound: 'dig/stone1.ogg', dropTex: 'item/emerald.png', dropLabel: '+1 Emerald', glow: 'rgba(34, 197, 94, 0.30)' },
+  diamond_ore: { name: 'Diamond Ore', tex: 'diamond_ore', topTex: 'diamond_ore', sideTex: 'diamond_ore', hp: 30, cat: 'pickaxe', sound: 'dig/stone2.ogg', dropTex: 'item/diamond.png', dropLabel: '+1 Diamond', glow: 'rgba(56, 189, 248, 0.36)' },
+  gold_block: { name: 'Block of Gold', tex: 'gold_block', topTex: 'gold_block', sideTex: 'gold_block', hp: 40, cat: 'pickaxe', sound: 'dig/stone1.ogg', glow: 'rgba(255, 215, 0, 0.22)' },
+  red_wool: { name: 'Royal Red Wool', tex: 'red_wool', topTex: 'red_wool', sideTex: 'red_wool', hp: 12, cat: 'sword', sound: 'dig/cloth1.ogg' },
+  obsidian: { name: 'Obsidian', tex: 'obsidian', topTex: 'obsidian', sideTex: 'obsidian', hp: 60, cat: 'pickaxe', sound: 'dig/stone4.ogg' },
+  nether_bricks: { name: 'Nether Bricks', tex: 'nether_bricks', topTex: 'nether_bricks', sideTex: 'nether_bricks', hp: 30, cat: 'pickaxe', sound: 'dig/stone2.ogg' },
+  diamond_block: { name: 'Block of Diamond', tex: 'diamond_block', topTex: 'diamond_block', sideTex: 'diamond_block', hp: 40, cat: 'pickaxe', sound: 'dig/stone1.ogg', glow: 'rgba(56, 189, 248, 0.28)' },
+  emerald_block: { name: 'Block of Emerald', tex: 'emerald_block', topTex: 'emerald_block', sideTex: 'emerald_block', hp: 40, cat: 'pickaxe', sound: 'dig/stone1.ogg' },
+  crafting_table: { name: 'Crafting Table', tex: 'crafting_table', topTex: 'crafting_table_top', sideTex: 'crafting_table_side', hp: 18, cat: 'axe', sound: 'dig/wood2.ogg' }
 };
+
+/**
+ * Pre-bakes a 2.5D Isometric Block Sprite using 100% Real Minecraft Textures
+ * (Top Face + Shaded Right Face + Crisp Front Face). Never draws fake flat color boxes!
+ */
+function getOrBakeBlockSprite(type, size, bevel = 8) {
+  const cacheKey = `${type}_${size}_${bevel}`;
+  if (BAKED_BLOCK_SPRITES[cacheKey]) return BAKED_BLOCK_SPRITES[cacheKey];
+
+  const def = WORLD_BLOCK_DEFS[type] || WORLD_BLOCK_DEFS.stone;
+  const frontImg = WORLD_TEX_IMAGES[def.tex];
+  if (!isTexReady(frontImg)) return null;
+
+  const topImg = isTexReady(WORLD_TEX_IMAGES[def.topTex]) ? WORLD_TEX_IMAGES[def.topTex] : frontImg;
+  const sideImg = isTexReady(WORLD_TEX_IMAGES[def.sideTex]) ? WORLD_TEX_IMAGES[def.sideTex] : frontImg;
+
+  const c = document.createElement('canvas');
+  c.width = size + bevel;
+  c.height = size + bevel;
+  const bctx = c.getContext('2d');
+  bctx.imageSmoothingEnabled = false;
+
+  // 1. Top 2.5D Bevel Face (Real Top Texture skewed 45 deg)
+  const topScratch = document.createElement('canvas');
+  topScratch.width = size;
+  topScratch.height = bevel;
+  const tctx = topScratch.getContext('2d');
+  tctx.imageSmoothingEnabled = false;
+  tctx.drawImage(topImg, 0, 0, size, bevel);
+  tctx.globalCompositeOperation = 'source-atop';
+  tctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+  tctx.fillRect(0, 0, size, bevel);
+
+  bctx.save();
+  bctx.setTransform(1, 0, -1, 1, bevel, 0);
+  bctx.drawImage(topScratch, 0, 0);
+  bctx.restore();
+
+  // 2. Right 2.5D Bevel Face (Real Side Texture skewed -45 deg & shaded for 3D depth)
+  const sideScratch = document.createElement('canvas');
+  sideScratch.width = bevel;
+  sideScratch.height = size;
+  const sctx = sideScratch.getContext('2d');
+  sctx.imageSmoothingEnabled = false;
+  sctx.drawImage(sideImg, 0, 0, bevel, size);
+  sctx.globalCompositeOperation = 'source-atop';
+  sctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+  sctx.fillRect(0, 0, bevel, size);
+
+  bctx.save();
+  bctx.setTransform(1, -1, 0, 1, size, bevel);
+  bctx.drawImage(sideScratch, 0, 0);
+  bctx.restore();
+
+  // 3. Front Block Face (Real Front Texture)
+  bctx.drawImage(frontImg, 0, bevel, size, size);
+
+  BAKED_BLOCK_SPRITES[cacheKey] = c;
+  return c;
+}
+
+let canvasDebrisPool = [];
+
+function spawnBlockDebris(x, y, texKey, count = 6) {
+  const maxParticles = 32;
+  for (let i = 0; i < count; i++) {
+    if (canvasDebrisPool.length >= maxParticles) canvasDebrisPool.shift();
+    canvasDebrisPool.push({
+      x,
+      y,
+      vx: (Math.random() - 0.5) * 4.8,
+      vy: -(Math.random() * 3.8 + 1.2),
+      texKey: texKey || 'stone',
+      sx: Math.floor(Math.random() * 10),
+      sy: Math.floor(Math.random() * 10),
+      life: 1.0
+    });
+  }
+}
 
 function initShader25DWorldCanvas() {
   const canvas = document.getElementById('bg-canvas');
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });
 
   let width = (canvas.width = window.innerWidth);
   let height = (canvas.height = window.innerHeight);
 
+  // Offscreen Buffers for Zero-Lag 60-120 FPS Rendering
+  const skyBufferCanvas = document.createElement('canvas');
+  const terrainBufferCanvas = document.createElement('canvas');
+  let terrainDirty = true;
+
+  window.markWorldTerrainDirty = () => {
+    terrainDirty = true;
+  };
+
   let worldBlocks = [];
+  let waterBlocks = [];
+  let damagedOrScalingBlocks = [];
   let characters = [];
   let cherryPetals = [];
+  const depthBevel = 8;
+
+  function rebuildSkyBuffer() {
+    skyBufferCanvas.width = width;
+    skyBufferCanvas.height = height;
+    const sctx = skyBufferCanvas.getContext('2d');
+
+    // 1. Complementary Shader Sky Gradient
+    const skyGrad = sctx.createLinearGradient(0, 0, 0, height * 0.78);
+    skyGrad.addColorStop(0, '#0a1124');
+    skyGrad.addColorStop(0.45, '#1b2b52');
+    skyGrad.addColorStop(0.75, '#4b365f');
+    skyGrad.addColorStop(1, '#9c5243');
+    sctx.fillStyle = skyGrad;
+    sctx.fillRect(0, 0, width, height);
+
+    // 2. Shader Sun Bloom & Volumetric Rays (pre-baked once!)
+    const sunX = width * 0.75;
+    const sunY = height * 0.18;
+    const sunGlow = sctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, 220);
+    sunGlow.addColorStop(0, 'rgba(255, 235, 160, 0.48)');
+    sunGlow.addColorStop(0.45, 'rgba(255, 165, 85, 0.16)');
+    sunGlow.addColorStop(1, 'rgba(255, 120, 60, 0)');
+    sctx.fillStyle = sunGlow;
+    sctx.fillRect(0, 0, width, height);
+
+    sctx.save();
+    sctx.globalCompositeOperation = 'screen';
+    for (let r = 0; r < 4; r++) {
+      sctx.fillStyle = 'rgba(255, 210, 140, 0.032)';
+      sctx.beginPath();
+      sctx.moveTo(sunX - 16 + r * 12, sunY);
+      sctx.lineTo(sunX - 360 + r * 150, height);
+      sctx.lineTo(sunX - 240 + r * 150, height);
+      sctx.closePath();
+      sctx.fill();
+    }
+    sctx.restore();
+  }
+
+  function rebuildTerrainBuffer() {
+    terrainBufferCanvas.width = width;
+    terrainBufferCanvas.height = height;
+    const tctx = terrainBufferCanvas.getContext('2d');
+    tctx.clearRect(0, 0, width, height);
+    tctx.imageSmoothingEnabled = false;
+
+    damagedOrScalingBlocks = [];
+
+    for (const b of worldBlocks) {
+      if (b.broken) {
+        tctx.fillStyle = 'rgba(5, 6, 10, 0.52)';
+        tctx.fillRect(b.x, b.y, b.size, b.size);
+        continue;
+      }
+
+      if (b.hp < b.maxHp || b.respawnScale < 1 || (b.hitShake && b.hitShake > 0.2)) {
+        damagedOrScalingBlocks.push(b);
+        continue;
+      }
+
+      if (b.def.glow) {
+        tctx.fillStyle = b.def.glow;
+        tctx.fillRect(b.x - 3, b.y - 3, b.size + 6, b.size + 6);
+      }
+
+      const sprite = getOrBakeBlockSprite(b.type, b.size, depthBevel);
+      if (sprite) {
+        tctx.drawImage(sprite, b.x, b.y - depthBevel);
+      }
+    }
+
+    terrainDirty = false;
+  }
 
   function buildSceneGrid() {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
     worldBlocks = [];
+    waterBlocks = [];
 
-    const bSize = width < 640 ? 36 : 44;
+    const bSize = width < 640 ? 38 : 46;
     const cols = Math.ceil(width / bSize) + 1;
-    const baseGroundRowY = Math.floor(height * 0.72);
+    const baseGroundRowY = Math.floor(height * 0.73);
+    const throneCol = Math.max(5, Math.min(cols - 4, Math.floor(cols * 0.78)));
 
-    // Terrain heightmap: left hill, center shader river, right hill + ore cliff
     const surfaceYByCol = [];
 
     for (let c = 0; c < cols; c++) {
       const normX = c / Math.max(1, cols - 1);
-      const isRiver = normX > 0.38 && normX < 0.58;
+      const isRiver = normX > 0.38 && normX < 0.56;
+      const isThronePlateau = Math.abs(c - throneCol) <= 2;
+
       let hillOffset = 0;
-      if (normX <= 0.38) {
+      if (isThronePlateau) {
+        hillOffset = 2;
+      } else if (normX <= 0.38) {
         hillOffset = Math.round(Math.sin(normX * Math.PI * 2.2) * 2);
-      } else if (normX >= 0.58) {
-        hillOffset = Math.round(Math.sin((normX - 0.55) * Math.PI * 2.0) * 2) + 1;
+      } else if (normX >= 0.56) {
+        hillOffset = Math.round(Math.sin((normX - 0.55) * Math.PI * 2.0) * 1.5) + 1;
       }
 
       const topY = isRiver ? baseGroundRowY + bSize : baseGroundRowY - hillOffset * bSize;
       surfaceYByCol[c] = topY;
 
-      // Water blocks in river basin
+      // Animated Minecraft water_still.png blocks in river basin
       if (isRiver) {
-        worldBlocks.push({
+        waterBlocks.push({
           col: c,
           x: c * bSize,
           y: baseGroundRowY,
-          size: bSize,
-          type: 'water',
-          breakable: false
+          size: bSize
         });
       }
 
-      // Surface Grass Block
-      addBlock(c * bSize, topY, bSize, isRiver ? 'dirt' : 'grass');
+      // Surface Block (Obsidian/Gold Dais under the Royal Throne, Grass on hills)
+      let surfaceType = isRiver ? 'dirt' : 'grass';
+      let surfaceBreakable = true;
+      if (isThronePlateau) {
+        surfaceType = Math.abs(c - throneCol) === 2 ? 'obsidian' : (c === throneCol ? 'red_wool' : 'gold_block');
+        surfaceBreakable = false;
+      }
+      addBlock(c * bSize, topY, bSize, surfaceType, surfaceBreakable);
 
-      // Subsurface Dirt + Stone + Exposed Ores down to bottom of screen
+      // Subsurface Dirt + Stone + Exposed Ores
       const oreChoices = ['stone', 'stone', 'deepslate', 'gold_ore', 'redstone_ore', 'emerald_ore', 'diamond_ore'];
       for (let depth = 1; depth <= 6; depth++) {
         const by = topY + depth * bSize;
         if (by > height + bSize) break;
         let bType = 'dirt';
-        if (depth === 2) bType = 'stone';
-        else if (depth >= 3) {
+        if (isThronePlateau && depth === 1) {
+          bType = 'nether_bricks';
+        } else if (depth === 2) {
+          bType = 'stone';
+        } else if (depth >= 3) {
           bType = oreChoices[(c * 7 + depth * 3) % oreChoices.length];
         }
-        addBlock(c * bSize, by, bSize, bType);
+        addBlock(c * bSize, by, bSize, bType, !isThronePlateau);
       }
 
-      // Add Crafting Table on left hill
-      if (c === Math.floor(cols * 0.22)) {
-        addBlock(c * bSize, topY - bSize, bSize, 'crafting_table');
+      // Crafting Table on left hill
+      if (c === Math.floor(cols * 0.24)) {
+        addBlock(c * bSize, topY - bSize, bSize, 'crafting_table', true);
       }
+    }
 
-      // Build 2.5D Voxel Trees on Left Hill & Right Hill
-      if (c === Math.floor(cols * 0.12) || c === Math.floor(cols * 0.72) || c === Math.floor(cols * 0.88)) {
-        const isCherry = c === Math.floor(cols * 0.72);
-        const leafType = isCherry ? 'cherry_leaves' : 'oak_leaves';
-        for (let th = 1; th <= 3; th++) {
-          addBlock(c * bSize, topY - th * bSize, bSize, 'oak_log');
-        }
-        for (let lx = -2; lx <= 2; lx++) {
-          for (let ly = 3; ly <= 5; ly++) {
-            if (ly === 5 && Math.abs(lx) === 2) continue;
-            addBlock((c + lx) * bSize, topY - ly * bSize, bSize, leafType);
-          }
+    // Build Voxel Trees Using 100% Real Minecraft Leaf & Log Textures
+    const treeSpecs = [
+      { col: Math.floor(cols * 0.11), log: 'oak_log', leafPrimary: 'oak_leaves', leafAccent: 'azalea_leaves' },
+      { col: Math.floor(cols * 0.63), log: 'cherry_log', leafPrimary: 'cherry_leaves', leafAccent: 'flowering_azalea_leaves' },
+      { col: Math.min(cols - 2, throneCol + 4), log: 'oak_log', leafPrimary: 'azalea_leaves', leafAccent: 'flowering_azalea_leaves' }
+    ];
+
+    for (const tree of treeSpecs) {
+      if (Math.abs(tree.col - throneCol) <= 2) continue;
+      const tTopY = surfaceYByCol[tree.col] || baseGroundRowY;
+      for (let th = 1; th <= 3; th++) {
+        addBlock(tree.col * bSize, tTopY - th * bSize, bSize, tree.log, true);
+      }
+      for (let lx = -2; lx <= 2; lx++) {
+        for (let ly = 3; ly <= 5; ly++) {
+          if (ly === 5 && Math.abs(lx) === 2) continue;
+          const lType = (Math.abs(lx) + ly) % 2 === 0 ? tree.leafPrimary : tree.leafAccent;
+          addBlock((tree.col + lx) * bSize, tTopY - ly * bSize, bSize, lType, true);
         }
       }
     }
 
-    // Initialize Animated Steve, Alex, and Technoblade on the terrain
+    // Construct The Blood God's Grand Royal Throne on the Right Hill Plateau (Unbreakable)
+    const throneSurfaceY = surfaceYByCol[throneCol];
+    // Backrest Pillars & Royal Cushion
+    addBlock((throneCol - 1) * bSize, throneSurfaceY - bSize, bSize, 'gold_block', false);
+    addBlock(throneCol * bSize, throneSurfaceY - bSize, bSize, 'red_wool', false);
+    addBlock((throneCol + 1) * bSize, throneSurfaceY - bSize, bSize, 'gold_block', false);
+
+    addBlock((throneCol - 1) * bSize, throneSurfaceY - 2 * bSize, bSize, 'emerald_block', false);
+    addBlock(throneCol * bSize, throneSurfaceY - 2 * bSize, bSize, 'red_wool', false);
+    addBlock((throneCol + 1) * bSize, throneSurfaceY - 2 * bSize, bSize, 'emerald_block', false);
+
+    addBlock((throneCol - 1) * bSize, throneSurfaceY - 3 * bSize, bSize, 'gold_block', false);
+    addBlock(throneCol * bSize, throneSurfaceY - 3 * bSize, bSize, 'gold_block', false);
+    addBlock((throneCol + 1) * bSize, throneSurfaceY - 3 * bSize, bSize, 'gold_block', false);
+
+    addBlock(throneCol * bSize, throneSurfaceY - 4 * bSize, bSize, 'diamond_block', false);
+
+    // Initialize Steve & Alex (Animated Walkers) + Technoblade (Seated Blood God King on His Throne!)
     characters = [
       {
         id: 'steve',
         name: 'Steve',
-        headKey: 'head_steve',
-        shirtColor: '#00aaaa',
-        pantsColor: '#283593',
+        skinKey: 'skin_steve',
         heldItem: 'pickaxe',
-        colFloat: cols * 0.18,
-        minCol: cols * 0.06,
-        maxCol: cols * 0.34,
+        isSeatedKing: false,
+        colFloat: cols * 0.16,
+        minCol: cols * 0.05,
+        maxCol: cols * 0.33,
         dir: 1,
-        speed: 0.75,
+        speed: 0.68,
         actionTimer: 0,
-        bubbleText: 'Mining diamonds...',
+        bubbleText: 'Mining deepslate diamonds!',
         jumpVel: 0,
         jumpY: 0
       },
       {
         id: 'alex',
         name: 'Alex',
-        headKey: 'head_alex',
-        shirtColor: '#558b2f',
-        pantsColor: '#4e342e',
+        skinKey: 'skin_alex',
         heldItem: 'fishing_rod',
-        colFloat: cols * 0.36,
-        minCol: cols * 0.25,
-        maxCol: cols * 0.42,
+        isSeatedKing: false,
+        colFloat: cols * 0.34,
+        minCol: cols * 0.22,
+        maxCol: cols * 0.38,
         dir: 1,
-        speed: 0.55,
+        speed: 0.52,
         actionTimer: 0,
         bubbleText: 'Fishing by the river',
         jumpVel: 0,
@@ -1150,20 +1340,18 @@ function initShader25DWorldCanvas() {
       },
       {
         id: 'techno',
-        name: 'Technoblade [o7]',
-        headKey: 'head_techno',
-        hasCrown: true,
-        hasCape: true,
-        shirtColor: '#b71c1c',
-        pantsColor: '#212121',
+        name: 'Technoblade [Blood God]',
+        skinKey: 'skin_techno_seated',
+        standingSkinKey: 'skin_techno',
         heldItem: 'sword',
-        colFloat: cols * 0.78,
-        minCol: cols * 0.62,
-        maxCol: cols * 0.92,
-        dir: -1,
-        speed: 0.85,
+        isSeatedKing: true,
+        colFloat: throneCol + 0.5,
+        throneCol,
+        throneSeatY: throneSurfaceY - bSize,
+        dir: 1,
+        speed: 0,
         actionTimer: 0,
-        bubbleText: 'Technoblade Never Dies!',
+        bubbleText: 'Blood for the Blood God!',
         jumpVel: 0,
         jumpY: 0
       }
@@ -1174,18 +1362,20 @@ function initShader25DWorldCanvas() {
       ch.bSize = bSize;
     });
 
-    // Ambient falling cherry petals & shader fireflies
-    cherryPetals = Array.from({ length: 45 }, () => ({
+    cherryPetals = Array.from({ length: 24 }, () => ({
       x: Math.random() * width,
-      y: Math.random() * height * 0.8,
-      vx: (Math.random() - 0.3) * 0.45,
-      vy: Math.random() * 0.35 + 0.15,
+      y: Math.random() * height * 0.78,
+      vx: (Math.random() - 0.3) * 0.4,
+      vy: Math.random() * 0.32 + 0.14,
       size: Math.random() > 0.5 ? 4 : 3,
       isFirefly: Math.random() > 0.45
     }));
+
+    rebuildSkyBuffer();
+    terrainDirty = true;
   }
 
-  function addBlock(x, y, size, type) {
+  function addBlock(x, y, size, type, breakable = true) {
     const def = WORLD_BLOCK_DEFS[type] || WORLD_BLOCK_DEFS.stone;
     worldBlocks.push({
       x,
@@ -1196,31 +1386,37 @@ function initShader25DWorldCanvas() {
       hp: def.hp,
       maxHp: def.hp,
       broken: false,
-      breakable: true,
+      breakable,
       respawnScale: 1
     });
   }
 
   buildSceneGrid();
-  window.addEventListener('resize', buildSceneGrid);
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(buildSceneGrid, 120);
+  });
 
   // Hit-test background blocks or characters when user clicks/taps
   window.hitShader25DWorldAt = function (clientX, clientY) {
-    // 1. Check if user clicked/tapped on Steve, Alex, or Technoblade!
     for (const ch of characters) {
       if (ch.screenX && ch.screenY) {
-        if (Math.abs(clientX - ch.screenX) < 32 && Math.abs(clientY - (ch.screenY - 26)) < 42) {
-          ch.jumpVel = -7.5;
-          ch.actionTimer = 45;
-          if (ch.id === 'techno') {
-            const quotes = ['Technoblade Never Dies!', 'Blood for the Blood God!', '+500M Potatoes!', 'bruh [o7]'];
+        if (Math.abs(clientX - ch.screenX) < 38 && Math.abs(clientY - (ch.screenY - 36)) < 48) {
+          ch.actionTimer = 65;
+          if (ch.isSeatedKing) {
+            const quotes = [
+              'Blood for the Blood God!',
+              'Technoblade Never Dies!',
+              'Sit down, mortal. [o7]',
+              '+500,000,000 Potatoes!'
+            ];
             ch.bubbleText = quotes[Math.floor(Math.random() * quotes.length)];
             playMcPigSound();
-          } else if (ch.id === 'steve') {
-            ch.bubbleText = 'Found Deepslate Diamonds!';
-            playMcXpChime();
           } else {
-            ch.bubbleText = 'Caught Enchanted Cod!';
+            ch.jumpVel = -6.8;
+            ch.bubbleText = ch.id === 'steve' ? 'Found Deepslate Diamonds!' : 'Caught Enchanted Cod!';
             playMcXpChime();
           }
           return;
@@ -1228,43 +1424,43 @@ function initShader25DWorldCanvas() {
       }
     }
 
-    // 2. Check if user clicked/tapped on any breakable 2.5D block (search top-most first)
     for (let i = worldBlocks.length - 1; i >= 0; i--) {
       const b = worldBlocks[i];
       if (!b.breakable || b.broken) continue;
-      if (clientX >= b.x && clientX <= b.x + b.size && clientY >= b.y - 10 && clientY <= b.y + b.size) {
+      if (clientX >= b.x && clientX <= b.x + b.size && clientY >= b.y - depthBevel && clientY <= b.y + b.size) {
         let dmg = (currentTool.baseDamage || 8) * (0.4 + 0.6 * lastChargeRatio);
         if (currentTool.affinity === b.def.cat || currentTool.affinity === 'all') {
           dmg *= 2.3;
         }
         b.hp -= dmg;
-        b.hitShake = 6;
+        b.hitShake = 5;
+        terrainDirty = true;
 
-        const texUrl = getTextureUrls(b.def.tex ? `block/${b.def.tex}.png` : 'block/stone.png')[0];
-        spawnBlockDebris(clientX, clientY, texUrl, 4);
+        spawnBlockDebris(clientX, clientY, b.def.tex, 5);
 
         if (b.hp > 0) {
           playMinecraftOgg(b.def.sound, 0.32, 0.92 + Math.random() * 0.16);
         } else {
-          // Block Broken!
           b.broken = true;
+          b.hitShake = 0;
+          terrainDirty = true;
           totalMinedBlocks++;
           const minedHud = document.getElementById('hud-mined-count');
           if (minedHud) minedHud.textContent = totalMinedBlocks.toLocaleString();
 
           playMinecraftOgg(b.def.sound, 0.5, 0.82);
-          spawnBlockDebris(clientX, clientY, texUrl, 9);
+          spawnBlockDebris(clientX, clientY, b.def.tex, 8);
 
           if (b.def.dropTex) {
             playMcXpChime();
             spawnFloatingOreDrop(clientX, clientY, b.def.dropTex, b.def.dropLabel || `+1 ${b.def.name}`);
           }
 
-          // Respawn block after 2.0 seconds (2000ms)!
           setTimeout(() => {
             b.broken = false;
             b.hp = b.maxHp;
             b.respawnScale = 0.25;
+            terrainDirty = true;
             playMinecraftOgg('random/pop.ogg', 0.2, 1.3);
           }, 2000);
         }
@@ -1273,143 +1469,250 @@ function initShader25DWorldCanvas() {
     }
   };
 
-  // Main 60 FPS 2.5D Shader World Render Loop
-  function renderWorld(ts) {
-    ctx.clearRect(0, 0, width, height);
-    ctx.imageSmoothingEnabled = false;
+  /**
+   * Articulated Skin Renderer for Steve & Alex using their Uploaded Skins
+   */
+  function drawArticulatedWalker(ch, cx, cy, ts) {
+    const skinImg = WORLD_TEX_IMAGES[ch.skinKey];
+    if (!isTexReady(skinImg)) return;
 
-    // 1. Complementary Shader Sky Gradient (Deep Twilight to Warm Golden Horizon)
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, height * 0.78);
-    skyGrad.addColorStop(0, '#0a1124');
-    skyGrad.addColorStop(0.45, '#1b2b52');
-    skyGrad.addColorStop(0.75, '#4b365f');
-    skyGrad.addColorStop(1, '#9c5243');
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, width, height);
+    const sw = skinImg.width || skinImg.naturalWidth;
+    const sh = skinImg.height || skinImg.naturalHeight;
+    const scale = 0.44;
+    const dw = Math.round(sw * scale);
+    const dh = Math.round(sh * scale);
 
-    // 2. Shader Sun & Volumetric God Rays
-    const sunX = width * 0.76;
-    const sunY = height * 0.2;
-    const sunGlow = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 240);
-    sunGlow.addColorStop(0, 'rgba(255, 235, 160, 0.55)');
-    sunGlow.addColorStop(0.4, 'rgba(255, 165, 85, 0.18)');
-    sunGlow.addColorStop(1, 'rgba(255, 120, 60, 0)');
-    ctx.fillStyle = sunGlow;
-    ctx.fillRect(0, 0, width, height);
+    const stride = Math.sin(ts * 0.0085 * ch.speed * 1.45);
+    const legAngle = stride * 0.32;
+    const bobY = Math.abs(stride) * 2.2;
+    const armAngle = ch.actionTimer > 0
+      ? Math.sin(ts * 0.032) * 0.65
+      : -stride * 0.28;
 
-    // Blocky Minecraft Shader Sun
-    ctx.fillStyle = '#fff5c0';
-    ctx.fillRect(Math.floor(sunX - 26), Math.floor(sunY - 26), 52, 52);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(Math.floor(sunX - 18), Math.floor(sunY - 18), 36, 36);
-
-    // Diagonal Volumetric God Rays
     ctx.save();
-    ctx.globalCompositeOperation = 'screen';
-    for (let r = 0; r < 5; r++) {
-      const rayAlpha = 0.035 + Math.sin(ts * 0.001 + r) * 0.015;
-      ctx.fillStyle = `rgba(255, 210, 140, ${rayAlpha})`;
-      ctx.beginPath();
-      ctx.moveTo(sunX - 20 + r * 12, sunY);
-      ctx.lineTo(sunX - 380 + r * 140, height);
-      ctx.lineTo(sunX - 260 + r * 140, height);
-      ctx.closePath();
-      ctx.fill();
+    ctx.translate(cx, Math.floor(cy - bobY));
+    if (ch.dir < 0) {
+      ctx.scale(-1, 1);
+    }
+
+    // 1. Back Leg (sy: 98..sh, sx: 0..sw*0.52)
+    const legSy = Math.floor(sh * 0.65);
+    const legSh = sh - legSy;
+    const midX = Math.floor(sw * 0.5);
+    const legTopDy = -Math.round(legSh * scale);
+
+    ctx.save();
+    ctx.translate(-2, legTopDy + 2);
+    ctx.rotate(legAngle);
+    ctx.drawImage(
+      skinImg,
+      0, legSy, midX, legSh,
+      -Math.round(midX * scale * 0.8), 0, Math.round(midX * scale), Math.round(legSh * scale)
+    );
+    ctx.restore();
+
+    // 2. Front Leg (sy: 98..sh, sx: sw*0.48..sw)
+    ctx.save();
+    ctx.translate(2, legTopDy + 2);
+    ctx.rotate(-legAngle);
+    ctx.drawImage(
+      skinImg,
+      midX - 2, legSy, sw - (midX - 2), legSh,
+      -4, 0, Math.round((sw - (midX - 2)) * scale), Math.round(legSh * scale)
+    );
+    ctx.restore();
+
+    // 3. Torso + Back Arm (sy: 44..102, sx: 16..sw)
+    const torsoSy = Math.floor(sh * 0.30);
+    const torsoSh = Math.floor(sh * 0.38);
+    const armSplitX = Math.floor(sw * 0.28);
+    ctx.drawImage(
+      skinImg,
+      armSplitX, torsoSy, sw - armSplitX, torsoSh,
+      Math.round((armSplitX - sw * 0.5) * scale), -dh + Math.round(torsoSy * scale),
+      Math.round((sw - armSplitX) * scale), Math.round(torsoSh * scale)
+    );
+
+    // 4. Head (sy: 0..48, sx: 0..sw) with subtle look nod
+    const headSh = Math.floor(sh * 0.33);
+    ctx.save();
+    ctx.translate(0, -dh + Math.round(headSh * scale));
+    ctx.rotate(Math.sin(ts * 0.003 + (ch.id === 'steve' ? 0 : 1.5)) * 0.05);
+    ctx.drawImage(
+      skinImg,
+      0, 0, sw, headSh,
+      -Math.round(dw * 0.5), -Math.round(headSh * scale), dw, Math.round(headSh * scale)
+    );
+    ctx.restore();
+
+    // 5. Front Swinging Arm (sy: 46..105, sx: 0..armSplitX+4) + Held Official Minecraft Tool
+    ctx.save();
+    const shoulderX = -Math.round(dw * 0.22);
+    const shoulderY = -dh + Math.round(sh * 0.34 * scale);
+    ctx.translate(shoulderX, shoulderY);
+    ctx.rotate(armAngle);
+    ctx.drawImage(
+      skinImg,
+      0, torsoSy, armSplitX + 4, torsoSh,
+      -Math.round(armSplitX * scale * 0.5), 0, Math.round((armSplitX + 4) * scale), Math.round(torsoSh * scale)
+    );
+
+    const itemImg = WORLD_TEX_IMAGES[ch.heldItem];
+    if (isTexReady(itemImg)) {
+      ctx.drawImage(itemImg, -2, Math.round(torsoSh * scale * 0.55), 18, 18);
     }
     ctx.restore();
 
-    // 3. Parallax Blocky Shader Clouds
-    ctx.fillStyle = 'rgba(255, 230, 215, 0.22)';
-    for (let c = 0; c < 6; c++) {
-      const cx = ((c * 280 + ts * 0.015 * (c % 2 === 0 ? 1 : 0.6)) % (width + 240)) - 120;
-      const cy = 58 + (c % 3) * 38;
-      ctx.fillRect(Math.floor(cx), cy, 110, 18);
-      ctx.fillRect(Math.floor(cx + 20), cy - 10, 70, 10);
+    ctx.restore();
+  }
+
+  /**
+   * Renders Technoblade Seated Majestically on His Royal Throne as the Blood God King
+   */
+  function drawSeatedKingTechnoblade(ch, ts) {
+    const cx = Math.floor(ch.colFloat * ch.bSize);
+    const cy = Math.floor(ch.throneSeatY + 8);
+    ch.screenX = cx;
+    ch.screenY = cy;
+
+    const breatheY = Math.sin(ts * 0.0022) * 1.2;
+
+    // Subtle Royal Golden Aura behind the Throne Seat
+    const seatedImg = WORLD_TEX_IMAGES.skin_techno_seated || WORLD_TEX_IMAGES.skin_techno;
+    if (isTexReady(seatedImg)) {
+      const sw = seatedImg.width || seatedImg.naturalWidth;
+      const sh = seatedImg.height || seatedImg.naturalHeight;
+      const scale = 0.52;
+      const dw = Math.round(sw * scale);
+      const dh = Math.round(sh * scale);
+
+      ctx.drawImage(
+        seatedImg,
+        Math.floor(cx - dw * 0.48),
+        Math.floor(cy - dh + 14 + breatheY),
+        dw,
+        dh
+      );
     }
 
-    // 4. Render 2.5D Voxel Blocks, Trees, Shader Water & Glowing Ores
-    const depthBevel = 9;
-    for (const b of worldBlocks) {
-      if (b.broken) {
-        // Draw dark cave cavity where block was mined
-        ctx.fillStyle = 'rgba(5, 6, 10, 0.55)';
-        ctx.fillRect(b.x, b.y, b.size, b.size);
-        continue;
-      }
+    // Netherite Sword planted point-down beside the Blood God's right golden armrest
+    const swordImg = WORLD_TEX_IMAGES.sword;
+    if (isTexReady(swordImg)) {
+      ctx.save();
+      ctx.translate(cx - 26, cy - 18 + breatheY * 0.5);
+      ctx.rotate((135 * Math.PI) / 180);
+      ctx.drawImage(swordImg, -12, -12, 24, 24);
+      ctx.restore();
+    }
 
-      if (b.type === 'water') {
-        // Animated Shader Water with Ripples & Sun Specular Reflection
-        const waveY = Math.sin(ts * 0.004 + b.col * 0.8) * 3;
-        const waterGrad = ctx.createLinearGradient(b.x, b.y + waveY, b.x, b.y + b.size);
-        waterGrad.addColorStop(0, 'rgba(56, 189, 248, 0.72)');
-        waterGrad.addColorStop(1, 'rgba(14, 116, 144, 0.88)');
-        ctx.fillStyle = waterGrad;
-        ctx.fillRect(b.x, b.y + waveY, b.size, b.size - waveY);
+    // Royal Nametag above the Throne
+    if (ch.actionTimer > 0) ch.actionTimer--;
+    ctx.font = '11px MinecraftOfficial, monospace';
+    ctx.textAlign = 'center';
+    const tagText = ch.actionTimer > 0 ? `${ch.name}: ${ch.bubbleText}` : ch.name;
+    const textWidth = ctx.measureText(tagText).width + 12;
+    const tagY = Math.floor(ch.throneSeatY - ch.bSize * 3.35);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.68)';
+    ctx.fillRect(Math.floor(cx - textWidth / 2), tagY - 12, Math.floor(textWidth), 16);
+    ctx.fillStyle = '#FFAA00';
+    ctx.fillText(tagText, cx, tagY);
+  }
 
-        // Shimmering water surface line
-        ctx.fillStyle = 'rgba(255, 250, 210, 0.65)';
-        ctx.fillRect(b.x + 4, b.y + waveY + 2, b.size - 8, 3);
-        continue;
+  // Zero-Lag 60-120 FPS Render Loop
+  function renderWorld(ts) {
+    // Pause heavy background rendering when tab is hidden or while full-screen intro overlay is opaque
+    if (document.hidden || (worldIntroActive && !terrainDirty)) {
+      requestAnimationFrame(renderWorld);
+      return;
+    }
+
+    if (terrainDirty) {
+      rebuildTerrainBuffer();
+    }
+
+    ctx.imageSmoothingEnabled = false;
+
+    // 1. Single Blit of Cached Sky, Sun Glow & Volumetric Rays
+    ctx.drawImage(skyBufferCanvas, 0, 0);
+
+    // 2. Real Minecraft Sun Texture (environment/sun.png)
+    const sunImg = WORLD_TEX_IMAGES.sun;
+    if (isTexReady(sunImg)) {
+      ctx.drawImage(sunImg, Math.floor(width * 0.75 - 28), Math.floor(height * 0.18 - 28), 56, 56);
+    }
+
+    // 3. Parallax Drifting Clouds
+    ctx.fillStyle = 'rgba(255, 230, 215, 0.20)';
+    for (let c = 0; c < 5; c++) {
+      const cx = ((c * 310 + ts * 0.012 * (c % 2 === 0 ? 1 : 0.6)) % (width + 240)) - 120;
+      const cy = 54 + (c % 3) * 38;
+      ctx.fillRect(Math.floor(cx), cy, 110, 16);
+      ctx.fillRect(Math.floor(cx + 20), cy - 8, 70, 8);
+    }
+
+    // 4. Animated Official Minecraft Water River (block/water_still.png 32-frame strip)
+    const waterImg = WORLD_TEX_IMAGES.water_still;
+    const waterFrame = Math.floor(ts / 110) % 32;
+    for (const wb of waterBlocks) {
+      const waveY = Math.round(Math.sin(ts * 0.0035 + wb.col * 0.8) * 2);
+      if (isTexReady(waterImg)) {
+        const fw = waterImg.width || 16;
+        const fh = Math.min(fw, (waterImg.height || 512) - waterFrame * fw);
+        ctx.globalAlpha = 0.86;
+        ctx.drawImage(waterImg, 0, waterFrame * fw, fw, fh, wb.x, wb.y + waveY, wb.size, wb.size - waveY);
+        ctx.globalAlpha = 1.0;
       }
+    }
+
+    // 5. Single Hardware-Accelerated Blit of Static 2.5D World Terrain, Trees & Royal Throne!
+    ctx.drawImage(terrainBufferCanvas, 0, 0);
+
+    // 6. Render Only Active Damaged/Scaling Blocks & Official destroy_stage_0..9.png Cracks
+    let needsTerrainRefresh = false;
+    for (const b of damagedOrScalingBlocks) {
+      if (b.broken) continue;
 
       if (b.respawnScale < 1) {
-        b.respawnScale = Math.min(1, b.respawnScale + 0.08);
+        b.respawnScale = Math.min(1, b.respawnScale + 0.1);
+        if (b.respawnScale >= 1 && b.hp >= b.maxHp) needsTerrainRefresh = true;
       }
       const shakeX = b.hitShake ? (Math.random() - 0.5) * b.hitShake : 0;
-      if (b.hitShake > 0) b.hitShake *= 0.75;
+      if (b.hitShake > 0) {
+        b.hitShake *= 0.72;
+        if (b.hitShake < 0.2) {
+          b.hitShake = 0;
+          if (b.hp >= b.maxHp && b.respawnScale >= 1) needsTerrainRefresh = true;
+        }
+      }
 
-      // Gentle leaf sway in the wind for tree foliage
-      const isLeaf = b.type === 'oak_leaves' || b.type === 'cherry_leaves';
-      const windX = isLeaf ? Math.sin(ts * 0.0025 + b.x * 0.05 + b.y * 0.03) * 2.2 : 0;
-
-      const drawX = Math.floor(b.x + shakeX + windX);
+      const drawX = Math.floor(b.x + shakeX);
       const drawY = Math.floor(b.y);
       const sz = Math.floor(b.size * b.respawnScale);
 
-      // Shader Ore Bloom
-      if (b.def.glow) {
-        ctx.fillStyle = b.def.glow;
-        ctx.fillRect(drawX - 4, drawY - 4, sz + 8, sz + 8);
+      const sprite = getOrBakeBlockSprite(b.type, sz, depthBevel);
+      if (sprite) {
+        ctx.drawImage(sprite, drawX, drawY - depthBevel);
       }
 
-      // 2.5D Isometric Top Face Bevel
-      ctx.fillStyle = b.def.topColor || '#666';
-      ctx.beginPath();
-      ctx.moveTo(drawX, drawY);
-      ctx.lineTo(drawX + depthBevel, drawY - depthBevel);
-      ctx.lineTo(drawX + sz + depthBevel, drawY - depthBevel);
-      ctx.lineTo(drawX + sz, drawY);
-      ctx.closePath();
-      ctx.fill();
-
-      // 2.5D Front Block Texture
-      const texImg = WORLD_TEX_IMAGES[b.def.tex];
-      if (texImg && texImg.complete && texImg.naturalWidth > 0) {
-        ctx.drawImage(texImg, drawX, drawY, sz, sz);
-      } else {
-        ctx.fillStyle = b.def.topColor || '#555';
-        ctx.fillRect(drawX, drawY, sz, sz);
-      }
-
-      // Official Minecraft destroy_stage_0..9.png Crack Overlay if Damaged!
       if (b.hp < b.maxHp) {
         const dmgFrac = 1 - b.hp / b.maxHp;
         const stage = Math.min(9, Math.max(0, Math.floor(dmgFrac * 10)));
         const crackImg = WORLD_TEX_IMAGES[`crack_${stage}`];
-        if (crackImg && crackImg.complete && crackImg.naturalWidth > 0) {
+        if (isTexReady(crackImg)) {
           ctx.drawImage(crackImg, drawX, drawY, sz, sz);
         }
       }
-
-      // Subtle voxel shadow border
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(drawX, drawY, sz, sz);
     }
+    if (needsTerrainRefresh) terrainDirty = true;
 
-    // 5. Update & Render Animated Steve, Alex, and Technoblade in the 2.5D Scene!
+    // 7. Render Seated King Technoblade on His Throne + Animated Steve & Alex
     for (const ch of characters) {
-      ch.colFloat += ch.dir * ch.speed * 0.016;
+      if (ch.isSeatedKing) {
+        drawSeatedKingTechnoblade(ch, ts);
+        continue;
+      }
+
+      ch.colFloat += ch.dir * ch.speed * 0.015;
       if (ch.colFloat >= ch.maxCol) {
         ch.colFloat = ch.maxCol;
         ch.dir = -1;
@@ -1418,150 +1721,79 @@ function initShader25DWorldCanvas() {
         ch.dir = 1;
       }
 
-      // Jump physics
       if (ch.jumpVel !== 0 || ch.jumpY < 0) {
         ch.jumpY += ch.jumpVel;
-        ch.jumpVel += 0.48;
+        ch.jumpVel += 0.46;
         if (ch.jumpY >= 0) {
           ch.jumpY = 0;
           ch.jumpVel = 0;
         }
-      } else if (Math.random() < 0.004) {
-        // Spontaneous little hop
-        ch.jumpVel = -5.2;
+      } else if (Math.random() < 0.0025) {
+        ch.jumpVel = -4.8;
       }
 
       const colIdx = Math.max(0, Math.min(ch.surfaceYByCol.length - 1, Math.floor(ch.colFloat)));
-      const groundY = ch.surfaceYByCol[colIdx] || height * 0.72;
+      const groundY = ch.surfaceYByCol[colIdx] || height * 0.73;
       const cx = Math.floor(ch.colFloat * ch.bSize);
       const cy = Math.floor(groundY + ch.jumpY);
       ch.screenX = cx;
       ch.screenY = cy;
 
-      const walkSwing = Math.sin(ts * 0.008 * ch.speed * 1.4) * 7;
-      const armActionSwing = ch.actionTimer > 0
-        ? Math.sin(ts * 0.035) * 18
-        : Math.sin(ts * 0.007 + (ch.id === 'techno' ? 1 : 0)) * 9;
       if (ch.actionTimer > 0) ch.actionTimer--;
 
-      // Character Shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.42)';
-      ctx.fillRect(cx - 12, groundY - 3, 24, 5);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
+      ctx.fillRect(cx - 12, groundY - 2, 24, 4);
 
-      // Technoblade Royal Red Cape
-      if (ch.hasCape) {
-        ctx.fillStyle = '#991b1b';
-        const capeX = ch.dir > 0 ? cx - 14 : cx + 6;
-        ctx.fillRect(capeX, cy - 36, 8, 22);
-      }
+      drawArticulatedWalker(ch, cx, cy, ts);
 
-      // Animated Legs
-      ctx.fillStyle = ch.pantsColor;
-      ctx.fillRect(cx - 6 + walkSwing * 0.4, cy - 14, 6, 14);
-      ctx.fillRect(cx + 1 - walkSwing * 0.4, cy - 14, 6, 14);
-
-      // Torso
-      ctx.fillStyle = ch.shirtColor;
-      ctx.fillRect(cx - 7, cy - 32, 15, 18);
-
-      // Animated Swinging Arm + Held Item (Pickaxe / Sword / Fishing Rod)
-      ctx.save();
-      ctx.translate(cx + (ch.dir > 0 ? 6 : -6), cy - 28);
-      ctx.rotate(((armActionSwing + (ch.dir > 0 ? -25 : 25)) * Math.PI) / 180);
-      ctx.fillStyle = ch.shirtColor;
-      ctx.fillRect(-3, 0, 6, 14);
-
-      const itemImg = WORLD_TEX_IMAGES[ch.heldItem];
-      if (itemImg && itemImg.complete && itemImg.naturalWidth > 0) {
-        ctx.drawImage(itemImg, -4, 6, 20, 20);
-      }
-      ctx.restore();
-
-      // Official Minecraft Avatar Head (Steve, Alex, Technoblade)
-      const headImg = WORLD_TEX_IMAGES[ch.headKey];
-      if (headImg && headImg.complete && headImg.naturalWidth > 0) {
-        ctx.drawImage(headImg, cx - 12, cy - 54, 24, 24);
-      } else {
-        ctx.fillStyle = ch.id === 'techno' ? '#f4a2a0' : '#d2a679';
-        ctx.fillRect(cx - 12, cy - 54, 24, 24);
-      }
-
-      // Technoblade's Golden Crown on top of his head
-      if (ch.hasCrown && WORLD_TEX_IMAGES.crown && WORLD_TEX_IMAGES.crown.complete) {
-        ctx.drawImage(WORLD_TEX_IMAGES.crown, cx - 14, cy - 70, 28, 28);
-      }
-
-      // Floating Minecraft Nametag + Activity Status above each character
       ctx.font = '11px MinecraftOfficial, monospace';
       ctx.textAlign = 'center';
       const tagText = ch.actionTimer > 0 ? `${ch.name}: ${ch.bubbleText}` : ch.name;
       const textWidth = ctx.measureText(tagText).width + 10;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.62)';
-      ctx.fillRect(Math.floor(cx - textWidth / 2), cy - 84, Math.floor(textWidth), 16);
-      ctx.fillStyle = ch.hasCrown ? '#FFAA00' : '#FFFFFF';
-      ctx.fillText(tagText, cx, cy - 72);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.58)';
+      ctx.fillRect(Math.floor(cx - textWidth / 2), cy - 78, Math.floor(textWidth), 15);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(tagText, cx, cy - 67);
     }
 
-    // 6. Render Drifting Cherry Petals & Golden Shader Fireflies
+    // 8. Canvas-Native Block Break Debris Particles (Real Block Texture Crops, Zero DOM Lag)
+    for (let i = canvasDebrisPool.length - 1; i >= 0; i--) {
+      const dp = canvasDebrisPool[i];
+      dp.x += dp.vx;
+      dp.y += dp.vy;
+      dp.vy += 0.28;
+      dp.life -= 0.035;
+      if (dp.life <= 0) {
+        canvasDebrisPool.splice(i, 1);
+        continue;
+      }
+      const texImg = WORLD_TEX_IMAGES[dp.texKey];
+      if (isTexReady(texImg)) {
+        ctx.globalAlpha = dp.life;
+        ctx.drawImage(texImg, dp.sx, dp.sy, 6, 6, Math.floor(dp.x), Math.floor(dp.y), 7, 7);
+        ctx.globalAlpha = 1.0;
+      }
+    }
+
+    // 9. Lightweight Ambient Petals & Fireflies
     for (const p of cherryPetals) {
       p.x += p.vx;
-      p.y += p.vy + (p.isFirefly ? Math.sin(ts * 0.003 + p.x) * 0.3 : 0);
+      p.y += p.vy;
       if (p.y > height * 0.85) {
-        p.y = -10;
+        p.y = -8;
         p.x = Math.random() * width;
       }
       if (p.x < 0) p.x = width;
       if (p.x > width) p.x = 0;
 
-      ctx.fillStyle = p.isFirefly
-        ? `rgba(255, 230, 110, ${0.45 + Math.sin(ts * 0.006 + p.x) * 0.35})`
-        : 'rgba(244, 165, 198, 0.68)';
+      ctx.fillStyle = p.isFirefly ? 'rgba(255, 230, 110, 0.65)' : 'rgba(244, 165, 198, 0.65)';
       ctx.fillRect(Math.floor(p.x), Math.floor(p.y), p.size, p.size);
     }
-
-    // Subtle dark vignette at very bottom so text cards stay crisp and readable
-    const vigGrad = ctx.createLinearGradient(0, 0, 0, height);
-    vigGrad.addColorStop(0, 'rgba(6, 9, 15, 0.28)');
-    vigGrad.addColorStop(0.6, 'rgba(6, 9, 15, 0.32)');
-    vigGrad.addColorStop(1, 'rgba(6, 9, 15, 0.62)');
-    ctx.fillStyle = vigGrad;
-    ctx.fillRect(0, 0, width, height);
 
     requestAnimationFrame(renderWorld);
   }
 
   requestAnimationFrame(renderWorld);
-}
-
-function spawnBlockDebris(x, y, texUrl, count = 6) {
-  for (let i = 0; i < count; i++) {
-    const p = document.createElement('div');
-    p.className = 'mc-block-debris';
-    p.style.left = `${x}px`;
-    p.style.top = `${y}px`;
-    p.style.backgroundImage = `url('${texUrl}')`;
-    p.style.backgroundPosition = `${Math.floor(Math.random() * 20)}px ${Math.floor(Math.random() * 20)}px`;
-    document.body.appendChild(p);
-
-    const vx = (Math.random() - 0.5) * 95;
-    const vy = -(Math.random() * 60 + 15);
-    const start = performance.now();
-
-    function step(ts) {
-      const dt = (ts - start) / 1000;
-      if (dt > 0.48) {
-        if (p.parentNode) p.parentNode.removeChild(p);
-        return;
-      }
-      const nx = x + vx * dt;
-      const ny = y + vy * dt + 260 * dt * dt;
-      p.style.left = `${nx}px`;
-      p.style.top = `${ny}px`;
-      p.style.opacity = String(1 - dt / 0.48);
-      requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
-  }
 }
 
 function spawnFloatingOreDrop(x, y, dropTex, label) {
