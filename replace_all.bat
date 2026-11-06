@@ -1,6 +1,6 @@
 @echo off
 REM ==============================================================================
-REM SAWBYTE FULL OVERHAUL — ONE-CLICK REPLACE & BUILD SCRIPT (Windows 10 / 11)
+REM SAWBYTE v0.5.0 FULL OVERHAUL — ONE-CLICK REPLACE, ASSIMILATE & BUILD (Windows)
 REM ==============================================================================
 setlocal EnableDelayedExpansion
 
@@ -12,7 +12,7 @@ if "%TARGET_DIR%"=="" (
 )
 
 echo ========================================================================
-echo   SAWBYTE v0.4.0 OVERHAUL — REPLACING ^& BUILDING ALL ENGINE/TAURI FILES
+echo   SAWBYTE v0.5.0 — FULL RUST 26.3 UNIFICATION ^& TAURI LAUNCHER BUILD
 echo ========================================================================
 echo   Source Archive Dir : %SCRIPT_DIR%
 echo   Target Project Dir : %TARGET_DIR%
@@ -20,22 +20,32 @@ echo ========================================================================
 
 if /I not "%SCRIPT_DIR%"=="%TARGET_DIR%" (
     xcopy /E /I /Y "%SCRIPT_DIR%*" "%TARGET_DIR%\" >nul
-    echo [1/4] Copied all updated files to %TARGET_DIR%
+    echo [1/5] Copied all updated v0.5.0 files to %TARGET_DIR%
 )
 
 cd /d "%TARGET_DIR%"
 
+where python >nul 2>nul
+if %ERRORLEVEL% EQU 0 (
+    echo [2/5] Running Sawbyte v0.5.0 Full Rust Engine Assimilator...
+    python tools\assimilate_horizon_into_sawbyte.py
+)
+
 where cargo >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
-    echo [2/4] Compiling Rust Workspace (sawbyte.exe ^& Launcher Backend)...
+    echo [3/5] Compiling Rust v0.5.0 Workspace (sawbyte.exe, sawbyte-ctl.exe, sawbyte-prepare.exe)...
     cargo build --workspace --release
-    echo [3/4] Compiling Standalone Headless ^& Singleplayer Engine (sawbyte-play.exe)...
+    echo [4/5] Compiling Standalone Headless ^& Singleplayer Engine (sawbyte-play.exe)...
     cargo build --release --manifest-path native\Cargo.toml
 
     set "SAWBYTE_HOME=%USERPROFILE%\.sawbyte\bin"
     if not exist "!SAWBYTE_HOME!" mkdir "!SAWBYTE_HOME!"
+    for %%B in (sawbyte.exe sawbyte-ctl.exe sawbyte-prepare.exe) do (
+        if exist "target\release\%%B" (
+            copy /Y "target\release\%%B" "!SAWBYTE_HOME!\%%B" >nul
+        )
+    )
     if exist "target\release\sawbyte.exe" (
-        copy /Y "target\release\sawbyte.exe" "!SAWBYTE_HOME!\sawbyte.exe" >nul
         copy /Y "target\release\sawbyte.exe" "!SAWBYTE_HOME!\sawbyte-launcher.exe" >nul
     )
     if exist "native\target\release\sawbyte-play.exe" (
@@ -45,12 +55,12 @@ if %ERRORLEVEL% EQU 0 (
         copy /Y "block-profile.json" "%USERPROFILE%\.sawbyte\block-profile.json" >nul
         copy /Y "block-profile.json" "!SAWBYTE_HOME!\block-profile.json" >nul
     )
-    echo [4/4] Installed updated binaries to !SAWBYTE_HOME!
+    echo [5/5] Installed updated v0.5.0 binaries to !SAWBYTE_HOME!
 ) else (
     echo [!] cargo not found in PATH — source files replaced.
 )
 
 echo ========================================================================
-echo   Done! Run "sawbyte-launcher.exe" or "sawbyte.exe gui" to launch.
+echo   Sawbyte v0.5.0 Ready! Run "sawbyte-launcher.exe" or "sawbyte.exe gui".
 echo ========================================================================
 pause

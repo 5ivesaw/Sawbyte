@@ -1,12 +1,19 @@
 [workspace]
-members = ["crates/sawbyte-core", "crates/sawbyte-protocol", "crates/sawbyte-cli"]
+members = [
+    "crates/sawbyte-core",
+    "crates/sawbyte-protocol",
+    "crates/sawbyte-cli",
+    "crates/sawbyte-sim-core",
+    "crates/sawbyte-prepare",
+    "crates/sawbyte-ctl",
+]
 resolver = "2"
-exclude = ["native"]
+exclude = ["native", "launcher-tauri/src-tauri"]
 
 [workspace.package]
-version = "0.3.4"
+version = "0.5.0"
 edition = "2021"
-rust-version = "1.90"
+rust-version = "1.85"
 license = "MIT"
 repository = "https://github.com/5ivesaw/Sawbyte"
 
@@ -15,8 +22,21 @@ unsafe_code = "allow"
 
 [workspace.lints.clippy]
 all = "allow"
+too_many_arguments = "allow"
+type_complexity = "allow"
+needless_range_loop = "allow"
+large_enum_variant = "allow"
+
+[profile.dev]
+debug = "line-tables-only"
 
 [profile.release]
 lto = "thin"
 codegen-units = 1
 strip = "symbols"
+
+[profile.fast]
+inherits = "release"
+lto = false
+codegen-units = 16
+incremental = true

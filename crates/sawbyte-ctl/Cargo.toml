@@ -1,0 +1,15 @@
+[package]
+name = "sawbyte-ctl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "sawbyte-ctl"
+path = "src/main.rs"
+
+[dependencies]
+sawbyte-core = { path = "../sawbyte-core" }
+
+[lints]
+workspace = true

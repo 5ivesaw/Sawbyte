@@ -219,7 +219,7 @@
     <header class="h-14 glass-panel border-b border-white/10 px-6 flex items-center justify-between shrink-0">
       <div class="flex items-center gap-3">
         <span class="font-bold text-lg tracking-tight text-white">sawbyte</span>
-        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold mono">v0.4.0 · TAURI + RUST</span>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold mono">v0.5.0 · TAURI + RUST</span>
         <span class="text-slate-600">/</span>
         <span id="header-crumb" class="text-sm font-medium text-slate-300">Home & Launch</span>
       </div>
@@ -283,7 +283,7 @@
                   🎮 Graphical Client (Fabric 26.3 Mod)
                 </button>
                 <button id="pill-horizon" onclick="setEdition('horizon')" class="edition-pill px-4 py-2 rounded-xl text-xs font-bold border transition-all bg-slate-900/70 border-cyan-500/30 text-cyan-300 hover:border-cyan-400">
-                  🦀 Horizon 26.3 Full Rust Engine (wgpu / --offscreen)
+                  🦀 Sawbyte Full 26.3 Engine (sawbyte-client wgpu / --offscreen)
                 </button>
               </div>
             </div>
@@ -603,7 +603,7 @@
                 <option value="auto" selected>Auto (Mojang 26.3 Integrated Server if present, else Instant Rust Engine)</option>
                 <option value="rust-native">Pure-Rust Embedded 20 TPS Engine (~9 MB RAM, Instant Start)</option>
                 <option value="integrated-26.3">Full Mojang 26.3 Integrated Server (`server-26.3.jar` + `sawbyte-play`)</option>
-                <option value="horizon">Horizon 26.3 Full Rust Server-Thread Engine (`horizon-client` / `horizon-ctl`)</option>
+                <option value="horizon">Sawbyte 26.3 Full Rust Server-Thread Engine (`sawbyte-client` / `sawbyte-ctl`)</option>
               </select>
             </div>
 
@@ -843,7 +843,7 @@
         headless: { title: 'LAUNCH HEADLESS', pill: 'pill-headless' },
         potato: { title: 'LAUNCH POTATO 3D', pill: 'pill-potato' },
         bridge: { title: 'LAUNCH FABRIC 26.3', pill: 'pill-bridge' },
-        horizon: { title: 'LAUNCH HORIZON 26.3', pill: 'pill-horizon' }
+        horizon: { title: 'LAUNCH SAWBYTE 26.3 FULL', pill: 'pill-horizon' }
       };
       ['headless', 'potato', 'bridge', 'horizon'].forEach(k => {
         const el = document.getElementById(map[k].pill);
@@ -1261,7 +1261,7 @@
     window.addEventListener('DOMContentLoaded', async () => {
       renderInstancesGrid();
       renderHotbarAndEntities();
-      addLog('[Sawbyte v0.4.0] Tauri + Rust WebView Desktop Launcher initialized.', 'text-emerald-400');
+      addLog('[Sawbyte v0.5.0] Tauri + Rust WebView Desktop Launcher initialized.', 'text-emerald-400');
       addLog('[Engine] Fixed 256-chunk crash -> 4096-chunk LRU cache + Singleplayer World Engine active.', 'text-cyan-300');
       addLog('[Protocol] Full 1.20.5/1.21.4/26.3 DataComponent slot & compass decoder active.');
 

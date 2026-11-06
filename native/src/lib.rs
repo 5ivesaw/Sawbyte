@@ -3447,7 +3447,7 @@ impl Session {
                     "id": id,
                     "result": {
                         "protocolVersion": "2025-06-18",
-                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.3.4" },
+                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.5.0" },
                         "capabilities": { "tools": { "listChanged": false }, "resources": { "listChanged": false } }
                     }
                 })
@@ -4054,7 +4054,7 @@ fn run_live(args: &[String]) -> Result<()> {
                                     "id": id,
                                     "result": {
                                         "protocolVersion": "2025-06-18",
-                                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.4.0" },
+                                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.5.0" },
                                         "capabilities": {
                                             "tools": { "listChanged": false },
                                             "resources": { "listChanged": false, "subscribe": false },

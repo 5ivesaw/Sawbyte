@@ -62,7 +62,7 @@ pub fn built_in_version_profiles() -> Vec<VersionAdapterProfile> {
             bridge_supported: true,
         },
         VersionAdapterProfile {
-            profile_id: "horizon-26.3".into(),
+            profile_id: "sawbyte-full-26.3".into(),
             minecraft_version: "26.3".into(),
             protocol_version: 777,
             native_verified_parity: true,
@@ -101,7 +101,7 @@ impl RuntimeMode {
             "native" => Ok(Self::NativeStandalone),
             "bridge" => Ok(Self::FullClientBridge),
             "visualizer" | "native-visualizer" | "minimal" => Ok(Self::NativeMinimalVisualizer),
-            "horizon" | "horizon-rust" | "horizon-offscreen" | "horizon-wgpu" => Ok(Self::HorizonRustEngine),
+            "sawbyte-client" | "sawbyte-full" | "horizon" | "horizon-rust" | "horizon-offscreen" | "horizon-wgpu" => Ok(Self::HorizonRustEngine),
             _ => Err(format!(
                 "unknown runtime mode '{s}'; expected 'native', 'bridge', 'visualizer', or 'horizon'"
             )),
@@ -872,16 +872,11 @@ impl PersistentLauncher {
         blocks_profile_path: &Path,
         extra_args: &[String],
     ) -> Result<(Child, PathBuf), String> {
-        // Copy what we need out of the instance so the immutable borrow of `self.instances`
-        // ends here, before any `&mut self` call (spawn_fabric_process / spawn_horizon_process).
-        let (inst_mode, inst_server, rpc_bind) = {
-            let inst = self
-                .instances
-                .get(instance_name)
-                .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
-            (inst.mode, inst.server.clone(), inst.rpc_bind.clone())
-        };
-        if inst_mode == RuntimeMode::FullClientBridge {
+        let inst = self
+            .instances
+            .get(instance_name)
+            .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
+        if inst.mode == RuntimeMode::FullClientBridge {
             return self.spawn_fabric_process(
                 instance_name,
                 server_override,
@@ -889,7 +884,7 @@ impl PersistentLauncher {
                 extra_args,
             );
         }
-        if inst_mode == RuntimeMode::HorizonRustEngine {
+        if inst.mode == RuntimeMode::HorizonRustEngine {
             if let Ok(res) = self.spawn_horizon_process(
                 instance_name,
                 server_override,
@@ -902,7 +897,8 @@ impl PersistentLauncher {
         if !self.accounts.contains_key(account_name) {
             return Err(format!("account '{account_name}' not found"));
         }
-        let server = server_override.unwrap_or(&inst_server).to_owned();
+        let server = server_override.unwrap_or(&inst.server).to_owned();
+        let rpc_bind = inst.rpc_bind.clone();
 
         let bin = self.ensure_sawbyte_play_binary()?;
         let dir = self.instance_dir(instance_name);
@@ -994,8 +990,8 @@ impl PersistentLauncher {
         let err_file = log_file.try_clone().map_err(|e| e.to_string())?;
 
         let exe_ext = if cfg!(windows) { ".exe" } else { "" };
-        let ctl_name = format!("horizon-ctl{exe_ext}");
-        let client_name = format!("horizon-client{exe_ext}");
+        let ctl_name = format!("sawbyte-ctl{exe_ext}");
+        let client_name = format!("sawbyte-client{exe_ext}");
 
         let mut ctl_bin = None;
         for cand in [
@@ -1014,7 +1010,7 @@ impl PersistentLauncher {
             return Err(format!("horizon-ctl binary not found yet; run './replace_all.sh --with-horizon' to fetch and build horizon-rust/horizon ({client_name} + {ctl_name})"));
         };
 
-        let sock_path = dir.join("horizon-control.sock");
+        let sock_path = dir.join("sawbyte-control.sock");
         let mut cmd = Command::new(&bin);
         cmd.arg("--socket").arg(&sock_path).arg("launch");
         if target == "singleplayer" || target.starts_with("singleplayer:") {
