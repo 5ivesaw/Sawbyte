@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2022]
+        os: [ubuntu-24.04, windows-2022, macos-14]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
@@ -87,14 +87,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install launcher deps
+      - name: Build desktop launcher
         shell: bash
         run: |
           cd launcher
           pnpm install --no-frozen-lockfile
           pnpm run build:renderer
           pnpm run build
-
       - name: Package preview
         shell: bash
         run: |
