@@ -872,11 +872,16 @@ impl PersistentLauncher {
         blocks_profile_path: &Path,
         extra_args: &[String],
     ) -> Result<(Child, PathBuf), String> {
-        let inst = self
-            .instances
-            .get(instance_name)
-            .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
-        if inst.mode == RuntimeMode::FullClientBridge {
+        // Copy what we need out of the instance so the immutable borrow of `self.instances`
+        // ends here, before any `&mut self` call (spawn_fabric_process / spawn_horizon_process).
+        let (inst_mode, inst_server, rpc_bind) = {
+            let inst = self
+                .instances
+                .get(instance_name)
+                .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
+            (inst.mode, inst.server.clone(), inst.rpc_bind.clone())
+        };
+        if inst_mode == RuntimeMode::FullClientBridge {
             return self.spawn_fabric_process(
                 instance_name,
                 server_override,
@@ -884,7 +889,7 @@ impl PersistentLauncher {
                 extra_args,
             );
         }
-        if inst.mode == RuntimeMode::HorizonRustEngine {
+        if inst_mode == RuntimeMode::HorizonRustEngine {
             if let Ok(res) = self.spawn_horizon_process(
                 instance_name,
                 server_override,
@@ -897,8 +902,7 @@ impl PersistentLauncher {
         if !self.accounts.contains_key(account_name) {
             return Err(format!("account '{account_name}' not found"));
         }
-        let server = server_override.unwrap_or(&inst.server).to_owned();
-        let rpc_bind = inst.rpc_bind.clone();
+        let server = server_override.unwrap_or(&inst_server).to_owned();
 
         let bin = self.ensure_sawbyte_play_binary()?;
         let dir = self.instance_dir(instance_name);
