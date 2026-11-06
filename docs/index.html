@@ -12,11 +12,24 @@
 <body class="intro-cursor-locked">
 
   <!-- ==========================================================================
-       MINECRAFT 26.3 JAVA EDITION JOINING SERVER INTRO OVERLAY
+       1. REAL MINECRAFT 26.3 JAVA EDITION JOINING SERVER INTRO OVERLAY
+       Uses Official 6-Face 3D Panorama Skybox + Official Title & Widget Sprites
        ========================================================================== -->
   <div id="mc-intro-overlay" aria-label="Minecraft 26.3 Joining Server Intro">
-    <!-- Blurred Autumn Forest Panorama Canvas (Matches 26.3 Title & Loading Screens) -->
+    <!-- Fallback Panorama Canvas -->
     <canvas id="mc-panorama-canvas"></canvas>
+
+    <!-- Official 6-Face 3D Rotating Panorama Skybox Cube -->
+    <div class="mc-panorama-viewport" id="mc-panorama-viewport">
+      <div class="mc-panorama-cube">
+        <div class="mc-pano-face mc-pano-0" data-pano-face="0"></div>
+        <div class="mc-pano-face mc-pano-1" data-pano-face="1"></div>
+        <div class="mc-pano-face mc-pano-2" data-pano-face="2"></div>
+        <div class="mc-pano-face mc-pano-3" data-pano-face="3"></div>
+        <div class="mc-pano-face mc-pano-4" data-pano-face="4"></div>
+        <div class="mc-pano-face mc-pano-5" data-pano-face="5"></div>
+      </div>
+    </div>
 
     <!-- Animated Virtual Mouse Cursor (Only cursor visible during intro) -->
     <div id="mc-virtual-cursor">
@@ -25,11 +38,19 @@
       </svg>
     </div>
 
-    <!-- SCREEN 1: Minecraft 26.3 Title Screen -->
+    <!-- SCREEN 1: Real Minecraft 26.3 Title Screen -->
     <div class="mc-intro-screen active" id="intro-screen-title">
       <div class="mc-title-logo-wrap">
-        <div class="mc-logo-main">MINECRAFT</div>
-        <div class="mc-logo-sub">JAVA EDITION</div>
+        <img
+          class="mc-official-title-img"
+          data-mc-tex="gui/title/minecraft.png"
+          alt="MINECRAFT"
+        >
+        <img
+          class="mc-official-edition-img"
+          data-mc-tex="gui/title/edition.png"
+          alt="JAVA EDITION"
+        >
         <div class="mc-splash-text">&lt;3 Max &amp; 99 &amp; Ducky!</div>
       </div>
 
@@ -38,26 +59,26 @@
         <div class="mc-gui-btn" id="mc-btn-multiplayer">Multiplayer</div>
         <div class="mc-gui-btn" id="mc-btn-realms">
           <span>Minecraft Realms</span>
-          <img class="mc-png mc-png-sm" data-mc-tex="item/ender_pearl.png" alt="" style="position: absolute; right: 10px;">
+          <img class="mc-png mc-png-sm" data-mc-tex="gui/sprites/icon/trial_available.png" data-mc-fallback="item/ender_pearl.png" alt="" style="position: absolute; right: 10px;">
         </div>
       </div>
 
-      <div class="mc-menu-small-icons">
-        <div class="mc-gui-icon-btn"><img class="mc-png mc-png-sm" data-mc-tex="item/spyglass.png" data-mc-fallback="item/compass_16.png" alt=""></div>
-        <div class="mc-gui-icon-btn"><img class="mc-png mc-png-sm" data-mc-tex="item/writable_book.png" alt=""></div>
-        <div class="mc-gui-icon-btn"><img class="mc-png mc-png-sm" data-mc-tex="item/armor_stand.png" alt=""></div>
-      </div>
-
-      <div class="mc-menu-row">
+      <div class="mc-menu-row" style="align-items: center;">
+        <div class="mc-gui-icon-btn">
+          <img class="mc-png mc-png-sm" data-mc-tex="gui/sprites/icon/language.png" data-mc-fallback="item/writable_book.png" alt="Language">
+        </div>
         <div class="mc-gui-btn" style="flex: 1;">Options...</div>
         <div class="mc-gui-btn" style="flex: 1;">Quit Game</div>
+        <div class="mc-gui-icon-btn">
+          <img class="mc-png mc-png-sm" data-mc-tex="gui/sprites/icon/accessibility.png" data-mc-fallback="item/armor_stand.png" alt="Accessibility">
+        </div>
       </div>
 
       <div class="mc-title-footer-left">Minecraft 26.3</div>
       <div class="mc-title-footer-right">Copyright Mojang AB. Do not distribute!</div>
     </div>
 
-    <!-- SCREEN 2 & 4: Play Multiplayer Screen -->
+    <!-- SCREEN 2 & 4: Play Multiplayer Screen (Real Tiled Dirt Background) -->
     <div class="mc-intro-screen" id="intro-screen-multiplayer">
       <div class="mc-multiplayer-window">
         <div class="mc-mp-header">Play Multiplayer</div>
@@ -70,24 +91,18 @@
           <!-- Dynamically revealed after Add Server completes -->
           <div class="mc-server-entry" id="mc-server-row-sawbyte" style="display: none;">
             <div class="mc-server-icon-box">
-              <img class="mc-png mc-png-lg" data-mc-tex="item/diamond_pickaxe.png" alt="Sawbyte">
+              <img class="mc-png mc-png-xl" data-gh-repo-asset="assets/sawbyte.png" data-mc-tex="item/diamond_pickaxe.png" alt="Sawbyte">
             </div>
             <div class="mc-server-details">
               <div class="mc-server-top-line">
-                <span class="mc-f" style="font-size: 14px;">Sawbyte</span>
+                <span class="mc-f" style="font-size: 15px;">Sawbyte</span>
                 <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px;">
                   <span class="mc-7">26/26</span>
-                  <span class="mc-ping-bars">
-                    <span style="height: 4px;"></span>
-                    <span style="height: 6px;"></span>
-                    <span style="height: 9px;"></span>
-                    <span style="height: 11px;"></span>
-                    <span style="height: 14px;"></span>
-                  </span>
+                  <img class="mc-png mc-png-sm" data-mc-tex="gui/sprites/server_list/ping_5.png" data-mc-fallback="item/emerald.png" alt="Ping">
                 </span>
               </div>
-              <div class="mc-a" style="font-size: 12.5px;">https://5ivesaw.github.io/Sawbyte</div>
-              <div class="mc-7" style="font-size: 12px;">Minecraft 26.3 • Rust Client &amp; Bot Engine</div>
+              <div class="mc-a" style="font-size: 13px;">https://5ivesaw.github.io/Sawbyte</div>
+              <div class="mc-7" style="font-size: 12.5px;">Minecraft 26.3 • Rust Client &amp; Bot Engine</div>
             </div>
           </div>
         </div>
@@ -110,7 +125,7 @@
 
     <!-- SCREEN 3: Edit Server Info (Add Server) -->
     <div class="mc-intro-screen" id="intro-screen-add-server">
-      <div class="mc-multiplayer-window" style="justify-content: center; gap: 22px;">
+      <div class="mc-multiplayer-window" style="justify-content: center; gap: 20px;">
         <div class="mc-mp-header">Edit Server Info</div>
 
         <div class="mc-add-server-box">
@@ -125,13 +140,13 @@
           </div>
 
           <div class="mc-gui-btn" style="margin-top: 6px;">Server Resource Packs: Prompt</div>
-          <div class="mc-gui-btn" id="mc-btn-add-done" style="margin-top: 10px;">Done</div>
+          <div class="mc-gui-btn" id="mc-btn-add-done" style="margin-top: 8px;">Done</div>
           <div class="mc-gui-btn">Cancel</div>
         </div>
       </div>
     </div>
 
-    <!-- SCREEN 5: Loading Terrain (Matches image_80219e.png) -->
+    <!-- SCREEN 5: Loading Terrain -->
     <div class="mc-intro-screen" id="intro-screen-loading">
       <div class="mc-loading-terrain-wrap">
         <div class="mc-loading-terrain-label" id="mc-loading-stage-text">Loading terrain...</div>
@@ -149,22 +164,50 @@
     </div>
   </div>
 
-  <!-- Background Void & Floating Pixel Particle Canvas -->
-  <canvas id="bg-canvas"></canvas>
+  <!-- ==========================================================================
+       2. CUSTOM ROTATING WEAPON & TOOL CURSOR + 1.9+ COOLDOWN INDICATOR BAR
+       Changes randomly every 15 seconds + plays per-item sounds & swing animation
+       ========================================================================== -->
+  <div id="mc-weapon-cursor" aria-hidden="true">
+    <div class="mc-cursor-crosshair"></div>
+    <div class="mc-cursor-item-wrap" id="mc-cursor-item-wrap">
+      <img id="mc-cursor-item-img" class="mc-cursor-item-img" alt="">
+    </div>
+    <div class="mc-cursor-cooldown-wrap" id="mc-cursor-cooldown-wrap">
+      <div class="mc-cursor-cooldown-fill" id="mc-cursor-cooldown-fill"></div>
+    </div>
+  </div>
 
-  <!-- Minecraft Advancement Toast Notification Container -->
-  <div id="advancement-toast-stack" class="advancement-toast-stack" aria-live="polite"></div>
+  <!-- Equipped Weapon/Tool & Mined Blocks HUD Dock (Bottom-Left) -->
+  <div class="tool-hud-dock" id="tool-hud-dock">
+    <div
+      class="tool-hud-slot"
+      id="tool-swap-btn"
+      data-tooltip-title="§bEquipped Cursor Tool (Rotates Every 15s)"
+      data-tooltip-lore="§7Click any block on the site to mine it!|§aBlocks break with cracks and respawn after 2s|§eClick this slot to roll a random weapon/tool now"
+    >
+      <img id="hud-tool-img" class="mc-png mc-png-lg" data-mc-tex="item/netherite_pickaxe.png" alt="Equipped Tool">
+      <div class="tool-cooldown-overlay" id="hud-tool-cd-overlay"></div>
+    </div>
 
-  <!-- Minecraft Purple-Bordered Floating Lore Tooltip -->
-  <div id="mc-floating-tooltip" role="tooltip"></div>
+    <div style="display: flex; flex-direction: column; gap: 2px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="mc-b" style="font-size: 12px;" id="hud-tool-name">Netherite Pickaxe</span>
+        <span class="mc-8" style="font-size: 11px;" id="hud-tool-timer">15s</span>
+      </div>
+      <div class="mc-7" style="font-size: 11px;">
+        Cooldown: <span class="mc-e" id="hud-tool-cd-text">0.83s</span> • Mined: <span class="mc-a" id="hud-mined-count">0</span>
+      </div>
+    </div>
+  </div>
 
-  <!-- Persistent Minecraft Jukebox Dock (Starts with Lena Raine: Pigstep at Low Volume) -->
+  <!-- Persistent Jukebox Dock (Bottom-Right, Starts with Pigstep at Low Volume) -->
   <div class="jukebox-dock" id="jukebox-dock">
     <div
       class="jukebox-disc-slot sfx-trigger"
       id="jukebox-play-btn"
-      data-tooltip-title="§6Music Disc (Lena Raine: Pigstep)"
-      data-tooltip-lore="§7Click to Play or Pause Jukebox|§8Streamed from GitHub Minecraft Assets|§bBackground Volume: Low (18%)"
+      data-tooltip-title="§6Background Jukebox (Lena Raine: Pigstep)"
+      data-tooltip-lore="§7Click to Play or Pause Background Music|§8Pauses automatically while disc_maker is playing"
     >
       <img
         id="jukebox-disc-img"
@@ -180,8 +223,8 @@
     </div>
 
     <div class="jukebox-controls">
-      <button type="button" class="jukebox-mini-btn" id="jukebox-toggle-btn" title="Play or Pause Music">PAUSE</button>
-      <button type="button" class="jukebox-mini-btn" id="jukebox-next-btn" title="Switch Music Disc">NEXT</button>
+      <button type="button" class="jukebox-mini-btn" id="jukebox-toggle-btn">PAUSE</button>
+      <button type="button" class="jukebox-mini-btn" id="jukebox-next-btn">NEXT</button>
       <input
         type="range"
         id="jukebox-volume"
@@ -193,6 +236,13 @@
       >
     </div>
   </div>
+
+  <!-- Background Particle Canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- Advancement Toast Stack & Floating Lore Tooltip -->
+  <div id="advancement-toast-stack" class="advancement-toast-stack" aria-live="polite"></div>
+  <div id="mc-floating-tooltip" role="tooltip"></div>
 
   <!-- Top Hotbar Navigation -->
   <nav class="navbar">
@@ -222,6 +272,10 @@
           <img class="mc-png mc-png-sm" data-mc-tex="block/grass_block_side.png" alt="">
           <span>Home</span>
         </a>
+        <a href="#disc-maker" class="nav-link sfx-trigger">
+          <img class="mc-png mc-png-sm disc-maker-cycling-icon" data-mc-tex="item/music_disc_pigstep.png" alt="">
+          <span class="mc-d">disc_maker</span>
+        </a>
         <a href="#previews" class="nav-link sfx-trigger">
           <img class="mc-png mc-png-sm" data-mc-tex="item/painting.png" alt="">
           <span>Previews</span>
@@ -238,10 +292,6 @@
           <img class="mc-png mc-png-sm" data-mc-tex="item/emerald.png" alt="">
           <span>Benchmarks</span>
         </a>
-        <a href="#agents" class="nav-link sfx-trigger">
-          <img class="mc-png mc-png-sm" data-mc-tex="item/redstone.png" alt="">
-          <span>AI Setup</span>
-        </a>
         <a href="#memoriam" class="nav-link sfx-trigger">
           <img class="mc-png mc-png-sm" data-mc-tex="item/golden_helmet.png" alt="">
           <span class="mc-6">Tribute</span>
@@ -250,17 +300,29 @@
           <img class="mc-png mc-png-sm" data-mc-tex="item/writable_book.png" alt="">
           <span>GitHub (<span id="nav-star-count">Live</span>)</span>
         </a>
-        <button id="replay-intro-btn" class="sfx-btn" type="button" title="Replay the full Minecraft joining server intro">
+        <button id="replay-intro-btn" class="sfx-btn" type="button">
           <img class="mc-png mc-png-sm" data-mc-tex="item/ender_pearl.png" alt="">
           <span>Intro</span>
         </button>
-        <button id="sfx-toggle-btn" class="sfx-btn" type="button" title="Toggle Minecraft Sound Effects">
+        <button id="sfx-toggle-btn" class="sfx-btn" type="button">
           <img class="mc-png mc-png-sm" data-mc-tex="block/note_block.png" alt="">
           <span id="sfx-toggle-label">SFX: ON</span>
         </button>
       </div>
     </div>
   </nav>
+
+  <!-- ==========================================================================
+       MINEABLE BLOCK STRATUM 1: Overworld Surface & Coal/Iron Vein
+       (Click any block to mine it with cracks; respawns after 2 seconds!)
+       ========================================================================== -->
+  <div class="mc-block-stratum">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
+      <span class="mc-a">Overworld Surface Layer (Click any block or ore to mine it • Respawns in 2s)</span>
+      <span class="mc-7">Tool affinity &amp; 1.9+ attack cooldown active</span>
+    </div>
+    <div class="mc-block-wall-grid" data-stratum="surface"></div>
+  </div>
 
   <!-- Hero Section -->
   <header class="hero reveal-on-scroll" id="overview">
@@ -288,15 +350,15 @@
         <span>Download (<span class="release-tag-badge">Latest</span>)</span>
       </a>
 
+      <a href="#disc-maker" class="btn btn-gold enchanted-glint sfx-trigger">
+        <img class="mc-png disc-maker-cycling-icon" data-mc-tex="item/music_disc_pigstep.png" alt="">
+        <span>Open disc_maker Studio</span>
+      </a>
+
       <a href="#benchmarks" class="btn btn-green sfx-trigger">
         <img class="mc-png" data-mc-tex="item/emerald.png" alt="">
         <span>Test Results (28/28)</span>
       </a>
-
-      <button type="button" class="btn btn-gold sfx-trigger" id="hero-pigstep-btn">
-        <img class="mc-png" data-mc-tex="item/music_disc_pigstep.png" alt="">
-        <span id="hero-pigstep-label">Play Pigstep</span>
-      </button>
 
       <a href="#agents" class="btn btn-secondary sfx-trigger">
         <img class="mc-png" data-mc-tex="block/command_block_front.png" alt="">
@@ -385,7 +447,161 @@
     </div>
   </div>
 
-  <!-- Clean Screenshot Placeholders Section (Replaces Old Launcher Image & Scuffed Preview) -->
+  <!-- ==========================================================================
+       MINEABLE BLOCK STRATUM 2: Deep Cavern Gold, Redstone & Emerald Ore Vein
+       ========================================================================== -->
+  <div class="mc-block-stratum">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
+      <span class="mc-6">Cavern Ore Stratum (Mine Gold, Redstone, Lapis &amp; Emerald Ores • 2s Respawn)</span>
+      <span class="mc-7">Pickaxes mine stone &amp; ores 3x faster</span>
+    </div>
+    <div class="mc-block-wall-grid" data-stratum="cavern"></div>
+  </div>
+
+  <!-- ==========================================================================
+       4. disc_maker - PROCEDURAL HARMONIC MINECRAFT MUSIC COMPOSER
+       Disc icon continuously cycles through all 19 official Minecraft discs;
+       assembles random Minecraft note block & game sounds constrained by scale,
+       chord progression, Euclidean groove & swing so it always sounds musical!
+       ========================================================================== -->
+  <section class="container reveal-on-scroll" id="disc-maker">
+    <div class="section-header">
+      <div class="badge enchanted-glint">
+        <img class="mc-png mc-png-sm disc-maker-cycling-icon" data-mc-tex="item/music_disc_otherside.png" alt="disc_maker">
+        <span class="mc-d">Procedural Minecraft Sound Composer</span>
+      </div>
+      <h2 class="section-title">disc_maker</h2>
+      <p class="section-desc">
+        Randomly assembles official Minecraft note blocks and game sounds using harmonic scale locking,
+        4-bar chord progressions, pocket swing, and Euclidean drum grooves so every random track sounds catchy and musical.
+      </p>
+    </div>
+
+    <div class="disc-maker-studio">
+      <div class="disc-maker-top-bar">
+        <div class="disc-turntable-wrap">
+          <div
+            class="disc-turntable-slot"
+            id="dm-turntable-btn"
+            data-tooltip-title="§ddisc_maker Turntable"
+            data-tooltip-lore="§7Icon continuously morphs through all 19|§7official Minecraft Music Discs!|§eClick to Start or Stop the composer"
+          >
+            <img
+              id="dm-main-disc-icon"
+              class="disc-maker-changing-icon disc-maker-cycling-icon"
+              data-mc-tex="item/music_disc_pigstep.png"
+              alt="disc_maker disc"
+            >
+          </div>
+          <div>
+            <div class="mc-f" style="font-size: 17px; display: flex; align-items: center; gap: 8px;">
+              <span>disc_maker</span>
+              <span class="status-tag" id="dm-status-badge">READY</span>
+            </div>
+            <div class="mc-b" style="font-size: 13px; margin-top: 3px;" id="dm-active-disc-label">
+              Disc Sprite: music_disc_pigstep • Key: F# Phrygian Groove
+            </div>
+            <div class="mc-7" style="font-size: 12px;" id="dm-chord-readout">
+              Bar 1/4 • Active Chord: i (Root) • Step 1/16
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-green" id="dm-play-btn">
+            <img class="mc-png" data-mc-tex="block/note_block.png" alt="">
+            <span id="dm-play-label">START COMPOSER</span>
+          </button>
+          <button type="button" class="btn btn-gold enchanted-glint" id="dm-randomize-btn">
+            <img class="mc-png disc-maker-cycling-icon" data-mc-tex="item/music_disc_relic.png" alt="">
+            <span>RANDOMIZE TRACK</span>
+          </button>
+          <button type="button" class="btn btn-secondary" id="dm-mutate-btn">
+            <img class="mc-png" data-mc-tex="item/redstone.png" alt="">
+            <span id="dm-mutate-label">Auto-Evolve: ON</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Musical Parameters Grid (Guarantees Random Always Sounds Good) -->
+      <div class="disc-maker-params-grid">
+        <div class="dm-param-box">
+          <div class="mc-b" style="font-size: 12px;">Musical Scale &amp; Vibe</div>
+          <select id="dm-scale-select" class="dm-select">
+            <option value="phrygian">Pigstep Nether Phrygian</option>
+            <option value="dorian">Aria Math Dorian Groove</option>
+            <option value="pentatonic">Otherside Minor Funk</option>
+            <option value="lydian">C418 Nostalgic Lydian</option>
+            <option value="hirajoshi">Cherry Grove Hirajoshi</option>
+          </select>
+        </div>
+
+        <div class="dm-param-box">
+          <div class="mc-a" style="font-size: 12px;">Root Key &amp; Tuning</div>
+          <select id="dm-root-select" class="dm-select">
+            <option value="0">F# (Native Note Block)</option>
+            <option value="1">G Minor / Major</option>
+            <option value="3">A Minor / Major</option>
+            <option value="6">C Minor / Major</option>
+            <option value="8">D Minor / Major</option>
+            <option value="-2">E Minor / Major</option>
+          </select>
+        </div>
+
+        <div class="dm-param-box">
+          <div class="mc-d" style="font-size: 12px;">4-Bar Chord Progression</div>
+          <select id="dm-prog-select" class="dm-select">
+            <option value="0">i - VI - III - VII (Anthem)</option>
+            <option value="1">i - bII - i - vii (Bastion)</option>
+            <option value="2">i - iv - VII - III (Groove)</option>
+            <option value="3">I - V - vi - IV (Bright)</option>
+          </select>
+        </div>
+
+        <div class="dm-param-box">
+          <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span class="mc-e">Tempo (BPM)</span>
+            <span class="mc-f" id="dm-bpm-val">116 BPM</span>
+          </div>
+          <input type="range" id="dm-bpm-slider" class="dm-slider" min="84" max="148" value="116">
+        </div>
+
+        <div class="dm-param-box">
+          <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span class="mc-6">Pocket Swing</span>
+            <span class="mc-f" id="dm-swing-val">22%</span>
+          </div>
+          <input type="range" id="dm-swing-slider" class="dm-slider" min="0" max="42" value="22">
+        </div>
+
+        <div class="dm-param-box">
+          <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span class="mc-c">Note Density</span>
+            <span class="mc-f" id="dm-density-val">68%</span>
+          </div>
+          <input type="range" id="dm-density-slider" class="dm-slider" min="30" max="95" value="68">
+        </div>
+      </div>
+
+      <!-- 16-Step x 6-Track Interactive Sequencer Grid -->
+      <div class="sequencer-scroll-wrap">
+        <div id="dm-sequencer-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       MINEABLE BLOCK STRATUM 3: Deepslate Diamond & Amethyst Geode Layer
+       ========================================================================== -->
+  <div class="mc-block-stratum">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
+      <span class="mc-b">Deepslate Diamond &amp; Amethyst Layer (Click blocks to fracture &amp; harvest diamonds)</span>
+      <span class="mc-7">Respawns automatically after 2.0s</span>
+    </div>
+    <div class="mc-block-wall-grid" data-stratum="deepslate"></div>
+  </div>
+
+  <!-- Clean Screenshot Placeholders Section -->
   <section class="container reveal-on-scroll" id="previews">
     <div class="section-header">
       <div class="badge">
@@ -400,7 +616,6 @@
     </div>
 
     <div class="screenshots-grid">
-      <!-- Placeholder 1: Desktop Launcher -->
       <div class="screenshot-slot-card">
         <div class="screenshot-slot-header">
           <span style="display: inline-flex; align-items: center; gap: 8px;">
@@ -427,7 +642,6 @@
         </div>
       </div>
 
-      <!-- Placeholder 2: Bot Session & Console -->
       <div class="screenshot-slot-card">
         <div class="screenshot-slot-header">
           <span style="display: inline-flex; align-items: center; gap: 8px;">
@@ -454,7 +668,6 @@
         </div>
       </div>
 
-      <!-- Placeholder 3: Multi-Server Manager -->
       <div class="screenshot-slot-card">
         <div class="screenshot-slot-header">
           <span style="display: inline-flex; align-items: center; gap: 8px;">
@@ -510,7 +723,6 @@
     </div>
 
     <div class="downloads-grid">
-      <!-- Linux Card -->
       <div class="download-card">
         <div class="platform-header">
           <div class="item-slot">
@@ -549,7 +761,6 @@
         </div>
       </div>
 
-      <!-- Windows Card -->
       <div class="download-card">
         <div class="platform-header">
           <div class="item-slot">
@@ -588,7 +799,6 @@
         </div>
       </div>
 
-      <!-- macOS Card -->
       <div class="download-card">
         <div class="platform-header">
           <div class="item-slot">
@@ -684,7 +894,7 @@
       </div>
       <h2 class="section-title">Interactive Console</h2>
       <p class="section-desc">
-        Test out Sawbyte bot commands, play Minecraft audio, or preview <span class="mc-e">§0 to §f</span> chat color codes.
+        Test out Sawbyte bot commands, trigger <code class="mc-d">disc_maker</code> beats, or preview <span class="mc-e">§0 to §f</span> chat color codes.
       </p>
     </div>
 
@@ -717,9 +927,9 @@
         <span class="mc-8" style="font-size: 11px;">COMMANDS:</span>
         <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('help')">help</button>
         <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('inspect.status')">inspect.status</button>
-        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('inspect.milestones')">inspect.milestones</button>
+        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('disc_maker')">disc_maker</button>
+        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('tool.swap')">tool.swap</button>
         <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('sound.pigstep')">sound.pigstep</button>
-        <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('sound.pig')">sound.pig</button>
         <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('technoblade')">technoblade</button>
         <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('colors')">colors</button>
         <button type="button" class="term-quick-btn" onclick="runTerminalQuickCommand('clear')">clear</button>
@@ -732,7 +942,7 @@
 
       <div class="terminal-input-bar">
         <span class="terminal-prompt">&gt;</span>
-        <input type="text" id="term-input" class="terminal-input" placeholder="Type a command (e.g. help, inspect.status, technoblade)..." autocomplete="off">
+        <input type="text" id="term-input" class="terminal-input" placeholder="Type a command (e.g. help, disc_maker, tool.swap, inspect.status)..." autocomplete="off">
       </div>
     </div>
   </section>
@@ -773,7 +983,6 @@
       </button>
     </div>
 
-    <!-- MineRL -->
     <div id="bench-minerl" class="bench-content-section">
       <div class="bench-card">
         <div class="bench-header">
@@ -812,7 +1021,6 @@
       </div>
     </div>
 
-    <!-- MineDojo -->
     <div id="bench-minedojo" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
@@ -846,7 +1054,6 @@
       </div>
     </div>
 
-    <!-- Voyager -->
     <div id="bench-voyager" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
@@ -875,7 +1082,6 @@
       </div>
     </div>
 
-    <!-- Multi-Server -->
     <div id="bench-universal" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
@@ -907,7 +1113,6 @@
       </div>
     </div>
 
-    <!-- Systems Efficiency -->
     <div id="bench-systems" class="bench-content-section" style="display: none;">
       <div class="bench-card">
         <div class="bench-header">
@@ -995,6 +1200,17 @@
     </div>
   </section>
 
+  <!-- ==========================================================================
+       MINEABLE BLOCK STRATUM 4: Nether Obsidian, Gilded Blackstone & Ancient Debris
+       ========================================================================== -->
+  <div class="mc-block-stratum">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
+      <span class="mc-c">Nether Bastion &amp; Ancient Debris Layer (Break blocks • Respawns in 2s)</span>
+      <span class="mc-7">Blood for the Blood God</span>
+    </div>
+    <div class="mc-block-wall-grid" data-stratum="nether"></div>
+  </div>
+
   <!-- ============================================================================
        PERSONAL NOTE FROM THE CREATOR: TECHNOBLADE (1999 to 2022)
        ============================================================================ -->
@@ -1026,7 +1242,6 @@
       </div>
 
       <div class="tribute-grid">
-        <!-- Cutout 1: Iconic Crown Pig -->
         <div
           class="tribute-figure-card"
           onclick="triggerTechnoSound('pig')"
@@ -1050,7 +1265,6 @@
           </p>
         </div>
 
-        <!-- Cutout 2: Dual Axes Technoblade -->
         <div
           class="tribute-figure-card"
           onclick="triggerTechnoSound('totem')"
@@ -1075,7 +1289,6 @@
         </div>
       </div>
 
-      <!-- Technoblade Minecraft Soundboard (Streamed from Public GitHub) -->
       <div class="techno-soundboard">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
           <div class="mc-6" style="font-size: 13.5px; display: flex; align-items: center; gap: 8px;">

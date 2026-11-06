@@ -176,7 +176,7 @@ Sawbyte/
 
 ## <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/paper.png" width="22" height="22" alt="" /> License
 
-MIT. See [LICENSE](https://github.com/5ivesaw/Sawbyte/blob/main/LICENSE).
+MIT. See [LICENSE](LICENSE).
 
 *Sawbyte is an independent open-source project built for fun. Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.*
 
