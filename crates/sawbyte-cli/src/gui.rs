@@ -1255,7 +1255,7 @@ fn run_python_native_canvas_window(state: &mut AppState) -> Result<(), Box<dyn s
 root = tk.Tk()
 root.title("Sawbyte")
 root.geometry("{w}x{h}")
-root.configure(bg="#16181C")
+root.configure(bg=0x16181C)
 root.resizable(False, False)
 img = tk.PhotoImage(file=r"{ppm}")
 lbl = tk.Label(root, image=img, bd=0, highlightthickness=0)
