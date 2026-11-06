@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           cd launcher
-          pnpm install --no-frozen-lockfile
+          pnpm install --no-frozen-lockfile --ignore-scripts=false
           pnpm run build:renderer
           pnpm run build
       - name: Package preview
