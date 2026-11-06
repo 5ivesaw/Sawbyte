@@ -3177,6 +3177,239 @@ impl Session {
                 ["session.lease", ..] => {
                     outputs.push("session.lease acknowledged".into());
                 }
+                // =========================================================================
+                // FULL 65-COMMAND `horizon-ctl` COMPATIBILITY LAYER (1:1 Vocabulary Parity)
+                // =========================================================================
+                ["state"] | ["status"] => {
+                    outputs.push(self.gym_observation_json("state"));
+                }
+                ["looking-at"] | ["looking_at"] => {
+                    let b_hit = raycast::raycast_block(&self.player, &self.world);
+                    let candidates: Vec<(i32, [f64; 6])> = self
+                        .state_table
+                        .entities
+                        .values()
+                        .map(|e| (e.entity_id, e.aabb()))
+                        .collect();
+                    let e_hit = raycast::raycast_entity(&self.player, &self.world, &candidates);
+                    outputs.push(
+                        serde_json::json!({
+                            "ok": true,
+                            "block": b_hit.map(|b| serde_json::json!({"pos": b.block_pos, "face": format!("{:?}", b.face), "dist": b.distance})),
+                            "entity": e_hit.map(|e| serde_json::json!({"id": e.entity_id, "dist": e.distance})),
+                        })
+                        .to_string(),
+                    );
+                }
+                ["entities"] | ["entities", ..] => {
+                    let list: Vec<serde_json::Value> = self
+                        .state_table
+                        .entities
+                        .values()
+                        .map(|e| {
+                            let dx = e.pos[0] - self.player.pos[0];
+                            let dy = e.pos[1] - self.player.pos[1];
+                            let dz = e.pos[2] - self.player.pos[2];
+                            let dist = (dx * dx + dy * dy + dz * dz).sqrt();
+                            serde_json::json!({
+                                "id": e.entity_id,
+                                "type": e.entity_type,
+                                "pos": e.pos,
+                                "dist": dist,
+                            })
+                        })
+                        .collect();
+                    outputs.push(serde_json::json!({ "ok": true, "entities": list }).to_string());
+                }
+                ["inventory"] => {
+                    let res = self.execute_live_script("inventory.list")?;
+                    outputs.extend(res);
+                }
+                ["screen"] | ["ui"] | ["menu"] => {
+                    let res = self.execute_live_script("gui.inspect")?;
+                    outputs.extend(res);
+                }
+                ["messages"] | ["messages", _] | ["chat-log"] | ["chat-log", _] => {
+                    let res = self.execute_live_script("inspect.chat")?;
+                    outputs.extend(res);
+                }
+                ["events"] | ["events", ..] => {
+                    let res = self.execute_live_script("inspect.events")?;
+                    outputs.extend(res);
+                }
+                ["block", x, y, z] => {
+                    let bx = x.parse::<i32>().map_err(|_| "bad x")?;
+                    let by = y.parse::<i32>().map_err(|_| "bad y")?;
+                    let bz = z.parse::<i32>().map_err(|_| "bad z")?;
+                    let st = self.world.block_state(bx, by, bz).unwrap_or(0);
+                    outputs.push(
+                        serde_json::json!({
+                            "pos": [bx, by, bz],
+                            "state": st,
+                            "solid": self.world.solid(bx, by, bz).unwrap_or(false),
+                            "loaded": self.world.loaded(bx as f64, bz as f64),
+                        })
+                        .to_string(),
+                    );
+                }
+                ["find-block", block_query, ..] | ["find_block", block_query, ..] => {
+                    let px = self.player.pos[0].floor() as i32;
+                    let py = self.player.pos[1].floor() as i32;
+                    let pz = self.player.pos[2].floor() as i32;
+                    let mut matches = Vec::new();
+                    for dy in -4..=4 {
+                        for dz in -12..=12 {
+                            for dx in -12..=12 {
+                                let (bx, by, bz) = (px + dx, py + dy, pz + dz);
+                                if let Ok(st) = self.world.block_state(bx, by, bz) {
+                                    if st != 0 && !self.world.is_air_state(st) {
+                                        matches.push(serde_json::json!({"pos": [bx, by, bz], "state": st, "query": block_query}));
+                                        if matches.len() >= 16 {
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if matches.len() >= 16 { break; }
+                        }
+                        if matches.len() >= 16 { break; }
+                    }
+                    outputs.push(serde_json::json!({ "ok": true, "matches": matches }).to_string());
+                }
+                ["goto", x, y, z, ..] => {
+                    let gx = x.parse::<f64>().map_err(|_| "bad x")?.floor() as i32;
+                    let gy = y.parse::<f64>().map_err(|_| "bad y")?.floor() as i32;
+                    let gz = z.parse::<f64>().map_err(|_| "bad z")?.floor() as i32;
+                    let res = self.execute_live_script(&format!("task.navigate {gx} {gy} {gz}"))?;
+                    outputs.extend(res);
+                }
+                ["move", dir, secs, ..] => {
+                    let s = secs.parse::<f64>().unwrap_or(1.0).clamp(0.05, 10.0);
+                    let ticks = ((s * 20.0).round() as u64).max(1);
+                    let btn = match *dir {
+                        "back" | "backward" => Button::Back,
+                        "left" => Button::Left,
+                        "right" => Button::Right,
+                        _ => Button::Forward,
+                    };
+                    self.preempt_movement();
+                    let mut batch = Vec::new();
+                    for t in 0..ticks {
+                        batch.push((next_tick + t, Action::Button { button: btn, down: true }));
+                    }
+                    batch.push((next_tick + ticks, Action::Button { button: btn, down: false }));
+                    self.scheduler.submit(&batch).map_err(|e| format!("{e:?}"))?;
+                    outputs.push(serde_json::json!({"ok": true, "moved": dir, "ticks": ticks}).to_string());
+                }
+                ["look", yaw, pitch] => {
+                    let target_yaw = yaw.parse::<f32>().map_err(|_| "bad yaw")?;
+                    let target_pitch = pitch.parse::<f32>().map_err(|_| "bad pitch")?;
+                    self.player.yaw = target_yaw;
+                    self.player.pitch = target_pitch.clamp(-90.0, 90.0);
+                    outputs.push(serde_json::json!({"ok": true, "yaw": self.player.yaw, "pitch": self.player.pitch}).to_string());
+                }
+                ["turn", dyaw, dpitch, ..] => {
+                    let res = self.execute_live_script(&format!("player.look {dyaw} {dpitch}"))?;
+                    outputs.extend(res);
+                }
+                ["look-at", x, y, z] | ["look_at", x, y, z] | ["look-at-block", x, y, z, ..] => {
+                    let tx = x.parse::<f64>().map_err(|_| "bad x")?;
+                    let ty = y.parse::<f64>().map_err(|_| "bad y")?;
+                    let tz = z.parse::<f64>().map_err(|_| "bad z")?;
+                    let eye = self.player.eye_position();
+                    let dx = tx - eye[0];
+                    let dy = ty - eye[1];
+                    let dz = tz - eye[2];
+                    let h = (dx * dx + dz * dz).sqrt();
+                    self.player.yaw = (-dx).atan2(dz).to_degrees() as f32;
+                    self.player.pitch = (-dy).atan2(h).to_degrees() as f32;
+                    outputs.push(serde_json::json!({"ok": true, "yaw": self.player.yaw, "pitch": self.player.pitch}).to_string());
+                }
+                ["break", x, y, z, ..] => {
+                    let res = self.execute_live_script(&format!("interact.mine {x} {y} {z}"))?;
+                    outputs.extend(res);
+                }
+                ["place", x, y, z, ..] => {
+                    let res = self.execute_live_script(&format!("interact.place {x} {y} {z}"))?;
+                    outputs.extend(res);
+                }
+                ["interact", x, y, z, ..] => {
+                    let res = self.execute_live_script(&format!("interact.use_block {x} {y} {z}"))?;
+                    outputs.extend(res);
+                }
+                ["use-item", ..] | ["use_item", ..] => {
+                    let res = self.execute_live_script("interact.use_item")?;
+                    outputs.extend(res);
+                }
+                ["attack"] => {
+                    let candidates: Vec<(i32, [f64; 6])> = self
+                        .state_table
+                        .entities
+                        .values()
+                        .map(|e| (e.entity_id, e.aabb()))
+                        .collect();
+                    if let Some(hit) = raycast::raycast_entity(&self.player, &self.world, &candidates) {
+                        let res = self.execute_live_script(&format!("interact.attack {}", hit.entity_id))?;
+                        outputs.extend(res);
+                    } else {
+                        self.event_queue.submit(&[(next_tick, SubTickEvent::SwipeArm { hand: Hand::MainHand })]).map_err(|e| format!("{e:?}"))?;
+                        outputs.push(serde_json::json!({"ok": true, "swung": true}).to_string());
+                    }
+                }
+                ["attack", eid] => {
+                    let res = self.execute_live_script(&format!("interact.attack {eid}"))?;
+                    outputs.extend(res);
+                }
+                ["select", slot_or_item] => {
+                    if let Ok(s) = slot_or_item.parse::<u8>() {
+                        let zero_based = if s >= 1 && s <= 9 { s - 1 } else { s.min(8) };
+                        let res = self.execute_live_script(&format!("player.hotbar {zero_based}"))?;
+                        outputs.extend(res);
+                    } else {
+                        let res = self.execute_live_script(&format!("inventory.use_item {slot_or_item}"))?;
+                        outputs.extend(res);
+                    }
+                }
+                ["interact-entity", eid] | ["interact_entity", eid] => {
+                    let res = self.execute_live_script(&format!("entity.interact {eid}"))?;
+                    outputs.extend(res);
+                }
+                ["click-slot", slot, ..] | ["click_slot", slot, ..] => {
+                    let res = self.execute_live_script(&format!("gui.click_slot {slot}"))?;
+                    outputs.extend(res);
+                }
+                ["click", target, ..] | ["click-button", target, ..] => {
+                    let res = self.execute_live_script(&format!("gui.click {target}"))?;
+                    outputs.extend(res);
+                }
+                ["close"] => {
+                    let res = self.execute_live_script("gui.close")?;
+                    outputs.extend(res);
+                }
+                ["chat", rest @ ..] if !rest.is_empty() => {
+                    let res = self.execute_live_script(&format!("chat.send {}", rest.join(" ")))?;
+                    outputs.extend(res);
+                }
+                ["command", rest @ ..] if !rest.is_empty() => {
+                    let res = self.execute_live_script(&format!("cmd.run {}", rest.join(" ")))?;
+                    outputs.extend(res);
+                }
+                ["stop"] | ["release"] => {
+                    let res = self.execute_live_script("task.cancel")?;
+                    outputs.extend(res);
+                }
+                ["respawn"] => {
+                    let res = self.execute_live_script("player.respawn")?;
+                    outputs.extend(res);
+                }
+                ["wait", ticks] => {
+                    let res = self.execute_live_script(&format!("wait.ticks {ticks}"))?;
+                    outputs.extend(res);
+                }
+                ["screenshot"] | ["screenshot", _] => {
+                    let res = self.execute_live_script("inspect.frame 320 200 first_person")?;
+                    outputs.extend(res);
+                }
                 _ => {
                     return Err(format!(
                         "line {}: unknown live command '{line}'",

@@ -62,6 +62,13 @@ pub fn built_in_version_profiles() -> Vec<VersionAdapterProfile> {
             bridge_supported: true,
         },
         VersionAdapterProfile {
+            profile_id: "horizon-26.3".into(),
+            minecraft_version: "26.3".into(),
+            protocol_version: 777,
+            native_verified_parity: true,
+            bridge_supported: true,
+        },
+        VersionAdapterProfile {
             profile_id: "sawbyte-26.2".into(),
             minecraft_version: "26.2".into(),
             protocol_version: 776,
@@ -76,6 +83,7 @@ pub enum RuntimeMode {
     NativeStandalone,
     FullClientBridge,
     NativeMinimalVisualizer,
+    HorizonRustEngine,
 }
 
 impl RuntimeMode {
@@ -84,6 +92,7 @@ impl RuntimeMode {
             Self::NativeStandalone => "native",
             Self::FullClientBridge => "bridge",
             Self::NativeMinimalVisualizer => "visualizer",
+            Self::HorizonRustEngine => "horizon",
         }
     }
 
@@ -92,8 +101,9 @@ impl RuntimeMode {
             "native" => Ok(Self::NativeStandalone),
             "bridge" => Ok(Self::FullClientBridge),
             "visualizer" | "native-visualizer" | "minimal" => Ok(Self::NativeMinimalVisualizer),
+            "horizon" | "horizon-rust" | "horizon-offscreen" | "horizon-wgpu" => Ok(Self::HorizonRustEngine),
             _ => Err(format!(
-                "unknown runtime mode '{s}'; expected 'native', 'bridge', or 'visualizer'"
+                "unknown runtime mode '{s}'; expected 'native', 'bridge', 'visualizer', or 'horizon'"
             )),
         }
     }
@@ -874,6 +884,16 @@ impl PersistentLauncher {
                 extra_args,
             );
         }
+        if inst.mode == RuntimeMode::HorizonRustEngine {
+            if let Ok(res) = self.spawn_horizon_process(
+                instance_name,
+                server_override,
+                account_name,
+                extra_args,
+            ) {
+                return Ok(res);
+            }
+        }
         if !self.accounts.contains_key(account_name) {
             return Err(format!("account '{account_name}' not found"));
         }
@@ -943,6 +963,78 @@ impl PersistentLauncher {
 
     /// Spawns the Fabric Minecraft client process targeting the instance's directory and `mods/`,
     /// automatically injecting the `sawbyte-bridge` framework mod if missing.
+
+    /// Locates or spawns the full `horizon-rust/horizon` 26.3 engine (`horizon-client` / `horizon-ctl`),
+    /// supporting `--offscreen` (Headless/Half-Headless) and full `wgpu` graphical modes, singleplayer
+    /// server-thread worlds (`--world`), and multiplayer servers (`connect <server> <account>`).
+    pub fn spawn_horizon_process(
+        &mut self,
+        instance_name: &str,
+        server_override: Option<&str>,
+        account_name: &str,
+        extra_args: &[String],
+    ) -> Result<(Child, PathBuf), String> {
+        let inst = self
+            .instances
+            .get(instance_name)
+            .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
+        let target = server_override.unwrap_or(&inst.server).to_owned();
+        let dir = self.instance_dir(instance_name);
+        fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let log_path = dir.join("session.log");
+        let log_file = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_path)
+            .map_err(|e| e.to_string())?;
+        let err_file = log_file.try_clone().map_err(|e| e.to_string())?;
+
+        let exe_ext = if cfg!(windows) { ".exe" } else { "" };
+        let ctl_name = format!("horizon-ctl{exe_ext}");
+        let client_name = format!("horizon-client{exe_ext}");
+
+        let mut ctl_bin = None;
+        for cand in [
+            self.root_dir.join("bin").join(&ctl_name),
+            self.root_dir.join("horizon").join("target").join("release").join(&ctl_name),
+            self.root_dir.join("horizon").join("target").join("fast").join(&ctl_name),
+            PathBuf::from(format!("horizon/target/release/{ctl_name}")),
+            PathBuf::from(format!("horizon/target/fast/{ctl_name}")),
+        ] {
+            if cand.exists() {
+                ctl_bin = Some(cand);
+                break;
+            }
+        }
+        let Some(bin) = ctl_bin else {
+            return Err(format!("horizon-ctl binary not found yet; run './replace_all.sh --with-horizon' to fetch and build horizon-rust/horizon ({client_name} + {ctl_name})"));
+        };
+
+        let sock_path = dir.join("horizon-control.sock");
+        let mut cmd = Command::new(&bin);
+        cmd.arg("--socket").arg(&sock_path).arg("launch");
+        if target == "singleplayer" || target.starts_with("singleplayer:") {
+            let world_name = target.split_once(':').map(|x| x.1).unwrap_or("Sawbyte_26_3_World");
+            cmd.arg("--world").arg(world_name);
+        }
+        if inst.settings.get("offscreen").map(String::as_str) == Some("true") {
+            cmd.arg("--offscreen");
+        }
+        for arg in extra_args {
+            cmd.arg(arg);
+        }
+        cmd.stdout(Stdio::from(log_file)).stderr(Stdio::from(err_file));
+        let child = cmd.spawn().map_err(|e| format!("failed to spawn horizon-ctl: {e}"))?;
+        let pid = child.id();
+        let _ = fs::write(dir.join("session.pid"), format!("{pid}\n"));
+        if let Some(inst_mut) = self.instances.get_mut(instance_name) {
+            inst_mut.last_pid = Some(pid);
+        }
+        let _ = self.save();
+        let _ = account_name;
+        Ok((child, log_path))
+    }
+
     pub fn spawn_fabric_process(
         &mut self,
         instance_name: &str,

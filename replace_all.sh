@@ -79,3 +79,13 @@ echo "[5/5] Launcher Ready!"
 echo "  -> Run 'sawbyte-launcher' or 'sawbyte gui' to open the Tauri + Rust Desktop Launcher."
 echo "  -> Or cd into 'launcher-tauri/' and run 'npm install && npm run tauri dev' for full Tauri v2 development."
 echo "========================================================================"
+
+
+# Optional: If user passed --with-horizon or --with-horizon-free, shallow-clone (~35 MB) and build horizon-rust/horizon!
+if [ "${1:-}" = "--with-horizon" ] || [ "${2:-}" = "--with-horizon" ]; then
+  echo "[Horizon 26.3] Shallow-cloning and building horizon-rust/horizon (--depth 1)..."
+  bash ./tools/fetch_and_wire_horizon.sh
+elif [ "${1:-}" = "--with-horizon-free" ] || [ "${2:-}" = "--with-horizon-free" ]; then
+  echo "[Horizon 26.3 Free] Shallow-cloning and building 0CYBER/horizon-free (--depth 1, no MS auth required)..."
+  bash ./tools/fetch_and_wire_horizon.sh --free
+fi
