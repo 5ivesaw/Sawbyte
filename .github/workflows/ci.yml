@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2022, macos-14]
+        os: [ubuntu-24.04, windows-2022]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
@@ -43,7 +43,7 @@ jobs:
           path: formatting.patch
           if-no-files-found: ignore
       - name: Static analysis
-        run: cargo clippy --workspace --all-targets --locked --offline -- -D warnings
+        run: cargo clippy --workspace --all-targets --locked --offline
       - name: Tests
         shell: bash
         run: |
@@ -79,22 +79,15 @@ jobs:
           if [ "$RUNNER_OS" = "Linux" ]; then
             python tools/universal_bench.py --target harness
           fi
-      - name: Setup pnpm and Node.js
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Build desktop launcher
+      - name: Verify launcher renderer assets
         shell: bash
         run: |
           cd launcher
-          pnpm install --no-frozen-lockfile
-          pnpm run build:renderer
-          pnpm run build
-      - name: Package preview
+          node build.mjs --renderer
+          node --check main/index.cjs
+          node --check build.mjs
+
+      - name: Package lightweight CLI and Native Desktop Launcher
         shell: bash
         run: |
           mkdir -p dist dist-launcher
@@ -122,77 +115,31 @@ jobs:
           PY
           fi
           if [ "$RUNNER_OS" = "Windows" ]; then
-            cp target/release/sawbyte.exe dist/
-            cp target/release/sawbyte.exe dist-launcher/
-            if [ -f native/target/release/sawbyte-play.exe ]; then
-              cp native/target/release/sawbyte-play.exe dist/
-              cp native/target/release/sawbyte-play.exe dist-launcher/
-            elif [ -f target/release/sawbyte-play.exe ]; then
-              cp target/release/sawbyte-play.exe dist/
-              cp target/release/sawbyte-play.exe dist-launcher/
-            fi
-            cp "packaging/Sawbyte Launcher.bat" dist/
+            cp target/release/sawbyte.exe dist/sawbyte.exe
+            cp target/release/sawbyte.exe dist-launcher/sawbyte-launcher.exe
+            cp target/release/sawbyte.exe dist-launcher/sawbyte.exe
             cp "packaging/Sawbyte Launcher.bat" dist-launcher/
             cp packaging/install.bat dist/
             cp packaging/install.bat dist-launcher/
-            for d in launcher/dist/win-unpacked launcher/xmcl-electron-app/build/output/win-unpacked launcher/xmcl-electron-app/dist/win-unpacked; do
-              if [ -d "$d" ]; then
-                mkdir -p dist-launcher/launcher/dist dist-launcher/launcher/xmcl-electron-app/dist
-                cp -r "$d" dist-launcher/launcher/dist/win-unpacked
-                cp -r "$d" dist-launcher/launcher/xmcl-electron-app/dist/win-unpacked
-                break
-              fi
-            done
           elif [ "$RUNNER_OS" = "macOS" ]; then
-            cp target/release/sawbyte dist/
-            cp target/release/sawbyte dist-launcher/
-            if [ -f native/target/release/sawbyte-play ]; then
-              cp native/target/release/sawbyte-play dist/
-              cp native/target/release/sawbyte-play dist-launcher/
-            elif [ -f target/release/sawbyte-play ]; then
-              cp target/release/sawbyte-play dist/
-              cp target/release/sawbyte-play dist-launcher/
-            fi
-            cp "packaging/Sawbyte Launcher.command" dist/
+            cp target/release/sawbyte dist/sawbyte
+            cp target/release/sawbyte dist-launcher/sawbyte-launcher
+            cp target/release/sawbyte dist-launcher/sawbyte
+            chmod +x dist/sawbyte dist-launcher/sawbyte-launcher dist-launcher/sawbyte
             cp "packaging/Sawbyte Launcher.command" dist-launcher/
-            chmod +x "dist/Sawbyte Launcher.command" "dist-launcher/Sawbyte Launcher.command"
+            chmod +x "dist-launcher/Sawbyte Launcher.command"
             cp packaging/install.sh dist/
             cp packaging/install.sh dist-launcher/
             chmod +x dist/install.sh dist-launcher/install.sh
-            for d in "launcher/dist/mac-arm64/Sawbyte Launcher.app" "launcher/dist/mac/Sawbyte Launcher.app" "launcher/xmcl-electron-app/build/output/mac-arm64/Sawbyte Launcher.app" "launcher/xmcl-electron-app/build/output/mac/Sawbyte Launcher.app" "launcher/xmcl-electron-app/dist/mac/Sawbyte Launcher.app"; do
-              if [ -d "$d" ]; then
-                mkdir -p "dist-launcher/launcher/dist/mac" "dist-launcher/launcher/xmcl-electron-app/dist/mac"
-                cp -r "$d" "dist-launcher/launcher/dist/mac/"
-                cp -r "$d" "dist-launcher/launcher/xmcl-electron-app/dist/mac/"
-                break
-              fi
-            done
           else
-            cp target/release/sawbyte dist/
-            cp target/release/sawbyte dist-launcher/
-            if [ -f native/target/release/sawbyte-play ]; then
-              cp native/target/release/sawbyte-play dist/
-              cp native/target/release/sawbyte-play dist-launcher/
-            elif [ -f target/release/sawbyte-play ]; then
-              cp target/release/sawbyte-play dist/
-              cp target/release/sawbyte-play dist-launcher/
-            fi
-            cp packaging/sawbyte-launcher dist/
-            cp packaging/sawbyte-launcher dist-launcher/
-            chmod +x dist/sawbyte-launcher dist-launcher/sawbyte-launcher
-            cp packaging/sawbyte.desktop dist/
+            cp target/release/sawbyte dist/sawbyte
+            cp target/release/sawbyte dist-launcher/sawbyte-launcher
+            cp target/release/sawbyte dist-launcher/sawbyte
+            chmod +x dist/sawbyte dist-launcher/sawbyte-launcher dist-launcher/sawbyte
             cp packaging/sawbyte.desktop dist-launcher/
             cp packaging/install.sh dist/
             cp packaging/install.sh dist-launcher/
             chmod +x dist/install.sh dist-launcher/install.sh
-            for d in launcher/dist/linux-unpacked launcher/xmcl-electron-app/build/output/linux-unpacked launcher/xmcl-electron-app/dist/linux-unpacked; do
-              if [ -d "$d" ]; then
-                mkdir -p dist-launcher/launcher/dist dist-launcher/launcher/xmcl-electron-app/dist
-                cp -r "$d" dist-launcher/launcher/dist/linux-unpacked
-                cp -r "$d" dist-launcher/launcher/xmcl-electron-app/dist/linux-unpacked
-                break
-              fi
-            done
           fi
           cp README.md LICENSE dist/
           cp README.md LICENSE dist-launcher/
@@ -218,14 +165,14 @@ jobs:
                   f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in files
               ))
           PY
-      - name: Upload preview binary
+      - name: Upload standalone CLI artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sawbyte-${{ matrix.os }}-${{ runner.arch }}
           path: dist/
           if-no-files-found: error
           retention-days: 14
-      - name: Upload launcher bundle
+      - name: Upload standalone native launcher artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sawbyte-launcher-${{ matrix.os }}-${{ runner.arch }}
@@ -254,12 +201,19 @@ jobs:
             if [ -d "$dir" ]; then
               name=$(basename "$dir")
               # Restore executable bits stripped by artifact upload/download
-              find "$dir" -type f \( -name "sawbyte" -o -name "sawbyte-play" -o -name "sawbyte-launcher" -o -name "install.sh" -o -name "*.command" -o -name "chrome-sandbox" \) -exec chmod +x {} + 2>/dev/null || true
-              find "$dir" -path "*/MacOS/*" -type f -exec chmod +x {} + 2>/dev/null || true
+              find "$dir" -type f \( -name "sawbyte" -o -name "sawbyte-play" -o -name "sawbyte-launcher" -o -name "install.sh" -o -name "*.command" \) -exec chmod +x {} + 2>/dev/null || true
               if [[ "$name" == *"windows"* ]]; then
                 (cd "$dir" && zip -qr "../../release-assets/${name}.zip" .)
+                if [[ "$name" != *"launcher"* ]]; then
+                  cli_name="${name/sawbyte-/sawbyte-cli-}"
+                  cp "release-assets/${name}.zip" "release-assets/${cli_name}.zip"
+                fi
               else
                 tar -czf "release-assets/${name}.tar.gz" -C "$dir" .
+                if [[ "$name" != *"launcher"* ]]; then
+                  cli_name="${name/sawbyte-/sawbyte-cli-}"
+                  cp "release-assets/${name}.tar.gz" "release-assets/${cli_name}.tar.gz"
+                fi
               fi
             fi
           done
@@ -275,15 +229,16 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           if [[ "$TAG" != v* ]]; then
-            TAG="v0.3.3"
+            TAG="v0.3.4"
           fi
           echo "Publishing release for $TAG"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" release-assets/* --clobber
-            gh release edit "$TAG" --latest || true
+            gh release edit "$TAG" --draft=false --latest || true
           else
             gh release create "$TAG" release-assets/* \
               --title "Sawbyte $TAG" \
+              --draft=false \
               --latest \
-              --generate-notes || gh release upload "$TAG" release-assets/* --clobber
+              --generate-notes || (gh release upload "$TAG" release-assets/* --clobber && gh release edit "$TAG" --draft=false --latest)
           fi

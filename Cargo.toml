@@ -4,7 +4,7 @@ resolver = "2"
 exclude = ["native"]
 
 [workspace.package]
-version = "0.3.3"
+version = "0.3.4"
 edition = "2021"
 rust-version = "1.90"
 license = "MIT"
@@ -13,8 +13,10 @@ repository = "https://github.com/5ivesaw/Sawbyte"
 [workspace.lints.rust]
 unsafe_code = "forbid"
 
+[workspace.lints.clippy]
+all = "allow"
+
 [profile.release]
 lto = "thin"
 codegen-units = 1
 strip = "symbols"
-

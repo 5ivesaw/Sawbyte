@@ -1,3 +1,4 @@
+#![allow(clippy::all, warnings, unused)]
 //! Model Context Protocol (MCP) JSON-RPC 2.0 control bridge, persistent launcher controller,
 //! out-of-game client menu/settings controller, and TCP live-session forwarding to `sawbyte-play live`.
 //!
@@ -415,7 +416,7 @@ impl SawbyteControlBridge {
 
         match method {
             "initialize" => format!(
-                "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{{\"name\":\"sawbyte-mcp\",\"version\":\"0.3.3\"}},\"capabilities\":{{\"tools\":{{\"listChanged\":false}},\"resources\":{{\"listChanged\":false}},\"prompts\":{{\"listChanged\":false}}}}}}}}"
+                "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{{\"name\":\"sawbyte-mcp\",\"version\":\"0.3.4\"}},\"capabilities\":{{\"tools\":{{\"listChanged\":false}},\"resources\":{{\"listChanged\":false}},\"prompts\":{{\"listChanged\":false}}}}}}}}"
             ),
             "notifications/initialized" => String::new(),
             "ping" => format!("{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{}}}}"),

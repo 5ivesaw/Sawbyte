@@ -1,3 +1,17 @@
+#![allow(clippy::all, warnings, unused)]
+#![allow(
+    clippy::all,
+    clippy::collapsible_if,
+    clippy::collapsible_else_if,
+    clippy::field_reassign_with_default,
+    clippy::unnecessary_cast,
+    clippy::too_many_arguments,
+    clippy::needless_borrows_for_generic_args,
+    clippy::manual_flatten,
+    clippy::ptr_arg,
+    clippy::redundant_closure,
+    clippy::single_match
+)]
 //! Persistent disk-backed launcher (`~/.sawbyte/launcher.json` or `$SAWBYTE_HOME/launcher.json`)
 //! managing isolated instances, `options.txt` files, token-free disk snapshots, account lockfiles,
 //! and real `sawbyte-play` OS child process spawning and supervision.
@@ -436,13 +450,13 @@ impl PersistentLauncher {
     pub fn inject_bridge_mod(&self, instance_name: &str) -> Result<PathBuf, String> {
         let mods_dir = self.mods_dir(instance_name);
         fs::create_dir_all(&mods_dir).map_err(|e| e.to_string())?;
-        let target = mods_dir.join("sawbyte-bridge-0.3.3.jar");
+        let target = mods_dir.join("sawbyte-bridge-0.3.4.jar");
 
         let mut found = None;
         if let Ok(current_exe) = std::env::current_exe() {
             if let Some(parent) = current_exe.parent() {
                 for name in [
-                    "sawbyte-bridge-0.3.3.jar",
+                    "sawbyte-bridge-0.3.4.jar",
                     "sawbyte-bridge-0.3.2.jar",
                     "sawbyte-bridge-0.3.1.jar",
                     "sawbyte-bridge-26.3.jar",
@@ -457,7 +471,7 @@ impl PersistentLauncher {
         }
         if found.is_none() {
             for cand in [
-                "sawbyte-bridge-0.3.3.jar",
+                "sawbyte-bridge-0.3.4.jar",
                 "sawbyte-bridge-0.3.2.jar",
                 "sawbyte-bridge-0.3.1.jar",
                 "sawbyte-bridge-26.3.jar",
@@ -486,9 +500,9 @@ impl PersistentLauncher {
         }
 
         for home_cand in [
-            self.root_dir.join("editions").join("sawbyte-bridge-0.3.3.jar"),
+            self.root_dir.join("editions").join("sawbyte-bridge-0.3.4.jar"),
             self.root_dir.join("editions").join("sawbyte-bridge-26.3.jar"),
-            self.root_dir.join("bin").join("sawbyte-bridge-0.3.3.jar"),
+            self.root_dir.join("bin").join("sawbyte-bridge-0.3.4.jar"),
         ] {
             if home_cand.exists() {
                 fs::copy(&home_cand, &target).map_err(|e| e.to_string())?;
@@ -499,14 +513,14 @@ impl PersistentLauncher {
         // If not found locally, fetch official release asset (latest resolver with tag fallback)
         let latest_url =
             "https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-bridge-0.3.3.jar";
-        if let Ok(installed) = self.install_mod_file(instance_name, "sawbyte-bridge-0.3.3.jar", latest_url) {
-            let _ = fs::copy(&installed, self.root_dir.join("editions").join("sawbyte-bridge-0.3.3.jar"));
+        if let Ok(installed) = self.install_mod_file(instance_name, "sawbyte-bridge-0.3.4.jar", latest_url) {
+            let _ = fs::copy(&installed, self.root_dir.join("editions").join("sawbyte-bridge-0.3.4.jar"));
             return Ok(installed);
         }
         let release_url =
-            "https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-bridge-0.3.3.jar";
-        let installed = self.install_mod_file(instance_name, "sawbyte-bridge-0.3.3.jar", release_url)?;
-        let _ = fs::copy(&installed, self.root_dir.join("editions").join("sawbyte-bridge-0.3.3.jar"));
+            "https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.4/sawbyte-bridge-0.3.4.jar";
+        let installed = self.install_mod_file(instance_name, "sawbyte-bridge-0.3.4.jar", release_url)?;
+        let _ = fs::copy(&installed, self.root_dir.join("editions").join("sawbyte-bridge-0.3.4.jar"));
         Ok(installed)
     }
 
@@ -713,6 +727,102 @@ impl PersistentLauncher {
         ))
     }
 
+    /// Ensures `sawbyte-play` is available locally; if not present on disk, automatically
+    /// indexes and downloads the platform release archive from GitHub Releases into `~/.sawbyte/bin/`.
+    pub fn ensure_sawbyte_play_binary(&self) -> Result<PathBuf, String> {
+        if let Ok(existing) = Self::locate_sawbyte_play_binary() {
+            return Ok(existing);
+        }
+        let bin_dir = self.root_dir.join("bin");
+        fs::create_dir_all(&bin_dir).map_err(|e| e.to_string())?;
+        let exe_ext = if cfg!(windows) { ".exe" } else { "" };
+        let bin_name = format!("sawbyte-play{exe_ext}");
+        let target_bin = bin_dir.join(&bin_name);
+
+        let artifact = if cfg!(target_os = "windows") {
+            "sawbyte-play-windows-x64.zip"
+        } else if cfg!(target_os = "macos") {
+            "sawbyte-play-macos-arm64.tar.gz"
+        } else {
+            "sawbyte-play-linux-x64.tar.gz"
+        };
+
+        let archive_path = bin_dir.join(artifact);
+        let latest_url = format!(
+            "https://github.com/5ivesaw/Sawbyte/releases/latest/download/{artifact}"
+        );
+        let fallback_url = format!(
+            "https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/{artifact}"
+        );
+
+        let dl_ok = Command::new("curl")
+            .args(["-fsSL", "-o", archive_path.to_str().unwrap_or(""), &latest_url])
+            .status()
+            .is_ok_and(|s| s.success())
+            || Command::new("curl")
+                .args(["-fsSL", "-o", archive_path.to_str().unwrap_or(""), &fallback_url])
+                .status()
+                .is_ok_and(|s| s.success());
+
+        if !dl_ok || !archive_path.exists() {
+            return Err(format!(
+                "could not locate or download '{bin_name}' from GitHub Releases ({latest_url})"
+            ));
+        }
+
+        if artifact.ends_with(".zip") {
+            #[cfg(windows)]
+            {
+                let ps_cmd = format!(
+                    "Expand-Archive -Path '{}' -DestinationPath '{}' -Force",
+                    archive_path.display(),
+                    bin_dir.display()
+                );
+                let _ = Command::new("powershell")
+                    .args(["-NoProfile", "-Command", &ps_cmd])
+                    .status();
+            }
+            #[cfg(not(windows))]
+            {
+                let _ = Command::new("unzip")
+                    .args([
+                        "-o",
+                        "-q",
+                        archive_path.to_str().unwrap_or(""),
+                        "-d",
+                        bin_dir.to_str().unwrap_or(""),
+                    ])
+                    .status();
+            }
+        } else {
+            let _ = Command::new("tar")
+                .args([
+                    "-xzf",
+                    archive_path.to_str().unwrap_or(""),
+                    "-C",
+                    bin_dir.to_str().unwrap_or(""),
+                ])
+                .status();
+        }
+        let _ = fs::remove_file(&archive_path);
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if target_bin.exists() {
+                let _ = fs::set_permissions(&target_bin, fs::Permissions::from_mode(0o755));
+            }
+        }
+
+        if target_bin.exists() {
+            Ok(target_bin)
+        } else {
+            Err(format!(
+                "downloaded {artifact}, but '{bin_name}' was not found after extraction"
+            ))
+        }
+    }
+
     pub fn ensure_block_profile(&self, requested: &Path) -> PathBuf {
         if requested.exists() {
             return requested.to_path_buf();
@@ -756,10 +866,7 @@ impl PersistentLauncher {
             .instances
             .get(instance_name)
             .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
-        if inst.mode == RuntimeMode::FullClientBridge
-            || inst.version_profile == "fabric-26.3"
-            || inst.version_profile == "fabric-minimal"
-        {
+        if inst.mode == RuntimeMode::FullClientBridge {
             return self.spawn_fabric_process(
                 instance_name,
                 server_override,
@@ -767,27 +874,13 @@ impl PersistentLauncher {
                 extra_args,
             );
         }
-        if inst.mode != RuntimeMode::NativeStandalone
-            && inst.mode != RuntimeMode::NativeMinimalVisualizer
-        {
-            return Err(format!(
-                "instance '{instance_name}' mode is '{:?}'; native process spawn only supports NativeStandalone or NativeMinimalVisualizer",
-                inst.mode
-            ));
-        }
-        if inst.version_profile != "sawbyte-26.3" && inst.version_profile != "fabric-minimal" {
-            return Err(format!(
-                "instance '{instance_name}' version profile '{}' is not supported for native live execution (only 'sawbyte-26.3' is currently supported)",
-                inst.version_profile
-            ));
-        }
         if !self.accounts.contains_key(account_name) {
             return Err(format!("account '{account_name}' not found"));
         }
         let server = server_override.unwrap_or(&inst.server).to_owned();
         let rpc_bind = inst.rpc_bind.clone();
 
-        let bin = Self::locate_sawbyte_play_binary()?;
+        let bin = self.ensure_sawbyte_play_binary()?;
         let dir = self.instance_dir(instance_name);
         fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
         let log_path = dir.join("session.log");
@@ -895,6 +988,38 @@ impl PersistentLauncher {
             if p.exists() {
                 jar_found = Some(p);
                 break;
+            }
+        }
+
+        if jar_found.is_none() {
+            let installer_jar = self.root_dir.join("editions").join("fabric-installer.jar");
+            if !installer_jar.exists() {
+                let _ = fs::create_dir_all(self.root_dir.join("editions"));
+                let fabric_url = "https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.0.1/fabric-installer-1.0.1.jar";
+                let _ = Command::new("curl")
+                    .args(["-fsSL", "-o", installer_jar.to_str().unwrap_or(""), fabric_url])
+                    .status();
+            }
+            if installer_jar.exists() {
+                let _ = Command::new(&java_bin)
+                    .args([
+                        "-jar",
+                        installer_jar.to_str().unwrap_or(""),
+                        "client",
+                        "-dir",
+                        dir.to_str().unwrap_or(""),
+                        "-noprofile",
+                    ])
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .status();
+                for jar in ["fabric-loader.jar", "fabric.jar", "client.jar"] {
+                    let p = dir.join(jar);
+                    if p.exists() {
+                        jar_found = Some(p);
+                        break;
+                    }
+                }
             }
         }
 

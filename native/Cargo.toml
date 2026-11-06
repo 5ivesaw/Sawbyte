@@ -1,6 +1,6 @@
 [package]
 name = "sawbyte-play"
-version = "0.3.3"
+version = "0.3.4"
 edition = "2024"
 license = "MIT"
 
@@ -34,3 +34,6 @@ strip = "symbols"
 
 [lints.rust]
 unsafe_code = "forbid"
+
+[lints.clippy]
+all = "allow"

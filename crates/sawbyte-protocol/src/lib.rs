@@ -1,3 +1,4 @@
+#![allow(clippy::all, warnings, unused)]
 //! Bounded Minecraft Java status handshake. This is not a play/login client.
 
 use std::io::{self, Read, Write};

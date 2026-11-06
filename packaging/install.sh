@@ -5,7 +5,7 @@
 set -e
 
 REPO="5ivesaw/Sawbyte"
-TAG="v0.3.3"
+TAG="v0.3.4"
 INSTALL_DIR="$HOME/.local/bin"
 SAWBYTE_HOME_DIR="${SAWBYTE_HOME:-$HOME/.sawbyte}"
 DESKTOP_DIR="$HOME/.local/share/applications"

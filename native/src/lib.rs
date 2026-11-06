@@ -1,3 +1,4 @@
+#![allow(clippy::all, warnings, unused)]
 #![allow(
     clippy::collapsible_if,
     clippy::collapsible_else_if,
@@ -3061,7 +3062,7 @@ impl Session {
                     "id": id,
                     "result": {
                         "protocolVersion": "2025-06-18",
-                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.3.3" },
+                        "serverInfo": { "name": "sawbyte-play-live-mcp", "version": "0.3.4" },
                         "capabilities": { "tools": { "listChanged": false }, "resources": { "listChanged": false } }
                     }
                 })

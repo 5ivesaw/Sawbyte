@@ -1,264 +1,292 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="cream">
+<html lang="en" data-theme="lunar">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
-<title>Sawbyte Launcher — Minecraft 26.3 Native Client, Editions &amp; AI Bot Engine</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sawbyte Launcher</title>
 <style>
-  :root, html[data-theme="cream"] {
-    --bg-canvas: #F6F0E4;
-    --bg-canvas-grad-1: rgba(196, 122, 44, 0.08);
-    --bg-canvas-grad-2: rgba(43, 110, 91, 0.08);
-    --bg-sidebar: #EFE7D6;
-    --bg-surface: #FDFBF7;
-    --bg-surface-hover: #FAF5EB;
-    --bg-subtle: #EAE0CE;
-    --bg-code: #1E1B18;
-    --text-code: #F5EFE2;
-    --border: #D8CBB5;
-    --border-strong: #BFA98B;
+  :root, html[data-theme="lunar"] {
+    --bg-base: #080B11;
+    --bg-glow-1: rgba(0, 245, 160, 0.11);
+    --bg-glow-2: rgba(0, 217, 245, 0.10);
+    --bg-sidebar: rgba(12, 16, 24, 0.92);
+    --bg-card: rgba(16, 22, 33, 0.86);
+    --bg-card-hover: rgba(22, 30, 45, 0.94);
+    --bg-elevated: #141B29;
+    --bg-console: #05070B;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-bright: rgba(0, 245, 160, 0.38);
+    --text-main: #F3F7SG;
+    --text-primary: #F4F8FC;
+    --text-secondary: #9BA9BE;
+    --text-muted: #64748B;
+    --accent: #00E599;
+    --accent-2: #00C8F8;
+    --accent-grad: linear-gradient(135deg, #00F5A0 0%, #00C8F8 100%);
+    --accent-soft: rgba(0, 229, 153, 0.14);
+    --accent-glow: 0 0 28px rgba(0, 229, 153, 0.32);
+    --amber: #F59E0B;
+    --amber-soft: rgba(245, 158, 11, 0.15);
+    --danger: #F43F5E;
+    --danger-soft: rgba(244, 63, 94, 0.15);
+    --purple: #A855F7;
+    --purple-soft: rgba(168, 85, 247, 0.15);
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+
+  html[data-theme="cyber"] {
+    --bg-base: #090712;
+    --bg-glow-1: rgba(139, 92, 246, 0.15);
+    --bg-glow-2: rgba(56, 189, 248, 0.12);
+    --bg-sidebar: rgba(14, 11, 26, 0.94);
+    --bg-card: rgba(20, 16, 36, 0.88);
+    --bg-card-hover: rgba(28, 22, 50, 0.95);
+    --bg-elevated: #1A1430;
+    --bg-console: #06040C;
+    --border: rgba(167, 139, 250, 0.14);
+    --border-bright: rgba(167, 139, 250, 0.48);
+    --text-primary: #F5F3FF;
+    --text-secondary: #B8B0D8;
+    --text-muted: #7C72A0;
+    --accent: #A855F7;
+    --accent-2: #38BDF8;
+    --accent-grad: linear-gradient(135deg, #A855F7 0%, #38BDF8 100%);
+    --accent-soft: rgba(168, 85, 247, 0.18);
+    --accent-glow: 0 0 28px rgba(168, 85, 247, 0.38);
+  }
+
+  html[data-theme="crimson"] {
+    --bg-base: #0E080A;
+    --bg-glow-1: rgba(244, 63, 94, 0.14);
+    --bg-glow-2: rgba(245, 158, 11, 0.10);
+    --bg-sidebar: rgba(20, 11, 14, 0.94);
+    --bg-card: rgba(27, 15, 19, 0.88);
+    --bg-card-hover: rgba(36, 20, 26, 0.95);
+    --bg-elevated: #231318;
+    --bg-console: #080406;
+    --border: rgba(251, 113, 133, 0.14);
+    --border-bright: rgba(245, 158, 11, 0.45);
+    --text-primary: #FFF1F2;
+    --text-secondary: #D4B4B8;
+    --text-muted: #8C6B70;
+    --accent: #F43F5E;
+    --accent-2: #F59E0B;
+    --accent-grad: linear-gradient(135deg, #F43F5E 0%, #F59E0B 100%);
+    --accent-soft: rgba(244, 63, 94, 0.18);
+    --accent-glow: 0 0 28px rgba(244, 63, 94, 0.35);
+  }
+
+  html[data-theme="matrix"] {
+    --bg-base: #050B08;
+    --bg-glow-1: rgba(16, 185, 129, 0.14);
+    --bg-glow-2: rgba(5, 150, 105, 0.10);
+    --bg-sidebar: rgba(8, 17, 13, 0.94);
+    --bg-card: rgba(11, 24, 18, 0.88);
+    --bg-card-hover: rgba(16, 33, 25, 0.95);
+    --bg-elevated: #102219;
+    --bg-console: #030705;
+    --border: rgba(52, 211, 153, 0.14);
+    --border-bright: rgba(16, 185, 129, 0.45);
+    --text-primary: #ECFDF5;
+    --text-secondary: #99C2B2;
+    --text-muted: #5A8273;
+    --accent: #10B981;
+    --accent-2: #34D399;
+    --accent-grad: linear-gradient(135deg, #059669 0%, #34D399 100%);
+    --accent-soft: rgba(16, 185, 129, 0.16);
+    --accent-glow: 0 0 28px rgba(16, 185, 129, 0.35);
+  }
+
+  html[data-theme="cream"] {
+    --bg-base: #F5EFE4;
+    --bg-glow-1: rgba(43, 110, 91, 0.09);
+    --bg-glow-2: rgba(196, 122, 44, 0.09);
+    --bg-sidebar: #EBE2D2;
+    --bg-card: #FDFBF7;
+    --bg-card-hover: #FAF6ED;
+    --bg-elevated: #EFE7D8;
+    --bg-console: #1C1916;
+    --border: #D6C8B2;
+    --border-bright: #2B6E5B;
     --text-primary: #1F1D1A;
-    --text-secondary: #4E463B;
-    --text-muted: #786D5D;
-    --emerald: #2B6E5B;
-    --emerald-hover: #215647;
-    --emerald-soft: rgba(43, 110, 91, 0.12);
-    --emerald-border: rgba(43, 110, 91, 0.32);
-    --amber: #C47A2C;
-    --amber-hover: #A9651E;
-    --amber-soft: rgba(196, 122, 44, 0.14);
-    --amber-border: rgba(196, 122, 44, 0.35);
-    --copper: #8C5230;
-    --danger: #B9382C;
-    --danger-soft: rgba(185, 56, 44, 0.12);
-    --danger-border: rgba(185, 56, 44, 0.32);
-    --shadow-sm: 0 2px 8px rgba(31, 29, 26, 0.05);
-    --shadow-md: 0 8px 24px rgba(31, 29, 26, 0.08);
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
+    --text-secondary: #524A3E;
+    --text-muted: #7C7162;
+    --accent: #2B6E5B;
+    --accent-2: #C47A2C;
+    --accent-grad: linear-gradient(135deg, #2B6E5B 0%, #3B8E76 100%);
+    --accent-soft: rgba(43, 110, 91, 0.12);
+    --accent-glow: 0 8px 24px rgba(43, 110, 91, 0.22);
+    --shadow: 0 8px 24px rgba(31, 29, 26, 0.08);
   }
 
-  html[data-theme="obsidian"] {
-    --bg-canvas: #12100E;
-    --bg-canvas-grad-1: rgba(196, 122, 44, 0.10);
-    --bg-canvas-grad-2: rgba(43, 110, 91, 0.12);
-    --bg-sidebar: #181512;
-    --bg-surface: #1E1B17;
-    --bg-surface-hover: #26221D;
-    --bg-subtle: #27231E;
-    --bg-code: #0D0B09;
-    --text-code: #EDE3D0;
-    --border: #332D25;
-    --border-strong: #4A4135;
-    --text-primary: #FAF6EE;
-    --text-secondary: #C8BFA8;
-    --text-muted: #8E8472;
-    --emerald: #34A887;
-    --emerald-hover: #2B8E72;
-    --emerald-soft: rgba(52, 168, 135, 0.15);
-    --emerald-border: rgba(52, 168, 135, 0.38);
-    --amber: #E0913E;
-    --amber-hover: #C87B28;
-    --amber-soft: rgba(224, 145, 62, 0.15);
-    --amber-border: rgba(224, 145, 62, 0.38);
-    --copper: #D4885C;
-    --danger: #E05A4E;
-    --danger-soft: rgba(224, 90, 78, 0.15);
-    --danger-border: rgba(224, 90, 78, 0.38);
-    --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
-    --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.45);
-  }
-
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
     height: 100%;
-    background-color: var(--bg-canvas);
+    width: 100%;
+    background-color: var(--bg-base);
     background-image:
-      radial-gradient(ellipse at 0% 0%, var(--bg-canvas-grad-1) 0%, transparent 50%),
-      radial-gradient(ellipse at 100% 100%, var(--bg-canvas-grad-2) 0%, transparent 50%);
+      radial-gradient(circle at 15% 0%, var(--bg-glow-1) 0%, transparent 48%),
+      radial-gradient(circle at 88% 100%, var(--bg-glow-2) 0%, transparent 48%);
     color: var(--text-primary);
     font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
-    font-size: 13.5px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.45;
     -webkit-font-smoothing: antialiased;
     overflow: hidden;
+    user-select: none;
   }
 
-  /* App Shell Layout */
+  /* Main Shell Grid */
   .app-shell {
     display: grid;
-    grid-template-columns: 252px 1fr;
+    grid-template-columns: 238px 1fr;
     height: 100vh;
     width: 100vw;
-    overflow: hidden;
   }
 
-  /* Left Sidebar Navigation */
+  /* Left Lunar Sidebar */
   .sidebar {
     background: var(--bg-sidebar);
+    backdrop-filter: blur(20px);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    padding: 18px 14px;
-    gap: 16px;
-    user-select: none;
+    padding: 16px 12px;
+    gap: 14px;
     z-index: 20;
   }
 
-  .brand-card {
+  .brand-box {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 11px;
     padding: 10px 12px;
-    background: var(--bg-surface);
+    background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
+    border-radius: 12px;
   }
 
-  .brand-card img {
-    width: 40px;
-    height: 40px;
+  .brand-box img {
+    width: 38px;
+    height: 38px;
     border-radius: 9px;
     object-fit: contain;
-    background: var(--bg-subtle);
-    padding: 3px;
-    border: 1px solid var(--border);
   }
 
-  .brand-title {
+  .brand-name {
     font-size: 16px;
-    font-weight: 800;
-    letter-spacing: -0.4px;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    font-weight: 900;
+    letter-spacing: 0.6px;
+    background: var(--accent-grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
-  .brand-sub {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--copper);
+  .brand-ver {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text-secondary);
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   }
 
-  .nav-section-label {
-    font-size: 10.5px;
-    font-weight: 700;
+  .nav-group-label {
+    font-size: 10px;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 1px;
     color: var(--text-muted);
     padding: 0 10px;
-    margin-top: 4px;
   }
 
-  .nav-list {
+  .nav-menu {
     display: flex;
     flex-direction: column;
     gap: 4px;
     flex: 1;
   }
 
-  .nav-btn {
+  .nav-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 100%;
-    padding: 10px 12px;
+    padding: 9px 12px;
     border-radius: 10px;
     border: 1px solid transparent;
     background: transparent;
     color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12.5px;
+    font-weight: 700;
     cursor: pointer;
+    transition: all 0.14s ease;
     text-align: left;
-    transition: all 0.15s ease;
   }
 
-  .nav-btn-left {
+  .nav-item-left {
     display: flex;
     align-items: center;
     gap: 10px;
   }
 
-  .nav-icon {
-    width: 18px;
-    height: 18px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    opacity: 0.85;
+  .nav-item svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    flex-shrink: 0;
   }
 
-  .nav-btn:hover {
-    background: var(--bg-surface-hover);
+  .nav-item:hover {
+    background: var(--bg-card-hover);
     color: var(--text-primary);
     border-color: var(--border);
   }
 
-  .nav-btn.active {
-    background: var(--bg-surface);
-    color: var(--emerald);
-    border-color: var(--emerald-border);
-    box-shadow: var(--shadow-sm);
-    font-weight: 700;
+  .nav-item.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: var(--border-bright);
   }
 
-  .nav-pill {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 7px;
+  .nav-tag {
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 2px 6px;
     border-radius: 999px;
-    background: var(--bg-subtle);
+    background: var(--bg-elevated);
     color: var(--text-secondary);
     font-family: ui-monospace, SFMono-Regular, monospace;
     white-space: nowrap;
   }
 
-  .nav-btn.active .nav-pill {
-    background: var(--emerald-soft);
-    color: var(--emerald);
+  .nav-item.active .nav-tag {
+    background: var(--accent);
+    color: #05080D;
   }
 
-  .sidebar-footer {
-    background: var(--bg-surface);
+  .sidebar-telemetry {
+    background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 12px;
+    border-radius: 12px;
+    padding: 11px 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
 
-  .sys-metric-row {
+  .tele-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 11.5px;
+    font-size: 11px;
   }
 
-  .sys-metric-label {
-    color: var(--text-muted);
-    font-weight: 600;
-  }
+  .tele-k { color: var(--text-muted); font-weight: 600; }
+  .tele-v { color: var(--accent); font-weight: 800; font-family: ui-monospace, monospace; }
 
-  .sys-metric-val {
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    font-weight: 700;
-    color: var(--emerald);
-  }
-
-  /* Main Area */
-  .main-area {
+  /* Right Main Area */
+  .main-col {
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -267,335 +295,406 @@
 
   /* Top Header Bar */
   .topbar {
-    height: 62px;
-    min-height: 62px;
-    padding: 0 26px;
-    background: var(--bg-surface);
+    height: 58px;
+    min-height: 58px;
+    padding: 0 22px;
+    background: var(--bg-sidebar);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
   }
 
   .topbar-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
   }
 
-  .view-title {
-    font-size: 17px;
+  .page-heading {
+    font-size: 15.5px;
     font-weight: 800;
-    color: var(--text-primary);
-    letter-spacing: -0.3px;
+    letter-spacing: -0.2px;
   }
 
   .topbar-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
   }
 
-  /* Scrollable Content Viewport */
-  .content-scroll {
-    flex: 1;
-    overflow-y: auto;
-    padding: 24px 28px 36px 28px;
+  /* Theme Selector Pills */
+  .theme-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-elevated);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
   }
 
-  .content-inner {
-    max-width: 1320px;
+  .theme-chip {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+
+  .theme-chip.active, .theme-chip:hover {
+    background: var(--bg-card);
+    color: var(--accent);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  /* Main Scroll Content */
+  .viewport-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px 28px 24px;
+  }
+
+  .viewport-inner {
+    max-width: 1340px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 18px;
   }
 
-  /* Cream Hero / Quick Launch Strip */
-  .cream-banner {
-    background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-subtle) 100%);
-    border: 1px solid var(--border-strong);
-    border-top: 4px solid var(--emerald);
-    border-radius: var(--radius-lg);
-    padding: 20px 24px;
-    box-shadow: var(--shadow-md);
+  /* =========================================================================
+     LUNAR-STYLE HERO LAUNCH DECK
+     ========================================================================= */
+  .lunar-hero-deck {
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-elevated) 100%);
+    border: 1px solid var(--border-bright);
+    border-radius: 16px;
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-top-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 18px;
+    gap: 16px;
   }
 
-  .cream-banner-info h2 {
-    font-size: 19px;
-    font-weight: 800;
+  .hero-headline h1 {
+    font-size: 20px;
+    font-weight: 900;
     letter-spacing: -0.4px;
-    color: var(--text-primary);
     margin-bottom: 4px;
   }
 
-  .cream-banner-info p {
-    font-size: 13px;
+  .hero-headline p {
+    font-size: 12.5px;
     color: var(--text-secondary);
-    max-width: 680px;
+    max-width: 640px;
   }
 
-  .quick-launch-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    background: var(--bg-surface);
-    padding: 10px 14px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-  }
-
-  /* Cards & Grids */
-  .grid-2 {
+  /* 3 Edition Mode Selector Cards inside Launch Deck */
+  .mode-selector-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-  }
-
-  .grid-3 {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
-    gap: 18px;
-  }
-
-  .grid-4 {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 14px;
-  }
-
-  .grid-6 {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
   }
 
-  .card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 20px;
-    box-shadow: var(--shadow-sm);
+  .mode-select-card {
+    background: var(--bg-base);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    gap: 5px;
+    text-align: left;
   }
 
-  .card:hover {
-    border-color: var(--border-strong);
-    box-shadow: var(--shadow-md);
+  .mode-select-card:hover {
+    border-color: var(--text-muted);
+    transform: translateY(-1px);
   }
 
-  .card-header {
+  .mode-select-card.selected {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    box-shadow: var(--accent-glow);
+  }
+
+  .mode-card-top {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 10px;
+    align-items: center;
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .mode-card-sub {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  /* Launch Controls Bar */
+  .launch-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+  }
+
+  .launch-inputs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .field-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .field-inline span {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+  }
+
+  /* Giant Glowing Lunar Launch Button */
+  .lunar-launch-btn {
+    background: var(--accent-grad);
+    color: #04080B;
+    border: none;
+    border-radius: 11px;
+    padding: 12px 28px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 245px;
+    box-shadow: var(--accent-glow);
+    transition: transform 0.14s ease, filter 0.14s ease;
+  }
+
+  .lunar-launch-btn:hover {
+    transform: translateY(-1px) scale(1.01);
+    filter: brightness(1.07);
+  }
+
+  .lunar-launch-btn .l-main {
+    font-size: 14.5px;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
+  .lunar-launch-btn .l-sub {
+    font-size: 10px;
+    font-weight: 700;
+    opacity: 0.82;
+  }
+
+  /* Common Grids & Cards */
+  .grid-2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; }
+  .grid-2-eq { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(295px, 1fr)); gap: 14px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+  .grid-6 { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 10px; }
+
+  .card {
+    background: var(--bg-card);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
   }
 
   .card-title {
-    font-size: 14.5px;
+    font-size: 14px;
     font-weight: 800;
     color: var(--text-primary);
-    line-height: 1.35;
   }
+
   .card-title code {
-    font-size: 12px;
-    background: var(--bg-subtle);
+    font-size: 11.5px;
+    background: var(--bg-elevated);
     padding: 2px 6px;
     border-radius: 5px;
-    border: 1px solid var(--border);
-    color: var(--copper);
+    color: var(--accent);
   }
 
   .card-desc {
-    font-size: 12.5px;
+    font-size: 12px;
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.45;
   }
 
-  /* Badges */
+  /* Badges & Buttons */
   .badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 3px 10px;
+    gap: 5px;
+    padding: 3px 9px;
     border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.2px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
     white-space: nowrap;
   }
 
-  .badge-emerald {
-    background: var(--emerald-soft);
-    color: var(--emerald);
-    border: 1px solid var(--emerald-border);
-  }
+  .badge-accent { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--border-bright); }
+  .badge-amber { background: var(--amber-soft); color: var(--amber); border: 1px solid rgba(245,158,11,0.35); }
+  .badge-danger { background: var(--danger-soft); color: var(--danger); border: 1px solid rgba(244,63,94,0.35); }
+  .badge-purple { background: var(--purple-soft); color: var(--purple); border: 1px solid rgba(168,85,247,0.35); }
+  .badge-neutral { background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border); }
 
-  .badge-amber {
-    background: var(--amber-soft);
-    color: var(--amber);
-    border: 1px solid var(--amber-border);
-  }
-
-  .badge-danger {
-    background: var(--danger-soft);
-    color: var(--danger);
-    border: 1px solid var(--danger-border);
-  }
-
-  .badge-neutral {
-    background: var(--bg-subtle);
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
-  }
-
-  .dot-live {
-    width: 7px;
-    height: 7px;
+  .pulse-dot {
+    width: 6.5px;
+    height: 6.5px;
     border-radius: 50%;
-    background: var(--emerald);
-    display: inline-block;
-    box-shadow: 0 0 0 3px var(--emerald-soft);
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
   }
 
-  /* Buttons & Inputs */
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-    padding: 8px 15px;
-    border-radius: var(--radius-sm);
-    font-size: 12.5px;
+    gap: 6px;
+    padding: 7px 13px;
+    border-radius: 8px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.15s ease;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    transition: all 0.14s ease;
     white-space: nowrap;
     text-decoration: none;
   }
 
-  .btn:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
+  .btn:hover:not(:disabled) {
+    border-color: var(--border-bright);
+    background: var(--bg-card-hover);
   }
 
   .btn-primary {
-    background: var(--emerald);
-    color: #FFFFFF;
-    border-color: var(--emerald-hover);
+    background: var(--accent);
+    color: #04080B;
+    border-color: transparent;
+    font-weight: 800;
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: var(--emerald-hover);
+    filter: brightness(1.08);
+    background: var(--accent);
   }
 
   .btn-amber {
     background: var(--amber);
-    color: #FFFFFF;
-    border-color: var(--amber-hover);
-  }
-
-  .btn-amber:hover:not(:disabled) {
-    background: var(--amber-hover);
-  }
-
-  .btn-secondary {
-    background: var(--bg-subtle);
-    color: var(--text-primary);
-    border-color: var(--border-strong);
-  }
-
-  .btn-secondary:hover:not(:disabled) {
-    background: var(--bg-surface-hover);
-    border-color: var(--text-muted);
+    color: #080602;
+    border-color: transparent;
+    font-weight: 800;
   }
 
   .btn-danger {
     background: var(--danger-soft);
     color: var(--danger);
-    border-color: var(--danger-border);
+    border-color: rgba(244,63,94,0.35);
   }
 
-  .btn-danger:hover:not(:disabled) {
-    background: var(--danger);
-    color: #FFFFFF;
-  }
+  .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 7px; }
 
-  .btn-sm {
-    padding: 5px 10px;
-    font-size: 11.5px;
-    border-radius: 6px;
-  }
-
-  input[type="text"], input[type="number"], select, textarea {
-    background: var(--bg-surface);
+  input[type="text"], select, textarea {
+    background: var(--bg-elevated);
     color: var(--text-primary);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    padding: 8px 12px;
-    font-size: 12.5px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 11px;
+    font-size: 12px;
     font-family: inherit;
-    width: 100%;
     outline: none;
-    transition: border-color 0.15s ease;
+    width: 100%;
   }
 
   input[type="text"]:focus, select:focus, textarea:focus {
-    border-color: var(--emerald);
+    border-color: var(--accent);
   }
 
-  label.field-label {
-    display: block;
+  /* Console & Code Output */
+  .console-box {
+    background: var(--bg-console);
+    color: #D8E6F3;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 11px 13px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 11.5px;
-    font-weight: 700;
-    color: var(--text-secondary);
-    margin-bottom: 5px;
+    line-height: 1.5;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    user-select: text;
   }
 
-  /* Telemetry & Stat Boxes */
+  /* Stat Tiles */
   .stat-tile {
-    background: var(--bg-subtle);
+    background: var(--bg-elevated);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 11px 14px;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
   }
 
-  .stat-tile .stat-k {
-    font-size: 10.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-muted);
-  }
+  .stat-k { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+  .stat-v { font-size: 13.5px; font-weight: 800; font-family: ui-monospace, monospace; color: var(--text-primary); }
 
-  .stat-tile .stat-v {
-    font-size: 14.5px;
-    font-weight: 800;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    color: var(--text-primary);
-  }
-
-  /* Visualizer Viewport */
+  /* 3D / Radar Viewport */
   .viz-viewport {
     width: 100%;
-    aspect-ratio: 16 / 10;
-    background: #101418;
-    border: 2px solid var(--border-strong);
+    aspect-ratio: 16 / 9.5;
+    background: #070B10;
+    border: 1.5px solid var(--border-bright);
     border-radius: 10px;
     overflow: hidden;
     position: relative;
@@ -611,425 +710,373 @@
     object-fit: fill;
   }
 
-  .viz-hud-overlay {
+  .viz-hud {
     position: absolute;
-    top: 10px;
-    left: 12px;
-    right: 12px;
+    top: 8px; left: 10px; right: 10px;
     display: flex;
     justify-content: space-between;
+    font-family: ui-monospace, monospace;
+    font-size: 10.5px;
+    color: #00F5A0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
     pointer-events: none;
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    font-size: 11px;
-    color: #E2F1EC;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
-  }
-
-  /* Code & Console Output */
-  .console-box {
-    background: var(--bg-code);
-    color: var(--text-code);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    padding: 12px 14px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 12px;
-    line-height: 1.5;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
   }
 
   /* Tables */
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12.5px;
-  }
-
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .data-table th {
-    text-align: left;
-    padding: 9px 12px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--border-strong);
-    background: var(--bg-subtle);
+    text-align: left; padding: 8px 10px; font-size: 10.5px; font-weight: 800;
+    text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border);
   }
-
-  .data-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-primary);
-    vertical-align: middle;
-  }
+  .data-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
 
   /* Modals */
   .modal-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(20, 18, 15, 0.55);
-    backdrop-filter: blur(4px);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.68);
+    backdrop-filter: blur(5px); z-index: 100; align-items: center; justify-content: center; padding: 16px;
   }
-
   .modal-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    max-width: 500px;
-    width: 100%;
-    box-shadow: var(--shadow-md);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+    background: var(--bg-card); border: 1px solid var(--border-bright);
+    border-radius: 14px; padding: 22px; max-width: 480px; width: 100%;
+    box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px;
   }
 
-  /* Responsive Device Optimization */
   @media (max-width: 980px) {
-    .app-shell {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto 1fr;
-    }
-    .sidebar {
-      flex-direction: row;
-      align-items: center;
-      overflow-x: auto;
-      padding: 10px 14px;
-      border-right: none;
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-section-label, .sidebar-footer {
-      display: none;
-    }
-    .nav-list {
-      flex-direction: row;
-      gap: 6px;
-    }
-    .nav-btn {
-      width: auto;
-      padding: 7px 11px;
-    }
-    .grid-2 {
-      grid-template-columns: 1fr;
-    }
+    .app-shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .sidebar { flex-direction: row; overflow-x: auto; padding: 8px 12px; border-right: none; border-bottom: 1px solid var(--border); }
+    .nav-group-label, .sidebar-telemetry { display: none; }
+    .nav-menu { flex-direction: row; }
+    .mode-selector-grid, .grid-2, .grid-2-eq { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
 <div class="app-shell">
-  <!-- Left Navigation Sidebar -->
+  <!-- Left Lunar Sidebar -->
   <aside class="sidebar">
-    <div class="brand-card">
-      <img src="data:image/png;base64,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" alt="Sawbyte" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%232B6E5B%22/><text x=%2232%22 y=%2243%22 font-size=%2234%22 font-family=%22sans-serif%22 font-weight=%22800%22 fill=%22%23FAF6EE%22 text-anchor=%22middle%22>S</text></svg>'">
+    <div class="brand-box">
+      <img src="data:image/png;base64,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" alt="Sawbyte">
       <div>
-        <div class="brand-title">SAWBYTE</div>
-        <div class="brand-sub">v0.3.3 · MC 26.3</div>
+        <div class="brand-name">SAWBYTE</div>
+        <div class="brand-ver">v0.3.4 · MC 26.3</div>
       </div>
     </div>
 
-    <div class="nav-section-label">Workspace</div>
-    <nav class="nav-list">
-      <button class="nav-btn active" data-tab="instances" onclick="switchTab('instances', this)">
-        <span class="nav-btn-left"><span class="nav-icon">&#9638;</span><span>Instances &amp; Launch</span></span>
-        <span class="nav-pill" id="nav-count-instances">1</span>
+    <div class="nav-group-label">Client &amp; Engine</div>
+    <nav class="nav-menu">
+      <button class="nav-item active" data-tab="home" onclick="switchTab('home', this)">
+        <span class="nav-item-left">
+          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>Launch &amp; Control</span>
+        </span>
+        <span class="nav-tag">26.3</span>
       </button>
-      <button class="nav-btn" data-tab="editions" onclick="switchTab('editions', this)">
-        <span class="nav-btn-left"><span class="nav-icon">&#8681;</span><span>Editions &amp; Releases</span></span>
-        <span class="nav-pill">GitHub</span>
+
+      <button class="nav-item" data-tab="instances" onclick="switchTab('instances', this)">
+        <span class="nav-item-left">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Instances</span>
+        </span>
+        <span class="nav-tag" id="nav-count-instances">3</span>
       </button>
-      <button class="nav-btn" data-tab="supervisor" onclick="switchTab('supervisor', this)">
-        <span class="nav-btn-left"><span class="nav-icon">&#9673;</span><span>3D &amp; Radar View</span></span>
-        <span class="nav-pill">Potato</span>
+
+      <button class="nav-item" data-tab="supervisor" onclick="switchTab('supervisor', this)">
+        <span class="nav-item-left">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/></svg>
+          <span>Potato 3D &amp; Radar</span>
+        </span>
+        <span class="nav-tag">10 MB</span>
       </button>
-      <button class="nav-btn" data-tab="agent" onclick="switchTab('agent', this)">
-        <span class="nav-btn-left"><span class="nav-icon">&#10022;</span><span>Sawbyte AI Agent</span></span>
-        <span class="nav-pill">Free MCP</span>
+
+      <button class="nav-item" data-tab="agent" onclick="switchTab('agent', this)">
+        <span class="nav-item-left">
+          <svg viewBox="0 0 24 24"><path d="M12 2L15 8L21 9L16.5 14L18 20L12 17L6 20L7.5 14L3 9L9 8L12 2Z"/></svg>
+          <span>AI MCP &amp; Neural API</span>
+        </span>
+        <span class="nav-tag">Free</span>
       </button>
-      <button class="nav-btn" data-tab="mods" onclick="switchTab('mods', this)">
-        <span class="nav-btn-left"><span class="nav-icon">&#9881;</span><span>Fabric Bridge &amp; Mods</span></span>
-        <span class="nav-pill">26.3</span>
+
+      <button class="nav-item" data-tab="mods" onclick="switchTab('mods', this)">
+        <span class="nav-item-left">
+          <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          <span>Fabric 26.3 &amp; Mods</span>
+        </span>
+        <span class="nav-tag">Bridge</span>
       </button>
-      <button class="nav-btn" data-tab="settings" onclick="switchTab('settings', this)">
-        <span class="nav-btn-left"><span class="nav-icon">&#9000;</span><span>Accounts &amp; CLI</span></span>
-        <span class="nav-pill" id="nav-count-accounts">1</span>
+
+      <button class="nav-item" data-tab="guide" onclick="switchTab('guide', this)">
+        <span class="nav-item-left">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>How Sawbyte Works</span>
+        </span>
+        <span class="nav-tag">Guide</span>
       </button>
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="sys-metric-row">
-        <span class="sys-metric-label">Engine Footprint</span>
-        <span class="sys-metric-val">~8.2 MB RSS</span>
+    <div class="sidebar-telemetry">
+      <div class="tele-row">
+        <span class="tele-k">Launcher Size</span>
+        <span class="tele-v">~1.5 MB Native</span>
       </div>
-      <div class="sys-metric-row">
-        <span class="sys-metric-label">Physics Tick Rate</span>
-        <span class="sys-metric-val">20.0 TPS</span>
+      <div class="tele-row">
+        <span class="tele-k">Headless RAM</span>
+        <span class="tele-v">~8.2 MB RSS</span>
       </div>
-      <div class="sys-metric-row">
-        <span class="sys-metric-label">Protocol Target</span>
-        <span class="sys-metric-val">777 (26.3)</span>
+      <div class="tele-row">
+        <span class="tele-k">Physics Clock</span>
+        <span class="tele-v">20.0 TPS (777)</span>
       </div>
-      <div class="sys-metric-row">
-        <span class="sys-metric-label">CLI Status</span>
-        <span class="sys-metric-val" id="sidebar-cli-status">Ready</span>
+      <div class="tele-row">
+        <span class="tele-k">MCP Agent Bridge</span>
+        <span class="tele-v" id="sidebar-mcp-state">READY</span>
       </div>
     </div>
   </aside>
 
-  <!-- Main Workspace Area -->
-  <div class="main-area">
+  <!-- Main Workspace Column -->
+  <div class="main-col">
     <header class="topbar">
       <div class="topbar-left">
-        <span class="view-title" id="topbar-title">Bot Instances &amp; Session Supervisor</span>
-        <span class="badge badge-emerald"><span class="dot-live"></span> Pure Sawbyte Engine</span>
+        <span class="page-heading" id="topbar-title">Launch Deck &amp; Live Bot Controller</span>
+        <span class="badge badge-accent"><span class="pulse-dot"></span> Auto-Indexes Releases on Launch</span>
       </div>
+
       <div class="topbar-right">
-        <span id="cli-status-badge" class="badge badge-neutral">CLI: Checking...</span>
-        <button class="btn btn-secondary btn-sm" id="btn-install-cli" onclick="installCliToSystem()">Install CLI to PATH</button>
-        <button class="btn btn-secondary btn-sm" onclick="toggleTheme()" id="theme-toggle-btn">Theme: Cream Luxe</button>
+        <div class="theme-bar" title="Switch Launcher Theme">
+          <button class="theme-chip active" data-th="lunar" onclick="setTheme('lunar')">Lunar</button>
+          <button class="theme-chip" data-th="cyber" onclick="setTheme('cyber')">Cyber</button>
+          <button class="theme-chip" data-th="crimson" onclick="setTheme('crimson')">Crimson</button>
+          <button class="theme-chip" data-th="matrix" onclick="setTheme('matrix')">Matrix</button>
+          <button class="theme-chip" data-th="cream" onclick="setTheme('cream')">Cream</button>
+        </div>
+        <button class="btn btn-sm" onclick="popOutCompanionTerminal()" title="Open companion OS terminal alongside launcher">
+          &gt;_ Pop Out Terminal
+        </button>
         <button class="btn btn-primary btn-sm" onclick="showCreateModal()">+ New Instance</button>
       </div>
     </header>
 
-    <main class="content-scroll">
-      <div class="content-inner">
+    <main class="viewport-scroll">
+      <div class="viewport-inner">
 
         <!-- =================================================================
-             TAB 1: INSTANCES & QUICK LAUNCH
+             TAB 1: HOME — LUNAR HERO LAUNCH DECK + LIVE OUTPUT & CONTROLS
              ================================================================= -->
-        <section id="tab-instances" class="tab-pane">
-          <div class="cream-banner">
-            <div class="cream-banner-info">
-              <h2>Zero-Graphics Rust Client &amp; Modular Edition Launcher</h2>
-              <p>
-                Run Minecraft Java 26.3 (Protocol 777) in ~8.2 MB of RAM with zero JVM overhead, switch to Pure-Rust Potato 3D/Radar mode, or attach the Fabric 26.3 Graphical Bridge. Need an edition binary? Fetch it on demand in the <strong>Editions &amp; Releases</strong> tab.
-              </p>
+        <section id="tab-home" class="tab-pane">
+          <div class="lunar-hero-deck">
+            <div class="hero-top-row">
+              <div class="hero-headline">
+                <h1>Select Edition Mode &amp; Launch Instantly</h1>
+                <p>
+                  Featherlight native launcher (~1.5 MB). Nothing is bloated or pre-bundled — when you click <strong>LAUNCH</strong>, Sawbyte automatically indexes and downloads the selected edition (Headless, Potato 3D, or Fabric 26.3 + Bridge Mod) into <code>~/.sawbyte/</code>.
+                </p>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <span class="badge badge-accent" id="hero-edition-status">Indexed: v0.3.4 (MC 26.3)</span>
+                <button class="btn btn-sm" onclick="switchTab('guide', document.querySelector('[data-tab=guide]'))">How It Works</button>
+              </div>
             </div>
-            <div class="quick-launch-bar">
-              <div>
-                <label class="field-label" style="margin-bottom:2px;">Instance</label>
-                <select id="quick-launch-instance" style="width:170px; padding:6px 10px;"></select>
+
+            <!-- 3 Edition Cards -->
+            <div class="mode-selector-grid">
+              <div class="mode-select-card selected" id="mode-card-native" onclick="selectLaunchMode('native')">
+                <div class="mode-card-top">
+                  <span>1. Headless Native Engine</span>
+                  <span class="badge badge-accent">~8.2 MB RAM</span>
+                </div>
+                <div class="mode-card-sub">
+                  Connects to real 26.3 servers at 20.0 TPS with zero game window. Control graphically below, via Companion Terminal, MCP AI Agents, or Neural Net API.
+                </div>
               </div>
-              <div>
-                <label class="field-label" style="margin-bottom:2px;">Server Endpoint</label>
-                <input type="text" id="quick-launch-server" value="127.0.0.1:25565" style="width:155px; padding:6px 10px;">
+
+              <div class="mode-select-card" id="mode-card-visualizer" onclick="selectLaunchMode('visualizer')">
+                <div class="mode-card-top">
+                  <span>2. Potato 3D &amp; Radar Mode</span>
+                  <span class="badge badge-amber">~10.4 MB RAM</span>
+                </div>
+                <div class="mode-card-sub">
+                  Pure-Rust software 3D raymarcher &amp; 360° top-down radar with zero GPU and zero Java VM. Streams live 1st-person, chase, and radar views.
+                </div>
               </div>
-              <div>
-                <label class="field-label" style="margin-bottom:2px;">Account</label>
-                <select id="quick-launch-account" style="width:145px; padding:6px 10px;"></select>
+
+              <div class="mode-select-card" id="mode-card-bridge" onclick="selectLaunchMode('bridge')">
+                <div class="mode-card-top">
+                  <span>3. Graphical Fabric 26.3</span>
+                  <span class="badge badge-purple">Full Visuals</span>
+                </div>
+                <div class="mode-card-sub">
+                  Automatically downloads Fabric 26.3 &amp; puts <code>sawbyte-bridge-0.3.4.jar</code> into <code>mods/</code>, launching the normal graphical game synced with Sawbyte.
+                </div>
               </div>
-              <div style="align-self:flex-end;">
-                <button class="btn btn-primary" onclick="quickLaunchSelected()">&#9654; Launch Bot</button>
+            </div>
+
+            <!-- Launch Controls Strip -->
+            <div class="launch-action-bar">
+              <div class="launch-inputs">
+                <div class="field-inline">
+                  <span>Instance Profile</span>
+                  <select id="quick-launch-instance" style="width:175px;" onchange="onQuickInstanceSelect()"></select>
+                </div>
+                <div class="field-inline">
+                  <span>Target Server IP</span>
+                  <input type="text" id="quick-launch-server" value="127.0.0.1:25565" style="width:165px;">
+                </div>
+                <div class="field-inline">
+                  <span>Bot Account</span>
+                  <select id="quick-launch-account" style="width:150px;"></select>
+                </div>
+                <div class="field-inline">
+                  <span>Control Port (TCP/RL)</span>
+                  <input type="text" id="quick-launch-rpc" value="127.0.0.1:25580" style="width:140px;">
+                </div>
               </div>
+
+              <button class="lunar-launch-btn" id="hero-launch-btn" onclick="quickLaunchSelected()">
+                <span class="l-main" id="hero-launch-title">&#9654; LAUNCH HEADLESS 26.3</span>
+                <span class="l-sub" id="hero-launch-sub">Auto-Indexes &amp; Downloads if Needed · 20.0 TPS</span>
+              </button>
             </div>
           </div>
 
-          <div class="grid-4" style="margin-top: 18px;">
-            <div class="stat-tile">
-              <span class="stat-k">Headless Native Engine</span>
-              <span class="stat-v" id="stat-ed-headless">Ready (8.2 MB)</span>
+          <!-- Split Panel: Live Output Console (Left) + Graphical Bot Controller, MCP Toggle & Neural Net API (Right) -->
+          <div class="grid-2">
+            <!-- Left: Live Bot Output & Companion Terminal Console -->
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <div class="card-title">Live Bot Output Stream &amp; Interactive Command Shell</div>
+                  <div class="card-desc">See everything the headless bot or installer is doing in real time, or send commands directly</div>
+                </div>
+                <div style="display:flex; gap:6px;">
+                  <button class="btn btn-sm" onclick="loadInstanceLogs()">Refresh Logs</button>
+                  <button class="btn btn-sm" onclick="popOutCompanionTerminal()">&gt;_ Companion Terminal</button>
+                </div>
+              </div>
+
+              <div id="home-live-console" class="console-box" style="height:255px;">[Sawbyte Supervisor v0.3.4] Ready.
+• Selected Mode: Headless Native Engine (sawbyte-26.3 · Protocol 777)
+• On-Launch Auto-Downloader: Active (indexes GitHub Releases &amp; Fabric Meta on demand)
+• Live TCP / Neural Net Socket: 127.0.0.1:25580 | MCP Agent Bridge: Ready
+$ sawbyte status
+Position: (0.50, -60.00, 0.50) | Health: 20.0 HP | Food: 20 | Tick Rate: 20.00 TPS (0.04 ms/tick)</div>
+
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="home-cmd-input" placeholder="Type any command (e.g. inspect.status, task.navigate 16 -60 16, interact.mine 2 -60 2, gym.observe)..." style="font-family:ui-monospace, monospace;" onkeydown="if(event.key==='Enter') sendHomeCommand()">
+                <button class="btn btn-primary" onclick="sendHomeCommand()">Execute</button>
+              </div>
             </div>
-            <div class="stat-tile">
-              <span class="stat-k">Potato 3D &amp; Radar</span>
-              <span class="stat-v" id="stat-ed-potato">Built-In Rasterizer</span>
-            </div>
-            <div class="stat-tile">
-              <span class="stat-k">Graphical Fabric Bridge</span>
-              <span class="stat-v" id="stat-ed-bridge">26.3 Compatible</span>
-            </div>
-            <div class="stat-tile">
-              <span class="stat-k">Built-In AI Agent / MCP</span>
-              <span class="stat-v" style="color:var(--emerald);">100% Free · 10 Tools</span>
+
+            <!-- Right: Graphical Bot Controls + MCP Toggle + Neural Network API -->
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <!-- Graphical Controller Card -->
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <div class="card-title">Graphical Headless Controller (No Terminal Needed)</div>
+                    <div class="card-desc">Click any action to control the running headless instance visually</div>
+                  </div>
+                  <span class="badge badge-accent" id="ctrl-live-badge">20.0 TPS</span>
+                </div>
+
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <button class="btn btn-sm" onclick="dispatchQuickAction('inspect.status')">Inspect Status</button>
+                  <button class="btn btn-sm" onclick="dispatchQuickAction('input.move forward 20')">Walk Forward</button>
+                  <button class="btn btn-sm" onclick="dispatchQuickAction('input.jump')">Jump</button>
+                  <button class="btn btn-sm" onclick="dispatchQuickAction('interact.raycast')">Raycast Target</button>
+                  <button class="btn btn-sm" onclick="dispatchQuickAction('interact.mine 2 -60 2')">Mine Block</button>
+                  <button class="btn btn-sm" onclick="dispatchQuickAction('gui.inspect')">Inspect Chest/GUI</button>
+                  <button class="btn btn-sm" onclick="dispatchQuickAction('task.navigate 16 -60 16')">3D A* Pathfind</button>
+                  <button class="btn btn-sm" onclick="dispatchQuickAction('gym.observe')">RL Observe</button>
+                </div>
+              </div>
+
+              <!-- MCP Agent Toggle & Neural Network API Card -->
+              <div class="card">
+                <div class="card-head">
+                  <div>
+                    <div class="card-title">AI Agent MCP Switch &amp; Neural Network RL API</div>
+                    <div class="card-desc">Turn on MCP for Claude/Gemini/Cursor or stream exact observations to PyTorch / Gymnasium</div>
+                  </div>
+                  <button class="btn btn-primary btn-sm" id="mcp-toggle-btn" onclick="toggleMcpDaemon()">MCP Server: ON</button>
+                </div>
+
+                <div class="grid-2-eq" style="gap:10px;">
+                  <div class="stat-tile">
+                    <span class="stat-k">MCP Stdio / Agent Endpoint</span>
+                    <span class="stat-v" style="font-size:11.5px; color:var(--accent);">sawbyte mcp --stdio</span>
+                  </div>
+                  <div class="stat-tile">
+                    <span class="stat-k">Neural Net / Gym TCP Socket</span>
+                    <span class="stat-v" style="font-size:11.5px; color:var(--accent-2);">127.0.0.1:25580</span>
+                  </div>
+                </div>
+
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <button class="btn btn-sm" onclick="copyMcpConfig()">Copy MCP Agent Config</button>
+                  <button class="btn btn-sm" onclick="copyNeuralNetSnippet()">Copy Python Neural Net / Gym Code</button>
+                  <button class="btn btn-sm" onclick="switchTab('supervisor', document.querySelector('[data-tab=supervisor]'))">Open Live 3D / Radar</button>
+                </div>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; margin-bottom:12px;">
+        <!-- =================================================================
+             TAB 2: INSTANCES & AUTO-DOWNLOADING PROFILES
+             ================================================================= -->
+        <section id="tab-instances" class="tab-pane" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
-              <h3 style="font-size:15.5px; font-weight:800;">Configured Sawbyte Instances</h3>
-              <div style="font-size:12px; color:var(--text-muted);">Persisted in <code>~/.sawbyte/launcher.db</code> with isolated <code>options.txt</code> &amp; snapshots</div>
+              <h2 style="font-size:17px; font-weight:900;">Managed Bot &amp; Game Instances</h2>
+              <div style="font-size:12px; color:var(--text-secondary);">Create isolated Headless, Potato 3D, or Graphical Fabric 26.3 instances. Required binaries &amp; mods download automatically on launch.</div>
             </div>
             <div style="display:flex; gap:8px;">
-              <button class="btn btn-secondary btn-sm" onclick="switchTab('editions', document.querySelector('[data-tab=editions]'))">&#8681; Fetch Editions from GitHub</button>
+              <button class="btn btn-sm" onclick="installEdition('all', this)">Pre-Download All Editions Now</button>
               <button class="btn btn-primary btn-sm" onclick="showCreateModal()">+ Create Instance</button>
             </div>
           </div>
 
-          <div id="instances-list" class="grid-3"></div>
-        </section>
+          <div id="instances-list" class="grid-3" style="margin-top:14px;"></div>
 
-        <!-- =================================================================
-             TAB 2: EDITIONS & GITHUB RELEASES INSTALLER
-             ================================================================= -->
-        <section id="tab-editions" class="tab-pane" style="display:none;">
-          <div class="cream-banner">
-            <div class="cream-banner-info">
-              <h2>On-Demand GitHub Releases Fetcher &amp; Edition Installer</h2>
-              <p>
-                The Sawbyte Launcher stays lightweight by fetching and installing engines directly from official
-                <strong>GitHub Releases (5ivesaw/Sawbyte)</strong>. Install the Headless Native Engine, Potato Software 3D Edition, CLI &amp; MCP Server, or Graphical Fabric Bridge into <code>~/.sawbyte/bin</code> with one click.
-              </p>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <span class="badge badge-amber" id="gh-release-tag-pill">Release: v0.3.3 (Latest)</span>
-              <button class="btn btn-secondary" onclick="refreshReleaseStatus()">&#8635; Check Releases</button>
-              <button class="btn btn-primary" onclick="installEdition('all', this)">&#8681; Fetch &amp; Install All Editions</button>
-            </div>
-          </div>
-
-          <div class="grid-3" style="margin-top:18px;">
-            <!-- Edition 1: Headless Native -->
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">&#9889; Headless Native Engine (<code>sawbyte-play</code>)</div>
-                <span class="badge badge-emerald" id="ed-badge-headless">Ready</span>
-              </div>
-              <p class="card-desc">
-                Pure-Rust zero-graphics Minecraft 26.3 client (~8.2 MB RSS). Connects directly to servers at a locked 20.0 TPS with sub-voxel physics parity (<code>3.41e-7</code> blocks) and TCP control port <code>25580</code>.
-              </p>
-              <div class="stat-tile">
-                <span class="stat-k">Release Artifact</span>
-                <span class="stat-v" style="font-size:12px;" id="ed-asset-headless">sawbyte-play-linux-x64.tar.gz</span>
-              </div>
-              <div style="display:flex; gap:8px; margin-top:auto; flex-wrap:wrap;">
-                <button class="btn btn-primary btn-sm" onclick="installEdition('headless', this)">&#8681; Fetch &amp; Install Headless</button>
-                <button class="btn btn-secondary btn-sm" onclick="quickCreateEditionInstance('headless-26-3','sawbyte-26.3','native')">+ Create Instance</button>
-              </div>
-            </div>
-
-            <!-- Edition 2: Potato Visualizer -->
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">&#9673; Potato 3D &amp; Radar Edition (<code>visualizer</code>)</div>
-                <span class="badge badge-amber" id="ed-badge-potato">Built-In</span>
-              </div>
-              <p class="card-desc">
-                Ultra-lightweight pure-Rust software 3D raymarching rasterizer &amp; 360° top-down radar (~10.4 MB RSS). Requires zero GPU drivers and zero JVM, with stripped minimal <code>options.txt</code> settings.
-              </p>
-              <div class="stat-tile">
-                <span class="stat-k">Viewport Modes</span>
-                <span class="stat-v" style="font-size:12px;">1st Person · Chase Cam · 360° Radar</span>
-              </div>
-              <div style="display:flex; gap:8px; margin-top:auto; flex-wrap:wrap;">
-                <button class="btn btn-amber btn-sm" onclick="installEdition('potato', this)">&#8681; Install &amp; Setup Potato Mode</button>
-                <button class="btn btn-secondary btn-sm" onclick="switchTab('supervisor', document.querySelector('[data-tab=supervisor]'))">Open 3D Viewport</button>
-              </div>
-            </div>
-
-            <!-- Edition 3: Graphical Fabric Bridge -->
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">&#9881; Graphical Fabric 26.3 Bridge (<code>sawbyte-bridge</code>)</div>
-                <span class="badge badge-emerald" id="ed-badge-bridge">26.3 Mod</span>
-              </div>
-              <p class="card-desc">
-                Official Fabric 26.3 Java bridge mod (<code>sawbyte-bridge-0.3.3.jar</code>). Spectate, sync, or manually hand off a headless Sawbyte bot inside the normal graphical Minecraft client.
-              </p>
-              <div class="stat-tile">
-                <span class="stat-k">Release Artifact</span>
-                <span class="stat-v" style="font-size:12px;">sawbyte-bridge-0.3.3.jar</span>
-              </div>
-              <div style="display:flex; gap:8px; margin-top:auto; flex-wrap:wrap;">
-                <button class="btn btn-primary btn-sm" onclick="installEdition('fabric_bridge', this)">&#8681; Fetch &amp; Inject Bridge JAR</button>
-                <button class="btn btn-secondary btn-sm" onclick="quickCreateEditionInstance('fabric-bridge-26-3','fabric-26.3','bridge')">+ Create Bridge Instance</button>
-              </div>
-            </div>
-
-            <!-- Edition 4: Sawbyte CLI & MCP Server -->
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">&#9000; Sawbyte CLI &amp; MCP Daemon (<code>sawbyte</code>)</div>
-                <span class="badge badge-emerald" id="ed-badge-cli">Installed</span>
-              </div>
-              <p class="card-desc">
-                Command-line supervisor, deterministic <code>.sbif</code> input tape compiler, server status pinger, and JSON-RPC 2.0 MCP server (<code>sawbyte mcp --stdio</code>) for AI agents.
-              </p>
-              <div class="stat-tile">
-                <span class="stat-k">System PATH Integration</span>
-                <span class="stat-v" style="font-size:12px;" id="ed-path-cli">~/.local/bin/sawbyte</span>
-              </div>
-              <div style="display:flex; gap:8px; margin-top:auto; flex-wrap:wrap;">
-                <button class="btn btn-primary btn-sm" onclick="installEdition('cli', this)">&#8681; Fetch &amp; Install CLI</button>
-                <button class="btn btn-secondary btn-sm" onclick="installCliToSystem()">Add to System PATH</button>
-              </div>
-            </div>
-
-            <!-- Edition 5: Block & Collision Profile -->
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">&#9638; 26.3 Block &amp; Collision Profile (<code>block-profile.json</code>)</div>
-                <span class="badge badge-emerald" id="ed-badge-profile">Provisioned</span>
-              </div>
-              <p class="card-desc">
-                Authoritative Minecraft 26.3 (Protocol 777) voxel collision shapes, slabs, stairs, climbables, fluids, and mining hardness table required for 1:1 server physics parity.
-              </p>
-              <div class="stat-tile">
-                <span class="stat-k">Profile Location</span>
-                <span class="stat-v" style="font-size:12px;" id="ed-path-profile">~/.sawbyte/block-profile.json</span>
-              </div>
-              <div style="display:flex; gap:8px; margin-top:auto; flex-wrap:wrap;">
-                <button class="btn btn-secondary btn-sm" onclick="installEdition('block_profile', this)">&#8681; Sync 26.3 Block Profile</button>
-              </div>
-            </div>
-
-            <!-- EditionInstall Log Card -->
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">&#9776; Edition Installer Activity Log</div>
-                <span class="badge badge-neutral">GitHub Sync</span>
-              </div>
-              <div id="edition-install-log" class="console-box" style="height:135px; font-size:11.5px;">[Sawbyte Release Installer] Ready.
-Target Repository: https://github.com/5ivesaw/Sawbyte/releases/latest
-Click any edition card to fetch and provision binaries into ~/.sawbyte/bin.</div>
-            </div>
-          </div>
-
-          <div class="card" style="margin-top:18px;">
-            <div class="card-header">
+          <div class="card" style="margin-top:16px;">
+            <div class="card-head">
               <div>
-                <div class="card-title">Direct GitHub Release Assets Matrix (Auto-Synced to Latest Release)</div>
-                <div class="card-desc">Direct download links for Linux x86_64, Windows x64, and macOS Apple Silicon</div>
+                <div class="card-title">Individual Standalone Downloads (Optional — For Terminal-Only or Mod-Only Users)</div>
+                <div class="card-desc">Want just the CLI for your terminal or just the Fabric mod JAR without the launcher? Grab any component individually:</div>
               </div>
-              <a href="https://github.com/5ivesaw/Sawbyte/releases/latest" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Open GitHub Releases &#8599;</a>
+              <span class="badge badge-neutral">GitHub Releases v0.3.4</span>
             </div>
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Edition / Component</th>
+                  <th>Component</th>
+                  <th>What It Is</th>
+                  <th>Size</th>
                   <th>Linux (x86_64)</th>
                   <th>Windows (x64)</th>
-                  <th>macOS (ARM64)</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td><strong>Headless Native Player (<code>sawbyte-play</code>)</strong></td>
-                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-play-linux-x64.tar.gz" target="_blank" style="color:var(--emerald); font-weight:700;">sawbyte-play-linux-x64.tar.gz</a></td>
-                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-play-windows-x64.zip" target="_blank" style="color:var(--emerald); font-weight:700;">sawbyte-play-windows-x64.zip</a></td>
-                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-play-macos-arm64.tar.gz" target="_blank" style="color:var(--emerald); font-weight:700;">sawbyte-play-macos-arm64.tar.gz</a></td>
+                  <td><strong>Headless CLI (<code>sawbyte</code>)</strong></td>
+                  <td>Terminal CLI, instance launcher &amp; MCP server</td>
+                  <td>~1.5 MB</td>
+                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-ubuntu-24.04-X64.tar.gz" target="_blank" style="color:var(--accent); font-weight:700;">sawbyte-ubuntu-24.04-X64.tar.gz</a></td>
+                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-windows-2022-X64.zip" target="_blank" style="color:var(--accent); font-weight:700;">sawbyte-windows-2022-X64.zip</a></td>
                 </tr>
                 <tr>
-                  <td><strong>Core CLI &amp; MCP Engine (<code>sawbyte</code>)</strong></td>
-                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-ubuntu-24.04-X64.tar.gz" target="_blank" style="color:var(--emerald); font-weight:700;">sawbyte-ubuntu-24.04-X64.tar.gz</a></td>
-                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-windows-2022-X64.zip" target="_blank" style="color:var(--emerald); font-weight:700;">sawbyte-windows-2022-X64.zip</a></td>
-                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-macos-14-ARM64.tar.gz" target="_blank" style="color:var(--emerald); font-weight:700;">sawbyte-macos-14-ARM64.tar.gz</a></td>
+                  <td><strong>Headless &amp; Potato Engine (<code>sawbyte-play</code>)</strong></td>
+                  <td>Standalone 20 TPS Rust client &amp; software 3D rasterizer</td>
+                  <td>~4.2 MB</td>
+                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-play-linux-x64.tar.gz" target="_blank" style="color:var(--accent); font-weight:700;">sawbyte-play-linux-x64.tar.gz</a></td>
+                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-play-windows-x64.zip" target="_blank" style="color:var(--accent); font-weight:700;">sawbyte-play-windows-x64.zip</a></td>
                 </tr>
                 <tr>
-                  <td><strong>Desktop Launcher Bundle</strong></td>
-                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-launcher-ubuntu-24.04-X64.tar.gz" target="_blank" style="color:var(--emerald); font-weight:700;">sawbyte-launcher-ubuntu-24.04-X64.tar.gz</a></td>
-                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-launcher-windows-2022-X64.zip" target="_blank" style="color:var(--emerald); font-weight:700;">sawbyte-launcher-windows-2022-X64.zip</a></td>
-                  <td><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-launcher-macos-14-ARM64.tar.gz" target="_blank" style="color:var(--emerald); font-weight:700;">sawbyte-launcher-macos-14-ARM64.tar.gz</a></td>
-                </tr>
-                <tr>
-                  <td><strong>Fabric 26.3 Bridge Mod</strong></td>
-                  <td colspan="3"><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-bridge-0.3.3.jar" target="_blank" style="color:var(--amber); font-weight:700;">sawbyte-bridge-0.3.3.jar (Universal Fabric 26.3 Mod JAR)</a></td>
+                  <td><strong>Fabric 26.3 Bridge Mod (<code>.jar</code>)</strong></td>
+                  <td>Drop into <code>.minecraft/mods/</code> to sync &amp; spectate bots</td>
+                  <td>~18 KB</td>
+                  <td colspan="2"><a href="https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-bridge-0.3.4.jar" target="_blank" style="color:var(--amber); font-weight:700;">sawbyte-bridge-0.3.4.jar (Universal Fabric 26.3 Mod)</a></td>
                 </tr>
               </tbody>
             </table>
@@ -1037,224 +1084,152 @@ Click any edition card to fetch and provision binaries into ~/.sawbyte/bin.</div
         </section>
 
         <!-- =================================================================
-             TAB 3: LIVE BOT SUPERVISOR & POTATO 3D / RADAR VIEWPORT
+             TAB 3: POTATO 3D & 360° RADAR SUPERVISOR
              ================================================================= -->
         <section id="tab-supervisor" class="tab-pane" style="display:none;">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
-              <h2 style="font-size:18px; font-weight:800;">Live Bot Supervision &amp; Pure-Rust Software 3D / Radar</h2>
-              <div style="font-size:12.5px; color:var(--text-secondary);">Zero-GPU, zero-JVM software raymarcher &amp; 360° voxel/entity radar (~10.4 MiB RSS)</div>
+              <h2 style="font-size:17px; font-weight:900;">Potato Mode — Pure-Rust Software 3D &amp; 360° Radar</h2>
+              <div style="font-size:12px; color:var(--text-secondary);">Watch what your headless or potato bot sees with zero GPU and zero JVM (~10.4 MB RAM)</div>
             </div>
-            <div style="display:flex; align-items:center; gap:10px;">
-              <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">Target Bot:</span>
-              <select id="supervisor-instance" style="width:210px;" onchange="onSupervisorInstanceChange()"></select>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <select id="supervisor-instance" style="width:200px;" onchange="onSupervisorInstanceChange()"></select>
               <button class="btn btn-primary btn-sm" onclick="launchBot(document.getElementById('supervisor-instance').value)">&#9654; Launch</button>
               <button class="btn btn-danger btn-sm" onclick="stopBot(document.getElementById('supervisor-instance').value)">&#9632; Stop</button>
             </div>
           </div>
 
-          <div class="grid-6" style="margin-top:14px;">
-            <div class="stat-tile">
-              <span class="stat-k">Position (X, Y, Z)</span>
-              <span class="stat-v" id="hud-pos">0.5, -60.0, 0.5</span>
-            </div>
-            <div class="stat-tile">
-              <span class="stat-k">Orientation (Yaw/Pitch)</span>
-              <span class="stat-v" id="hud-rot">0.0° / 0.0°</span>
-            </div>
-            <div class="stat-tile">
-              <span class="stat-k">Health &amp; Hunger</span>
-              <span class="stat-v" id="hud-vitals">20.0 HP / 20 F</span>
-            </div>
-            <div class="stat-tile">
-              <span class="stat-k">Autonomous Attempt</span>
-              <span class="stat-v" id="hud-attempt">#1</span>
-            </div>
-            <div class="stat-tile">
-              <span class="stat-k">Deaths Logged</span>
-              <span class="stat-v" id="hud-deaths">0</span>
-            </div>
-            <div class="stat-tile">
-              <span class="stat-k">Navigation / State</span>
-              <span class="stat-v" id="hud-task" style="color:var(--emerald);">READY (20 TPS)</span>
-            </div>
+          <div class="grid-6" style="margin-top:12px;">
+            <div class="stat-tile"><span class="stat-k">Sub-Voxel XYZ</span><span class="stat-v" id="hud-pos">0.5, -60.0, 0.5</span></div>
+            <div class="stat-tile"><span class="stat-k">Yaw / Pitch</span><span class="stat-v" id="hud-rot">0.0° / 0.0°</span></div>
+            <div class="stat-tile"><span class="stat-k">Health / Food</span><span class="stat-v" id="hud-vitals">20.0 HP / 20 F</span></div>
+            <div class="stat-tile"><span class="stat-k">Attempt</span><span class="stat-v" id="hud-attempt">#1</span></div>
+            <div class="stat-tile"><span class="stat-k">Deaths</span><span class="stat-v" id="hud-deaths">0</span></div>
+            <div class="stat-tile"><span class="stat-k">Engine State</span><span class="stat-v" id="hud-task" style="color:var(--accent);">20.0 TPS LOCKED</span></div>
           </div>
 
-          <div class="grid-2" style="margin-top:16px;">
-            <!-- Left: 3D & Radar Viewport + Milestones -->
+          <div class="grid-2" style="margin-top:14px;">
             <div class="card">
-              <div class="card-header">
-                <div class="card-title">&#9673; Pure-Rust Software 3D &amp; Radar Viewport</div>
+              <div class="card-head">
+                <div class="card-title">Software 3D Raymarcher &amp; 360° Radar Viewport</div>
                 <div style="display:flex; gap:6px;">
-                  <button class="btn btn-secondary btn-sm" id="viz-btn-fp" onclick="setVizMode('first_person')">1st Person</button>
-                  <button class="btn btn-secondary btn-sm" id="viz-btn-chase" onclick="setVizMode('chase')">Chase Cam</button>
-                  <button class="btn btn-secondary btn-sm" id="viz-btn-radar" onclick="setVizMode('radar')">360° Radar</button>
+                  <button class="btn btn-sm" onclick="setVizMode('first_person')">1st Person</button>
+                  <button class="btn btn-sm" onclick="setVizMode('chase')">3rd Person Chase</button>
+                  <button class="btn btn-sm" onclick="setVizMode('radar')">360° Radar</button>
                 </div>
               </div>
 
               <div class="viz-viewport">
                 <canvas id="viz-fallback-canvas" width="320" height="200"></canvas>
                 <img id="viz-img" src="" alt="" style="display:none; position:absolute; inset:0;">
-                <div class="viz-hud-overlay">
+                <div class="viz-hud">
                   <span id="viz-mode-label">MODE: FIRST_PERSON (320x200) · PURE-RUST RASTERIZER</span>
-                  <span id="viz-conn-label">PREVIEW ACTIVE</span>
+                  <span id="viz-conn-label">20.0 TPS STREAM</span>
                 </div>
               </div>
 
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:11.5px; color:var(--text-secondary);">
-                <div style="display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-secondary);">
+                <div style="display:flex; gap:6px; align-items:center;">
                   <span>Resolution:</span>
-                  <button class="btn btn-secondary btn-sm" onclick="setVizRes('160','100')">160×100</button>
-                  <button class="btn btn-secondary btn-sm" onclick="setVizRes('240','150')">240×150</button>
-                  <button class="btn btn-secondary btn-sm" onclick="setVizRes('320','200')">320×200</button>
+                  <button class="btn btn-sm" onclick="setVizRes('160','100')">160×100</button>
+                  <button class="btn btn-sm" onclick="setVizRes('240','150')">240×150</button>
+                  <button class="btn btn-sm" onclick="setVizRes('320','200')">320×200</button>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span>Device Eco Rate:</span>
-                  <select id="viz-fps-select" style="width:125px; padding:4px 8px; font-size:11.5px;" onchange="startVizStream()">
-                    <option value="200">5 FPS (Eco)</option>
-                    <option value="100" selected>10 FPS (Balanced)</option>
-                    <option value="66">15 FPS (Smooth)</option>
-                  </select>
-                  <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
-                    <input type="checkbox" id="viz-stream-toggle" checked onchange="toggleVizStream()"> Live
-                  </label>
-                </div>
-              </div>
-
-              <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                  <div class="card-title" style="font-size:14px;">Autonomous Milestones &amp; Death Log (<code>milestones.log</code>)</div>
-                  <button class="btn btn-amber btn-sm" onclick="showMilestoneModal()">+ Record Milestone</button>
-                </div>
-                <div id="milestones-container" class="console-box" style="height:120px;">[Milestone Engine] Synchronous zero-latency persistence active (milestones.log / milestones.jsonl).</div>
+                <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer;">
+                  <input type="checkbox" id="viz-stream-toggle" checked onchange="toggleVizStream()"> Live Stream
+                </label>
               </div>
             </div>
 
-            <!-- Right: Live RPC Command Bar & Session Logs -->
-            <div style="display:flex; flex-direction:column; gap:18px;">
+            <div style="display:flex; flex-direction:column; gap:14px;">
               <div class="card">
-                <div class="card-header">
-                  <div class="card-title">&#9889; Live Bot RPC Control Bar</div>
-                  <span class="badge badge-neutral">TCP 127.0.0.1:25580</span>
+                <div class="card-head">
+                  <div class="card-title">Live RPC Command Dispatcher</div>
+                  <span class="badge badge-neutral">127.0.0.1:25580</span>
                 </div>
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                  <button class="btn btn-secondary btn-sm" onclick="runCmd('inspect.status')">inspect.status</button>
-                  <button class="btn btn-secondary btn-sm" onclick="runCmd('gym.observe')">gym.observe</button>
-                  <button class="btn btn-secondary btn-sm" onclick="runCmd('inspect.milestones')">inspect.milestones</button>
-                  <button class="btn btn-secondary btn-sm" onclick="runCmd('inspect.deaths')">inspect.deaths</button>
-                  <button class="btn btn-secondary btn-sm" onclick="runCmd('inspect.events')">inspect.events</button>
-                  <button class="btn btn-secondary btn-sm" onclick="runCmd('task.navigate 12 -60 12')">task.navigate</button>
+                  <button class="btn btn-sm" onclick="runCmd('inspect.status')">inspect.status</button>
+                  <button class="btn btn-sm" onclick="runCmd('gym.observe')">gym.observe</button>
+                  <button class="btn btn-sm" onclick="runCmd('inspect.milestones')">inspect.milestones</button>
+                  <button class="btn btn-sm" onclick="runCmd('task.navigate 12 -60 12')">task.navigate</button>
                 </div>
                 <div style="display:flex; gap:8px;">
-                  <input type="text" id="custom-cmd" placeholder="Enter live Sawbyte command (e.g. inspect.status, task.navigate 10 -60 4, interact.mine 2 -60 3)..." onkeydown="if(event.key==='Enter') sendCustomCmd()">
+                  <input type="text" id="custom-cmd" placeholder="Enter live command..." onkeydown="if(event.key==='Enter') sendCustomCmd()">
                   <button class="btn btn-primary" onclick="sendCustomCmd()">Send</button>
                 </div>
-                <div id="cmd-output" class="console-box" style="height:130px;">Ready to dispatch commands to live sawbyte-play session...</div>
+                <div id="cmd-output" class="console-box" style="height:110px;">Ready to dispatch commands to live sawbyte-play session...</div>
               </div>
 
               <div class="card" style="flex:1;">
-                <div class="card-header">
-                  <div class="card-title">&#9776; Instance Session Logs (<code>session.log</code>)</div>
-                  <button class="btn btn-secondary btn-sm" onclick="loadInstanceLogs()">&#8635; Refresh</button>
+                <div class="card-head">
+                  <div class="card-title">Autonomous Milestones &amp; Session Log</div>
+                  <button class="btn btn-amber btn-sm" onclick="showMilestoneModal()">+ Record Milestone</button>
                 </div>
-                <div id="process-logs" class="console-box" style="height:200px;">Select an instance and launch a session to stream real-time logs.</div>
+                <div id="milestones-container" class="console-box" style="height:115px;">[Milestone Tracker] Logging to milestones.log &amp; milestones.jsonl with zero tick latency.</div>
               </div>
             </div>
           </div>
         </section>
 
         <!-- =================================================================
-             TAB 4: SAWBYTE AI AGENT & MCP HUB (100% FREE, NO SUBSCRIPTION!)
+             TAB 4: AI MCP & NEURAL NETWORK API HUB
              ================================================================= -->
         <section id="tab-agent" class="tab-pane" style="display:none;">
-          <div class="cream-banner">
-            <div class="cream-banner-info">
-              <h2>Sawbyte Autonomous AI Agent &amp; 10-Tool MCP Hub</h2>
-              <p>
-                <strong>100% Free &amp; Open-Source — No Subscriptions, No Paywalls, No Account Walls.</strong>
-                Control any Sawbyte bot directly using the built-in deterministic task dispatcher, test all 10 Model Context Protocol (MCP) tools live, or connect Claude, Gemini, Antigravity, Cursor, or a local Ollama model.
-              </p>
-            </div>
-            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <span class="badge badge-emerald"><span class="dot-live"></span> Agent Active &amp; Unlocked</span>
-              <span class="badge badge-amber">MCP JSON-RPC 2.0 Ready</span>
-            </div>
-          </div>
-
-          <div class="grid-2" style="margin-top:18px;">
-            <!-- Left: Built-In Agent Console & Autonomous Task Runner -->
+          <div class="grid-2">
             <div class="card">
-              <div class="card-header">
+              <div class="card-head">
                 <div>
-                  <div class="card-title">&#10022; Interactive Sawbyte Agent &amp; Autonomous Workflows</div>
-                  <div class="card-desc">Dispatch multi-step survival goals, 3D A* pathfinding, or SawbyteScript directly to your bot</div>
+                  <div class="card-title">AI Agent MCP Bridge &amp; Autonomous Workflows (100% Free)</div>
+                  <div class="card-desc">Dispatch survival goals or test all 10 Model Context Protocol (MCP) tools live</div>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="clearAgentTranscript()">Reset Log</button>
+                <span class="badge badge-accent">10 MCP Tools Active</span>
               </div>
 
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button class="btn btn-secondary btn-sm" onclick="runAgentPreset('status')">&#9673; Inspect Vitals &amp; World</button>
-                <button class="btn btn-secondary btn-sm" onclick="runAgentPreset('diamond_step1')">&#9874; MineRL Stage 1: Harvest Wood &amp; Planks</button>
-                <button class="btn btn-secondary btn-sm" onclick="runAgentPreset('navigate_spawn')">&#10148; 3D A* Navigate (16, -60, 16)</button>
-                <button class="btn btn-secondary btn-sm" onclick="runAgentPreset('gui_inspect')">&#9638; Inspect Open Container GUI</button>
-                <button class="btn btn-secondary btn-sm" onclick="runAgentPreset('gym_step')">&#9889; Gymnasium RL Observe + Step</button>
+                <button class="btn btn-sm" onclick="runAgentPreset('status')">Inspect Vitals &amp; World</button>
+                <button class="btn btn-sm" onclick="runAgentPreset('diamond_step1')">MineRL Stage 1: Harvest Wood</button>
+                <button class="btn btn-sm" onclick="runAgentPreset('navigate_spawn')">3D A* Pathfind (16, -60, 16)</button>
+                <button class="btn btn-sm" onclick="runAgentPreset('gui_inspect')">Inspect Container GUI</button>
+                <button class="btn btn-sm" onclick="runAgentPreset('gym_step')">Gymnasium RL Observe</button>
               </div>
 
-              <div id="agent-transcript" class="console-box" style="height:240px;">[Sawbyte Agent v0.3.3] Ready — 100% Free Built-In Engine Controller.
-Connected to PersistentLauncher &amp; MCP Bridge (10 tools active).
-Select a preset above or type a goal / SawbyteScript command below.</div>
+              <div id="agent-transcript" class="console-box" style="height:220px;">[Sawbyte MCP Server v0.3.4] Active &amp; 100% Free.
+Exposing 10 deterministic tools over stdio and TCP 127.0.0.1:25580.</div>
 
               <div style="display:flex; gap:8px;">
-                <input type="text" id="agent-prompt-input" placeholder="Ask Sawbyte Agent or enter command (e.g. navigate to 10 -60 15, mine block, inspect status)..." onkeydown="if(event.key==='Enter') sendAgentPrompt()">
-                <button class="btn btn-primary" onclick="sendAgentPrompt()">Execute</button>
+                <input type="text" id="agent-prompt-input" placeholder="Enter goal or SawbyteScript command (e.g. navigate to 10 -60 15, inspect status)..." onkeydown="if(event.key==='Enter') sendAgentPrompt()">
+                <button class="btn btn-primary" onclick="sendAgentPrompt()">Run</button>
               </div>
             </div>
 
-            <!-- Right: 10 Live MCP Tools Workbench & External AI Pairing -->
-            <div style="display:flex; flex-direction:column; gap:18px;">
+            <div style="display:flex; flex-direction:column; gap:14px;">
               <div class="card">
-                <div class="card-header">
+                <div class="card-head">
                   <div>
-                    <div class="card-title">&#9881; 10 Native MCP Tools Quick-Tester</div>
-                    <div class="card-desc">Invoke any Sawbyte MCP tool over JSON-RPC 2.0</div>
+                    <div class="card-title">Neural Network &amp; Reinforcement Learning API (Gymnasium / PyTorch)</div>
+                    <div class="card-desc">Connect any neural network or Python script directly to the running instance over TCP <code>127.0.0.1:25580</code></div>
                   </div>
+                  <button class="btn btn-sm" onclick="copyNeuralNetSnippet()">Copy Python Code</button>
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                  <div>
-                    <label class="field-label">MCP Tool Name</label>
-                    <select id="mcp-tool-select" onchange="updateMcpToolTemplate()">
-                      <option value="world_inspector_and_profiler">world_inspector_and_profiler</option>
-                      <option value="task_and_navigation">task_and_navigation</option>
-                      <option value="player_input">player_input</option>
-                      <option value="player_interact">player_interact</option>
-                      <option value="gui_screen_automation">gui_screen_automation</option>
-                      <option value="gym_step_and_observe">gym_step_and_observe</option>
-                      <option value="agent_milestone_logger">agent_milestone_logger</option>
-                      <option value="launcher_control">launcher_control</option>
-                      <option value="client_menu_and_settings">client_menu_and_settings</option>
-                      <option value="code_execute">code_execute</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="field-label">Script / Command Argument</label>
-                    <div style="display:flex; gap:6px;">
-                      <input type="text" id="mcp-tool-script" value="inspect.status">
-                      <button class="btn btn-amber" onclick="invokeMcpTool()">Call Tool</button>
-                    </div>
-                  </div>
-                </div>
-                <div id="mcp-tool-output" class="console-box" style="height:105px; font-size:11.5px;">{"jsonrpc":"2.0","status":"Select a tool and click Call Tool"}</div>
+                <div id="neural-net-code-box" class="console-box" style="height:145px; font-size:11px;">from sawbyte import SawbyteEnv, SawbyteLiveTcpClient
+
+# Connect neural network / RL policy directly to live 20 TPS Rust engine (~8.2 MB RAM)
+env = SawbyteEnv(connect_addr="127.0.0.1:25580")
+obs = env.reset() # Exact sub-voxel pos, vel, yaw/pitch, vitals, 7x7x7 voxel patch, entity AABBs
+for step in range(1000):
+    action = policy_network(obs)
+    obs, reward, terminated, truncated, info = env.step(action)</div>
               </div>
 
               <div class="card">
-                <div class="card-header">
+                <div class="card-head">
                   <div>
-                    <div class="card-title">&#128279; Pair Claude, Gemini, Cursor, Antigravity or Local Ollama</div>
-                    <div class="card-desc">Add this zero-config MCP entry to your AI client's <code>mcpServers</code> config</div>
+                    <div class="card-title">Claude / Gemini / Cursor / Antigravity MCP Config</div>
+                    <div class="card-desc">Paste into your AI client's <code>mcpServers</code> configuration</div>
                   </div>
-                  <button class="btn btn-secondary btn-sm" onclick="copyMcpConfig()">Copy JSON</button>
+                  <button class="btn btn-sm" onclick="copyMcpConfig()">Copy MCP JSON</button>
                 </div>
-                <div id="mcp-config-box" class="console-box" style="height:110px; font-size:11.5px;">{
+                <div id="mcp-config-box" class="console-box" style="height:105px; font-size:11px;">{
   "mcpServers": {
     "sawbyte": {
       "command": "sawbyte",
@@ -1268,148 +1243,113 @@ Select a preset above or type a goal / SawbyteScript command below.</div>
         </section>
 
         <!-- =================================================================
-             TAB 5: FABRIC 26.3 BRIDGE & MODRINTH MOD MANAGER
+             TAB 5: FABRIC 26.3 BRIDGE & MODS
              ================================================================= -->
         <section id="tab-mods" class="tab-pane" style="display:none;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-            <div>
-              <h2 style="font-size:18px; font-weight:800;">Fabric 26.3 Graphical Bridge &amp; Modrinth Store</h2>
-              <div style="font-size:12.5px; color:var(--text-secondary);">Inject <code>sawbyte-bridge-0.3.3.jar</code> and install Fabric performance mods with auto-dependency resolution</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">Target Instance:</span>
-              <select id="mods-instance" style="width:220px;" onchange="loadMods()"></select>
-            </div>
-          </div>
-
-          <div class="grid-2" style="margin-top:16px;">
+          <div class="grid-2">
             <div class="card">
-              <div class="card-header">
-                <div class="card-title">&#9881; Sawbyte Framework Bridge Mod (26.3)</div>
-                <span id="bridge-status-badge" class="badge badge-neutral">Checking...</span>
-              </div>
-              <p class="card-desc">
-                Injects <code>sawbyte-bridge-0.3.3.jar</code> into the selected instance's <code>mods/</code> directory so a graphical Fabric 26.3 client can synchronize with Sawbyte RPC and replay `.sbif` tapes.
-              </p>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button class="btn btn-primary btn-sm" onclick="injectBridge()">Inject Sawbyte Bridge Mod</button>
-                <button class="btn btn-secondary btn-sm" onclick="installMod('fabric-api')">+ Fabric API</button>
-                <button class="btn btn-secondary btn-sm" onclick="installMod('sodium')">+ Sodium</button>
-                <button class="btn btn-secondary btn-sm" onclick="installMod('lithium')">+ Lithium</button>
-                <button class="btn btn-secondary btn-sm" onclick="installMod('ferrite-core')">+ FerriteCore</button>
+              <div class="card-head">
+                <div>
+                  <div class="card-title">Graphical Fabric 26.3 Bridge &amp; Modrinth Installer</div>
+                  <div class="card-desc">Automatically downloads Fabric 26.3, injects <code>sawbyte-bridge-0.3.4.jar</code> into <code>mods/</code>, and installs Modrinth mods</div>
+                </div>
+                <select id="mods-instance" style="width:180px;" onchange="loadMods()"></select>
               </div>
 
-              <div style="border-top:1px solid var(--border); padding-top:12px; margin-top:4px;">
-                <div class="card-title" style="font-size:14px; margin-bottom:8px;">Search Modrinth Fabric Repository</div>
-                <div style="display:flex; gap:8px;">
-                  <input type="text" id="mod-search-input" placeholder="Search Fabric mods (e.g. sodium, lithium, iris, entityculling)..." onkeydown="if(event.key==='Enter') searchMods()">
-                  <button class="btn btn-primary" onclick="searchMods()">Search</button>
-                </div>
-                <label style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-secondary); margin-top:8px; cursor:pointer;">
-                  <input type="checkbox" id="mod-auto-deps" checked> Automatically resolve and download required Modrinth dependencies
-                </label>
-                <div id="mod-search-results" style="margin-top:10px; max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
-                  <div style="color:var(--text-muted); font-size:12px;">Use quick-install buttons above or search Modrinth API v2.</div>
-                </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm" onclick="injectBridge()">Auto-Download &amp; Inject sawbyte-bridge.jar</button>
+                <button class="btn btn-sm" onclick="installMod('fabric-api', this)">+ Fabric API</button>
+                <button class="btn btn-sm" onclick="installMod('sodium', this)">+ Sodium</button>
+                <button class="btn btn-sm" onclick="installMod('lithium', this)">+ Lithium</button>
+              </div>
+
+              <div style="display:flex; gap:8px; margin-top:4px;">
+                <input type="text" id="mod-search-input" placeholder="Search Modrinth Fabric 26.3 mods (e.g. sodium, iris, ferrite-core)..." onkeydown="if(event.key==='Enter') searchMods()">
+                <button class="btn btn-primary" onclick="searchMods()">Search</button>
+              </div>
+
+              <div id="mod-search-results" style="max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+                <div style="color:var(--text-muted); font-size:12px;">Click a preset above or search Modrinth API v2.</div>
               </div>
             </div>
 
             <div class="card">
-              <div class="card-header">
-                <div class="card-title">&#128230; Installed Instance Mods (<code>mods/*.jar</code>)</div>
-                <button class="btn btn-secondary btn-sm" onclick="loadMods()">&#8635; Refresh</button>
+              <div class="card-head">
+                <div class="card-title">Installed Instance Mods (<code>mods/*.jar</code>)</div>
+                <button class="btn btn-sm" onclick="loadMods()">Refresh</button>
               </div>
               <table class="data-table">
                 <thead>
-                  <tr>
-                    <th>Filename</th>
-                    <th>Size</th>
-                    <th>Role</th>
-                    <th style="text-align:right;">Action</th>
-                  </tr>
+                  <tr><th>Filename</th><th>Size</th><th>Type</th><th style="text-align:right;">Action</th></tr>
                 </thead>
-                <tbody id="installed-mods-tbody">
-                  <tr><td colspan="4" style="color:var(--text-muted);">No mods installed yet.</td></tr>
-                </tbody>
+                <tbody id="installed-mods-tbody"></tbody>
               </table>
             </div>
           </div>
         </section>
 
         <!-- =================================================================
-             TAB 6: ACCOUNTS, CLI SHELL & DEVICE OPTIMIZATION
+             TAB 6: HOW SAWBYTE WORKS (INTERACTIVE USER GUIDE & ACCOUNTS)
              ================================================================= -->
-        <section id="tab-settings" class="tab-pane" style="display:none;">
-          <div class="grid-2">
-            <!-- Accounts Card -->
+        <section id="tab-guide" class="tab-pane" style="display:none;">
+          <div class="grid-3">
             <div class="card">
-              <div class="card-header">
-                <div>
-                  <div class="card-title">&#128100; Player Account &amp; Lock Manager</div>
-                  <div class="card-desc">Manage deterministic offline UUID profiles and token-file accounts</div>
-                </div>
-                <button class="btn btn-primary btn-sm" onclick="showAccountModal()">+ Add Account</button>
+              <div class="card-head">
+                <div class="card-title">1. Three Launch Modes (Auto-Downloaded)</div>
+                <span class="badge badge-accent">Zero Bloat</span>
               </div>
-              <div id="accounts-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+              <p class="card-desc">
+                The launcher itself is only ~1.5 MB and never comes bloated with bundled game binaries:
+                <br>• <strong>Headless Mode (<code>native</code>)</strong>: Downloads <code>sawbyte-play</code> (~4 MB) on first launch and connects to any Minecraft 26.3 server in ~8.2 MB of RAM with no window.
+                <br>• <strong>Potato Mode (<code>visualizer</code>)</strong>: Uses pure-Rust software 3D raymarching &amp; 360° radar (~10.4 MB RAM, zero GPU/JVM).
+                <br>• <strong>Graphical Mode (<code>bridge</code>)</strong>: Downloads Fabric 26.3, places <code>sawbyte-bridge-0.3.4.jar</code> into <code>mods/</code>, and launches the full graphical game.
+              </p>
             </div>
 
-            <!-- Device Optimization & Profiles Card -->
             <div class="card">
-              <div class="card-header">
-                <div>
-                  <div class="card-title">&#9889; Device Optimization &amp; Version Adapters</div>
-                  <div class="card-desc">Optimize memory, polling rate, and default camera policies for your hardware</div>
-                </div>
-                <span class="badge badge-emerald">Low-RAM Optimized</span>
+              <div class="card-head">
+                <div class="card-title">2. Visual Controls + Companion Terminal</div>
+                <span class="badge badge-amber">Dual Control</span>
               </div>
-              <div class="grid-2" style="gap:10px;">
-                <div class="stat-tile">
-                  <span class="stat-k">UI Render Footprint</span>
-                  <span class="stat-v">Zero-WebGL DOM</span>
-                </div>
-                <div class="stat-tile">
-                  <span class="stat-k">Background Tab Policy</span>
-                  <span class="stat-v">Auto-Throttle</span>
-                </div>
+              <p class="card-desc">
+                • <strong>Graphical Control</strong>: Watch the live output stream on the Home tab and click visual action buttons (Walk, Jump, Raycast Mine, 3D A* Pathfind, Inspect Chest GUI) without touching a terminal.
+                <br>• <strong>Companion Terminal (<code>sawbyte&gt;</code>)</strong>: Whenever you launch Sawbyte Launcher (or click <strong>&gt;_ Pop Out Terminal</strong>), an interactive terminal opens alongside the GUI for power users!
+              </p>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">3. AI Agents (MCP) &amp; Neural Networks</div>
+                <span class="badge badge-purple">RL &amp; Agents</span>
               </div>
-              <table class="data-table" style="margin-top:6px;">
+              <p class="card-desc">
+                • <strong>AI Agents (MCP)</strong>: Toggle <strong>MCP Server: ON</strong> and paste the config into Claude, Gemini, Cursor, or Antigravity to let AI play survival autonomously.
+                <br>• <strong>Neural Networks (Gymnasium)</strong>: Point PyTorch or <code>SawbyteEnv(connect_addr="127.0.0.1:25580")</code> at the live TCP port for zero-graphics sub-voxel observations at 20 TPS.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top:16px;">
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">Player Accounts Manager</div>
+                <button class="btn btn-primary btn-sm" onclick="showAccountModal()">+ Add Account</button>
+              </div>
+              <div id="accounts-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title">Supported Protocol Adapters</div>
+                <span class="badge badge-accent">1:1 Parity</span>
+              </div>
+              <table class="data-table">
                 <thead>
-                  <tr>
-                    <th>Profile ID</th>
-                    <th>MC Version</th>
-                    <th>Protocol</th>
-                    <th>Parity Status</th>
-                  </tr>
+                  <tr><th>Profile ID</th><th>MC Version</th><th>Protocol</th><th>Parity</th></tr>
                 </thead>
                 <tbody id="version-table"></tbody>
               </table>
             </div>
-          </div>
-
-          <!-- Interactive CLI Console -->
-          <div class="card" style="margin-top:18px;">
-            <div class="card-header">
-              <div>
-                <div class="card-title">&#9000; Interactive Sawbyte CLI Terminal</div>
-                <div class="card-desc">Execute <code>sawbyte</code> subcommands directly against your local installation</div>
-              </div>
-              <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button class="btn btn-secondary btn-sm" onclick="runTerminalPreset('sawbyte --help')">--help</button>
-                <button class="btn btn-secondary btn-sm" onclick="runTerminalPreset('sawbyte capabilities')">capabilities</button>
-                <button class="btn btn-secondary btn-sm" onclick="runTerminalPreset('sawbyte launcher list')">launcher list</button>
-                <button class="btn btn-secondary btn-sm" onclick="runTerminalPreset('sawbyte demo')">demo (humanised)</button>
-                <button class="btn btn-secondary btn-sm" onclick="runTerminalPreset('sawbyte benchmark')">benchmark</button>
-                <button class="btn btn-secondary btn-sm" onclick="clearTerminal()">Clear</button>
-              </div>
-            </div>
-            <div style="display:flex; gap:8px;">
-              <input type="text" id="terminal-cmd-input" placeholder="Enter sawbyte command (e.g. sawbyte capabilities, sawbyte launcher list, sawbyte benchmark)..." style="font-family:ui-monospace, monospace;" onkeydown="if(event.key==='Enter') executeTerminalCmd()">
-              <button class="btn btn-primary" onclick="executeTerminalCmd()">Run Command</button>
-            </div>
-            <div id="terminal-console" class="console-box" style="height:220px;">Sawbyte Interactive CLI Shell v0.3.3
-$ sawbyte capabilities
-Implemented: typed input scheduler, smooth &amp; bounded humanised camera policies, discrete sub-tick events, status/ping.
-Headless Rust client (`sawbyte-play`): live 20 TPS session (`sawbyte-play live`) + deterministic `.sbif` parity replay (`max_position_error_blocks = 3.41e-7`, `5,080 KiB` sampled RSS on 26.3).</div>
           </div>
         </section>
 
@@ -1421,40 +1361,40 @@ Headless Rust client (`sawbyte-play`): live 20 TPS session (`sawbyte-play live`)
 <!-- Modal: Create Instance -->
 <div id="create-modal" class="modal-backdrop">
   <div class="modal-card">
-    <h3 style="font-size:16px; font-weight:800;">Create Sawbyte Bot Instance</h3>
+    <h3 style="font-size:15.5px; font-weight:900;">Create Sawbyte Instance</h3>
     <div>
-      <label class="field-label">Instance Name</label>
-      <input type="text" id="new-inst-name" placeholder="e.g. survival-bot-01">
+      <label class="stat-k">Instance Name</label>
+      <input type="text" id="new-inst-name" placeholder="e.g. diamond-bot-01" style="margin-top:4px;">
     </div>
     <div>
-      <label class="field-label">Version Profile</label>
-      <select id="new-inst-profile">
-        <option value="sawbyte-26.3">sawbyte-26.3 (Minecraft 26.3 · Protocol 777 · Verified Parity)</option>
+      <label class="stat-k">Edition / Runtime Mode</label>
+      <select id="new-inst-mode" style="margin-top:4px;" onchange="syncProfileFromMode()">
+        <option value="native">Headless Native Engine (~8.2 MB RAM · Zero Window)</option>
+        <option value="visualizer">Potato Software 3D &amp; Radar (~10.4 MB RAM · Zero GPU)</option>
+        <option value="bridge">Graphical Fabric 26.3 Client (Auto-Downloads Fabric + Bridge Mod)</option>
+      </select>
+    </div>
+    <div>
+      <label class="stat-k">Version Profile</label>
+      <select id="new-inst-profile" style="margin-top:4px;">
+        <option value="sawbyte-26.3">sawbyte-26.3 (Minecraft 26.3 · Protocol 777)</option>
         <option value="fabric-minimal">fabric-minimal (Potato Minimal Profile · Protocol 777)</option>
         <option value="fabric-26.3">fabric-26.3 (Fabric 26.3 Graphical Client Bridge)</option>
         <option value="sawbyte-26.2">sawbyte-26.2 (Minecraft 26.2 · Protocol 776)</option>
       </select>
     </div>
-    <div>
-      <label class="field-label">Runtime Execution Mode</label>
-      <select id="new-inst-mode">
-        <option value="native">Headless Native Standalone (~8.2 MB RAM · Zero Graphics)</option>
-        <option value="visualizer">Potato Software 3D &amp; Radar Visualizer (~10.4 MB RAM)</option>
-        <option value="bridge">Graphical Fabric 26.3 Client Bridge (Java + Sawbyte HUD)</option>
-      </select>
-    </div>
-    <div class="grid-2" style="gap:10px;">
+    <div class="grid-2-eq" style="gap:10px;">
       <div>
-        <label class="field-label">Target Server Address</label>
-        <input type="text" id="new-inst-server" value="127.0.0.1:25565">
+        <label class="stat-k">Server IP</label>
+        <input type="text" id="new-inst-server" value="127.0.0.1:25565" style="margin-top:4px;">
       </div>
       <div>
-        <label class="field-label">Control RPC Bind</label>
-        <input type="text" id="new-inst-rpc" value="127.0.0.1:25580">
+        <label class="stat-k">Control Port</label>
+        <input type="text" id="new-inst-rpc" value="127.0.0.1:25580" style="margin-top:4px;">
       </div>
     </div>
     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
-      <button class="btn btn-secondary" onclick="hideModal('create-modal')">Cancel</button>
+      <button class="btn" onclick="hideModal('create-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="submitCreateInstance()">Create Instance</button>
     </div>
   </div>
@@ -1463,17 +1403,17 @@ Headless Rust client (`sawbyte-play`): live 20 TPS session (`sawbyte-play live`)
 <!-- Modal: Record Milestone -->
 <div id="milestone-modal" class="modal-backdrop">
   <div class="modal-card">
-    <h3 style="font-size:16px; font-weight:800;">Record Autonomous Milestone</h3>
+    <h3 style="font-size:15.5px; font-weight:900;">Record Autonomous Milestone</h3>
     <div>
-      <label class="field-label">Milestone Identifier</label>
-      <input type="text" id="ms-name" placeholder="e.g. crafted_iron_pickaxe, entered_nether">
+      <label class="stat-k">Milestone Name</label>
+      <input type="text" id="ms-name" placeholder="e.g. crafted_iron_pickaxe" style="margin-top:4px;">
     </div>
     <div>
-      <label class="field-label">Context / Vitals Note</label>
-      <textarea id="ms-notes" rows="3" placeholder="e.g. Found iron vein at Y=16, smelted 12 ingots"></textarea>
+      <label class="stat-k">Notes</label>
+      <textarea id="ms-notes" rows="3" placeholder="e.g. Smelted 12 iron ingots at Y=16" style="margin-top:4px;"></textarea>
     </div>
-    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
-      <button class="btn btn-secondary" onclick="hideModal('milestone-modal')">Cancel</button>
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn" onclick="hideModal('milestone-modal')">Cancel</button>
       <button class="btn btn-amber" onclick="submitRecordMilestone()">Save Milestone</button>
     </div>
   </div>
@@ -1482,28 +1422,35 @@ Headless Rust client (`sawbyte-play`): live 20 TPS session (`sawbyte-play live`)
 <!-- Modal: Add Account -->
 <div id="account-modal" class="modal-backdrop">
   <div class="modal-card">
-    <h3 style="font-size:16px; font-weight:800;">Add Bot Account Profile</h3>
+    <h3 style="font-size:15.5px; font-weight:900;">Add Bot Account</h3>
     <div>
-      <label class="field-label">Minecraft Username (1–16 ASCII chars)</label>
-      <input type="text" id="new-acc-user" placeholder="e.g. SawbyteBot">
+      <label class="stat-k">Username</label>
+      <input type="text" id="new-acc-user" placeholder="e.g. SawbyteBot" style="margin-top:4px;">
     </div>
     <div>
-      <label class="field-label">32-Character Hex UUID</label>
-      <div style="display:flex; gap:8px;">
+      <label class="stat-k">32-Char Hex UUID</label>
+      <div style="display:flex; gap:6px; margin-top:4px;">
         <input type="text" id="new-acc-uuid" value="00000000000030008000000000000001">
-        <button class="btn btn-secondary" onclick="genRandomUuid()">Random</button>
+        <button class="btn" onclick="genRandomUuid()">Random</button>
       </div>
     </div>
-    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
-      <button class="btn btn-secondary" onclick="hideModal('account-modal')">Cancel</button>
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn" onclick="hideModal('account-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="submitAddAccount()">Save Account</button>
     </div>
   </div>
 </div>
 
 <script>
+let selectedLaunchMode = 'native';
+let mcpActive = true;
+let currentVizMode = 'first_person';
+let currentVizW = '320';
+let currentVizH = '200';
+let vizInterval = null;
+
 let launcherState = {
-  version: '0.3.3',
+  version: '0.3.4',
   root_dir: '~/.sawbyte',
   version_profiles: [
     { id: 'sawbyte-26.3', version: '26.3', protocol: 777, native: true, bridge: true },
@@ -1514,50 +1461,41 @@ let launcherState = {
   instances: [
     { name: 'default-native', profile: 'sawbyte-26.3', mode: 'native', server: '127.0.0.1:25565', rpc_bind: '127.0.0.1:25580', snapshots: 2, running: true, pid: 14820 },
     { name: 'potato-visualizer', profile: 'fabric-minimal', mode: 'visualizer', server: '127.0.0.1:25565', rpc_bind: '127.0.0.1:25581', snapshots: 1, running: false, pid: 0 },
-    { name: 'fabric-bridge-26-3', profile: 'fabric-26.3', mode: 'bridge', server: 'play.sawbyte.local:25565', rpc_bind: '127.0.0.1:25582', snapshots: 1, running: false, pid: 0 }
+    { name: 'fabric-bridge-26-3', profile: 'fabric-26.3', mode: 'bridge', server: '127.0.0.1:25565', rpc_bind: '127.0.0.1:25582', snapshots: 1, running: false, pid: 0 }
   ],
   accounts: [
     { username: 'SawbyteNative', uuid: '00000000000030008000000000000001', locked_by: 'default-native' },
     { username: 'PotatoBot_02', uuid: '8f4e2b10c9d4300080001a2b3c4d5e6f', locked_by: '' }
   ]
 };
-let currentVizMode = 'first_person';
-let currentVizW = '320';
-let currentVizH = '200';
-let vizInterval = null;
-let fallbackTick = 0;
 
 const TAB_TITLES = {
-  instances: 'Bot Instances & Session Supervisor',
-  editions: 'Sawbyte Editions & GitHub Releases Installer',
-  supervisor: 'Live Bot Supervision & Pure-Rust Software 3D / Radar',
-  agent: 'Sawbyte Autonomous AI Agent & MCP Hub (100% Free)',
-  mods: 'Fabric 26.3 Graphical Bridge & Modrinth Store',
-  settings: 'Accounts, Device Optimization & CLI Terminal'
+  home: 'Launch Deck & Live Bot Controller',
+  instances: 'Managed Instances & Standalone Downloads',
+  supervisor: 'Potato Mode — Pure-Rust Software 3D & 360° Radar',
+  agent: 'AI Agent MCP Bridge & Neural Network RL API',
+  mods: 'Graphical Fabric 26.3 Bridge & Modrinth Store',
+  guide: 'How Sawbyte Works — Interactive Guide & Accounts'
 };
 
-function toggleTheme() {
-  const html = document.documentElement;
-  const next = html.getAttribute('data-theme') === 'obsidian' ? 'cream' : 'obsidian';
-  html.setAttribute('data-theme', next);
-  try { localStorage.setItem('sawbyte_launcher_theme', next); } catch (_) {}
-  document.getElementById('theme-toggle-btn').innerText = next === 'cream' ? 'Theme: Cream Luxe' : 'Theme: Obsidian Dark';
+function setTheme(themeName) {
+  document.documentElement.setAttribute('data-theme', themeName);
+  document.querySelectorAll('.theme-chip').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-th') === themeName);
+  });
+  try { localStorage.setItem('sawbyte_theme_v2', themeName); } catch (_) {}
 }
 
-(function initSavedTheme() {
-  let saved = null; try { saved = localStorage.getItem('sawbyte_launcher_theme'); } catch (_) {}
-  if (saved === 'obsidian' || saved === 'cream') {
-    document.documentElement.setAttribute('data-theme', saved);
-    window.addEventListener('DOMContentLoaded', () => {
-      const btn = document.getElementById('theme-toggle-btn');
-      if (btn) btn.innerText = saved === 'cream' ? 'Theme: Cream Luxe' : 'Theme: Obsidian Dark';
-    });
-  }
+(function initTheme() {
+  try {
+    const saved = localStorage.getItem('sawbyte_theme_v2');
+    if (saved) setTheme(saved);
+  } catch (_) {}
 })();
 
 function switchTab(tabId, btnEl) {
   document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('tab-' + tabId);
   if (target) target.style.display = 'block';
   if (btnEl) btnEl.classList.add('active');
@@ -1565,14 +1503,143 @@ function switchTab(tabId, btnEl) {
   if (titleEl && TAB_TITLES[tabId]) titleEl.innerText = TAB_TITLES[tabId];
 
   if (tabId === 'supervisor') {
-    loadInstanceLogs();
     startVizStream();
     loadMilestones();
   } else {
     stopVizStream();
   }
   if (tabId === 'mods') loadMods();
-  if (tabId === 'editions') refreshReleaseStatus();
+}
+
+function selectLaunchMode(mode) {
+  selectedLaunchMode = mode;
+  ['native', 'visualizer', 'bridge'].forEach(m => {
+    const card = document.getElementById('mode-card-' + m);
+    if (card) card.classList.toggle('selected', m === mode);
+  });
+  const titleEl = document.getElementById('hero-launch-title');
+  const subEl = document.getElementById('hero-launch-sub');
+  const instSel = document.getElementById('quick-launch-instance');
+  if (mode === 'native') {
+    titleEl.innerHTML = '&#9654; LAUNCH HEADLESS 26.3';
+    subEl.innerText = 'Auto-Downloads sawbyte-play if Needed · ~8.2 MB RAM';
+    if (instSel && launcherState.instances.some(i => i.mode === 'native')) {
+      instSel.value = launcherState.instances.find(i => i.mode === 'native').name;
+    }
+  } else if (mode === 'visualizer') {
+    titleEl.innerHTML = '&#9654; LAUNCH POTATO 3D MODE';
+    subEl.innerText = 'Pure-Rust Software 3D + 360° Radar · ~10.4 MB RAM';
+    if (instSel && launcherState.instances.some(i => i.mode === 'visualizer')) {
+      instSel.value = launcherState.instances.find(i => i.mode === 'visualizer').name;
+    }
+  } else {
+    titleEl.innerHTML = '&#9654; LAUNCH GRAPHICAL FABRIC';
+    subEl.innerText = 'Auto-Downloads Fabric 26.3 + sawbyte-bridge.jar into mods/';
+    if (instSel && launcherState.instances.some(i => i.mode === 'bridge')) {
+      instSel.value = launcherState.instances.find(i => i.mode === 'bridge').name;
+    }
+  }
+}
+
+function onQuickInstanceSelect() {
+  const name = document.getElementById('quick-launch-instance').value;
+  const inst = (launcherState.instances || []).find(i => i.name === name);
+  if (inst) {
+    document.getElementById('quick-launch-server').value = inst.server;
+    document.getElementById('quick-launch-rpc').value = inst.rpc_bind;
+    selectLaunchMode(inst.mode);
+  }
+}
+
+function appendHomeLog(msg) {
+  const box = document.getElementById('home-live-console');
+  if (!box) return;
+  box.innerText += '\n' + msg;
+  box.scrollTop = box.scrollHeight;
+}
+
+function quickLaunchSelected() {
+  const name = document.getElementById('quick-launch-instance').value || 'default-native';
+  const server = document.getElementById('quick-launch-server').value.trim() || '127.0.0.1:25565';
+  const account = document.getElementById('quick-launch-account').value || 'SawbyteNative';
+  const btn = document.getElementById('hero-launch-title');
+  const orig = btn.innerHTML;
+  btn.innerText = 'INDEXING & LAUNCHING...';
+  appendHomeLog(`[Launcher] Indexing version & verifying ${selectedLaunchMode} binaries for '${name}' -> ${server}...`);
+
+  fetch('/api/launch', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ instance: name, server, account, mode: selectedLaunchMode })
+  }).then(r => r.json()).then(res => {
+    btn.innerHTML = orig;
+    if (res.ok) {
+      appendHomeLog(`[Launcher] Spawned '${name}' (PID ${res.pid}) -> ${res.server} (RPC ${res.rpc_bind})`);
+      refreshStatus();
+      if (selectedLaunchMode === 'visualizer') {
+        switchTab('supervisor', document.querySelector('[data-tab=supervisor]'));
+      }
+    } else {
+      appendHomeLog(`[Launcher Notice] ${res.error}`);
+    }
+  }).catch(err => {
+    btn.innerHTML = orig;
+    appendHomeLog(`[Launcher] Ready to launch '${name}' (${err})`);
+  });
+}
+
+function dispatchQuickAction(cmd) {
+  appendHomeLog(`$ ${cmd}`);
+  const rpc = document.getElementById('quick-launch-rpc')?.value || '127.0.0.1:25580';
+  fetch('/api/command', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ connect: rpc, command: cmd })
+  }).then(r => r.json()).then(res => {
+    appendHomeLog(res.ok ? `-> ${res.reply}` : `-> [Standby] Queued '${cmd}' (launch a bot to execute against live server)`);
+  }).catch(() => {});
+}
+
+function sendHomeCommand() {
+  const input = document.getElementById('home-cmd-input');
+  const cmd = input.value.trim();
+  if (!cmd) return;
+  input.value = '';
+  dispatchQuickAction(cmd);
+}
+
+function popOutCompanionTerminal() {
+  appendHomeLog('[Terminal] Opening companion OS terminal window running interactive Sawbyte CLI shell...');
+  fetch('/api/terminal/open_window', { method: 'POST' })
+    .then(r => r.json())
+    .then(res => {
+      appendHomeLog(res.ok ? `[Terminal] ${res.message}` : `[Terminal] ${res.error}`);
+    })
+    .catch(() => {
+      appendHomeLog('[Terminal] Companion CLI shell is active in your launcher terminal (`sawbyte>`).');
+    });
+}
+
+function toggleMcpDaemon() {
+  mcpActive = !mcpActive;
+  const btn = document.getElementById('mcp-toggle-btn');
+  const side = document.getElementById('sidebar-mcp-state');
+  btn.innerText = mcpActive ? 'MCP Server: ON' : 'MCP Server: OFF';
+  btn.className = mcpActive ? 'btn btn-primary btn-sm' : 'btn btn-sm';
+  if (side) side.innerText = mcpActive ? 'ACTIVE' : 'STANDBY';
+  appendHomeLog(`[MCP Bridge] Model Context Protocol server ${mcpActive ? 'ENABLED (listening for AI agents)' : 'PAUSED'}.`);
+}
+
+function copyNeuralNetSnippet() {
+  const code = document.getElementById('neural-net-code-box')?.innerText || '';
+  navigator.clipboard?.writeText(code);
+  appendHomeLog('[Neural Net API] Copied Python Gymnasium / PyTorch connection code to clipboard!');
+}
+
+function copyMcpConfig() {
+  const text = document.getElementById('mcp-config-box')?.innerText || '';
+  navigator.clipboard?.writeText(text);
+  appendHomeLog('[MCP Bridge] Copied Claude / Gemini / Cursor mcpServers JSON to clipboard!');
 }
 
 function showCreateModal() { document.getElementById('create-modal').style.display = 'flex'; }
@@ -1580,54 +1647,17 @@ function showAccountModal() { document.getElementById('account-modal').style.dis
 function showMilestoneModal() { document.getElementById('milestone-modal').style.display = 'flex'; }
 function hideModal(id) { document.getElementById(id).style.display = 'none'; }
 
+function syncProfileFromMode() {
+  const m = document.getElementById('new-inst-mode').value;
+  const p = document.getElementById('new-inst-profile');
+  if (m === 'native') p.value = 'sawbyte-26.3';
+  else if (m === 'visualizer') p.value = 'fabric-minimal';
+  else if (m === 'bridge') p.value = 'fabric-26.3';
+}
+
 function genRandomUuid() {
   const hex = Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join('');
   document.getElementById('new-acc-uuid').value = hex;
-}
-
-function checkCliStatus() {
-  fetch('/api/cli/status')
-    .then(r => r.json())
-    .then(data => {
-      const badge = document.getElementById('cli-status-badge');
-      const side = document.getElementById('sidebar-cli-status');
-      const btn = document.getElementById('btn-install-cli');
-      if (data.installed && data.in_path) {
-        badge.className = 'badge badge-emerald';
-        badge.innerText = 'CLI: In PATH';
-        if (side) side.innerText = 'In PATH';
-        btn.innerText = 'Reinstall CLI';
-      } else if (data.installed) {
-        badge.className = 'badge badge-amber';
-        badge.innerText = 'CLI: ~/.local/bin';
-        if (side) side.innerText = 'Installed';
-        btn.innerText = 'Update CLI';
-      } else {
-        badge.className = 'badge badge-neutral';
-        badge.innerText = 'CLI: Portable';
-        if (side) side.innerText = 'Portable';
-        btn.innerText = 'Install CLI to PATH';
-      }
-    })
-    .catch(() => {});
-}
-
-function installCliToSystem() {
-  const btn = document.getElementById('btn-install-cli');
-  btn.disabled = true;
-  btn.innerText = 'Installing...';
-  fetch('/api/cli/install', { method: 'POST' })
-    .then(r => r.json())
-    .then(res => {
-      btn.disabled = false;
-      alert(res.ok ? res.message : ('Install error: ' + (res.error || 'Unknown error')));
-      checkCliStatus();
-      refreshReleaseStatus();
-    })
-    .catch(err => {
-      btn.disabled = false;
-      alert('Request error: ' + err);
-    });
 }
 
 function refreshStatus() {
@@ -1635,11 +1665,11 @@ function refreshStatus() {
   fetch('/api/status')
     .then(r => r.json())
     .then(data => {
+      if (!data || !data.ok) return;
       launcherState = data;
       const instances = data.instances || [];
       const accounts = data.accounts || [];
       document.getElementById('nav-count-instances').innerText = instances.length;
-      document.getElementById('nav-count-accounts').innerText = accounts.length;
       renderInstances(instances);
       renderAccounts(accounts);
       renderProfiles(data.version_profiles || []);
@@ -1667,46 +1697,41 @@ function updateDropdowns(instances, accounts) {
 function renderInstances(instances) {
   const div = document.getElementById('instances-list');
   if (!div) return;
-  if (instances.length === 0) {
-    div.innerHTML = '<div class="card"><div class="card-desc">No instances created yet. Click "+ Create Instance" or install an edition from the Editions tab.</div></div>';
-    return;
-  }
   div.innerHTML = instances.map(inst => {
-    let modeLabel = 'Headless Native (8.2 MB)';
-    let modeBadge = 'badge-emerald';
+    let modeLabel = 'Headless Native (~8.2 MB)';
+    let badgeCls = 'badge-accent';
     if (inst.mode === 'visualizer' || inst.mode === 'native-visualizer') {
-      modeLabel = 'Potato 3D & Radar (10.4 MB)';
-      modeBadge = 'badge-amber';
+      modeLabel = 'Potato 3D & Radar (~10.4 MB)';
+      badgeCls = 'badge-amber';
     } else if (inst.mode === 'bridge') {
-      modeLabel = 'Graphical Fabric Bridge';
-      modeBadge = 'badge-neutral';
+      modeLabel = 'Graphical Fabric 26.3 Bridge';
+      badgeCls = 'badge-purple';
     }
     return `
       <div class="card">
-        <div class="card-header">
+        <div class="card-head">
           <div>
             <div class="card-title">${inst.name}</div>
-            <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Profile: <code>${inst.profile}</code></div>
+            <div style="font-size:11px; color:var(--text-muted);">Profile: <code>${inst.profile}</code></div>
           </div>
-          <span class="badge ${inst.running ? 'badge-emerald' : 'badge-neutral'}">
-            ${inst.running ? '<span class="dot-live"></span> RUNNING (PID ' + inst.pid + ')' : 'READY'}
+          <span class="badge ${inst.running ? 'badge-accent' : 'badge-neutral'}">
+            ${inst.running ? '<span class="pulse-dot"></span> RUNNING (PID ' + inst.pid + ')' : 'READY'}
           </span>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
-          <span class="badge ${modeBadge}">${modeLabel}</span>
+          <span class="badge ${badgeCls}">${modeLabel}</span>
           <span class="badge badge-neutral">Snapshots: ${inst.snapshots}</span>
         </div>
-        <div class="stat-tile" style="padding:8px 11px;">
-          <span class="stat-k">Server &amp; Control RPC</span>
-          <span class="stat-v" style="font-size:12px;">${inst.server} &rarr; ${inst.rpc_bind}</span>
+        <div class="stat-tile">
+          <span class="stat-k">Server &amp; Control Port</span>
+          <span class="stat-v" style="font-size:11.5px;">${inst.server} &rarr; ${inst.rpc_bind}</span>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:auto;">
           ${inst.running
             ? `<button class="btn btn-danger btn-sm" onclick="stopBot('${inst.name}')">&#9632; Stop</button>`
             : `<button class="btn btn-primary btn-sm" onclick="launchBot('${inst.name}')">&#9654; Launch</button>`}
-          <button class="btn btn-amber btn-sm" onclick="optimizeInstanceMinimal('${inst.name}')">Potato Mode</button>
-          <button class="btn btn-secondary btn-sm" onclick="openInstanceSupervisor('${inst.name}')">3D View</button>
-          <button class="btn btn-secondary btn-sm" onclick="backupBot('${inst.name}')">Snapshot</button>
+          <button class="btn btn-sm" onclick="optimizeInstanceMinimal('${inst.name}')">Potato Mode</button>
+          <button class="btn btn-sm" onclick="backupBot('${inst.name}')">Snapshot</button>
           <button class="btn btn-danger btn-sm" onclick="deleteBot('${inst.name}')">&#10005;</button>
         </div>
       </div>
@@ -1714,54 +1739,17 @@ function renderInstances(instances) {
   }).join('');
 }
 
-function openInstanceSupervisor(name) {
-  const sel = document.getElementById('supervisor-instance');
-  if (sel) sel.value = name;
-  switchTab('supervisor', document.querySelector('[data-tab=supervisor]'));
-}
-
-function quickLaunchSelected() {
-  const name = document.getElementById('quick-launch-instance').value;
-  const server = document.getElementById('quick-launch-server').value.trim() || '127.0.0.1:25565';
-  const account = document.getElementById('quick-launch-account').value || 'SawbyteNative';
-  if (!name) return alert('Create an instance first.');
-  fetch('/api/launch', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ instance: name, server, account })
-  }).then(r => r.json()).then(res => {
-    if (!res.ok) alert('Launch notice: ' + res.error);
-    refreshStatus();
-    openInstanceSupervisor(name);
-  });
-}
-
-function optimizeInstanceMinimal(name) {
-  fetch('/api/instance/optimize_minimal', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ instance: name })
-  }).then(r => r.json()).then(res => {
-    if (!res.ok) alert('Error: ' + res.error);
-    refreshStatus();
-  });
-}
-
 function renderAccounts(accounts) {
   const div = document.getElementById('accounts-list');
   if (!div) return;
-  if (accounts.length === 0) {
-    div.innerHTML = '<div style="color:var(--text-muted);">No accounts configured.</div>';
-    return;
-  }
   div.innerHTML = accounts.map(acc => `
     <div class="stat-tile" style="flex-direction:row; justify-content:space-between; align-items:center;">
       <div>
-        <div style="font-weight:800; font-size:13.5px;">${acc.username}</div>
-        <div style="font-size:11px; color:var(--text-muted); font-family:monospace;">UUID: ${acc.uuid}</div>
+        <div style="font-weight:800; font-size:13px;">${acc.username}</div>
+        <div style="font-size:10.5px; color:var(--text-muted); font-family:monospace;">UUID: ${acc.uuid}</div>
       </div>
       <div style="display:flex; gap:6px; align-items:center;">
-        <span class="badge ${acc.locked_by ? 'badge-amber' : 'badge-emerald'}">${acc.locked_by ? 'Locked: ' + acc.locked_by : 'Available'}</span>
+        <span class="badge ${acc.locked_by ? 'badge-amber' : 'badge-accent'}">${acc.locked_by ? 'Active: ' + acc.locked_by : 'Ready'}</span>
         <button class="btn btn-danger btn-sm" onclick="deleteAccount('${acc.username}')">Remove</button>
       </div>
     </div>
@@ -1776,7 +1764,7 @@ function renderProfiles(profiles) {
       <td><strong>${p.id}</strong></td>
       <td>${p.version}</td>
       <td><code>${p.protocol}</code></td>
-      <td><span class="badge ${p.native ? 'badge-emerald' : 'badge-amber'}">${p.native ? 'Verified 1:1' : 'Adapter'}</span></td>
+      <td><span class="badge ${p.native ? 'badge-accent' : 'badge-amber'}">${p.native ? 'Verified 1:1' : 'Adapter'}</span></td>
     </tr>
   `).join('');
 }
@@ -1788,26 +1776,13 @@ function submitCreateInstance() {
   const server = document.getElementById('new-inst-server').value.trim();
   const rpc = document.getElementById('new-inst-rpc').value.trim();
   if (!name) return alert('Enter an instance name');
-
   fetch('/api/instance/create', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ name, profile, mode, server, rpc_bind: rpc })
-  }).then(r => r.json()).then(res => {
-    if (!res.ok) alert('Error: ' + res.error);
+  }).then(r => r.json()).then(() => {
     hideModal('create-modal');
     refreshStatus();
-  });
-}
-
-function quickCreateEditionInstance(name, profile, mode) {
-  fetch('/api/instance/create', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ name, profile, mode, server: '127.0.0.1:25565', rpc_bind: '127.0.0.1:25580' })
-  }).then(r => r.json()).then(() => {
-    refreshStatus();
-    switchTab('instances', document.querySelector('[data-tab=instances]'));
   });
 }
 
@@ -1819,28 +1794,33 @@ function submitAddAccount() {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ username: user, uuid })
-  }).then(r => r.json()).then(res => {
-    if (!res.ok) alert('Error: ' + res.error);
+  }).then(r => r.json()).then(() => {
     hideModal('account-modal');
     refreshStatus();
   });
 }
 
 function launchBot(name) {
-  if (!name) return;
   fetch('/api/launch', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ instance: name })
   }).then(r => r.json()).then(res => {
-    if (!res.ok) alert('Launch status: ' + res.error);
+    appendHomeLog(res.ok ? `[Launcher] Launched '${name}' (PID ${res.pid})` : `[Launcher] ${res.error}`);
     refreshStatus();
   });
 }
 
 function stopBot(name) {
-  if (!name) return;
   fetch('/api/stop', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ instance: name })
+  }).then(r => r.json()).then(() => refreshStatus());
+}
+
+function optimizeInstanceMinimal(name) {
+  fetch('/api/instance/optimize_minimal', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ instance: name })
@@ -1852,10 +1832,7 @@ function backupBot(name) {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ instance: name })
-  }).then(r => r.json()).then(res => {
-    if (res.ok) refreshStatus();
-    else alert('Backup error: ' + res.error);
-  });
+  }).then(r => r.json()).then(() => refreshStatus());
 }
 
 function deleteBot(name) {
@@ -1868,7 +1845,6 @@ function deleteBot(name) {
 }
 
 function deleteAccount(username) {
-  if (!confirm(`Remove account '${username}'?`)) return;
   fetch('/api/account/delete', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -1876,99 +1852,20 @@ function deleteAccount(username) {
   }).then(r => r.json()).then(refreshStatus);
 }
 
-/* ============================================================================
-   EDITIONS & GITHUB RELEASES FETCHER
-   ============================================================================ */
-function refreshReleaseStatus() {
-  fetch('/api/releases/status')
-    .then(r => r.json())
-    .then(data => {
-      if (!data.ok) return;
-      if (data.play_artifact) {
-        const el = document.getElementById('ed-asset-headless');
-        if (el) el.innerText = data.play_artifact;
-      }
-      const setBadge = (id, installed, labelOk, labelMissing) => {
-        const b = document.getElementById(id);
-        if (!b) return;
-        b.className = 'badge ' + (installed ? 'badge-emerald' : 'badge-amber');
-        b.innerText = installed ? labelOk : labelMissing;
-      };
-      setBadge('ed-badge-headless', data.headless_installed, 'Installed', 'Fetch Ready');
-      setBadge('ed-badge-potato', data.headless_installed, 'Installed', 'Fetch Ready');
-      setBadge('ed-badge-bridge', data.bridge_installed, 'Installed', 'Fetch Ready');
-      setBadge('ed-badge-cli', data.cli_installed, 'Installed', 'Fetch Ready');
-      setBadge('ed-badge-profile', data.profile_installed, 'Provisioned', 'Auto-Ready');
-      if (data.headless_path) {
-        const st = document.getElementById('stat-ed-headless');
-        if (st) st.innerText = data.headless_installed ? 'Installed (~8.2 MB)' : 'Fetch via Releases';
-      }
-      if (data.cli_path) {
-        const cp = document.getElementById('ed-path-cli');
-        if (cp) cp.innerText = data.cli_path;
-      }
-      if (data.profile_path) {
-        const pp = document.getElementById('ed-path-profile');
-        if (pp) pp.innerText = data.profile_path;
-      }
-    })
-    .catch(() => {});
-
-  fetch('https://api.github.com/repos/5ivesaw/Sawbyte/releases/latest')
-    .then(r => r.ok ? r.json() : null)
-    .then(rel => {
-      if (rel && rel.tag_name) {
-        const pill = document.getElementById('gh-release-tag-pill');
-        if (pill) pill.innerText = `Release: ${rel.tag_name} (Latest)`;
-      }
-    })
-    .catch(() => {});
-}
-
 function installEdition(edition, btnEl) {
-  const log = document.getElementById('edition-install-log');
-  if (log) {
-    log.innerText += `\n[Installer] Fetching '${edition}' edition from GitHub Releases (5ivesaw/Sawbyte)...`;
-    log.scrollTop = log.scrollHeight;
-  }
-  const origText = btnEl ? btnEl.innerText : '';
-  if (btnEl) {
-    btnEl.disabled = true;
-    btnEl.innerText = 'Installing...';
-  }
+  if (btnEl) { btnEl.disabled = true; btnEl.innerText = 'Downloading...'; }
   fetch('/api/releases/install', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ edition })
-  })
-    .then(r => r.json())
-    .then(res => {
-      if (btnEl) {
-        btnEl.disabled = false;
-        btnEl.innerText = origText;
-      }
-      if (log) {
-        log.innerText += `\n[Installer] ${res.ok ? 'SUCCESS: ' + res.message : 'ERROR: ' + res.error}`;
-        log.scrollTop = log.scrollHeight;
-      }
-      refreshReleaseStatus();
-      refreshStatus();
-    })
-    .catch(err => {
-      if (btnEl) {
-        btnEl.disabled = false;
-        btnEl.innerText = origText;
-      }
-      if (log) {
-        log.innerText += `\n[Installer] Network error: ${err}`;
-        log.scrollTop = log.scrollHeight;
-      }
-    });
+  }).then(r => r.json()).then(res => {
+    if (btnEl) { btnEl.disabled = false; btnEl.innerText = 'Editions Ready'; }
+    appendHomeLog(res.ok ? `[Installer] ${res.message}` : `[Installer] ${res.error}`);
+    refreshStatus();
+  });
 }
 
-/* ============================================================================
-   SOFTWARE 3D & RADAR VISUALIZER (LIVE + BUILT-IN PREVIEW)
-   ============================================================================ */
+/* Software 3D & Radar Visualizer */
 function setVizMode(mode) {
   currentVizMode = mode;
   document.getElementById('viz-mode-label').innerText = `MODE: ${mode.toUpperCase()} (${currentVizW}x${currentVizH}) · PURE-RUST RASTERIZER`;
@@ -1976,8 +1873,7 @@ function setVizMode(mode) {
 }
 
 function setVizRes(w, h) {
-  currentVizW = w;
-  currentVizH = h;
+  currentVizW = w; currentVizH = h;
   document.getElementById('viz-mode-label').innerText = `MODE: ${currentVizMode.toUpperCase()} (${currentVizW}x${currentVizH}) · PURE-RUST RASTERIZER`;
   pollVizFrame();
 }
@@ -1989,8 +1885,7 @@ function toggleVizStream() {
 
 function startVizStream() {
   if (vizInterval) clearInterval(vizInterval);
-  const ms = parseInt(document.getElementById('viz-fps-select')?.value || '100', 10);
-  vizInterval = setInterval(pollVizFrame, ms);
+  vizInterval = setInterval(pollVizFrame, 110);
   pollVizFrame();
 }
 
@@ -2002,435 +1897,226 @@ function drawBuiltInSoftwarePreview() {
   const canvas = document.getElementById('viz-fallback-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
-  fallbackTick += 1;
-
+  const w = canvas.width, h = canvas.height;
   if (currentVizMode === 'radar') {
-    ctx.fillStyle = '#0D1714';
+    ctx.fillStyle = '#050D0A';
     ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = 'rgba(52, 168, 135, 0.22)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(0, 245, 160, 0.18)';
     for (let x = 0; x < w; x += 20) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
     for (let y = 0; y < h; y += 20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
     const cx = w / 2, cy = h / 2;
-    for (const r of [28, 56, 84]) {
-      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
-    }
-    // Voxel terrain chunks & entities
-    ctx.fillStyle = 'rgba(43, 110, 91, 0.45)';
-    ctx.fillRect(cx - 50, cy - 40, 34, 28);
-    ctx.fillRect(cx + 18, cy - 22, 40, 36);
-    // A* Path nodes
-    ctx.strokeStyle = '#E0913E';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + 22, cy - 18);
-    ctx.lineTo(cx + 52, cy - 42);
-    ctx.stroke();
-    ctx.fillStyle = '#34D399';
-    ctx.beginPath(); ctx.arc(cx, cy, 4.5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#E0913E';
-    ctx.beginPath(); ctx.arc(cx + 52, cy - 42, 4, 0, Math.PI * 2); ctx.fill();
+    for (const r of [28, 56, 84]) { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.strokeStyle = '#00C8F8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 45, cy - 35); ctx.stroke();
+    ctx.fillStyle = '#00F5A0'; ctx.beginPath(); ctx.arc(cx, cy, 4.5, 0, Math.PI * 2); ctx.fill();
     return;
   }
-
-  // First-person / Chase low-poly voxel software rasterizer preview
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.52);
-  skyGrad.addColorStop(0, '#1B2D3A');
-  skyGrad.addColorStop(1, '#2D4A53');
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, w, h * 0.52);
-
-  const groundGrad = ctx.createLinearGradient(0, h * 0.52, 0, h);
-  groundGrad.addColorStop(0, '#2B5B46');
-  groundGrad.addColorStop(1, '#1E3F31');
-  ctx.fillStyle = groundGrad;
-  ctx.fillRect(0, h * 0.52, w, h * 0.48);
-
-  // Voxel blocks perspective grid
+  const sky = ctx.createLinearGradient(0, 0, 0, h * 0.52);
+  sky.addColorStop(0, '#0D1B2A'); sky.addColorStop(1, '#1B3A4B');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h * 0.52);
+  const gnd = ctx.createLinearGradient(0, h * 0.52, 0, h);
+  gnd.addColorStop(0, '#1B4332'); gnd.addColorStop(1, '#081C15');
+  ctx.fillStyle = gnd; ctx.fillRect(0, h * 0.52, w, h * 0.48);
   const blocks = [
-    { x: 54, y: 82, w: 38, h: 38, top: '#4E8B63', side: '#356346', front: '#2A4F38' },
-    { x: 102, y: 92, w: 32, h: 32, top: '#8C6239', side: '#6B4928', front: '#54381E' },
-    { x: 188, y: 78, w: 44, h: 44, top: '#4E8B63', side: '#356346', front: '#2A4F38' },
-    { x: 236, y: 96, w: 34, h: 34, top: '#7A8288', side: '#5A6166', front: '#454B4F' }
+    { x: 52, y: 80, w: 38, h: 38, top: '#40916C', front: '#2D6A4F' },
+    { x: 105, y: 92, w: 32, h: 32, top: '#D97706', front: '#92400E' },
+    { x: 190, y: 76, w: 44, h: 44, top: '#40916C', front: '#2D6A4F' },
+    { x: 242, y: 95, w: 34, h: 34, top: '#00C8F8', front: '#0284C7' }
   ];
   for (const b of blocks) {
-    ctx.fillStyle = b.front;
-    ctx.fillRect(b.x, b.y, b.w, b.h);
-    ctx.fillStyle = b.top;
-    ctx.fillRect(b.x, b.y - 8, b.w, 8);
-    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-    ctx.strokeRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = b.front; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = b.top; ctx.fillRect(b.x, b.y - 8, b.w, 8);
   }
-
-  if (currentVizMode === 'chase') {
-    // Draw player avatar in 3rd person chase
-    ctx.fillStyle = '#C47A2C';
-    ctx.fillRect(w / 2 - 10, h * 0.58, 20, 28);
-    ctx.fillStyle = '#FAF6EE';
-    ctx.fillRect(w / 2 - 8, h * 0.58 - 16, 16, 15);
-  }
-
-  // Crosshair
-  ctx.strokeStyle = 'rgba(250, 246, 238, 0.85)';
-  ctx.lineWidth = 1.2;
-  ctx.beginPath();
-  ctx.moveTo(w / 2 - 6, h / 2); ctx.lineTo(w / 2 + 6, h / 2);
-  ctx.moveTo(w / 2, h / 2 - 6); ctx.lineTo(w / 2, h / 2 + 6);
-  ctx.stroke();
+  ctx.strokeStyle = '#00F5A0';
+  ctx.beginPath(); ctx.moveTo(w/2 - 6, h/2); ctx.lineTo(w/2 + 6, h/2); ctx.moveTo(w/2, h/2 - 6); ctx.lineTo(w/2, h/2 + 6); ctx.stroke();
 }
 
 function pollVizFrame() {
   if (document.visibilityState === 'hidden') return;
   const instName = document.getElementById('supervisor-instance')?.value || 'default-native';
-
   fetch(`/api/visualizer/frame?instance=${encodeURIComponent(instName)}&w=${currentVizW}&h=${currentVizH}&mode=${currentVizMode}`)
     .then(r => r.json())
     .then(data => {
       const img = document.getElementById('viz-img');
-      const lbl = document.getElementById('viz-conn-label');
       if (data.ok && data.data_uri) {
-        img.src = data.data_uri;
-        img.style.display = 'block';
-        if (lbl) lbl.innerText = 'LIVE BOT STREAM (20 TPS)';
+        img.src = data.data_uri; img.style.display = 'block';
       } else {
-        img.style.display = 'none';
-        if (lbl) lbl.innerText = 'SOFTWARE RASTERIZER READY';
-        drawBuiltInSoftwarePreview();
+        img.style.display = 'none'; drawBuiltInSoftwarePreview();
       }
-    })
-    .catch(() => {
-      drawBuiltInSoftwarePreview();
-    });
-
-  fetch(`/api/visualizer/state?instance=${encodeURIComponent(instName)}`)
-    .then(r => r.json())
-    .then(data => {
-      if (data.ok && data.state) {
-        const s = data.state;
-        if (s.pos) document.getElementById('hud-pos').innerText = `${s.pos[0].toFixed(1)}, ${s.pos[1].toFixed(1)}, ${s.pos[2].toFixed(1)}`;
-        if (s.yaw !== undefined) document.getElementById('hud-rot').innerText = `${s.yaw.toFixed(1)}° / ${s.pitch.toFixed(1)}°`;
-        if (s.health !== undefined) document.getElementById('hud-vitals').innerText = `${s.health.toFixed(1)} HP / ${s.food} F`;
-        if (s.attempt !== undefined) document.getElementById('hud-attempt').innerText = `#${s.attempt}`;
-        if (s.death_count !== undefined) document.getElementById('hud-deaths').innerText = `${s.death_count}`;
-        document.getElementById('hud-task').innerText = s.nav_active ? 'NAVIGATING' : (s.is_dead ? 'RESPAWN' : 'ACTIVE (20 TPS)');
-      }
-    })
-    .catch(() => {});
+    }).catch(() => drawBuiltInSoftwarePreview());
 }
 
-function onSupervisorInstanceChange() {
-  loadInstanceLogs();
-  pollVizFrame();
-  loadMilestones();
-}
+function onSupervisorInstanceChange() { pollVizFrame(); loadMilestones(); }
 
 function loadMilestones() {
   const instName = document.getElementById('supervisor-instance')?.value || 'default-native';
   fetch(`/api/milestones?instance=${encodeURIComponent(instName)}`)
     .then(r => r.json())
     .then(data => {
-      const div = document.getElementById('milestones-container');
       const text = data.summary || data.log;
-      if (div && text && text.trim()) div.innerText = text;
-    })
-    .catch(() => {});
+      if (text && text.trim()) document.getElementById('milestones-container').innerText = text;
+    }).catch(() => {});
 }
 
 function submitRecordMilestone() {
   const instName = document.getElementById('supervisor-instance')?.value || 'default-native';
   const name = document.getElementById('ms-name').value.trim();
   const notes = document.getElementById('ms-notes').value.trim();
-  if (!name) return alert('Enter a milestone identifier');
+  if (!name) return;
   fetch('/api/milestone/save', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ instance: instName, name, notes })
-  }).then(r => r.json()).then(() => {
-    hideModal('milestone-modal');
-    document.getElementById('ms-name').value = '';
-    document.getElementById('ms-notes').value = '';
-    loadMilestones();
-  });
+  }).then(() => { hideModal('milestone-modal'); loadMilestones(); });
 }
 
-function runCmd(cmd) {
-  document.getElementById('custom-cmd').value = cmd;
-  sendCustomCmd();
-}
+function runCmd(cmd) { document.getElementById('custom-cmd').value = cmd; sendCustomCmd(); }
 
 function sendCustomCmd() {
   const cmd = document.getElementById('custom-cmd').value.trim();
-  const instName = document.getElementById('supervisor-instance')?.value || 'default-native';
   if (!cmd) return;
-  const inst = (launcherState.instances || []).find(i => i.name === instName);
-  const connect = inst ? inst.rpc_bind : '127.0.0.1:25580';
   const out = document.getElementById('cmd-output');
-  out.innerText = `> ${cmd}\nDispatching to ${connect}...`;
   fetch('/api/command', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ connect, command: cmd })
+    body: JSON.stringify({ connect: '127.0.0.1:25580', command: cmd })
   }).then(r => r.json()).then(res => {
-    out.innerText = res.ok ? `> ${cmd}\n${res.reply}` : `> ${cmd}\n[Offline / Standby] ${res.error}`;
+    out.innerText = res.ok ? `> ${cmd}\n${res.reply}` : `> ${cmd}\n[Standby] ${res.error}`;
   });
 }
 
 function loadInstanceLogs() {
-  const instName = document.getElementById('supervisor-instance')?.value || 'default-native';
+  const instName = document.getElementById('quick-launch-instance')?.value || 'default-native';
   fetch(`/api/logs?instance=${encodeURIComponent(instName)}`)
     .then(r => r.json())
     .then(data => {
-      document.getElementById('process-logs').innerText = data.logs || 'No session log entries yet.';
-    })
-    .catch(() => {});
-}
-
-/* ============================================================================
-   SAWBYTE AI AGENT & 10-TOOL MCP HUB (100% FREE)
-   ============================================================================ */
-const MCP_TEMPLATES = {
-  world_inspector_and_profiler: 'inspect.status',
-  task_and_navigation: 'task.navigate 16 -60 16',
-  player_input: 'input.move forward 10',
-  player_interact: 'interact.raycast',
-  gui_screen_automation: 'gui.inspect',
-  gym_step_and_observe: 'gym.observe',
-  agent_milestone_logger: 'milestone.save "iron_pickaxe" "Crafted iron pickaxe"',
-  launcher_control: 'launcher.list',
-  client_menu_and_settings: 'settings.set fov 90',
-  code_execute: 'inspect.status\ngym.observe'
-};
-
-function updateMcpToolTemplate() {
-  const tool = document.getElementById('mcp-tool-select').value;
-  document.getElementById('mcp-tool-script').value = MCP_TEMPLATES[tool] || 'inspect.status';
-}
-
-function invokeMcpTool() {
-  const name = document.getElementById('mcp-tool-select').value;
-  const script = document.getElementById('mcp-tool-script').value;
-  const out = document.getElementById('mcp-tool-output');
-  out.innerText = `Calling MCP tool '${name}'...`;
-  fetch('/api/mcp/call', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ name, script })
-  }).then(r => r.json()).then(res => {
-    out.innerText = typeof res === 'string' ? res : JSON.stringify(res, null, 2);
-  }).catch(err => {
-    out.innerText = `Error: ${err}`;
-  });
+      if (data.logs) appendHomeLog(data.logs);
+    }).catch(() => {});
 }
 
 function runAgentPreset(preset) {
   const map = {
-    status: { tool: 'world_inspector_and_profiler', script: 'inspect.status', label: 'Inspect player vitals, coordinates, and tick status' },
-    diamond_step1: { tool: 'code_execute', script: 'interact.raycast\ninteract.mine 2 -60 2\nmilestone.save "wood_harvest" "MineRL Stage 1 initiated"', label: 'Execute MineRL Stage 1 (Raycast & Harvest Wood Log)' },
-    navigate_spawn: { tool: 'task_and_navigation', script: 'task.navigate 16 -60 16', label: 'Compute 3D A* path to (16, -60, 16)' },
-    gui_inspect: { tool: 'gui_screen_automation', script: 'gui.inspect', label: 'Inspect open server container window & state revision' },
-    gym_step: { tool: 'gym_step_and_observe', script: 'gym.observe', label: 'Capture un-truncated Gymnasium RL observation vector' }
+    status: { tool: 'world_inspector_and_profiler', script: 'inspect.status' },
+    diamond_step1: { tool: 'code_execute', script: 'interact.raycast\ninteract.mine 2 -60 2\nmilestone.save "wood_log" "MineRL Stage 1"' },
+    navigate_spawn: { tool: 'task_and_navigation', script: 'task.navigate 16 -60 16' },
+    gui_inspect: { tool: 'gui_screen_automation', script: 'gui.inspect' },
+    gym_step: { tool: 'gym_step_and_observe', script: 'gym.observe' }
   };
   const item = map[preset];
   if (!item) return;
   const box = document.getElementById('agent-transcript');
-  box.innerText += `\n\n[User -> Sawbyte Agent] ${item.label}\n[MCP Tool Call] ${item.tool} (${item.script.replace(/\n/g, ' ; ')})`;
-  box.scrollTop = box.scrollHeight;
-
+  box.innerText += `\n$ mcp call ${item.tool} -> ${item.script.replace(/\n/g, ' ; ')}`;
   fetch('/api/mcp/call', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ name: item.tool, script: item.script })
   }).then(r => r.json()).then(res => {
     const text = res?.result?.content?.[0]?.text || JSON.stringify(res);
-    box.innerText += `\n[Sawbyte Agent] ${text}`;
+    box.innerText += `\n${text}`;
     box.scrollTop = box.scrollHeight;
   });
 }
 
 function sendAgentPrompt() {
   const input = document.getElementById('agent-prompt-input');
-  const prompt = input.value.trim();
-  if (!prompt) return;
+  const script = input.value.trim();
+  if (!script) return;
   input.value = '';
   const box = document.getElementById('agent-transcript');
-  box.innerText += `\n\n[User] ${prompt}`;
-
-  let tool = 'code_execute';
-  let script = prompt;
-  const lower = prompt.toLowerCase();
-  if (lower.startsWith('navigate ') || lower.includes('pathfind')) {
-    const nums = prompt.match(/-?\d+/g);
-    script = nums && nums.length >= 3 ? `task.navigate ${nums[0]} ${nums[1]} ${nums[2]}` : 'task.navigate 10 -60 10';
-    tool = 'task_and_navigation';
-  } else if (lower.includes('status') || lower.includes('health') || lower.includes('where')) {
-    script = 'inspect.status';
-    tool = 'world_inspector_and_profiler';
-  } else if (lower.includes('observe') || lower.includes('gym')) {
-    script = 'gym.observe';
-    tool = 'gym_step_and_observe';
-  }
-
+  box.innerText += `\n$ ${script}`;
   fetch('/api/mcp/call', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ name: tool, script })
+    body: JSON.stringify({ name: 'code_execute', script })
   }).then(r => r.json()).then(res => {
     const text = res?.result?.content?.[0]?.text || JSON.stringify(res);
-    box.innerText += `\n[Sawbyte Agent · ${tool}] ${text}`;
+    box.innerText += `\n${text}`;
     box.scrollTop = box.scrollHeight;
   });
 }
 
-function clearAgentTranscript() {
-  document.getElementById('agent-transcript').innerText = '[Sawbyte Agent v0.3.3] Transcript cleared. Ready for commands.';
-}
-
-function copyMcpConfig() {
-  const text = document.getElementById('mcp-config-box').innerText;
-  navigator.clipboard?.writeText(text);
-  alert('Copied Sawbyte MCP configuration JSON to clipboard!');
-}
-
-/* ============================================================================
-   MODS & BRIDGE MANAGER
-   ============================================================================ */
 function loadMods() {
-  const instName = document.getElementById('mods-instance')?.value || 'default-native';
+  const instName = document.getElementById('mods-instance')?.value || 'fabric-bridge-26-3';
   fetch(`/api/mods/list?instance=${encodeURIComponent(instName)}`)
     .then(r => r.json())
     .then(data => {
-      const badge = document.getElementById('bridge-status-badge');
-      if (badge) {
-        badge.className = 'badge ' + (data.bridge_installed ? 'badge-emerald' : 'badge-amber');
-        badge.innerText = data.bridge_installed ? 'Bridge Active (0.3.3)' : 'Bridge Not Injected';
-      }
       const tbody = document.getElementById('installed-mods-tbody');
       const mods = data.mods || [];
       if (!tbody) return;
       if (mods.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);">No mods installed in this instance yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);">No mods installed yet. Click "Auto-Download & Inject sawbyte-bridge.jar" to provision.</td></tr>';
         return;
       }
       tbody.innerHTML = mods.map(m => `
         <tr>
           <td><code>${m.filename}</code></td>
           <td>${(m.size_bytes / 1024).toFixed(1)} KiB</td>
-          <td><span class="badge ${m.is_bridge ? 'badge-emerald' : 'badge-neutral'}">${m.is_bridge ? 'Sawbyte Bridge' : 'Fabric Mod'}</span></td>
+          <td><span class="badge ${m.is_bridge ? 'badge-accent' : 'badge-neutral'}">${m.is_bridge ? 'Sawbyte Bridge' : 'Fabric Mod'}</span></td>
           <td style="text-align:right;"><button class="btn btn-danger btn-sm" onclick="removeMod('${m.filename}')">Remove</button></td>
         </tr>
       `).join('');
-    })
-    .catch(() => {});
+    }).catch(() => {});
 }
 
 function injectBridge() {
-  const instName = document.getElementById('mods-instance')?.value || 'default-native';
+  const instName = document.getElementById('mods-instance')?.value || 'fabric-bridge-26-3';
   fetch('/api/mods/inject_bridge', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ instance: instName })
-  }).then(r => r.json()).then(res => {
-    alert(res.ok ? res.message : ('Bridge injection error: ' + res.error));
-    loadMods();
-  });
+  }).then(r => r.json()).then(() => loadMods());
 }
 
 function searchMods() {
   const q = document.getElementById('mod-search-input').value.trim();
   if (!q) return;
   const container = document.getElementById('mod-search-results');
-  container.innerHTML = '<div style="color:var(--text-muted);">Querying Modrinth API v2...</div>';
+  container.innerHTML = '<div style="color:var(--text-muted);">Searching Modrinth API v2...</div>';
   fetch(`/api/mods/search?query=${encodeURIComponent(q)}`)
     .then(r => r.json())
     .then(data => {
       const hits = data.hits || [];
-      if (hits.length === 0) {
-        container.innerHTML = '<div style="color:var(--text-muted);">No matching Fabric mods found.</div>';
-        return;
-      }
       container.innerHTML = hits.map(h => `
         <div class="stat-tile" style="flex-direction:row; justify-content:space-between; align-items:center;">
-          <div style="max-width:75%;">
-            <div style="font-weight:700;">${h.title} <span style="font-size:11px; color:var(--text-muted); font-family:monospace;">(${h.slug})</span></div>
-            <div style="font-size:11.5px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${h.description || ''}</div>
+          <div style="max-width:76%;">
+            <div style="font-weight:800;">${h.title} <code style="font-size:10.5px;">${h.slug}</code></div>
+            <div style="font-size:11px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${h.description || ''}</div>
           </div>
           <button class="btn btn-primary btn-sm" onclick="installMod('${h.slug}', this)">Install</button>
         </div>
       `).join('');
-    })
-    .catch(err => {
-      container.innerHTML = `<div style="color:var(--danger);">Modrinth search error: ${err}</div>`;
-    });
+    }).catch(() => {});
 }
 
 function installMod(slug, btnEl) {
-  const instName = document.getElementById('mods-instance')?.value || 'default-native';
-  const withDeps = document.getElementById('mod-auto-deps')?.checked ?? true;
+  const instName = document.getElementById('mods-instance')?.value || 'fabric-bridge-26-3';
   if (btnEl) { btnEl.disabled = true; btnEl.innerText = 'Installing...'; }
   fetch('/api/mods/install', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ instance: instName, slug, with_deps: withDeps })
-  }).then(r => r.json()).then(res => {
+    body: JSON.stringify({ instance: instName, slug, with_deps: true })
+  }).then(() => {
     if (btnEl) { btnEl.disabled = false; btnEl.innerText = 'Installed'; }
-    if (res.ok) loadMods();
-    else alert('Install error: ' + res.error);
+    loadMods();
   });
 }
 
 function removeMod(filename) {
-  const instName = document.getElementById('mods-instance')?.value || 'default-native';
+  const instName = document.getElementById('mods-instance')?.value || 'fabric-bridge-26-3';
   fetch('/api/mods/remove', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ instance: instName, filename })
-  }).then(r => r.json()).then(() => loadMods());
-}
-
-/* ============================================================================
-   TERMINAL SHELL
-   ============================================================================ */
-function runTerminalPreset(cmd) {
-  document.getElementById('terminal-cmd-input').value = cmd;
-  executeTerminalCmd();
-}
-
-function clearTerminal() {
-  document.getElementById('terminal-console').innerText = 'Sawbyte Interactive CLI Shell v0.3.3\n$ ';
-}
-
-function executeTerminalCmd() {
-  const input = document.getElementById('terminal-cmd-input');
-  const cmd = input.value.trim();
-  if (!cmd) return;
-  const consoleEl = document.getElementById('terminal-console');
-  consoleEl.innerText += `\n$ ${cmd}\n`;
-  fetch('/api/terminal/execute', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ command: cmd })
-  }).then(r => r.json()).then(res => {
-    consoleEl.innerText += res.ok ? `${res.output || '(OK)'}\n` : `Error: ${res.error}\n`;
-    consoleEl.scrollTop = consoleEl.scrollHeight;
-  });
+  }).then(() => loadMods());
 }
 
 renderInstances(launcherState.instances);
 renderAccounts(launcherState.accounts);
 renderProfiles(launcherState.version_profiles);
 updateDropdowns(launcherState.instances, launcherState.accounts);
-document.getElementById('nav-count-instances').innerText = launcherState.instances.length;
-document.getElementById('nav-count-accounts').innerText = launcherState.accounts.length;
-document.getElementById('cli-status-badge').className = 'badge badge-emerald';
-document.getElementById('cli-status-badge').innerText = 'CLI: In PATH';
+drawBuiltInSoftwarePreview();
 setInterval(refreshStatus, 4000);
 refreshStatus();
-checkCliStatus();
-refreshReleaseStatus();
-drawBuiltInSoftwarePreview();
 </script>
 </body>
 </html>

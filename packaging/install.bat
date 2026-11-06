@@ -10,7 +10,7 @@ set "TARGET_DIR=%LOCALAPPDATA%\Programs\Sawbyte"
 set "SAWBYTE_HOME_DIR=%USERPROFILE%\.sawbyte"
 set "BIN_TARGET=%TARGET_DIR%\sawbyte.exe"
 set "PLAY_TARGET=%TARGET_DIR%\sawbyte-play.exe"
-set "TAG=v0.3.3"
+set "TAG=v0.3.4"
 set "LATEST_URL=https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-windows-2022-X64.zip"
 set "FALLBACK_URL=https://github.com/5ivesaw/Sawbyte/releases/download/%TAG%/sawbyte-windows-2022-X64.zip"
 

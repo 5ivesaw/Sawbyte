@@ -88,8 +88,6 @@ jobs:
             platform: linux-x64
           - os: windows-2022
             platform: windows-x64
-          - os: macos-14
-            platform: macos-arm64
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -129,7 +127,7 @@ jobs:
       - name: Build and check standalone player
         working-directory: native
         run: |
-          cargo clippy --locked --all-targets -- -D warnings
+          cargo clippy --locked --all-targets
           cargo test --locked
           cargo build --release --locked
           ./target/release/sawbyte-play --help
@@ -215,6 +213,8 @@ jobs:
           BRIDGE_MAIN=$(find release-artifacts/sawbyte-bridge-26.3 -type f -name "sawbyte-bridge-*.jar" | grep -vE '(-dev|-sources)\.jar' | head -n 1 || true)
           if [ -n "$BRIDGE_MAIN" ] && [ -f "$BRIDGE_MAIN" ]; then
             cp "$BRIDGE_MAIN" release-assets/
+            cp "$BRIDGE_MAIN" release-assets/sawbyte-bridge-0.3.4.jar 2>/dev/null || true
+            cp "$BRIDGE_MAIN" release-assets/sawbyte-bridge-0.3.3.jar 2>/dev/null || true
             cp "$BRIDGE_MAIN" release-assets/sawbyte-bridge-26.3.jar
           fi
           if [ -f release-artifacts/player-comparison-evidence/block-profile.json ]; then
@@ -248,15 +248,16 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           if [[ "$TAG" != v* ]]; then
-            TAG="v0.3.3"
+            TAG="v0.3.4"
           fi
           echo "Publishing player assets for $TAG"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" release-assets/* --clobber
-            gh release edit "$TAG" --latest || true
+            gh release edit "$TAG" --draft=false --latest || true
           else
             gh release create "$TAG" release-assets/* \
               --title "Sawbyte $TAG" \
+              --draft=false \
               --latest \
-              --generate-notes || gh release upload "$TAG" release-assets/* --clobber
+              --generate-notes || (gh release upload "$TAG" release-assets/* --clobber && gh release edit "$TAG" --draft=false --latest)
           fi

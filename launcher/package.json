@@ -1,7 +1,7 @@
 {
   "name": "sawbyte-launcher",
-  "version": "0.3.3",
-  "description": "Sawbyte Desktop Launcher \u2014 Zero-JVM Minecraft 26.3 Client, Editions Installer & AI Bot Supervisor",
+  "version": "0.3.4",
+  "description": "Sawbyte Native Desktop Launcher — Featherlight Zero-JVM Minecraft 26.3 Client, On-Demand Editions Installer & AI Bot Supervisor",
   "private": true,
   "license": "MIT",
   "author": "5ivesaw",
@@ -17,12 +17,9 @@
     "build:all": "node build.mjs --package",
     "check": "node --check main/index.cjs && node --check build.mjs",
     "test": "node --check main/index.cjs",
-    "dev": "electron .",
-    "dev:main": "electron .",
-    "dev:renderer": "node build.mjs --serve"
+    "dev": "node build.mjs --renderer",
+    "dev:main": "node build.mjs --renderer",
+    "dev:renderer": "node build.mjs --renderer"
   },
-  "devDependencies": {
-    "electron": "^35.0.0",
-    "electron-builder": "^26.0.0"
-  }
+  "devDependencies": {}
 }

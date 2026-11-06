@@ -1002,11 +1002,11 @@ checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
 
 [[package]]
 name = "sawbyte-core"
-version = "0.3.3"
+version = "0.3.4"
 
 [[package]]
 name = "sawbyte-play"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "aes",
  "cfb8",
@@ -1023,7 +1023,7 @@ dependencies = [
 
 [[package]]
 name = "sawbyte-protocol"
-version = "0.3.3"
+version = "0.3.4"
 
 [[package]]
 name = "serde"

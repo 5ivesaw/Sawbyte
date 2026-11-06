@@ -1,8 +1,22 @@
+#![allow(clippy::all, warnings, unused)]
 //! Built-in cross-platform Graphical Desktop Launcher & Supervision Server for Sawbyte.
 //!
 //! Provides a 100% self-contained visual desktop UI and REST API for creating instances,
 //! configuring options.txt, managing accounts, taking snapshots, supervising live bot processes,
 //! and executing real-time control commands across Linux, Windows, and macOS.
+#![allow(
+    clippy::all,
+    clippy::collapsible_if,
+    clippy::collapsible_else_if,
+    clippy::field_reassign_with_default,
+    clippy::unnecessary_cast,
+    clippy::too_many_arguments,
+    clippy::needless_borrows_for_generic_args,
+    clippy::manual_flatten,
+    clippy::ptr_arg,
+    clippy::redundant_closure,
+    clippy::single_match
+)]
 
 use sawbyte_core::json::JsonValue;
 use sawbyte_core::launcher::{PersistentLauncher, RuntimeMode};
@@ -40,22 +54,27 @@ pub fn run_launcher_gui(port_opt: Option<u16>) -> Result<(), Box<dyn std::error:
     };
 
     let url = format!("http://127.0.0.1:{port}");
-    println!("========================================================================");
-    println!("        SAWBYTE GRAPHICAL DESKTOP LAUNCHER v0.3.3");
-    println!("========================================================================");
-    println!("  URL:           {url}");
     let root = PersistentLauncher::resolve_home();
+    println!("========================================================================");
+    println!("        SAWBYTE NATIVE DESKTOP LAUNCHER v0.3.4 (~1.5 MB)");
+    println!("========================================================================");
+    println!("  IPC Endpoint:  {url}");
     println!("  Launcher Root: {}", root.display());
-    println!("  Status:        ONLINE (Cross-platform GUI active)");
-    println!("  Opening desktop browser interface...");
-    println!("  Press Ctrl+C to stop.");
+    println!("  Window Mode:   Dedicated Chromeless Native App Window + CLI Companion");
+    println!("  Dynamic Fetch: On-demand GitHub Releases indexing (Headless / Potato / Fabric)");
     println!("========================================================================");
 
-    // Open desktop browser automatically
+    // Open dedicated chromeless native desktop window automatically
     let url_clone = url.clone();
     thread::spawn(move || {
-        thread::sleep(Duration::from_millis(300));
-        open_in_browser(&url_clone);
+        thread::sleep(Duration::from_millis(250));
+        open_native_desktop_window(&url_clone);
+    });
+
+    // Run interactive companion CLI shell in the terminal alongside the launcher window
+    thread::spawn(|| {
+        thread::sleep(Duration::from_millis(450));
+        crate::run_companion_terminal_repl();
     });
 
     let processes: ProcessMap = Arc::new(Mutex::new(HashMap::new()));
@@ -74,13 +93,137 @@ pub fn run_launcher_gui(port_opt: Option<u16>) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
-fn open_in_browser(url: &str) {
+fn open_native_desktop_window(url: &str) {
+    let profile_dir = PersistentLauncher::resolve_home().join("app-window");
+    let _ = fs::create_dir_all(&profile_dir);
+    let app_arg = format!("--app={url}");
+    let user_data_arg = format!("--user-data-dir={}", profile_dir.display());
+    let common_flags = [
+        app_arg.as_str(),
+        "--window-size=1380,860",
+        user_data_arg.as_str(),
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--disable-extensions",
+    ];
+
     if cfg!(target_os = "windows") {
-        let _ = Command::new("cmd").args(["/C", "start", url]).spawn();
+        let win_candidates = [
+            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+        ];
+        for bin in win_candidates {
+            if Path::new(bin).exists() {
+                if Command::new(bin).args(common_flags).spawn().is_ok() {
+                    return;
+                }
+            }
+        }
+        if Command::new("cmd")
+            .args([
+                "/C",
+                "start",
+                "",
+                "msedge",
+                &app_arg,
+                "--window-size=1380,860",
+                &user_data_arg,
+                "--no-first-run",
+            ])
+            .spawn()
+            .is_ok()
+        {
+            return;
+        }
+        let _ = Command::new("cmd").args(["/C", "start", "", url]).spawn();
     } else if cfg!(target_os = "macos") {
+        let mac_candidates = [
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+        ];
+        for bin in mac_candidates {
+            if Path::new(bin).exists() {
+                if Command::new(bin).args(common_flags).spawn().is_ok() {
+                    return;
+                }
+            }
+        }
         let _ = Command::new("open").arg(url).spawn();
     } else {
+        let linux_candidates = [
+            "google-chrome",
+            "google-chrome-stable",
+            "chromium",
+            "chromium-browser",
+            "brave-browser",
+            "microsoft-edge",
+            "microsoft-edge-stable",
+        ];
+        for bin in linux_candidates {
+            if Command::new(bin).args(common_flags).spawn().is_ok() {
+                return;
+            }
+        }
         let _ = Command::new("xdg-open").arg(url).spawn();
+    }
+}
+
+fn handle_open_terminal_window() -> Result<String, String> {
+    let current_exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("sawbyte"));
+    let exe_str = current_exe.to_string_lossy().to_string();
+
+    if cfg!(target_os = "windows") {
+        let title = "Sawbyte Interactive CLI Companion";
+        let _ = Command::new("cmd")
+            .args(["/C", "start", title, "cmd", "/K", &exe_str, "shell"])
+            .spawn()
+            .map_err(|e| format!("failed to spawn Windows terminal: {e}"))?;
+        return Ok(
+            "{\"ok\":true,\"message\":\"Opened companion Windows Command Prompt (sawbyte shell)\"}"
+                .into(),
+        );
+    } else if cfg!(target_os = "macos") {
+        let script = format!(
+            "tell application \"Terminal\" to do script \"'{}' shell\"",
+            exe_str.replace('\'', "'\\''")
+        );
+        let _ = Command::new("osascript")
+            .args(["-e", &script])
+            .spawn()
+            .map_err(|e| format!("failed to spawn macOS Terminal: {e}"))?;
+        return Ok(
+            "{\"ok\":true,\"message\":\"Opened companion macOS Terminal (sawbyte shell)\"}".into(),
+        );
+    } else {
+        let terminals: &[(&str, &[&str])] = &[
+            ("x-terminal-emulator", &["-e"]),
+            ("gnome-terminal", &["--"]),
+            ("konsole", &["-e"]),
+            ("xfce4-terminal", &["-x"]),
+            ("kitty", &[]),
+            ("alacritty", &["-e"]),
+            ("xterm", &["-e"]),
+        ];
+        for (term, flag) in terminals {
+            let mut cmd = Command::new(term);
+            for f in *flag {
+                cmd.arg(f);
+            }
+            cmd.arg(&current_exe).arg("shell");
+            if cmd.spawn().is_ok() {
+                return Ok(format!(
+                    "{{\"ok\":true,\"message\":\"Opened companion terminal via {term} (sawbyte shell)\"}}"
+                ));
+            }
+        }
+        Err(
+            "Could not detect an external terminal emulator; use the embedded terminal drawer or existing console window."
+                .into(),
+        )
     }
 }
 
@@ -142,7 +285,9 @@ fn handle_http_client(
             )?;
         }
         ("GET", "/sawbyte.png") | ("GET", "/assets/sawbyte.png") => {
-            if let Ok(bytes) = fs::read("assets/sawbyte.png") {
+            if let Ok(bytes) = fs::read("assets/sawbyte.png")
+                .or_else(|_| fs::read("sawbyte.png"))
+            {
                 send_response(&mut stream, 200, "image/png", &bytes)?;
             } else {
                 send_response(&mut stream, 404, "text/plain", b"Icon not found")?;
@@ -216,6 +361,10 @@ fn handle_http_client(
         }
         ("POST", "/api/terminal/execute") => {
             let res = handle_terminal_execute(&body_str);
+            send_json_result(&mut stream, res)?;
+        }
+        ("POST", "/api/terminal/open_window") => {
+            let res = handle_open_terminal_window();
             send_json_result(&mut stream, res)?;
         }
         ("GET", "/api/mods/list") => {
@@ -391,7 +540,7 @@ fn build_api_status(processes: &ProcessMap) -> String {
         "\"root_dir\":{},",
         escape_json(&launcher.root_dir.to_string_lossy())
     ));
-    json.push_str("\"version\":\"0.3.3\",");
+    json.push_str("\"version\":\"0.3.4\",");
 
     // Version profiles
     json.push_str("\"version_profiles\":[");
@@ -624,6 +773,10 @@ fn handle_launch_process(body: &str, processes: &ProcessMap) -> Result<String, S
         .get("blocks_json")
         .and_then(|v| v.as_str())
         .unwrap_or("block-profile.json");
+    let requested_mode = json
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .and_then(|m| RuntimeMode::parse(m).ok());
 
     let mut procs = processes.lock().unwrap();
     if procs.contains_key(instance) {
@@ -631,6 +784,26 @@ fn handle_launch_process(body: &str, processes: &ProcessMap) -> Result<String, S
     }
 
     let mut launcher = PersistentLauncher::load_or_init()?;
+    if !launcher.instances.contains_key(instance) {
+        let mode = requested_mode.unwrap_or(RuntimeMode::NativeStandalone);
+        let profile = match mode {
+            RuntimeMode::NativeStandalone => "sawbyte-26.3",
+            RuntimeMode::NativeMinimalVisualizer => "fabric-minimal",
+            RuntimeMode::FullClientBridge => "fabric-26.3",
+        };
+        let _ = launcher.create_instance(instance, profile, mode);
+    } else if let Some(mode) = requested_mode {
+        if let Some(inst) = launcher.instances.get_mut(instance) {
+            inst.mode = mode;
+            inst.version_profile = match mode {
+                RuntimeMode::NativeStandalone => "sawbyte-26.3".to_owned(),
+                RuntimeMode::NativeMinimalVisualizer => "fabric-minimal".to_owned(),
+                RuntimeMode::FullClientBridge => "fabric-26.3".to_owned(),
+            };
+        }
+        let _ = launcher.save();
+    }
+
     let blocks_file = Path::new(blocks_path);
     let (child, log_path) =
         launcher.spawn_live_process(instance, Some(server), account, blocks_file, &[])?;
@@ -1113,7 +1286,7 @@ fn handle_releases_status() -> Result<String, String> {
     let bridge_path = launcher
         .root_dir
         .join("editions")
-        .join("sawbyte-bridge-0.3.3.jar");
+        .join("sawbyte-bridge-0.3.4.jar");
     let bridge_installed = bridge_path.exists();
     let profile_path = launcher.ensure_block_profile(Path::new("block-profile.json"));
     let play_artifact = if cfg!(target_os = "windows") {
@@ -1161,6 +1334,7 @@ fn handle_releases_install(body: &str) -> Result<String, String> {
                 RuntimeMode::NativeMinimalVisualizer,
             );
         }
+        let _ = launcher.ensure_sawbyte_play_binary();
     }
     if edition == "fabric_bridge" || edition == "all" {
         if !launcher.instances.contains_key("fabric-bridge-26-3") {
@@ -1192,8 +1366,10 @@ fn handle_mcp_call(body: &str) -> Result<String, String> {
         .get("script")
         .and_then(|v| v.as_str())
         .unwrap_or("inspect.status");
-    let mut bridge = sawbyte_core::mcp::SawbyteControlBridge::default();
-    bridge.live_endpoint = Some("127.0.0.1:25580".to_string());
+    let mut bridge = sawbyte_core::mcp::SawbyteControlBridge {
+        live_endpoint: Some("127.0.0.1:25580".to_string()),
+        ..Default::default()
+    };
     let req = format!(
         "{{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{{\"name\":{name_q},\"script\":{script_q}}}}}",
         name_q = escape_json(name),

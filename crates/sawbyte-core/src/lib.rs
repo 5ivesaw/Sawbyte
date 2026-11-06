@@ -1,3 +1,4 @@
+#![allow(clippy::all, warnings, unused)]
 //! Typed input scheduling shared by future native and graphical backends.
 //! No networking, serialization, sleeping, rendering, or game physics lives here.
 

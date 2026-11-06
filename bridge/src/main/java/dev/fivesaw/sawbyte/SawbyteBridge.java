@@ -70,9 +70,11 @@ public final class SawbyteBridge implements ClientModInitializer {
         }
 
         String portStr = System.getProperty("sawbyte.port");
-        if (portStr != null) {
-            int port = Integer.parseInt(portStr);
+        if (portStr != null && !portStr.isBlank()) {
+            int port = Integer.parseInt(portStr.trim());
             startControlServer(port);
+        } else if (filename == null) {
+            startControlServer(25580);
         }
 
         ClientTickEvents.START_CLIENT_TICK.register(this::beforeTick);

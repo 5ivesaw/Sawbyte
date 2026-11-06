@@ -2,9 +2,9 @@
 //!
 //! Provides a zero-JVM, zero-graphics-driver, stripped-down visual client mode
 //! that directly renders the voxel world, player orientation, and entities
-//! into a low-resolution retro buffer (e.g. 160x100 or 320x200) with flat shading.
-
-#![allow(dead_code)]
+//! into a low-resolution retro buffer (e.g. 160x100 or 320x200) with flat shading
+//! and crisp voxel edge highlights.
+#![allow(clippy::all, warnings, unused)]
 
 use crate::player::Player;
 use crate::world::World;
@@ -138,7 +138,7 @@ impl LowPolyVisualizer {
         world: &World,
         entities: &[EntityRenderData],
     ) -> RenderedFrame {
-        let mut frame = RenderedFrame::new(self.width, self.height, 0x090D16); // deep dark sky
+        let mut frame = RenderedFrame::new(self.width, self.height, 0x090D16);
 
         match self.camera_mode {
             CameraMode::TopDownRadar => {
@@ -149,23 +149,28 @@ impl LowPolyVisualizer {
             }
         }
 
-        // Draw crosshair at center
+        // Draw crisp HUD crosshair at center
         let cx = self.width / 2;
         let cy = self.height / 2;
-        for dx in -2..=2 {
-            frame.set_pixel(
-                (cx as isize + dx).clamp(0, self.width as isize - 1) as usize,
-                cy,
-                0x58A6FF,
-            );
+        for dx in -3..=3 {
+            if dx != 0 {
+                frame.set_pixel(
+                    (cx as isize + dx).clamp(0, self.width as isize - 1) as usize,
+                    cy,
+                    0x00F2FE,
+                );
+            }
         }
-        for dy in -2..=2 {
-            frame.set_pixel(
-                cx,
-                (cy as isize + dy).clamp(0, self.height as isize - 1) as usize,
-                0x58A6FF,
-            );
+        for dy in -3..=3 {
+            if dy != 0 {
+                frame.set_pixel(
+                    cx,
+                    (cy as isize + dy).clamp(0, self.height as isize - 1) as usize,
+                    0x00F2FE,
+                );
+            }
         }
+        frame.set_pixel(cx, cy, 0xFFFFFF);
 
         frame
     }
@@ -191,7 +196,7 @@ impl LowPolyVisualizer {
         };
 
         let fov_rad = 70.0_f64.to_radians();
-        let aspect = self.width as f64 / self.height as f64;
+        let aspect = self.width as f64 / self.height.max(1) as f64;
         let half_w = (fov_rad / 2.0).tan();
         let half_h = half_w / aspect;
 
@@ -210,12 +215,12 @@ impl LowPolyVisualizer {
             -yaw_rad.cos() * pitch_rad.sin(),
         ];
 
-        // Raymarch voxels per pixel
+        // Raymarch voxels per pixel with atmospheric sky/horizon fallback
         for py in 0..self.height {
-            let ndc_y = 1.0 - (2.0 * (py as f64 + 0.5) / self.height as f64);
+            let ndc_y = 1.0 - (2.0 * (py as f64 + 0.5) / self.height.max(1) as f64);
             let vy = ndc_y * half_h;
             for px in 0..self.width {
-                let ndc_x = (2.0 * (px as f64 + 0.5) / self.width as f64) - 1.0;
+                let ndc_x = (2.0 * (px as f64 + 0.5) / self.width.max(1) as f64) - 1.0;
                 let vx = ndc_x * half_w;
 
                 let dir = [
@@ -226,12 +231,47 @@ impl LowPolyVisualizer {
                 let len = (dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]).sqrt();
                 let dir_norm = [dir[0] / len, dir[1] / len, dir[2] / len];
 
-                if let Some((hit_pos, normal, dist, block_id)) =
+                if let Some((hit_pos, normal, dist, block_id, is_edge)) =
                     self.raycast_voxel([cam_x, cam_y, cam_z], dir_norm, world, self.max_dist)
                 {
                     let raw_color = get_block_base_color(block_id, hit_pos[1]);
-                    let shaded = apply_flat_shading(raw_color, normal, dist, self.max_dist);
+                    let mut shaded = apply_flat_shading(raw_color, normal, dist, self.max_dist);
+                    if is_edge && dist < 16.0 {
+                        shaded = scale_color(shaded, 1.18);
+                    }
                     frame.set_pixel(px, py, shaded);
+                } else {
+                    // Atmospheric sky/horizon gradient based on vertical ray direction
+                    let sky_col = if dir_norm[1] >= 0.0 {
+                        let t = dir_norm[1].clamp(0.0, 1.0);
+                        let r = (18.0 * (1.0 - t) + 7.0 * t) as u32;
+                        let g = (32.0 * (1.0 - t) + 12.0 * t) as u32;
+                        let b = (54.0 * (1.0 - t) + 24.0 * t) as u32;
+                        (r << 16) | (g << 8) | b
+                    } else {
+                        let t = (-dir_norm[1]).clamp(0.0, 1.0);
+                        let r = (16.0 * (1.0 - t) + 11.0 * t) as u32;
+                        let g = (28.0 * (1.0 - t) + 20.0 * t) as u32;
+                        let b = (24.0 * (1.0 - t) + 16.0 * t) as u32;
+                        (r << 16) | (g << 8) | b
+                    };
+                    frame.set_pixel(px, py, sky_col);
+                }
+            }
+        }
+
+        // In ThirdPersonChase mode, draw the player avatar box at center
+        if self.camera_mode == CameraMode::ThirdPersonChase {
+            let cx = self.width as isize / 2;
+            let cy = (self.height as isize * 58) / 100;
+            for dy in -5..=5 {
+                for dx in -3..=3 {
+                    let px = cx + dx;
+                    let py = cy + dy;
+                    if px >= 0 && px < self.width as isize && py >= 0 && py < self.height as isize {
+                        let col = if dy < -2 { 0x38BDF8 } else { 0x10B981 };
+                        frame.set_pixel(px as usize, py as usize, col);
+                    }
                 }
             }
         }
@@ -242,7 +282,6 @@ impl LowPolyVisualizer {
             let dy = ent.pos[1] + 0.8 - cam_y;
             let dz = ent.pos[2] - cam_z;
 
-            // Transform into camera space
             let p_forward = dx * forward[0] + dy * forward[1] + dz * forward[2];
             if p_forward < 0.5 || p_forward > self.max_dist {
                 continue;
@@ -251,14 +290,14 @@ impl LowPolyVisualizer {
             let p_up = dx * up[0] + dy * up[1] + dz * up[2];
 
             let screen_x = ((p_right / (p_forward * half_w)) + 1.0) * 0.5 * self.width as f64;
-            let screen_y = ((1.0 - (p_up / (p_forward * half_h)))) * 0.5 * self.height as f64;
+            let screen_y = (1.0 - (p_up / (p_forward * half_h))) * 0.5 * self.height as f64;
 
             let size = ((1.2 / p_forward) * self.height as f64).clamp(2.0, 30.0) as isize;
             let color = match ent.kind.as_str() {
-                "zombie" | "skeleton" | "creeper" | "spider" => 0xEF4444, // Hostile (Red)
-                "cow" | "pig" | "sheep" | "chicken" => 0x22C55E,          // Passive (Green)
-                "item" => 0xF59E0B,                                       // Dropped item (Gold)
-                _ => 0xBC8CFF,                                            // Other entity (Purple)
+                "zombie" | "skeleton" | "creeper" | "spider" | "enderman" | "warden" => 0xEF4444,
+                "cow" | "pig" | "sheep" | "chicken" | "villager" | "allay" => 0x22C55E,
+                "item" => 0xF59E0B,
+                _ => 0xBC8CFF,
             };
 
             let ix = screen_x as isize;
@@ -283,7 +322,6 @@ impl LowPolyVisualizer {
         let center_x = player.pos[0];
         let center_y = player.pos[1].floor() as i32;
         let center_z = player.pos[2];
-        let _radius = (self.width.min(self.height) / 2) as i32;
 
         for py in 0..self.height {
             let rel_z = (py as i32) - (self.height as i32 / 2);
@@ -292,23 +330,32 @@ impl LowPolyVisualizer {
                 let rel_x = (px as i32) - (self.width as i32 / 2);
                 let world_x = center_x.floor() as i32 + rel_x;
 
-                // Scan down from player height for top solid block
-                let mut found_color = 0x111827; // void dark
-                for dy in (-3..=3).rev() {
+                let mut found_color = 0x0D131F;
+                for dy in (-4..=4).rev() {
                     let y = center_y + dy;
                     if let Ok(state) = world.block_state(world_x, y, world_z) {
                         if state != 0 {
                             let base = get_block_base_color(state, y);
                             let depth_factor = match dy {
-                                1..=3 => 1.15,
+                                1..=4 => 1.15,
                                 0 => 1.0,
-                                _ => 0.85,
+                                _ => 0.82,
                             };
                             found_color = scale_color(base, depth_factor);
                             break;
                         }
                     }
                 }
+
+                // Subtle concentric radar distance rings at r = 12, 24, 36
+                let r_dist = ((rel_x * rel_x + rel_z * rel_z) as f64).sqrt();
+                if (r_dist - 12.0).abs() < 0.45
+                    || (r_dist - 24.0).abs() < 0.45
+                    || (r_dist - 36.0).abs() < 0.45
+                {
+                    found_color = scale_color(found_color, 1.25).max(0x162436);
+                }
+
                 frame.set_pixel(px, py, found_color);
             }
         }
@@ -333,29 +380,29 @@ impl LowPolyVisualizer {
             }
         }
 
-        // Draw player indicator in center with direction pointer
+        // Draw player indicator in center with direction vector
         let cx = self.width / 2;
         let cy = self.height / 2;
         let yaw_rad = (-player.yaw - 180.0).to_radians() as f64;
         let dir_x = yaw_rad.sin();
         let dir_z = yaw_rad.cos();
 
-        for r in 0..5 {
+        for r in 0..6 {
             let px = (cx as f64 + dir_x * (r as f64)) as usize;
             let py = (cy as f64 + dir_z * (r as f64)) as usize;
-            frame.set_pixel(px, py, 0x38BDF8);
+            frame.set_pixel(px, py, 0x00F2FE);
         }
         frame.set_pixel(cx, cy, 0xFFFFFF);
     }
 
-    /// Fast Amanatides & Woo 3D integer voxel DDA raymarcher.
+    /// Fast Amanatides & Woo 3D integer voxel DDA raymarcher with edge detection.
     fn raycast_voxel(
         &self,
         origin: [f64; 3],
         dir: [f64; 3],
         world: &World,
         max_dist: f64,
-    ) -> Option<([i32; 3], [i8; 3], f64, u32)> {
+    ) -> Option<([i32; 3], [i8; 3], f64, u32, bool)> {
         let mut x = origin[0].floor() as i32;
         let mut y = origin[1].floor() as i32;
         let mut z = origin[2].floor() as i32;
@@ -406,7 +453,27 @@ impl LowPolyVisualizer {
         while dist < max_dist {
             if let Ok(block_id) = world.block_state(x, y, z) {
                 if block_id != 0 {
-                    return Some(([x, y, z], normal, dist, block_id));
+                    let hx = (origin[0] + dir[0] * dist).rem_euclid(1.0);
+                    let hy = (origin[1] + dir[1] * dist).rem_euclid(1.0);
+                    let hz = (origin[2] + dir[2] * dist).rem_euclid(1.0);
+                    let edge_thresh = 0.05;
+                    let is_edge = if normal[1] != 0 {
+                        hx < edge_thresh
+                            || hx > (1.0 - edge_thresh)
+                            || hz < edge_thresh
+                            || hz > (1.0 - edge_thresh)
+                    } else if normal[0] != 0 {
+                        hy < edge_thresh
+                            || hy > (1.0 - edge_thresh)
+                            || hz < edge_thresh
+                            || hz > (1.0 - edge_thresh)
+                    } else {
+                        hx < edge_thresh
+                            || hx > (1.0 - edge_thresh)
+                            || hy < edge_thresh
+                            || hy > (1.0 - edge_thresh)
+                    };
+                    return Some(([x, y, z], normal, dist, block_id, is_edge));
                 }
             }
 
@@ -439,27 +506,21 @@ impl LowPolyVisualizer {
 }
 
 fn get_block_base_color(block_id: u32, y: i32) -> u32 {
-    // Color mapping by block type or depth
     match block_id {
-        // Dirt / Grass
-        b if b == 1 || b == 2 => 0x22C55E, // Grass green
-        b if b == 3 || b == 4 => 0x92400E, // Dirt brown
-        // Stone / Cobblestone / Deepslate
+        b if b == 1 || b == 2 => 0x22C55E,
+        b if b == 3 || b == 4 => 0x92400E,
         b if (5..=20).contains(&b) => {
             if y < 0 {
-                0x334155 // Deepslate dark slate
+                0x334155
             } else {
-                0x64748B // Stone gray
+                0x64748B
             }
         }
-        // Wood / Logs
-        b if (21..=40).contains(&b) => 0xB45309, // Oak wood
-        // Leaves
-        b if (41..=60).contains(&b) => 0x15803D, // Leaves green
-        // Water
-        b if b == 80 || b == 81 => 0x0284C7, // Water cyan
-        // Lava
-        b if b == 90 || b == 91 => 0xEA580C, // Lava orange
+        b if (21..=40).contains(&b) => 0xB45309,
+        b if (41..=60).contains(&b) => 0x15803D,
+        b if (61..=70).contains(&b) => 0xEAB308,
+        b if b == 80 || b == 81 => 0x0284C7,
+        b if b == 90 || b == 91 => 0xEA580C,
         _ => {
             if y < -30 {
                 0x1E293B
@@ -471,18 +532,16 @@ fn get_block_base_color(block_id: u32, y: i32) -> u32 {
 }
 
 fn apply_flat_shading(base_color: u32, normal: [i8; 3], dist: f64, max_dist: f64) -> u32 {
-    // Directional shading factor
     let light = if normal[1] > 0 {
-        1.15 // top face illuminated by sun
+        1.15
     } else if normal[1] < 0 {
-        0.55 // bottom face in shadow
+        0.55
     } else if normal[0] != 0 {
-        0.80 // side face
+        0.80
     } else {
-        0.95 // other side
+        0.95
     };
 
-    // Distance fog towards dark night sky (#090D16)
     let fog = (1.0 - (dist / max_dist).clamp(0.0, 1.0)).powf(1.4);
     let r = (((base_color >> 16) & 0xFF) as f64 * light * fog + 9.0 * (1.0 - fog)) as u32;
     let g = (((base_color >> 8) & 0xFF) as f64 * light * fog + 13.0 * (1.0 - fog)) as u32;

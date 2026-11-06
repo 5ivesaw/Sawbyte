@@ -1,22 +1,9 @@
 #!/bin/sh
-# Sawbyte Launcher Runner for Linux & Unix
+# Sawbyte Native Desktop Launcher + Companion CLI Terminal Runner (Linux & Unix)
 DIR="$(cd "$(dirname "$0")" && pwd)"
 export PATH="$DIR:$HOME/.sawbyte/bin:$HOME/.local/bin:$PATH"
 
-# 1. Standalone compiled Electron application
-if [ -x "$DIR/launcher/dist/linux-unpacked/sawbyte-launcher" ]; then
-    exec "$DIR/launcher/dist/linux-unpacked/sawbyte-launcher" "$@"
-elif [ -x "$DIR/launcher/xmcl-electron-app/dist/linux-unpacked/sawbyte-launcher" ]; then
-    exec "$DIR/launcher/xmcl-electron-app/dist/linux-unpacked/sawbyte-launcher" "$@"
-elif [ -x "$DIR/launcher/xmcl-electron-app/build/output/linux-unpacked/sawbyte-launcher" ]; then
-    exec "$DIR/launcher/xmcl-electron-app/build/output/linux-unpacked/sawbyte-launcher" "$@"
-elif [ -x "$DIR/sawbyte-launcher-bin" ]; then
-    exec "$DIR/sawbyte-launcher-bin" "$@"
-# 2. Local launcher workspace with pnpm
-elif [ -d "$DIR/launcher" ] && command -v pnpm >/dev/null 2>&1; then
-    cd "$DIR/launcher" && exec pnpm run dev "$@"
-# 3. Built-in native supervision server & desktop web interface
-elif [ -x "$DIR/sawbyte" ]; then
+if [ -x "$DIR/sawbyte" ]; then
     exec "$DIR/sawbyte" launcher gui "$@"
 else
     exec sawbyte launcher gui "$@"
