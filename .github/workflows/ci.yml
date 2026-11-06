@@ -94,8 +94,7 @@ jobs:
           pnpm install --no-frozen-lockfile
           pnpm run build:renderer
           pnpm run build
-        env:
-          PNPM_CONFIG_APPROVED_BUILDS: electron,electron-winstaller
+
       - name: Package preview
         shell: bash
         run: |
