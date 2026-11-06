@@ -3968,15 +3968,14 @@ async function initReleaseDownloader() {
       if (pubDateEl) pubDateEl.textContent = 'Auto Redirect';
 
       const fallbackAssets = [
-        { name: 'sawbyte-launcher-ubuntu-24.04-X64.tar.gz', browser_download_url: `${dynamicLatestBase}/sawbyte-launcher-ubuntu-24.04-X64.tar.gz` },
-        { name: 'sawbyte-ubuntu-24.04-X64.tar.gz', browser_download_url: `${dynamicLatestBase}/sawbyte-ubuntu-24.04-X64.tar.gz` },
+        { name: 'sawbyte-launcher-linux-amd64.deb', browser_download_url: `${dynamicLatestBase}/sawbyte-launcher-linux-amd64.deb` },
+        { name: 'Sawbyte-Launcher-x86_64.AppImage', browser_download_url: `${dynamicLatestBase}/Sawbyte-Launcher-x86_64.AppImage` },
         { name: 'sawbyte-play-linux-x64.tar.gz', browser_download_url: `${dynamicLatestBase}/sawbyte-play-linux-x64.tar.gz` },
-        { name: 'sawbyte-launcher-windows-2022-X64.zip', browser_download_url: `${dynamicLatestBase}/sawbyte-launcher-windows-2022-X64.zip` },
-        { name: 'sawbyte-windows-2022-X64.zip', browser_download_url: `${dynamicLatestBase}/sawbyte-windows-2022-X64.zip` },
+        { name: 'sawbyte-cli-linux-x86_64', browser_download_url: `${dynamicLatestBase}/sawbyte-cli-linux-x86_64` },
+        { name: 'Sawbyte-Launcher-x64.exe', browser_download_url: `${dynamicLatestBase}/Sawbyte-Launcher-x64.exe` },
         { name: 'sawbyte-play-windows-x64.zip', browser_download_url: `${dynamicLatestBase}/sawbyte-play-windows-x64.zip` },
-        { name: 'sawbyte-launcher-macos-14-ARM64.tar.gz', browser_download_url: `${dynamicLatestBase}/sawbyte-launcher-macos-14-ARM64.tar.gz` },
-        { name: 'sawbyte-macos-14-ARM64.tar.gz', browser_download_url: `${dynamicLatestBase}/sawbyte-macos-14-ARM64.tar.gz` },
-        { name: 'sawbyte-play-macos-arm64.tar.gz', browser_download_url: `${dynamicLatestBase}/sawbyte-play-macos-arm64.tar.gz` }
+        { name: 'sawbyte-cli-x64.exe', browser_download_url: `${dynamicLatestBase}/sawbyte-cli-x64.exe` },
+        { name: 'sawbyte-bridge-0.3.4.jar', browser_download_url: `${dynamicLatestBase}/sawbyte-bridge-0.3.4.jar` }
       ];
       bindReleaseAssetsToButtons(fallbackAssets, 'Latest');
       renderLiveAssetsTable(fallbackAssets, `https://github.com/${SAWBYTE_REPO}/releases/latest`);
@@ -3986,15 +3985,16 @@ async function initReleaseDownloader() {
 
 function bindReleaseAssetsToButtons(assets, tag) {
   const matchers = {
-    'linux-launcher': (n) => n.includes('launcher') && (n.includes('ubuntu') || n.includes('linux')),
+    'linux-launcher': (n) => n.endsWith('.deb') || (n.includes('launcher') && (n.includes('ubuntu') || n.includes('linux') || n.endsWith('.appimage'))),
+    'linux-appimage': (n) => n.endsWith('.appimage') || (n.includes('launcher') && n.includes('x86_64')),
     'linux-engine': (n) => n.includes('play') && (n.includes('linux') || n.includes('ubuntu')),
-    'linux-play': (n) => !n.includes('launcher') && !n.includes('play') && (n.includes('ubuntu') || n.includes('linux')),
-    'win-launcher': (n) => n.includes('launcher') && n.includes('win'),
+    'linux-play': (n) => (n.includes('cli') && n.includes('linux')) || (!n.includes('launcher') && !n.includes('play') && (n.includes('ubuntu') || n.includes('linux'))),
+    'win-launcher': (n) => (n.includes('launcher') && n.endsWith('.exe')) || (n.includes('launcher') && n.includes('win')),
     'win-engine': (n) => n.includes('play') && n.includes('win'),
-    'win-play': (n) => !n.includes('launcher') && !n.includes('play') && n.includes('win'),
-    'mac-launcher': (n) => n.includes('launcher') && (n.includes('mac') || n.includes('darwin')),
-    'mac-engine': (n) => n.includes('play') && (n.includes('mac') || n.includes('darwin')),
-    'mac-play': (n) => !n.includes('launcher') && !n.includes('play') && (n.includes('mac') || n.includes('darwin')),
+    'win-play': (n) => (n.includes('cli') && n.endsWith('.exe')) || (!n.includes('launcher') && !n.includes('play') && n.includes('win')),
+    'mac-launcher': (n) => n.endsWith('.appimage') || (n.includes('launcher') && (n.includes('mac') || n.includes('linux'))),
+    'mac-engine': (n) => n.includes('play'),
+    'mac-play': (n) => n.includes('cli') || (!n.includes('launcher') && !n.includes('play')),
     'bridge-jar': (n) => n.includes('bridge') && n.endsWith('.jar')
   };
 

@@ -14,6 +14,7 @@
 )]
 
 mod gui;
+pub mod ui_assets;
 
 use sawbyte_core::mcp::{
     benchmark_transports, PersistentLauncher, RuntimeMode, SawbyteControlBridge,

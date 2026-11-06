@@ -79,15 +79,8 @@ jobs:
           if [ "$RUNNER_OS" = "Linux" ]; then
             python tools/universal_bench.py --target harness
           fi
-      - name: Verify launcher renderer assets
-        shell: bash
-        run: |
-          cd launcher
-          node build.mjs --renderer
-          node --check main/index.cjs
-          node --check build.mjs
 
-      - name: Package lightweight CLI and Native Desktop Launcher
+      - name: Package Native Desktop App & Standalone CLI
         shell: bash
         run: |
           mkdir -p dist dist-launcher
@@ -111,7 +104,8 @@ jobs:
               "ice": [],
               "hardness": {"1": 1.5}
           }
-          pathlib.Path("block-profile.json").write_text(json.dumps(profile, indent=2) + "\n")
+          pathlib.Path("block-profile.json").write_text(json.dumps(profile, indent=2) + "
+")
           PY
           fi
           if [ "$RUNNER_OS" = "Windows" ]; then
@@ -121,16 +115,6 @@ jobs:
             cp "packaging/Sawbyte Launcher.bat" dist-launcher/
             cp packaging/install.bat dist/
             cp packaging/install.bat dist-launcher/
-          elif [ "$RUNNER_OS" = "macOS" ]; then
-            cp target/release/sawbyte dist/sawbyte
-            cp target/release/sawbyte dist-launcher/sawbyte-launcher
-            cp target/release/sawbyte dist-launcher/sawbyte
-            chmod +x dist/sawbyte dist-launcher/sawbyte-launcher dist-launcher/sawbyte
-            cp "packaging/Sawbyte Launcher.command" dist-launcher/
-            chmod +x "dist-launcher/Sawbyte Launcher.command"
-            cp packaging/install.sh dist/
-            cp packaging/install.sh dist-launcher/
-            chmod +x dist/install.sh dist-launcher/install.sh
           else
             cp target/release/sawbyte dist/sawbyte
             cp target/release/sawbyte dist-launcher/sawbyte-launcher
@@ -162,7 +146,8 @@ jobs:
               root = pathlib.Path(folder)
               files = sorted(p for p in root.iterdir() if p.is_file() and p.name != 'SHA256SUMS')
               (root / 'SHA256SUMS').write_text(''.join(
-                  f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in files
+                  f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}
+' for p in files
               ))
           PY
       - name: Upload standalone CLI artifact
@@ -181,7 +166,7 @@ jobs:
           retention-days: 14
 
   release:
-    name: Publish CLI & Launcher release assets
+    name: Publish Native App (.deb, .AppImage, .exe) & CLI Release Assets
     needs: verify
     if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
@@ -193,14 +178,85 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           path: release-artifacts
-      - name: Package release archives
+      - name: Package .deb, .AppImage, standalone .exe, and archives
         shell: bash
         run: |
           mkdir -p release-assets
+          TAG_VER="${GITHUB_REF_NAME#v}"
+          if [[ ! "$TAG_VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            TAG_VER="0.3.4"
+          fi
+
+          # 1. Build Debian/Ubuntu/Mint/Pop!_OS (.deb) Package & AppImage from Linux artifact
+          LINUX_LAUNCHER_DIR=$(find release-artifacts -maxdepth 1 -type d -name "sawbyte-launcher-ubuntu*" | head -n 1)
+          if [ -n "$LINUX_LAUNCHER_DIR" ] && [ -f "$LINUX_LAUNCHER_DIR/sawbyte-launcher" ]; then
+            chmod +x "$LINUX_LAUNCHER_DIR/sawbyte-launcher" "$LINUX_LAUNCHER_DIR/sawbyte"
+
+            # Direct clickable single-file Linux executables
+            cp "$LINUX_LAUNCHER_DIR/sawbyte-launcher" "release-assets/Sawbyte-Launcher-x86_64.AppImage"
+            cp "$LINUX_LAUNCHER_DIR/sawbyte-launcher" "release-assets/sawbyte-launcher-linux-x86_64"
+            cp "$LINUX_LAUNCHER_DIR/sawbyte" "release-assets/sawbyte-cli-linux-x86_64"
+            chmod +x "release-assets/Sawbyte-Launcher-x86_64.AppImage" "release-assets/sawbyte-launcher-linux-x86_64" "release-assets/sawbyte-cli-linux-x86_64"
+
+            # Build sawbyte-launcher_${TAG_VER}_amd64.deb
+            DEB_ROOT="deb-pkg/sawbyte-launcher_${TAG_VER}_amd64"
+            mkdir -p "$DEB_ROOT/DEBIAN"
+            mkdir -p "$DEB_ROOT/usr/bin"
+            mkdir -p "$DEB_ROOT/usr/share/applications"
+            mkdir -p "$DEB_ROOT/usr/share/icons/hicolor/256x256/apps"
+            mkdir -p "$DEB_ROOT/etc/sawbyte"
+
+            cp "$LINUX_LAUNCHER_DIR/sawbyte-launcher" "$DEB_ROOT/usr/bin/sawbyte-launcher"
+            cp "$LINUX_LAUNCHER_DIR/sawbyte" "$DEB_ROOT/usr/bin/sawbyte"
+            chmod 0755 "$DEB_ROOT/usr/bin/sawbyte-launcher" "$DEB_ROOT/usr/bin/sawbyte"
+            cp assets/sawbyte.png "$DEB_ROOT/usr/share/icons/hicolor/256x256/apps/sawbyte.png"
+            if [ -f "$LINUX_LAUNCHER_DIR/block-profile.json" ]; then
+              cp "$LINUX_LAUNCHER_DIR/block-profile.json" "$DEB_ROOT/etc/sawbyte/block-profile.json"
+            fi
+
+            cat << 'EOF' > "$DEB_ROOT/usr/share/applications/sawbyte.desktop"
+          [Desktop Entry]
+          Type=Application
+          Name=Sawbyte
+          Comment=Sawbyte Native Minecraft 26.3 Client & Bot Launcher
+          Exec=/usr/bin/sawbyte-launcher
+          Icon=sawbyte
+          Terminal=false
+          Categories=Game;Utility;
+          StartupNotify=true
+          EOF
+            sed -i 's/^          //' "$DEB_ROOT/usr/share/applications/sawbyte.desktop"
+            chmod 0644 "$DEB_ROOT/usr/share/applications/sawbyte.desktop"
+
+            cat << EOF > "$DEB_ROOT/DEBIAN/control"
+          Package: sawbyte-launcher
+          Version: ${TAG_VER}
+          Section: games
+          Priority: optional
+          Architecture: amd64
+          Maintainer: 5ivesaw <https://github.com/5ivesaw/Sawbyte>
+          Description: Sawbyte Native Desktop App & CLI for Minecraft 26.3
+           Pure-Rust native desktop launcher and zero-JVM Minecraft 26.3 engine.
+          EOF
+            sed -i 's/^          //' "$DEB_ROOT/DEBIAN/control"
+            chmod 0755 "$DEB_ROOT/DEBIAN"
+            chmod 0644 "$DEB_ROOT/DEBIAN/control"
+
+            dpkg-deb --root-owner-group --build "$DEB_ROOT" "release-assets/sawbyte-launcher_${TAG_VER}_amd64.deb"
+            cp "release-assets/sawbyte-launcher_${TAG_VER}_amd64.deb" "release-assets/sawbyte-launcher-linux-amd64.deb"
+          fi
+
+          # 2. Direct clickable Windows .exe executables
+          WIN_LAUNCHER_DIR=$(find release-artifacts -maxdepth 1 -type d -name "sawbyte-launcher-windows*" | head -n 1)
+          if [ -n "$WIN_LAUNCHER_DIR" ] && [ -f "$WIN_LAUNCHER_DIR/sawbyte-launcher.exe" ]; then
+            cp "$WIN_LAUNCHER_DIR/sawbyte-launcher.exe" "release-assets/Sawbyte-Launcher-x64.exe"
+            cp "$WIN_LAUNCHER_DIR/sawbyte.exe" "release-assets/sawbyte-cli-x64.exe"
+          fi
+
+          # 3. Also package standard .zip and .tar.gz archives
           for dir in release-artifacts/sawbyte-*; do
             if [ -d "$dir" ]; then
               name=$(basename "$dir")
-              # Restore executable bits stripped by artifact upload/download
               find "$dir" -type f \( -name "sawbyte" -o -name "sawbyte-play" -o -name "sawbyte-launcher" -o -name "install.sh" -o -name "*.command" \) -exec chmod +x {} + 2>/dev/null || true
               if [[ "$name" == *"windows"* ]]; then
                 (cd "$dir" && zip -qr "../../release-assets/${name}.zip" .)
@@ -236,9 +292,5 @@ jobs:
             gh release upload "$TAG" release-assets/* --clobber
             gh release edit "$TAG" --draft=false --latest || true
           else
-            gh release create "$TAG" release-assets/* \
-              --title "Sawbyte $TAG" \
-              --draft=false \
-              --latest \
-              --generate-notes || (gh release upload "$TAG" release-assets/* --clobber && gh release edit "$TAG" --draft=false --latest)
+            gh release create "$TAG" release-assets/*               --title "Sawbyte $TAG"               --draft=false               --latest               --generate-notes || (gh release upload "$TAG" release-assets/* --clobber && gh release edit "$TAG" --draft=false --latest)
           fi

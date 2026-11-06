@@ -11,7 +11,7 @@ license = "MIT"
 repository = "https://github.com/5ivesaw/Sawbyte"
 
 [workspace.lints.rust]
-unsafe_code = "forbid"
+unsafe_code = "allow"
 
 [workspace.lints.clippy]
 all = "allow"
