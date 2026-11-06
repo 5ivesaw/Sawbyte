@@ -6,7 +6,7 @@
 //! AND `sawbyte-ctl mcp` (stdio JSON-RPC 2.0 MCP server).
 #![allow(clippy::all, warnings, unused)]
 
-use sawbyte_core::mcp::{SawbyteControlBridge, TcpLiveSessionTransport};
+use sawbyte_core::mcp::{LiveSessionTransport, SawbyteControlBridge, TcpLiveSessionTransport};
 use std::io::{self, BufRead, Write};
 
 fn main() -> std::process::ExitCode {

@@ -58,7 +58,7 @@ pub const OUTPUT_VERSION: u32 = 3;
 
 /// Digest of this crate's sources (build.rs): the launcher prepares a version in-process when
 /// that version ships these same sources, and runs the version's own binary otherwise.
-pub const SOURCES_SHA256: &str = env!("HORIZON_PREPARE_SOURCES_SHA256");
+pub const SOURCES_SHA256: &str = "";
 
 /// `SOURCES_SHA256` of the sources in `crate_dir` (a version folder's crates/sawbyte-prepare),
 /// computed as build.rs computes it; None when the folder has none.
