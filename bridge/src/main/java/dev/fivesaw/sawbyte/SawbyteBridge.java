@@ -178,12 +178,6 @@ public final class SawbyteBridge implements ClientModInitializer {
 
         // Process live TCP socket control requests if client is connected to world
         if (client.player != null && client.level != null) {
-            if (tickCounter % 20 == 0 && !manualHandoffActive) {
-                String modeTag = activeNavGoal != null ? "§aNavigating" : (activeMinePos != null ? "§eMining" : "§aSynced");
-                String hud = String.format("§a● §f§lsawbyte §726.3 §8| %s §8| §7XYZ: §f%.1f %.1f %.1f §8| §a20.0 TPS",
-                        modeTag, client.player.getX(), client.player.getY(), client.player.getZ());
-                client.player.displayClientMessage(net.minecraft.network.chat.Component.literal(hud), true);
-            }
             handleLiveControlTick(client);
         }
 

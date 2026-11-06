@@ -1405,26 +1405,26 @@ fn run_win32_native_window(mut state: AppState) -> Result<(), Box<dyn std::error
         ) -> i32;
     }
 
-    static mut PENDING_CLICK: Option<(i32, i32)> = None;
-    static mut NEEDS_PAINT: bool = true;
+    use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
+    static CLICK_X: AtomicI32 = AtomicI32::new(-1);
+    static CLICK_Y: AtomicI32 = AtomicI32::new(-1);
+    static NEEDS_PAINT: AtomicBool = AtomicBool::new(true);
 
     unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
         match msg {
             0x0002 => {
-                // WM_DESTROY
                 PostQuitMessage(0);
                 0
             }
             0x000F => {
-                // WM_PAINT
-                NEEDS_PAINT = true;
+                NEEDS_PAINT.store(true, Ordering::SeqCst);
                 DefWindowProcW(hwnd, msg, wparam, lparam)
             }
             0x0201 => {
-                // WM_LBUTTONDOWN
                 let x = (lparam & 0xFFFF) as i16 as i32;
                 let y = ((lparam >> 16) & 0xFFFF) as i16 as i32;
-                PENDING_CLICK = Some((x, y));
+                CLICK_X.store(x, Ordering::SeqCst);
+                CLICK_Y.store(y, Ordering::SeqCst);
                 0
             }
             _ => DefWindowProcW(hwnd, msg, wparam, lparam),
@@ -1496,13 +1496,15 @@ fn run_win32_native_window(mut state: AppState) -> Result<(), Box<dyn std::error
                 DispatchMessageW(&msg);
             }
 
-            if let Some((cx, cy)) = PENDING_CLICK.take() {
+            let cx = CLICK_X.swap(-1, Ordering::SeqCst);
+            let cy = CLICK_Y.swap(-1, Ordering::SeqCst);
+            if cx >= 0 && cy >= 0 {
                 if handle_mouse_click(&mut state, cx, cy) {
-                    NEEDS_PAINT = true;
+                    NEEDS_PAINT.store(true, Ordering::SeqCst);
                 }
             }
 
-            if NEEDS_PAINT {
+            if NEEDS_PAINT.swap(false, Ordering::SeqCst) {
                 let surface = render_app_frame(&state);
                 let hdc = GetDC(hwnd);
                 StretchDIBits(
@@ -1518,10 +1520,9 @@ fn run_win32_native_window(mut state: AppState) -> Result<(), Box<dyn std::error
                     surface.pixels.as_ptr() as *const core::ffi::c_void,
                     &bmi,
                     0,
-                    0x00CC_0020, // SRCCOPY
+                    0x00CC_0020,
                 );
                 ReleaseDC(hwnd, hdc);
-                NEEDS_PAINT = false;
             }
             thread::sleep(Duration::from_millis(16));
         }
