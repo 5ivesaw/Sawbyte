@@ -16,6 +16,9 @@ path = "src/main.rs"
 [dependencies]
 sawbyte-core = { path = "../sawbyte-core" }
 sawbyte-sim-core = { path = "../sawbyte-sim-core" }
+sha2 = "0.10"
+regex = "1.10"
+sha1 = "0.10"
 
 [lints]
 workspace = true
