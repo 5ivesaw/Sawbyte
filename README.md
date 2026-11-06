@@ -48,13 +48,10 @@
 
 ## <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/painting.png" width="22" height="22" alt="" /> Screenshots & Previews
 
-> **Note:** New desktop launcher and bot view screenshots will be added to `assets/screenshots/` once the new launcher UI build is finalized.
-
-| Slot | Preview Area | Target File Path | Status |
-| :---: | :--- | :--- | :---: |
-| **01** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/crafting_table_front.png" width="16" height="16" alt="" /> **Desktop Launcher UI** | `assets/screenshots/launcher.png` | Placeholder ready |
-| **02** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/command_block_front.png" width="16" height="16" alt="" /> **Bot Session & Live View** | `assets/screenshots/bot_view.png` | Placeholder ready |
-| **03** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/chest_front.png" width="16" height="16" alt="" /> **Server & Account Manager** | `assets/screenshots/server_manager.png` | Placeholder ready |
+| Desktop Launcher UI (Cream Luxe) | Live 3D & Radar Bot Supervisor | On-Demand GitHub Releases & Editions |
+| :---: | :---: | :---: |
+| <img src="assets/screenshots/launcher.png" width="320" alt="Desktop Launcher UI" /> | <img src="assets/screenshots/bot_view.png" width="320" alt="Bot Session & Live View" /> | <img src="assets/screenshots/server_manager.png" width="320" alt="Editions & Server Manager" /> |
+| **Instances, Quick Launch & Telemetry** (`assets/screenshots/launcher.png`) | **Pure-Rust 3D Rasterizer & 360° Radar** (`assets/screenshots/bot_view.png`) | **Fetch Headless, Potato & Fabric Bridge** (`assets/screenshots/server_manager.png`) |
 
 ## <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/diamond.png" width="22" height="22" alt="" /> Install & Downloads
 

@@ -135,6 +135,8 @@ impl PersistentLauncher {
     pub fn load_from(root_dir: PathBuf) -> Result<Self, String> {
         fs::create_dir_all(root_dir.join("instances")).map_err(|e| e.to_string())?;
         fs::create_dir_all(root_dir.join("locks")).map_err(|e| e.to_string())?;
+        fs::create_dir_all(root_dir.join("bin")).map_err(|e| e.to_string())?;
+        fs::create_dir_all(root_dir.join("editions")).map_err(|e| e.to_string())?;
         let state_file = root_dir.join("launcher.db");
         let mut launcher = Self {
             root_dir,
@@ -483,10 +485,29 @@ impl PersistentLauncher {
             return Ok(target);
         }
 
-        // If not found locally, fetch official release asset
+        for home_cand in [
+            self.root_dir.join("editions").join("sawbyte-bridge-0.3.3.jar"),
+            self.root_dir.join("editions").join("sawbyte-bridge-26.3.jar"),
+            self.root_dir.join("bin").join("sawbyte-bridge-0.3.3.jar"),
+        ] {
+            if home_cand.exists() {
+                fs::copy(&home_cand, &target).map_err(|e| e.to_string())?;
+                return Ok(target);
+            }
+        }
+
+        // If not found locally, fetch official release asset (latest resolver with tag fallback)
+        let latest_url =
+            "https://github.com/5ivesaw/Sawbyte/releases/latest/download/sawbyte-bridge-0.3.3.jar";
+        if let Ok(installed) = self.install_mod_file(instance_name, "sawbyte-bridge-0.3.3.jar", latest_url) {
+            let _ = fs::copy(&installed, self.root_dir.join("editions").join("sawbyte-bridge-0.3.3.jar"));
+            return Ok(installed);
+        }
         let release_url =
             "https://github.com/5ivesaw/Sawbyte/releases/download/v0.3.3/sawbyte-bridge-0.3.3.jar";
-        self.install_mod_file(instance_name, "sawbyte-bridge-0.3.3.jar", release_url)
+        let installed = self.install_mod_file(instance_name, "sawbyte-bridge-0.3.3.jar", release_url)?;
+        let _ = fs::copy(&installed, self.root_dir.join("editions").join("sawbyte-bridge-0.3.3.jar"));
+        Ok(installed)
     }
 
     /// Writes a token-free snapshot file on disk under `<instance>/snapshots/snapshot-<id>.cfg`.
@@ -658,6 +679,25 @@ impl PersistentLauncher {
                 }
             }
         }
+        let home_bin = Self::resolve_home().join("bin").join(&bin_name);
+        if home_bin.exists() {
+            return Ok(home_bin);
+        }
+        if let Ok(home) = std::env::var("HOME") {
+            let local_bin = PathBuf::from(home).join(".local/bin").join(&bin_name);
+            if local_bin.exists() {
+                return Ok(local_bin);
+            }
+        }
+        if let Ok(local_app) = std::env::var("LOCALAPPDATA") {
+            let win_bin = PathBuf::from(local_app)
+                .join("Programs")
+                .join("Sawbyte")
+                .join(&bin_name);
+            if win_bin.exists() {
+                return Ok(win_bin);
+            }
+        }
         for candidate in [
             PathBuf::from(format!("native/target/release/{bin_name}")),
             PathBuf::from(format!("native/target/debug/{bin_name}")),
@@ -669,8 +709,37 @@ impl PersistentLauncher {
             }
         }
         Err(format!(
-            "could not locate '{bin_name}' binary; set SAWBYTE_PLAY_BIN or place sawbyte-play next to sawbyte"
+            "could not locate '{bin_name}' binary; install it via the Launcher Editions tab or place '{bin_name}' in ~/.sawbyte/bin"
         ))
+    }
+
+    pub fn ensure_block_profile(&self, requested: &Path) -> PathBuf {
+        if requested.exists() {
+            return requested.to_path_buf();
+        }
+        for cand in [
+            self.root_dir.join("block-profile.json"),
+            self.root_dir.join("bin").join("block-profile.json"),
+            PathBuf::from("block-profile.json"),
+            PathBuf::from("run/reports/block-profile.json"),
+        ] {
+            if cand.exists() {
+                return cand;
+            }
+        }
+        if let Ok(exe) = std::env::current_exe() {
+            if let Some(parent) = exe.parent() {
+                let sib = parent.join("block-profile.json");
+                if sib.exists() {
+                    return sib;
+                }
+            }
+        }
+        let fallback = self.root_dir.join("block-profile.json");
+        let default_json = "{\n  \"minecraft\": \"26.3\",\n  \"air\": [0],\n  \"solid\": [1],\n  \"bottom_slabs\": [],\n  \"top_slabs\": [],\n  \"stairs\": [],\n  \"fences\": [],\n  \"carpets\": [],\n  \"climbable\": [],\n  \"water\": [],\n  \"lava\": [],\n  \"cobwebs\": [],\n  \"soul_sand\": [],\n  \"ice\": [],\n  \"hardness\": {\n    \"1\": 1.5\n  }\n}\n";
+        let _ = fs::create_dir_all(&self.root_dir);
+        let _ = fs::write(&fallback, default_json.as_bytes());
+        fallback
     }
 
     /// Spawns the real `sawbyte-play` headless client process connected to `server`, persists its PID
@@ -741,7 +810,8 @@ impl PersistentLauncher {
         } else {
             cmd.arg("--offline").arg(&acc.username);
         }
-        cmd.arg(blocks_profile_path).arg("--listen").arg(&rpc_bind);
+        let resolved_profile = self.ensure_block_profile(blocks_profile_path);
+        cmd.arg(&resolved_profile).arg("--listen").arg(&rpc_bind);
         for arg in extra_args {
             cmd.arg(arg);
         }

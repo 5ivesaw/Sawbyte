@@ -3,6 +3,7 @@ on:
   push:
     branches: [feat/real-player, main]
     tags: ['v*']
+  pull_request:
   workflow_dispatch:
 permissions:
   contents: write
@@ -39,11 +40,11 @@ jobs:
           sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers x11-xserver-utils
       - name: Compare real players
         run: |
-          BRIDGE_JAR=$(ls run/mods/sawbyte-bridge-*.jar | head -n 1)
+          BRIDGE_JAR=$(ls run/mods/sawbyte-bridge-*.jar | grep -vE '(-dev|-sources)\.jar' | head -n 1)
           python tools/player_lab.py --native run/bin/sawbyte-play --cli target/release/sawbyte --bridge "$BRIDGE_JAR"
       - name: Run crucible benchmark
         run: |
-          BRIDGE_JAR=$(ls run/mods/sawbyte-bridge-*.jar | head -n 1)
+          BRIDGE_JAR=$(ls run/mods/sawbyte-bridge-*.jar | grep -vE '(-dev|-sources)\.jar' | head -n 1)
           python tools/crucible_bench.py --backend both --native run/bin/sawbyte-play --cli target/release/sawbyte --bridge "$BRIDGE_JAR"
       - name: Run universal capabilities benchmark
         run: |
@@ -147,14 +148,37 @@ jobs:
             cp native/target/release/sawbyte-play.exe run/player/
           else
             cp native/target/release/sawbyte-play run/player/
+            chmod +x run/player/sawbyte-play
           fi
           cp README.md LICENSE docs/COVERAGE.md assets/sawbyte.png run/player/
           cp docs/PLAYER.md run/player/
           cp packaging/generated/sawbyte.ico packaging/generated/sawbyte.icns run/player/
           if [ -f run/reports/block-profile.json ]; then
-            cp run/reports/block-profile.json run/player/
+            cp run/reports/block-profile.json run/player/block-profile.json
           elif [ -f block-profile.json ]; then
-            cp block-profile.json run/player/
+            cp block-profile.json run/player/block-profile.json
+          else
+            python - <<'PY'
+          import json, pathlib
+          profile = {
+              "minecraft": "26.3",
+              "air": [0],
+              "solid": [1],
+              "bottom_slabs": [],
+              "top_slabs": [],
+              "stairs": [],
+              "fences": [],
+              "carpets": [],
+              "climbable": [],
+              "water": [],
+              "lava": [],
+              "cobwebs": [],
+              "soul_sand": [],
+              "ice": [],
+              "hardness": {"1": 1.5}
+          }
+          pathlib.Path("run/player/block-profile.json").write_text(json.dumps(profile, indent=2) + "\n")
+          PY
           fi
           python - <<'PY'
           import hashlib, pathlib
@@ -172,9 +196,9 @@ jobs:
           if-no-files-found: error
 
   release:
-    name: Publish player release assets
+    name: Publish player & bridge release assets
     needs: [comparison, bridge, native]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -188,12 +212,27 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-assets
-          find release-artifacts/sawbyte-bridge-26.3 -type f -name "*.jar" -exec cp {} release-assets/ \; || true
+          BRIDGE_MAIN=$(find release-artifacts/sawbyte-bridge-26.3 -type f -name "sawbyte-bridge-*.jar" | grep -vE '(-dev|-sources)\.jar' | head -n 1 || true)
+          if [ -n "$BRIDGE_MAIN" ] && [ -f "$BRIDGE_MAIN" ]; then
+            cp "$BRIDGE_MAIN" release-assets/
+            cp "$BRIDGE_MAIN" release-assets/sawbyte-bridge-26.3.jar
+          fi
+          if [ -f release-artifacts/player-comparison-evidence/block-profile.json ]; then
+            cp release-artifacts/player-comparison-evidence/block-profile.json release-assets/block-profile.json
+            for dir in release-artifacts/sawbyte-play-*; do
+              if [ -d "$dir" ]; then
+                cp release-artifacts/player-comparison-evidence/block-profile.json "$dir/block-profile.json"
+              fi
+            done
+          fi
           for dir in release-artifacts/sawbyte-play-*; do
             if [ -d "$dir" ]; then
               name=$(basename "$dir")
+              if [ -f "$dir/sawbyte-play" ]; then
+                chmod +x "$dir/sawbyte-play"
+              fi
               if [[ "$name" == *"windows"* ]]; then
-                (cd "$dir" && zip -r "../../release-assets/${name}.zip" .)
+                (cd "$dir" && zip -qr "../../release-assets/${name}.zip" .)
               else
                 tar -czf "release-assets/${name}.tar.gz" -C "$dir" .
               fi
@@ -208,14 +247,16 @@ jobs:
         shell: bash
         run: |
           TAG="${GITHUB_REF_NAME}"
-          if [[ "$TAG" == "main" || "$TAG" == "" ]]; then
-            TAG="v0.3.2"
+          if [[ "$TAG" != v* ]]; then
+            TAG="v0.3.3"
           fi
           echo "Publishing player assets for $TAG"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" release-assets/* --clobber
+            gh release edit "$TAG" --latest || true
           else
             gh release create "$TAG" release-assets/* \
               --title "Sawbyte $TAG" \
+              --latest \
               --generate-notes || gh release upload "$TAG" release-assets/* --clobber
           fi

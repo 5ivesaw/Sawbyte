@@ -9,14 +9,14 @@
   <link rel="stylesheet" href="style.css">
   <script defer src="app.js"></script>
 </head>
-<body class="intro-cursor-locked">
+<body data-site-mode="minimal" data-cursor-mode="normal">
 
   <!-- ==========================================================================
        1. REAL MINECRAFT 26.3 JAVA EDITION JOINING SERVER INTRO OVERLAY
        Slower natural pace: Title -> Singleplayer (misclick!) -> Cancel ->
        Multiplayer -> Add Server -> Join Server -> Technoblade Block Vortex
        ========================================================================== -->
-  <div id="mc-intro-overlay" aria-label="Minecraft 26.3 Joining Server Intro">
+  <div id="mc-intro-overlay" aria-label="Minecraft 26.3 Joining Server Intro" style="display: none;">
     <canvas id="mc-panorama-canvas"></canvas>
 
     <!-- Official 6-Face 3D Rotating Panorama Skybox Cube -->
@@ -359,12 +359,26 @@
 
   <!-- Hero Section -->
   <header class="hero reveal-on-scroll" id="overview">
-    <div class="world-hint-pill">
-      <img class="mc-png mc-png-sm" data-mc-tex="item/diamond_pickaxe.png" alt="">
-      <span class="mc-e">Interactive 2.5D Shader World:</span>
-      <span class="mc-7">Click or tap any tree, block, or ore in the background to break it (respawns in 2s)!</span>
+    <!-- Experience Mode & Background Selector Bar -->
+    <div class="site-mode-selector-bar" id="site-mode-selector-bar">
+      <span class="mc-7" style="font-size: 11.5px;">Background Mode:</span>
+      <button type="button" class="mode-pill-btn active" id="mode-btn-minimal" onclick="setSiteExperienceMode('minimal')">
+        Minimal Clean (Default)
+      </button>
+      <button type="button" class="mode-pill-btn" id="mode-btn-interactive" onclick="setSiteExperienceMode('interactive')">
+        2.5D Minecraft World (Interactive)
+      </button>
+      <span class="mc-8">|</span>
+      <button type="button" class="mode-pill-btn" id="cursor-mode-toggle-btn" onclick="toggleCursorMode()">
+        Cursor: Standard
+      </button>
     </div>
-    <br>
+
+    <div class="world-hint-pill" id="world-hint-pill">
+      <img class="mc-png mc-png-sm" data-mc-tex="item/diamond_pickaxe.png" alt="">
+      <span class="mc-e">Interactive 2.5D Shader World Active:</span>
+      <span class="mc-7">Click empty background blocks or trees to mine them (respawns in 2s)!</span>
+    </div>
     <div class="badge enchanted-glint">
       <span class="pulse-dot"></span>
       <img class="mc-png mc-png-sm" data-mc-tex="item/experience_bottle.png" alt="">
@@ -389,9 +403,9 @@
         <span>Download (<span class="release-tag-badge">Latest</span>)</span>
       </a>
 
-      <a href="#disc-maker" class="btn btn-gold enchanted-glint sfx-trigger">
-        <img class="mc-png disc-maker-cycling-icon" data-mc-tex="item/music_disc_pigstep.png" alt="">
-        <span>Open disc_maker Studio</span>
+      <a href="#previews" class="btn btn-gold sfx-trigger">
+        <img class="mc-png" data-mc-tex="item/painting.png" alt="">
+        <span>Launcher &amp; 3D Previews</span>
       </a>
 
       <a href="#benchmarks" class="btn btn-green sfx-trigger">
@@ -486,149 +500,17 @@
     </div>
   </div>
 
-  <!-- ==========================================================================
-       4. disc_maker - TRUE STOCHASTIC HARMONIC MINECRAFT SOUND COMPOSER
-       Zero hardcoded rhythms or melodies: generates rhythms via Bjorklund's
-       Euclidean algorithm E(k, 16, rot), melodies via Markov Consonance Gravity,
-       and randomizes instrument voices from 16 official Minecraft sounds!
-       ========================================================================== -->
-  <section class="container reveal-on-scroll" id="disc-maker">
-    <div class="section-header">
-      <div class="badge enchanted-glint">
-        <img class="mc-png mc-png-sm disc-maker-cycling-icon" data-mc-tex="item/music_disc_otherside.png" alt="disc_maker">
-        <span class="mc-d">Stochastic Minecraft Sound Composer</span>
-      </div>
-      <h2 class="section-title">disc_maker</h2>
-      <p class="section-desc">
-        100% non-hardcoded random music generator. Every click randomly picks Minecraft instruments, Euclidean rhythm pulses,
-        and Markov scale-walk notes constrained by harmonic consonance and swing parameters so random always sounds musical.
-      </p>
-    </div>
-
-    <div class="disc-maker-studio">
-      <div class="disc-maker-top-bar">
-        <div class="disc-turntable-wrap">
-          <div
-            class="disc-turntable-slot"
-            id="dm-turntable-btn"
-            data-tooltip-title="§ddisc_maker Turntable"
-            data-tooltip-lore="§7Icon continuously morphs through all 19|§7official Minecraft Music Discs!|§eTap to Start or Stop the composer"
-          >
-            <img
-              id="dm-main-disc-icon"
-              class="disc-maker-changing-icon disc-maker-cycling-icon"
-              data-mc-tex="item/music_disc_pigstep.png"
-              alt="disc_maker disc"
-            >
-          </div>
-          <div>
-            <div class="mc-f" style="font-size: 17px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span>disc_maker</span>
-              <span class="status-tag" id="dm-status-badge">READY</span>
-            </div>
-            <div class="mc-b" style="font-size: 12.5px; margin-top: 3px;" id="dm-active-disc-label">
-              Disc: music_disc_pigstep • Scale: Phrygian Dominant
-            </div>
-            <div class="mc-7" style="font-size: 11.5px;" id="dm-chord-readout">
-              Euclidean + Markov Engine Ready • Tap Randomize or Start
-            </div>
-          </div>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-green" id="dm-play-btn">
-            <img class="mc-png" data-mc-tex="block/note_block.png" alt="">
-            <span id="dm-play-label">START COMPOSER</span>
-          </button>
-          <button type="button" class="btn btn-gold enchanted-glint" id="dm-randomize-btn">
-            <img class="mc-png disc-maker-cycling-icon" data-mc-tex="item/music_disc_relic.png" alt="">
-            <span>RANDOMIZE TRACK</span>
-          </button>
-          <button type="button" class="btn btn-secondary" id="dm-mutate-btn">
-            <img class="mc-png" data-mc-tex="item/redstone.png" alt="">
-            <span id="dm-mutate-label">Live Mutate: ON</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Stochastic & Acoustic Parameters Grid -->
-      <div class="disc-maker-params-grid">
-        <div class="dm-param-box">
-          <div class="mc-b" style="font-size: 12px;">Scale Mode</div>
-          <select id="dm-scale-select" class="dm-select">
-            <option value="phrygian">Phrygian Dominant (Nether)</option>
-            <option value="dorian">Dorian Mode (Aria Groove)</option>
-            <option value="pentatonic">Minor Pentatonic (Funk)</option>
-            <option value="lydian">Lydian Mode (C418 Dream)</option>
-            <option value="hirajoshi">Hirajoshi (Cherry Blossom)</option>
-            <option value="mixolydian">Mixolydian (Upbeat Jam)</option>
-          </select>
-        </div>
-
-        <div class="dm-param-box">
-          <div class="mc-a" style="font-size: 12px;">Root Pitch Center</div>
-          <select id="dm-root-select" class="dm-select">
-            <option value="0">F# (Native Note Block)</option>
-            <option value="1">G</option>
-            <option value="3">A</option>
-            <option value="5">B</option>
-            <option value="6">C</option>
-            <option value="8">D</option>
-            <option value="-2">E</option>
-          </select>
-        </div>
-
-        <div class="dm-param-box">
-          <div style="display: flex; justify-content: space-between; font-size: 12px;">
-            <span class="mc-d">Consonance Gravity</span>
-            <span class="mc-f" id="dm-consonance-val">82%</span>
-          </div>
-          <input type="range" id="dm-consonance-slider" class="dm-slider" min="45" max="98" value="82">
-        </div>
-
-        <div class="dm-param-box">
-          <div style="display: flex; justify-content: space-between; font-size: 12px;">
-            <span class="mc-e">Tempo (BPM)</span>
-            <span class="mc-f" id="dm-bpm-val">114 BPM</span>
-          </div>
-          <input type="range" id="dm-bpm-slider" class="dm-slider" min="82" max="148" value="114">
-        </div>
-
-        <div class="dm-param-box">
-          <div style="display: flex; justify-content: space-between; font-size: 12px;">
-            <span class="mc-6">Pocket Swing</span>
-            <span class="mc-f" id="dm-swing-val">20%</span>
-          </div>
-          <input type="range" id="dm-swing-slider" class="dm-slider" min="0" max="42" value="20">
-        </div>
-
-        <div class="dm-param-box">
-          <div style="display: flex; justify-content: space-between; font-size: 12px;">
-            <span class="mc-c">Euclidean Pulse Density</span>
-            <span class="mc-f" id="dm-density-val">64%</span>
-          </div>
-          <input type="range" id="dm-density-slider" class="dm-slider" min="25" max="92" value="64">
-        </div>
-      </div>
-
-      <!-- 16-Step x 6-Track Interactive Sequencer Grid -->
-      <div class="sequencer-scroll-wrap">
-        <div id="dm-sequencer-grid"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Clean Screenshot Placeholders Section -->
+  <!-- Real Desktop Launcher & Bot UI Previews Section -->
   <section class="container reveal-on-scroll" id="previews">
     <div class="section-header">
       <div class="badge">
         <img class="mc-png mc-png-sm" data-mc-tex="item/painting.png" alt="">
-        <span class="mc-b">Screenshots &amp; UI Previews</span>
+        <span class="mc-b">Desktop Launcher &amp; Live Bot Previews</span>
       </div>
-      <h2 class="section-title">Launcher &amp; Bot Previews</h2>
+      <h2 class="section-title">Sleek Sawbyte Launcher &amp; 3D Supervisor</h2>
       <p class="section-desc">
-        Placeholders for the upcoming desktop launcher and bot screenshots. Drop your PNG screenshots into
-        <code class="mc-e">assets/screenshots/</code> when the launcher build is ready and they will load here automatically.
+        Pure Sawbyte desktop interface with Cream Luxe &amp; Obsidian themes, on-demand GitHub Releases edition installer
+        (Headless Native, Potato 3D/Radar, CLI &amp; Fabric Bridge), and a 100% free built-in MCP AI Agent hub.
       </p>
     </div>
 
@@ -637,25 +519,16 @@
         <div class="screenshot-slot-header">
           <span style="display: inline-flex; align-items: center; gap: 8px;">
             <img class="mc-png mc-png-sm" data-mc-tex="block/crafting_table_front.png" alt="">
-            <span class="mc-f">Desktop Launcher</span>
+            <span class="mc-f">Desktop Launcher (Instances &amp; Quick Launch)</span>
           </span>
-          <span class="mc-8">Slot 01</span>
+          <span class="mc-a">v0.3.3</span>
         </div>
         <div class="screenshot-frame-body">
-          <img class="screenshot-user-img" data-optional-screenshot="assets/screenshots/launcher.png" alt="Desktop Launcher Screenshot">
-          <div class="screenshot-placeholder-box">
-            <div class="item-slot">
-              <img class="mc-png mc-png-lg" data-mc-tex="item/painting.png" alt="">
-            </div>
-            <div class="mc-e" style="font-size: 13.5px;">Launcher Screenshot Placeholder</div>
-            <div class="mc-7" style="font-size: 12px;">
-              Add <code class="mc-b">assets/screenshots/launcher.png</code> once you take screenshots of the new launcher.
-            </div>
-          </div>
+          <img class="screenshot-user-img" src="assets/screenshots/launcher.png" data-optional-screenshot="assets/screenshots/launcher.png" alt="Desktop Launcher Screenshot" style="display: block;">
         </div>
         <div class="screenshot-slot-footer">
-          <span>New Launcher UI (In Progress)</span>
-          <span class="mc-a">16:9 PNG</span>
+          <span>Cream Luxe Theme • Zero-JVM Instance Supervisor</span>
+          <span class="mc-a">~8.2 MB RSS</span>
         </div>
       </div>
 
@@ -663,25 +536,16 @@
         <div class="screenshot-slot-header">
           <span style="display: inline-flex; align-items: center; gap: 8px;">
             <img class="mc-png mc-png-sm" data-mc-tex="block/command_block_front.png" alt="">
-            <span class="mc-f">Bot Session &amp; Live View</span>
+            <span class="mc-f">Pure-Rust 3D &amp; 360° Radar Supervisor</span>
           </span>
-          <span class="mc-8">Slot 02</span>
+          <span class="mc-a">Potato Mode</span>
         </div>
         <div class="screenshot-frame-body">
-          <img class="screenshot-user-img" data-optional-screenshot="assets/screenshots/bot_view.png" alt="Bot View Screenshot">
-          <div class="screenshot-placeholder-box">
-            <div class="item-slot">
-              <img class="mc-png mc-png-lg" data-mc-tex="item/compass_16.png" alt="">
-            </div>
-            <div class="mc-e" style="font-size: 13.5px;">Bot View Screenshot Placeholder</div>
-            <div class="mc-7" style="font-size: 12px;">
-              Add <code class="mc-b">assets/screenshots/bot_view.png</code> to show live bot coordinates, inventory, and tasks.
-            </div>
-          </div>
+          <img class="screenshot-user-img" src="assets/screenshots/bot_view.png" data-optional-screenshot="assets/screenshots/bot_view.png" alt="Bot View Screenshot" style="display: block;">
         </div>
         <div class="screenshot-slot-footer">
-          <span>Headless Bot Dashboard</span>
-          <span class="mc-a">16:9 PNG</span>
+          <span>Software 3D Rasterizer, Telemetry HUD &amp; Live RPC</span>
+          <span class="mc-a">20.0 TPS</span>
         </div>
       </div>
 
@@ -689,25 +553,16 @@
         <div class="screenshot-slot-header">
           <span style="display: inline-flex; align-items: center; gap: 8px;">
             <img class="mc-png mc-png-sm" data-mc-tex="item/ender_eye.png" alt="">
-            <span class="mc-f">Server &amp; Account Manager</span>
+            <span class="mc-f">On-Demand GitHub Releases &amp; Editions</span>
           </span>
-          <span class="mc-8">Slot 03</span>
+          <span class="mc-a">Auto-Sync</span>
         </div>
         <div class="screenshot-frame-body">
-          <img class="screenshot-user-img" data-optional-screenshot="assets/screenshots/server_manager.png" alt="Server Manager Screenshot">
-          <div class="screenshot-placeholder-box">
-            <div class="item-slot">
-              <img class="mc-png mc-png-lg" data-mc-tex="block/chest_front.png" alt="">
-            </div>
-            <div class="mc-e" style="font-size: 13.5px;">Server List Screenshot Placeholder</div>
-            <div class="mc-7" style="font-size: 12px;">
-              Add <code class="mc-b">assets/screenshots/server_manager.png</code> for multi-server &amp; Fabric bridge previews.
-            </div>
-          </div>
+          <img class="screenshot-user-img" src="assets/screenshots/server_manager.png" data-optional-screenshot="assets/screenshots/server_manager.png" alt="Editions &amp; Releases Screenshot" style="display: block;">
         </div>
         <div class="screenshot-slot-footer">
-          <span>Server &amp; Bridge Sync</span>
-          <span class="mc-a">16:9 PNG</span>
+          <span>Fetch Headless, Potato, CLI &amp; Fabric 26.3 Bridge</span>
+          <span class="mc-a">GitHub API</span>
         </div>
       </div>
     </div>
@@ -1216,6 +1071,140 @@
       </div>
     </div>
   </section>
+
+
+  <!-- ==========================================================================
+       4. disc_maker - TRUE STOCHASTIC HARMONIC MINECRAFT SOUND COMPOSER
+       Zero hardcoded rhythms or melodies: generates rhythms via Bjorklund's
+       Euclidean algorithm E(k, 16, rot), melodies via Markov Consonance Gravity,
+       and randomizes instrument voices from 16 official Minecraft sounds!
+       ========================================================================== -->
+  <section class="container reveal-on-scroll extras-studio-section" id="disc-maker">
+    <div class="section-header">
+      <div class="badge enchanted-glint">
+        <img class="mc-png mc-png-sm disc-maker-cycling-icon" data-mc-tex="item/music_disc_otherside.png" alt="disc_maker">
+        <span class="mc-d">Stochastic Minecraft Sound Composer</span>
+      </div>
+      <h2 class="section-title">disc_maker</h2>
+      <p class="section-desc">
+        100% non-hardcoded random music generator. Every click randomly picks Minecraft instruments, Euclidean rhythm pulses,
+        and Markov scale-walk notes constrained by harmonic consonance and swing parameters so random always sounds musical.
+      </p>
+    </div>
+
+    <div style="text-align:center; margin-bottom:14px;"><button type="button" class="mode-pill-btn" id="toggle-dm-studio-btn" onclick="toggleDiscMakerDrawer()">Expand / Collapse disc_maker Studio</button></div><div class="disc-maker-studio" id="disc-maker-studio-box">
+      <div class="disc-maker-top-bar">
+        <div class="disc-turntable-wrap">
+          <div
+            class="disc-turntable-slot"
+            id="dm-turntable-btn"
+            data-tooltip-title="§ddisc_maker Turntable"
+            data-tooltip-lore="§7Icon continuously morphs through all 19|§7official Minecraft Music Discs!|§eTap to Start or Stop the composer"
+          >
+            <img
+              id="dm-main-disc-icon"
+              class="disc-maker-changing-icon disc-maker-cycling-icon"
+              data-mc-tex="item/music_disc_pigstep.png"
+              alt="disc_maker disc"
+            >
+          </div>
+          <div>
+            <div class="mc-f" style="font-size: 17px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span>disc_maker</span>
+              <span class="status-tag" id="dm-status-badge">READY</span>
+            </div>
+            <div class="mc-b" style="font-size: 12.5px; margin-top: 3px;" id="dm-active-disc-label">
+              Disc: music_disc_pigstep • Scale: Phrygian Dominant
+            </div>
+            <div class="mc-7" style="font-size: 11.5px;" id="dm-chord-readout">
+              Euclidean + Markov Engine Ready • Tap Randomize or Start
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-green" id="dm-play-btn">
+            <img class="mc-png" data-mc-tex="block/note_block.png" alt="">
+            <span id="dm-play-label">START COMPOSER</span>
+          </button>
+          <button type="button" class="btn btn-gold enchanted-glint" id="dm-randomize-btn">
+            <img class="mc-png disc-maker-cycling-icon" data-mc-tex="item/music_disc_relic.png" alt="">
+            <span>RANDOMIZE TRACK</span>
+          </button>
+          <button type="button" class="btn btn-secondary" id="dm-mutate-btn">
+            <img class="mc-png" data-mc-tex="item/redstone.png" alt="">
+            <span id="dm-mutate-label">Live Mutate: ON</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stochastic & Acoustic Parameters Grid -->
+      <div class="disc-maker-params-grid">
+        <div class="dm-param-box">
+          <div class="mc-b" style="font-size: 12px;">Scale Mode</div>
+          <select id="dm-scale-select" class="dm-select">
+            <option value="phrygian">Phrygian Dominant (Nether)</option>
+            <option value="dorian">Dorian Mode (Aria Groove)</option>
+            <option value="pentatonic">Minor Pentatonic (Funk)</option>
+            <option value="lydian">Lydian Mode (C418 Dream)</option>
+            <option value="hirajoshi">Hirajoshi (Cherry Blossom)</option>
+            <option value="mixolydian">Mixolydian (Upbeat Jam)</option>
+          </select>
+        </div>
+
+        <div class="dm-param-box">
+          <div class="mc-a" style="font-size: 12px;">Root Pitch Center</div>
+          <select id="dm-root-select" class="dm-select">
+            <option value="0">F# (Native Note Block)</option>
+            <option value="1">G</option>
+            <option value="3">A</option>
+            <option value="5">B</option>
+            <option value="6">C</option>
+            <option value="8">D</option>
+            <option value="-2">E</option>
+          </select>
+        </div>
+
+        <div class="dm-param-box">
+          <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span class="mc-d">Consonance Gravity</span>
+            <span class="mc-f" id="dm-consonance-val">82%</span>
+          </div>
+          <input type="range" id="dm-consonance-slider" class="dm-slider" min="45" max="98" value="82">
+        </div>
+
+        <div class="dm-param-box">
+          <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span class="mc-e">Tempo (BPM)</span>
+            <span class="mc-f" id="dm-bpm-val">114 BPM</span>
+          </div>
+          <input type="range" id="dm-bpm-slider" class="dm-slider" min="82" max="148" value="114">
+        </div>
+
+        <div class="dm-param-box">
+          <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span class="mc-6">Pocket Swing</span>
+            <span class="mc-f" id="dm-swing-val">20%</span>
+          </div>
+          <input type="range" id="dm-swing-slider" class="dm-slider" min="0" max="42" value="20">
+        </div>
+
+        <div class="dm-param-box">
+          <div style="display: flex; justify-content: space-between; font-size: 12px;">
+            <span class="mc-c">Euclidean Pulse Density</span>
+            <span class="mc-f" id="dm-density-val">64%</span>
+          </div>
+          <input type="range" id="dm-density-slider" class="dm-slider" min="25" max="92" value="64">
+        </div>
+      </div>
+
+      <!-- 16-Step x 6-Track Interactive Sequencer Grid -->
+      <div class="sequencer-scroll-wrap">
+        <div id="dm-sequencer-grid"></div>
+      </div>
+    </div>
+  </section>
+
 
   <!-- ============================================================================
        PERSONAL NOTE FROM THE CREATOR: TECHNOBLADE (1999 to 2022)

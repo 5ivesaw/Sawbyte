@@ -1,38 +1,24 @@
 # Sawbyte Desktop Launcher
 
-Official cross-platform desktop launcher, instance supervisor, and AI pair-programming interface for the **Sawbyte** Minecraft Java Edition automation platform and native client.
+Official lightweight, cross-platform desktop launcher, on-demand GitHub Releases edition installer, pure-Rust 3D/Radar visualizer, and 100% free AI agent / MCP hub for **Sawbyte** (Minecraft Java 26.3, Protocol 777).
 
-## Core Capabilities
+## Key Highlights
 
-- **Zero-JVM & Native Integration**: Directly configure, manage, and launch the pure-Rust standalone client (`sawbyte-play`) with sub-12 MB RSS and locked 20.00 TPS physics.
-- **Fabric Graphical Bridge**: Launch the official Fabric 26.3 graphical reference client equipped with `sawbyte-bridge-0.3.2.jar` for synchronized in-game HUD and telemetry.
-- **Potato Minimal Visualizer**: Direct toggle for the pure-Rust software 3D raymarching engine and 360-degree top-down mob radar with zero GPU dependencies.
-- **Integrated Mod Store**: Full native search and one-click installation from Modrinth and CurseForge with automated dependency resolution (Fabric API, Sodium, etc.).
-- **Account Management**: Seamless support for Microsoft OAuth login and deterministic offline/cracked UUID profiles.
-- **Autonomous AI Hub**: Integrated Model Context Protocol (MCP) server daemon supervisor (`skills/sawbyte/SKILL.md`) for pairing Claude, Gemini, and Antigravity agents.
-- **Deep Dark Obsidian Theme**: Authentic dark styling (`#07090e`, `#0f141c`) with cyan diamond (`#38bdf8`) and emerald (`#22c55e`) accents, acrylic glassmorphism, and backgroundless Sawbyte brand icons.
-
-## Workspace Layout
-
-```
-launcher/
-├── xmcl-electron-app/    # Electron main process, window management, and native packaging
-├── xmcl-keystone-ui/      # Vue 3 + Vite renderer UI, views, components, and deep dark theme
-├── xmcl-runtime/          # Background Node.js services for instances, launch, and mods
-├── xmcl-runtime-api/      # Service interface contracts and type definitions
-└── packages/              # Modular utilities (@xmcl/installer, @xmcl/client, @xmcl/model, etc.)
-```
+- **100% Pure Sawbyte Architecture**: Built specifically for Sawbyte with zero third-party launcher bloat, zero subscriptions, and zero paywalls.
+- **Sleek Creamy Luxe & Obsidian UI**: Proportional, high-contrast editorial design with one-click switching between **Cream Luxe** (`#F6F0E4` / `#2B6E5B` / `#C47A2C`) and **Obsidian Dark**, plus adaptive eco frame-rate throttling for low-end devices.
+- **On-Demand GitHub Releases Edition Installer**: The launcher stays featherlight and fetches editions directly from `https://github.com/5ivesaw/Sawbyte/releases/latest` into `~/.sawbyte/bin`:
+  - **Headless Native Engine (`sawbyte-play`)**: ~8.2 MB RAM, locked 20.0 TPS sub-voxel physics (`3.41e-7` block parity), TCP control port `25580`.
+  - **Potato Software 3D & Radar Edition (`visualizer`)**: ~10.4 MB RAM pure-Rust raymarcher & 360° radar with zero GPU/JVM dependencies.
+  - **Sawbyte CLI & MCP Daemon (`sawbyte`)**: Persistent instance supervisor, `.sbif` input tape generator, and 10-tool MCP stdio server.
+  - **Graphical Fabric 26.3 Bridge (`sawbyte-bridge-0.3.3.jar`)**: Reference bridge mod for syncing/spectating headless bots inside the regular Java client.
+  - **Minecraft 26.3 Block Profile (`block-profile.json`)**: Authoritative protocol 777 collision and hardness profile.
+- **Built-In Free Sawbyte AI Agent & MCP Hub**: Dispatch autonomous survival workflows, test all 10 MCP tools live over JSON-RPC 2.0, or copy the ready-to-use `mcpServers` config for Claude, Gemini, Cursor, Antigravity, or local Ollama.
 
 ## Quick Start
 
 ```bash
-# Using bun or pnpm
 cd launcher
 pnpm install
-
-# Run the renderer in development mode
-pnpm run --prefix=xmcl-keystone-ui dev
-
-# Run the desktop Electron app
-pnpm run --prefix=xmcl-electron-app dev
+pnpm run build:renderer
+pnpm run dev
 ```

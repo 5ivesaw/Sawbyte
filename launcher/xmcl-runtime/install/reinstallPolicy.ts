@@ -1,1 +1,0 @@
-export const reinstallDiagnoseOptions = Object.freeze({ strict: true } as const)

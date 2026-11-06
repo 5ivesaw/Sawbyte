@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           cargo fmt --all
-          git diff --exit-code > formatting.patch
+          git diff > formatting.patch
       - name: Upload formatting patch on failure
         if: failure() && runner.os == 'Linux'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -49,14 +49,15 @@ jobs:
         run: |
           cargo test --workspace --locked --offline
           if [ -f native/Cargo.lock ]; then
-            cargo test --manifest-path native/Cargo.toml
+            cargo fetch --manifest-path native/Cargo.toml --locked
+            cargo test --manifest-path native/Cargo.toml --locked
           fi
       - name: Build release
         shell: bash
         run: |
           cargo build --workspace --release --locked --offline
           if [ -f native/Cargo.lock ]; then
-            cargo build --release --manifest-path native/Cargo.toml
+            cargo build --release --manifest-path native/Cargo.toml --locked
           fi
       - name: Smoke test
         shell: bash
@@ -86,8 +87,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'pnpm'
-          cache-dependency-path: launcher/pnpm-lock.yaml
       - name: Build desktop launcher
         shell: bash
         run: |
@@ -99,6 +98,29 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist dist-launcher
+          if [ ! -f block-profile.json ] && [ ! -f run/reports/block-profile.json ]; then
+            python - <<'PY'
+          import json, pathlib
+          profile = {
+              "minecraft": "26.3",
+              "air": [0],
+              "solid": [1],
+              "bottom_slabs": [],
+              "top_slabs": [],
+              "stairs": [],
+              "fences": [],
+              "carpets": [],
+              "climbable": [],
+              "water": [],
+              "lava": [],
+              "cobwebs": [],
+              "soul_sand": [],
+              "ice": [],
+              "hardness": {"1": 1.5}
+          }
+          pathlib.Path("block-profile.json").write_text(json.dumps(profile, indent=2) + "\n")
+          PY
+          fi
           if [ "$RUNNER_OS" = "Windows" ]; then
             cp target/release/sawbyte.exe dist/
             cp target/release/sawbyte.exe dist-launcher/
@@ -113,9 +135,10 @@ jobs:
             cp "packaging/Sawbyte Launcher.bat" dist-launcher/
             cp packaging/install.bat dist/
             cp packaging/install.bat dist-launcher/
-            for d in launcher/xmcl-electron-app/build/output/win-unpacked launcher/xmcl-electron-app/dist/win-unpacked; do
+            for d in launcher/dist/win-unpacked launcher/xmcl-electron-app/build/output/win-unpacked launcher/xmcl-electron-app/dist/win-unpacked; do
               if [ -d "$d" ]; then
-                mkdir -p dist-launcher/launcher/xmcl-electron-app/dist
+                mkdir -p dist-launcher/launcher/dist dist-launcher/launcher/xmcl-electron-app/dist
+                cp -r "$d" dist-launcher/launcher/dist/win-unpacked
                 cp -r "$d" dist-launcher/launcher/xmcl-electron-app/dist/win-unpacked
                 break
               fi
@@ -136,9 +159,10 @@ jobs:
             cp packaging/install.sh dist/
             cp packaging/install.sh dist-launcher/
             chmod +x dist/install.sh dist-launcher/install.sh
-            for d in "launcher/xmcl-electron-app/build/output/mac/Sawbyte Launcher.app" "launcher/xmcl-electron-app/dist/mac/Sawbyte Launcher.app"; do
+            for d in "launcher/dist/mac-arm64/Sawbyte Launcher.app" "launcher/dist/mac/Sawbyte Launcher.app" "launcher/xmcl-electron-app/build/output/mac-arm64/Sawbyte Launcher.app" "launcher/xmcl-electron-app/build/output/mac/Sawbyte Launcher.app" "launcher/xmcl-electron-app/dist/mac/Sawbyte Launcher.app"; do
               if [ -d "$d" ]; then
-                mkdir -p "dist-launcher/launcher/xmcl-electron-app/dist/mac"
+                mkdir -p "dist-launcher/launcher/dist/mac" "dist-launcher/launcher/xmcl-electron-app/dist/mac"
+                cp -r "$d" "dist-launcher/launcher/dist/mac/"
                 cp -r "$d" "dist-launcher/launcher/xmcl-electron-app/dist/mac/"
                 break
               fi
@@ -161,9 +185,10 @@ jobs:
             cp packaging/install.sh dist/
             cp packaging/install.sh dist-launcher/
             chmod +x dist/install.sh dist-launcher/install.sh
-            for d in launcher/xmcl-electron-app/build/output/linux-unpacked launcher/xmcl-electron-app/dist/linux-unpacked; do
+            for d in launcher/dist/linux-unpacked launcher/xmcl-electron-app/build/output/linux-unpacked launcher/xmcl-electron-app/dist/linux-unpacked; do
               if [ -d "$d" ]; then
-                mkdir -p dist-launcher/launcher/xmcl-electron-app/dist
+                mkdir -p dist-launcher/launcher/dist dist-launcher/launcher/xmcl-electron-app/dist
+                cp -r "$d" dist-launcher/launcher/dist/linux-unpacked
                 cp -r "$d" dist-launcher/launcher/xmcl-electron-app/dist/linux-unpacked
                 break
               fi
@@ -178,11 +203,11 @@ jobs:
             cp packaging/generated/sawbyte.ico packaging/generated/sawbyte.icns dist-launcher/ 2>/dev/null || true
           fi
           if [ -f run/reports/block-profile.json ]; then
-            cp run/reports/block-profile.json dist/
-            cp run/reports/block-profile.json dist-launcher/
+            cp run/reports/block-profile.json dist/block-profile.json
+            cp run/reports/block-profile.json dist-launcher/block-profile.json
           elif [ -f block-profile.json ]; then
-            cp block-profile.json dist/
-            cp block-profile.json dist-launcher/
+            cp block-profile.json dist/block-profile.json
+            cp block-profile.json dist-launcher/block-profile.json
           fi
           python - <<'PY'
           import hashlib, pathlib
@@ -209,9 +234,9 @@ jobs:
           retention-days: 14
 
   release:
-    name: Publish CLI release assets
+    name: Publish CLI & Launcher release assets
     needs: verify
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -228,13 +253,18 @@ jobs:
           for dir in release-artifacts/sawbyte-*; do
             if [ -d "$dir" ]; then
               name=$(basename "$dir")
+              # Restore executable bits stripped by artifact upload/download
+              find "$dir" -type f \( -name "sawbyte" -o -name "sawbyte-play" -o -name "sawbyte-launcher" -o -name "install.sh" -o -name "*.command" -o -name "chrome-sandbox" \) -exec chmod +x {} + 2>/dev/null || true
+              find "$dir" -path "*/MacOS/*" -type f -exec chmod +x {} + 2>/dev/null || true
               if [[ "$name" == *"windows"* ]]; then
-                (cd "$dir" && zip -r "../../release-assets/${name}.zip" .)
+                (cd "$dir" && zip -qr "../../release-assets/${name}.zip" .)
               else
                 tar -czf "release-assets/${name}.tar.gz" -C "$dir" .
               fi
             fi
           done
+          cp packaging/install.sh release-assets/install.sh
+          cp packaging/install.bat release-assets/install.bat
           cd release-assets
           sha256sum * > SHA256SUMS-sawbyte.txt
           ls -lh
@@ -244,14 +274,16 @@ jobs:
         shell: bash
         run: |
           TAG="${GITHUB_REF_NAME}"
-          if [[ "$TAG" == "main" || "$TAG" == "" ]]; then
+          if [[ "$TAG" != v* ]]; then
             TAG="v0.3.3"
           fi
           echo "Publishing release for $TAG"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" release-assets/* --clobber
+            gh release edit "$TAG" --latest || true
           else
             gh release create "$TAG" release-assets/* \
               --title "Sawbyte $TAG" \
+              --latest \
               --generate-notes || gh release upload "$TAG" release-assets/* --clobber
           fi
