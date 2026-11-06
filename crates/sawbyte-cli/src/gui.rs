@@ -1192,8 +1192,7 @@ fn handle_mcp_call(body: &str) -> Result<String, String> {
         .get("script")
         .and_then(|v| v.as_str())
         .unwrap_or("inspect.status");
-    let mut bridge = sawbyte_core::mcp::SawbyteControlBridge::default();
-    bridge.live_endpoint = Some("127.0.0.1:25580".to_string());
+    let bridge = sawbyte_core::mcp::SawbyteControlBridge { live_endpoint: Some("127.0.0.1:25580".to_string()), ..Default::default() };
     let req = format!(
         "{{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{{\"name\":{name_q},\"script\":{script_q}}}}}",
         name_q = escape_json(name),
