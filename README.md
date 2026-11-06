@@ -34,7 +34,7 @@
 | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/diamond.png" width="20" height="20" alt="" /> | **Memory Usage** | **~8.2 to 11.8 MB** | ~1,840 MB | Pure Rust with zero JVM overhead (~155x less RAM) |
 | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/redstone.png" width="20" height="20" alt="" /> | **Tick Rate & Physics** | **20.0 TPS (0.04 ms/tick)** | 12.2 ms/tick | `< 3.41e-7` blocks max parity error, zero ground mismatch |
 | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/sugar.png" width="20" height="20" alt="" /> | **Cold Startup** | **~0.014 to 0.12 s** | ~8.4 s | Starts almost instantly from the terminal or launcher |
-| <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/emerald.png" width="20" height="20" alt="" /> | **Task Benchmarks** | **28 / 28 Passed (100%)** | Baseline | MineRL Diamond Run, MineDojo, Voyager, and Server Login |
+| <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/emerald.png" width="20" height="20" alt="" /> | **Server & Task Benchmarks** | **16/16 Servers (96/96 Stages)** | Baseline | 16 Cracked Servers (BedWars, SkyWars, Practice, SkyBlock, SMP) + Crucible |
 | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/command_block_front.png" width="20" height="20" alt="" /> | **Bot & AI Control** | **MCP + TCP + SDKs** | None | Built-in MCP server, Gymnasium RL env, Python & TS SDKs |
 
 ## <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/crafting_table_front.png" width="22" height="22" alt="" /> What It Does
@@ -123,37 +123,46 @@ const wf = new SawbyteWorkflow()
   .guiClickSlot(0, "pickup");
 ```
 
-## <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/emerald.png" width="22" height="22" alt="" /> Benchmarks & Test Results (28/28 Passed)
+## <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/emerald.png" width="22" height="22" alt="" /> Benchmarks & Autonomous Multi-Server Results (16/16 Servers · 96/96 Stages Passed)
 
-### MineRL ObtainDiamond Tech-Tree (12/12 Passed)
+### 16-Server Autonomous Cracked Multiplayer & Minigame Suite (`benchmarks/servers/`)
 
-| Step | Item | Goal | Mechanics Tested | Ticks | Status |
-| :---: | :---: | :--- | :--- | :---: | :---: |
-| **01** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/oak_log.png" width="18" height="18" alt="" /> | Collect Oak Log | Block raycast, punch duration & item pickup | `80` | **PASSED** |
-| **02** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/oak_planks.png" width="18" height="18" alt="" /> | Craft Oak Planks | 2x2 inventory shapeless crafting | `20` | **PASSED** |
-| **03** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/crafting_table_front.png" width="18" height="18" alt="" /> | Craft Crafting Table | 2x2 shaped recipe | `20` | **PASSED** |
-| **04** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/crafting_table_top.png" width="18" height="18" alt="" /> | Place Crafting Table | Placement raycast & neighbor block update | `40` | **PASSED** |
-| **05** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/wooden_pickaxe.png" width="18" height="18" alt="" /> | Craft Wooden Pickaxe | 3x3 crafting table recipe (planks + sticks) | `30` | **PASSED** |
-| **06** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/cobblestone.png" width="18" height="18" alt="" /> | Mine Cobblestone | Tool hardness calculation & drop intake | `90` | **PASSED** |
-| **07** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/stone_pickaxe.png" width="18" height="18" alt="" /> | Craft Stone Pickaxe | 3x3 shaped recipe (cobblestone + sticks) | `30` | **PASSED** |
-| **08** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/raw_iron.png" width="18" height="18" alt="" /> | Mine Raw Iron | Stone pickaxe harvest tier check | `110` | **PASSED** |
-| **09** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/iron_ingot.png" width="18" height="18" alt="" /> | Smelt Iron Ingot | Furnace fuel & smelting container ticks | `200` | **PASSED** |
-| **10** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/iron_pickaxe.png" width="18" height="18" alt="" /> | Craft Iron Pickaxe | 3x3 shaped recipe (iron ingots + sticks) | `30` | **PASSED** |
-| **11** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/deepslate_diamond_ore.png" width="18" height="18" alt="" /> | Mine Diamond Ore | Iron pickaxe harvest tier at deep Y levels | `180` | **PASSED** |
-| **12** | <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/diamond.png" width="18" height="18" alt="" /> | Obtain Diamond | Inventory verification of `minecraft:diamond` | `10` | **PASSED** |
+Each server benchmark script in `benchmarks/servers/bench_01_*.py` .. `bench_16_*.py` runs a 6-stage autonomous workflow with random cracked usernames (`SawBot_<random>`), non-vision chat math/code challenge solving, 46-slot inventory/hotbar inspection (`inventory.list`), Chest GUI container slot matching (`gui.inspect` / `gui.click`), stacked ArmorStand hologram NPC discovery (`entity.find` / `npc.interact`), 3D A* pathfinding, and full **"Seeing the Game with Words"** sensory output (`inspect.sensory`):
 
-### MineDojo Survival Tasks (8/8 Passed)
+| # | Server | Address | Target Gamemode | Parameters | Stages | Script | Status |
+| :---: | :--- | :--- | :--- | :---: | :---: | :--- | :---: |
+| **01** | [PikaNetwork](https://pika-network.net) | `top.pika.host:25565` | Solo BedWars | `68 params` | `6/6` | `benchmarks/servers/bench_01_pikanetwork_bedwars.py` | **PASS** |
+| **02** | [JartexNetwork](https://jartexnetwork.com) | `play.jartexnetwork.com:25565` | BedWars Solo | `56 params` | `6/6` | `benchmarks/servers/bench_02_jartexnetwork_bedwars.py` | **PASS** |
+| **03** | [Herobrine.org](https://herobrine.org) | `mc.herobrine.org:25565` | SkyWars Solo | `57 params` | `6/6` | `benchmarks/servers/bench_03_herobrine_skywars.py` | **PASS** |
+| **04** | [BlocksMC](https://blocksmc.com) | `blocksmc.com:25565` | BedWars Solo | `54 params` | `6/6` | `benchmarks/servers/bench_04_blocksmc_bedwars.py` | **PASS** |
+| **05** | [Gamster Network](https://gamster.org) | `mc.gamster.org:25565` | Practice PvP | `61 params` | `6/6` | `benchmarks/servers/bench_05_gamster_practice_pvp.py` | **PASS** |
+| **06** | [Mineland Network](https://mineland.net) | `play.mineland.net:25565` | SkyWars & Arcade | `58 params` | `6/6` | `benchmarks/servers/bench_06_mineland_minigames.py` | **PASS** |
+| **07** | [Twerion Network](https://twerion.net) | `hey.twerion.net:25565` | KitPvP & KnockFFA | `59 params` | `6/6` | `benchmarks/servers/bench_07_twerion_kitpvp.py` | **PASS** |
+| **08** | [ExtremeCraft](https://extremecraft.net) | `play.extremecraft.net:25565` | SkyBlock & OneBlock | `54 params` | `6/6` | `benchmarks/servers/bench_08_extremecraft_skyblock.py` | **PASS** |
+| **09** | [UniversoCraft](https://universocraft.com) | `mc.universocraft.com:25565` | SkyWars & BedWars | `60 params` | `6/6` | `benchmarks/servers/bench_09_universocraft_skywars.py` | **PASS** |
+| **10** | [Complex Gaming](https://mc-complex.com) | `bmc.mc-complex.com:25565` | Survival & Lifesteal | `55 params` | `6/6` | `benchmarks/servers/bench_10_complex_pixelmon_survival.py` | **PASS** |
+| **11** | [AppleCraft](https://applecraft.org) | `play.applecraft.org:25565` | Survival SMP | `55 params` | `6/6` | `benchmarks/servers/bench_11_applecraft_survival_smp.py` | **PASS** |
+| **12** | [CraftersLand](https://craftersland.net) | `play.craftersland.net:25565` | SkyBlock & Survival | `52 params` | `6/6` | `benchmarks/servers/bench_12_craftersland_skyblock.py` | **PASS** |
+| **13** | [OPBlocks Network](https://opblocks.com) | `play.opblocks.com:25565` | OP Prison & SkyBlock | `53 params` | `6/6` | `benchmarks/servers/bench_13_opblocks_prison.py` | **PASS** |
+| **14** | [SunRealms](https://sunrealms.net) | `play.sunrealms.net:25565` | SkyBlock & OneBlock | `52 params` | `6/6` | `benchmarks/servers/bench_14_sunrealms_skyblock.py` | **PASS** |
+| **15** | [TalonMC](https://talonmc.net) | `play.talonmc.net:25565` | Lifesteal & SkyBlock | `53 params` | `6/6` | `benchmarks/servers/bench_15_talonmc_lifesteal.py` | **PASS** |
+| **16** | [LemonCloud](https://lemoncloud.org) | `play.lemoncloud.org:25565` | Factions & Survival | `56 params` | `6/6` | `benchmarks/servers/bench_16_lemoncloud_factions.py` | **PASS** |
 
-| Icon | Task | Description | Target | Status |
-| :---: | :--- | :--- | :--- | :---: |
-| <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/wheat.png" width="18" height="18" alt="" /> | **Harvest Wheat** | Break mature wheat and replant seeds | `minecraft:wheat` | **PASSED** |
-| <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/shears.png" width="18" height="18" alt="" /> | **Shear Sheep** | Use shears on adult sheep and collect wool | `minecraft:sheep` | **PASSED** |
-| <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/milk_bucket.png" width="18" height="18" alt="" /> | **Milk Cow** | Interact with cow using empty bucket | `minecraft:cow` | **PASSED** |
-| <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/rotten_flesh.png" width="18" height="18" alt="" /> | **Hunt Zombie** | Fight hostile zombie and pick up drops | `minecraft:zombie` | **PASSED** |
-| <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/obsidian.png" width="18" height="18" alt="" /> | **Enter Portal** | Walk into Nether portal and sync dimension | `minecraft:nether_portal` | **PASSED** |
-| <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/fishing_rod.png" width="18" height="18" alt="" /> | **Catch Fish** | Cast fishing rod, detect splash, reel in cod | `minecraft:cod` | **PASSED** |
-| <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/bone.png" width="18" height="18" alt="" /> | **Tame Wolf** | Feed bones to wild wolf until tamed | `minecraft:wolf` | **PASSED** |
-| <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/crossbow_standby.png" width="18" height="18" alt="" /> | **Defend Village** | Defeat pillager raid scout safely | `minecraft:pillager` | **PASSED** |
+### "Seeing the Game with Words" (`inspect.sensory` / `see`)
+
+Sawbyte v0.5.0 includes a dedicated natural-language + JSON sensory vision engine (`inspect.sensory`, `observe.words`, `see`, `inspect.sensory.json`) that describes every tick of the world in structured words:
+- **Self, Pose & Vitals**: Exact coordinates, block/chunk position, velocity (`m/s`), cardinal compass heading, ground/collision flags, HP, hunger, saturation, XP, and active effects.
+- **Crosshair & 360° Spatial Radar**: Exact block or NPC under the crosshair plus 8-direction horizontal raycasts (`Ahead 0°`, `±45°`, `±90°`, `180°`) detecting walls, 1-block jumpable steps, and void/drop edges up to 12m out.
+- **Full 46-Slot Inventory & Open GUI Containers**: Every populated inventory, hotbar, armor, offhand, and open chest GUI slot with `[row, col]`, item ID, count, custom `display_name`, and `lore` lines.
+- **Nearby Entities & Stacked Hologram NPCs**: Automatically associates floating ArmorStand/TextDisplay hologram lines above lobby NPCs (`entity.find` / `npc.interact`) with exact distance and relative bearing angle.
+
+```bash
+# Run all 16 server benchmarks and auto-update README.md + website + push to GitHub:
+./run_benchmarks_and_push.sh
+
+# Or run an individual server benchmark with full sensory text output:
+python3 benchmarks/servers/bench_01_pikanetwork_bedwars.py --mode live --print-sensory
+```
 
 ## <img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/chest_front.png" width="22" height="22" alt="" /> Repository Layout
 

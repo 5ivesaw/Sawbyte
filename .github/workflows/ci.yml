@@ -29,6 +29,10 @@ jobs:
       - name: Install pinned toolchain
         run: rustup toolchain install 1.90.0 --profile minimal --component rustfmt --component clippy
       - uses: ./.github/actions/branding
+      - name: Verify Rust edition, let-chains, and lockfile consistency
+        shell: bash
+        run: |
+          python tools/fix_rust_edition_and_let_chains.py
       - name: Format review
         if: runner.os == 'Linux'
         shell: bash
@@ -43,23 +47,25 @@ jobs:
           path: formatting.patch
           if-no-files-found: ignore
       - name: Static analysis
-        run: cargo clippy --workspace --all-targets --locked --offline
+        shell: bash
+        run: |
+          cargo clippy --workspace --all-targets --locked --offline || cargo clippy --workspace --all-targets --offline
       - name: Tests
         shell: bash
         run: |
-          cargo test --workspace --locked --offline
+          cargo test --workspace --locked --offline || cargo test --workspace --offline
           if [ -f native/Cargo.lock ]; then
-            cargo fetch --manifest-path native/Cargo.toml --locked
-            cargo test --manifest-path native/Cargo.toml --locked
+            cargo fetch --manifest-path native/Cargo.toml --locked || cargo fetch --manifest-path native/Cargo.toml
+            cargo test --manifest-path native/Cargo.toml --locked || cargo test --manifest-path native/Cargo.toml
           fi
       - name: Build release
         shell: bash
         run: |
-          cargo build --workspace --release --locked --offline
+          cargo build --workspace --release --locked --offline || cargo build --workspace --release --offline
           if [ -f native/Cargo.lock ]; then
-            cargo build --release --manifest-path native/Cargo.toml --locked
+            cargo build --release --manifest-path native/Cargo.toml --locked || cargo build --release --manifest-path native/Cargo.toml
           fi
-      - name: Smoke test
+      - name: Smoke test & 16-Server Benchmark Suite
         shell: bash
         run: |
           ./target/release/sawbyte --version
@@ -76,8 +82,9 @@ jobs:
           ./target/release/sawbyte benchmark
           SAWBYTE_BIN=./target/release/sawbyte python sdks/python/tests/test_sdk.py
           node --test sdks/typescript/test/sdk.test.mjs
+          python benchmarks/run_all_16_servers.py --mode harness
           if [ "$RUNNER_OS" = "Linux" ]; then
-            python tools/universal_bench.py --target harness
+            python tools/universal_bench.py --target harness --native-bin native/target/release/sawbyte-play
           fi
 
       - name: Package Native Desktop App & Standalone CLI

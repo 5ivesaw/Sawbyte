@@ -1510,7 +1510,7 @@ fn run_win32_native_window(mut state: AppState) -> Result<(), Box<dyn std::error
     }
 
     #[link(name = "user32")]
-    extern "system" {
+    unsafe extern "system" {
         fn RegisterClassExW(lpwcx: *const WNDCLASSEXW) -> u16;
         fn CreateWindowExW(
             dw_ex_style: DWORD,
@@ -1538,7 +1538,7 @@ fn run_win32_native_window(mut state: AppState) -> Result<(), Box<dyn std::error
     }
 
     #[link(name = "gdi32")]
-    extern "system" {
+    unsafe extern "system" {
         fn StretchDIBits(
             hdc: HDC,
             x_dest: i32,
@@ -1561,15 +1561,20 @@ fn run_win32_native_window(mut state: AppState) -> Result<(), Box<dyn std::error
     static CLICK_Y: AtomicI32 = AtomicI32::new(-1);
     static NEEDS_PAINT: AtomicBool = AtomicBool::new(true);
 
-    unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    unsafe extern "system" fn wnd_proc(
+        hwnd: HWND,
+        msg: UINT,
+        wparam: WPARAM,
+        lparam: LPARAM,
+    ) -> LRESULT {
         match msg {
             0x0002 => {
-                PostQuitMessage(0);
+                unsafe { PostQuitMessage(0) };
                 0
             }
             0x000F => {
                 NEEDS_PAINT.store(true, Ordering::SeqCst);
-                DefWindowProcW(hwnd, msg, wparam, lparam)
+                unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
             }
             0x0201 => {
                 let x = (lparam & 0xFFFF) as i16 as i32;
@@ -1578,7 +1583,7 @@ fn run_win32_native_window(mut state: AppState) -> Result<(), Box<dyn std::error
                 CLICK_Y.store(y, Ordering::SeqCst);
                 0
             }
-            _ => DefWindowProcW(hwnd, msg, wparam, lparam),
+            _ => unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) },
         }
     }
 

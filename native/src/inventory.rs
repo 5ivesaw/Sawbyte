@@ -39,6 +39,13 @@ pub struct PacketTable {
     pub cb_set_equipment: i32,
     pub cb_set_experience: i32,
     pub cb_block_changed_ack: i32,
+    pub cb_set_entity_data: i32,
+    pub cb_player_info_update: i32,
+    pub cb_set_title_text: i32,
+    pub cb_set_subtitle_text: i32,
+    pub cb_set_action_bar_text: i32,
+    pub cb_set_objective: i32,
+    pub cb_set_score: i32,
     // Serverbound play packet IDs
     pub sb_attack: i32,
     pub sb_chat_command: i32,
@@ -94,6 +101,13 @@ impl Default for PacketTable {
             cb_set_equipment: 105,         // minecraft:set_equipment
             cb_set_experience: 107,        // minecraft:set_experience
             cb_block_changed_ack: 4,       // minecraft:block_changed_ack
+            cb_set_entity_data: 92,        // minecraft:set_entity_data
+            cb_player_info_update: 64,     // minecraft:player_info_update
+            cb_set_title_text: 115,        // minecraft:set_title_text
+            cb_set_subtitle_text: 113,     // minecraft:set_subtitle_text
+            cb_set_action_bar_text: 70,    // minecraft:set_action_bar_text
+            cb_set_objective: 108,         // minecraft:set_objective
+            cb_set_score: 111,             // minecraft:set_score
             sb_attack: 1,                  // minecraft:attack
             sb_chat_command: 7,            // minecraft:chat_command
             sb_chat: 9,                    // minecraft:chat
@@ -192,6 +206,20 @@ impl PacketTable {
             get_id(cb, "minecraft:set_experience", table.cb_set_experience);
         table.cb_block_changed_ack =
             get_id(cb, "minecraft:block_changed_ack", table.cb_block_changed_ack);
+        table.cb_set_entity_data =
+            get_id(cb, "minecraft:set_entity_data", table.cb_set_entity_data);
+        table.cb_player_info_update =
+            get_id(cb, "minecraft:player_info_update", table.cb_player_info_update);
+        table.cb_set_title_text =
+            get_id(cb, "minecraft:set_title_text", table.cb_set_title_text);
+        table.cb_set_subtitle_text =
+            get_id(cb, "minecraft:set_subtitle_text", table.cb_set_subtitle_text);
+        table.cb_set_action_bar_text =
+            get_id(cb, "minecraft:set_action_bar_text", table.cb_set_action_bar_text);
+        table.cb_set_objective =
+            get_id(cb, "minecraft:set_objective", table.cb_set_objective);
+        table.cb_set_score =
+            get_id(cb, "minecraft:set_score", table.cb_set_score);
 
         table.sb_attack = get_id(sb, "minecraft:attack", table.sb_attack);
         table.sb_chat_command = get_id(sb, "minecraft:chat_command", table.sb_chat_command);
@@ -289,7 +317,11 @@ pub fn nbt_to_plain_text(val: &serde_json::Value) -> String {
 #[derive(Clone, Debug)]
 pub struct TrackedEntity {
     pub entity_id: i32,
+    pub uuid: [u8; 16],
     pub entity_type: i32,
+    pub kind_name: String,
+    pub custom_name: Option<String>,
+    pub metadata_texts: Vec<String>,
     pub pos: [f64; 3],
     pub velocity: [f64; 3],
     pub yaw: f32,
@@ -297,6 +329,30 @@ pub struct TrackedEntity {
     pub width: f64,
     pub height: f64,
     pub equipment: HashMap<u8, ItemStack>,
+}
+
+pub fn entity_type_name(entity_type: i32) -> &'static str {
+    match entity_type {
+        2 => "armor_stand",
+        10 => "boat",
+        18 => "chicken",
+        19 => "cow",
+        21 => "creeper",
+        29 => "enderman",
+        58 => "iron_golem",
+        59 => "item",
+        62 => "minecart",
+        82 => "pig",
+        90 => "sheep",
+        93 => "skeleton",
+        96 => "spider",
+        106 => "text_display",
+        115 => "villager",
+        123 => "wolf",
+        125 => "zombie",
+        128 | 129 | 130 => "player",
+        _ => "entity",
+    }
 }
 
 pub fn entity_dimensions(entity_type: i32) -> (f64, f64) {
@@ -355,6 +411,11 @@ pub struct PlayerStateTable {
     pub action_sequence: i32,
     pub chat_log: Vec<String>,
     pub received_events: Vec<String>,
+    pub player_profiles: HashMap<[u8; 16], String>,
+    pub title_text: Option<String>,
+    pub subtitle_text: Option<String>,
+    pub action_bar_text: Option<String>,
+    pub scoreboard_lines: Vec<String>,
     pub decode_errors: u64,
     pub last_decode_error: Option<String>,
 }
@@ -378,6 +439,11 @@ impl Default for PlayerStateTable {
             action_sequence: 1,
             chat_log: Vec::new(),
             received_events: Vec::new(),
+            player_profiles: HashMap::new(),
+            title_text: None,
+            subtitle_text: None,
+            action_bar_text: None,
+            scoreboard_lines: Vec::new(),
             decode_errors: 0,
             last_decode_error: None,
         }
@@ -1036,12 +1102,20 @@ impl PlayerStateTable {
 
     pub fn apply_add_entity(&mut self, r: &mut Reader<'_>) -> Result<()> {
         let entity_id = r.var()?;
-        let _uuid = r.take(16)?;
+        let uuid_slice = r.take(16)?;
+        let mut uuid = [0u8; 16];
+        uuid.copy_from_slice(uuid_slice);
         let entity_type = r.var()?;
         let x = r.f64()?;
         let y = r.f64()?;
         let z = r.f64()?;
         let (width, height) = entity_dimensions(entity_type);
+        let profile_name = self.player_profiles.get(&uuid).cloned();
+        let kind_name = if profile_name.is_some() {
+            "player_npc".to_string()
+        } else {
+            entity_type_name(entity_type).to_string()
+        };
         if self.entities.len() >= 1024 && !self.entities.contains_key(&entity_id) {
             if let Some(&oldest) = self.entities.keys().next() {
                 self.entities.remove(&oldest);
@@ -1051,7 +1125,11 @@ impl PlayerStateTable {
             entity_id,
             TrackedEntity {
                 entity_id,
+                uuid,
                 entity_type,
+                kind_name,
+                custom_name: profile_name,
+                metadata_texts: Vec::new(),
                 pos: [x, y, z],
                 velocity: [0.0; 3],
                 yaw: 0.0,
@@ -1062,6 +1140,138 @@ impl PlayerStateTable {
             },
         );
         Ok(())
+    }
+
+    /// Extracts printable ASCII / UTF-8 strings (such as custom NPC names and hologram text)
+    /// from raw `set_entity_data` metadata packets without failing on custom server plugins.
+    pub fn apply_set_entity_data(&mut self, r: &mut Reader<'_>) -> Result<()> {
+        let entity_id = r.var()?;
+        let raw = r.0;
+        let mut extracted = Vec::new();
+        let mut cur = String::new();
+        for &b in raw {
+            if (0x20..=0x7e).contains(&b) || b == 0xa7 {
+                cur.push(b as char);
+            } else {
+                let trimmed = cur.trim();
+                if trimmed.len() >= 3 && trimmed.chars().any(|c| c.is_ascii_alphabetic()) {
+                    extracted.push(trimmed.to_string());
+                }
+                cur.clear();
+            }
+        }
+        let trimmed = cur.trim();
+        if trimmed.len() >= 3 && trimmed.chars().any(|c| c.is_ascii_alphabetic()) {
+            extracted.push(trimmed.to_string());
+        }
+        if let Some(ent) = self.entities.get_mut(&entity_id) {
+            for s in extracted {
+                if !ent.metadata_texts.contains(&s) {
+                    if ent.custom_name.is_none() {
+                        ent.custom_name = Some(s.clone());
+                    }
+                    ent.metadata_texts.push(s);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn apply_player_info_update(&mut self, r: &mut Reader<'_>) -> Result<()> {
+        let actions = r.byte()?;
+        let count = r.count(1024)?;
+        for _ in 0..count {
+            let uuid_slice = r.take(16)?;
+            let mut uuid = [0u8; 16];
+            uuid.copy_from_slice(uuid_slice);
+            if (actions & 0x01) != 0 {
+                if let Ok(name) = r.string() {
+                    self.player_profiles.insert(uuid, name.clone());
+                    for ent in self.entities.values_mut() {
+                        if ent.uuid == uuid && ent.custom_name.is_none() {
+                            ent.custom_name = Some(name.clone());
+                            ent.kind_name = "player_npc".to_string();
+                        }
+                    }
+                    // Only decode first player entry safely if multiple action bits are set
+                    if actions != 0x01 {
+                        break;
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn apply_set_title_text(&mut self, r: &mut Reader<'_>) -> Result<()> {
+        let nbt = r.nbt()?;
+        let text = nbt_to_plain_text(&nbt);
+        if !text.is_empty() {
+            self.title_text = Some(text.clone());
+            self.push_event(format!("title:{text}"));
+        }
+        Ok(())
+    }
+
+    pub fn apply_set_subtitle_text(&mut self, r: &mut Reader<'_>) -> Result<()> {
+        let nbt = r.nbt()?;
+        let text = nbt_to_plain_text(&nbt);
+        if !text.is_empty() {
+            self.subtitle_text = Some(text.clone());
+            self.push_event(format!("subtitle:{text}"));
+        }
+        Ok(())
+    }
+
+    pub fn apply_set_action_bar_text(&mut self, r: &mut Reader<'_>) -> Result<()> {
+        let nbt = r.nbt()?;
+        let text = nbt_to_plain_text(&nbt);
+        if !text.is_empty() {
+            self.action_bar_text = Some(text.clone());
+            self.push_event(format!("actionbar:{text}"));
+        }
+        Ok(())
+    }
+
+    /// Returns all hologram/nametag strings stacked above or attached to `entity_id`
+    /// (including nearby ArmorStands and TextDisplays within 1.8m horizontally and -0.5..+3.8m vertically).
+    pub fn entity_hologram_lines(&self, entity_id: i32) -> Vec<String> {
+        let Some(target) = self.entities.get(&entity_id) else {
+            return Vec::new();
+        };
+        let mut lines = Vec::new();
+        if let Some(ref cname) = target.custom_name {
+            lines.push(cname.clone());
+        }
+        for m in &target.metadata_texts {
+            if !lines.contains(m) {
+                lines.push(m.clone());
+            }
+        }
+        for other in self.entities.values() {
+            if other.entity_id == entity_id {
+                continue;
+            }
+            let dx = other.pos[0] - target.pos[0];
+            let dz = other.pos[2] - target.pos[2];
+            let dy = other.pos[1] - target.pos[1];
+            let horiz = (dx * dx + dz * dz).sqrt();
+            if horiz <= 1.85 && (-0.75..=3.8).contains(&dy) {
+                if let Some(ref cname) = other.custom_name {
+                    if !lines.contains(cname) {
+                        lines.push(cname.clone());
+                    }
+                }
+                for m in &other.metadata_texts {
+                    if !lines.contains(m) {
+                        lines.push(m.clone());
+                    }
+                }
+            }
+        }
+        lines
     }
 
     pub fn apply_remove_entities(&mut self, r: &mut Reader<'_>) -> Result<()> {

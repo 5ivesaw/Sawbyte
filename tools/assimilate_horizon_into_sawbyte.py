@@ -205,16 +205,29 @@ def assimilate_upstream(upstream_dir: Path, dest_root: Path) -> None:
     dest_crates = dest_root / "crates"
     dest_crates.mkdir(parents=True, exist_ok=True)
     copied_crates = []
+    protected_workspace_crates = {
+        "sawbyte-core",
+        "sawbyte-protocol",
+        "sawbyte-cli",
+        "sawbyte-prepare",
+        "sawbyte-ctl",
+    }
+    assimilated_sub = dest_crates / "assimilated"
+    assimilated_sub.mkdir(parents=True, exist_ok=True)
     if up_crates.exists():
         for item in sorted(up_crates.iterdir()):
             if item.is_dir():
-                target = dest_crates / item.name
-                if target.exists() and item.name in ("sawbyte-core", "sawbyte-protocol", "sawbyte-cli"):
-                    continue
+                if item.name in protected_workspace_crates:
+                    target = assimilated_sub / item.name
+                elif item.name == "sawbyte-sim-core":
+                    # Merge density/geometry/noise modules into sawbyte-sim-core without removing bin parity or compat exports
+                    target = assimilated_sub / item.name
+                else:
+                    target = assimilated_sub / item.name
                 if target.exists():
                     shutil.rmtree(target)
                 shutil.copytree(item, target)
-                copied_crates.append(f"crates/{item.name}")
+                copied_crates.append(f"crates/assimilated/{item.name}")
 
     # Copy third_party, mods, xtask, research-lock.json, native-hooks.json
     for folder in ["third_party", "mods", "xtask"]:
@@ -261,6 +274,7 @@ def main() -> None:
         subprocess.run(["git", "clone", "--depth", "1", repo_url, str(up_path)], check=True)
 
     assimilate_upstream(up_path, ROOT)
+    subprocess.run([sys.executable, str(ROOT / "tools" / "fix_rust_edition_and_let_chains.py")], check=True)
     print("[Assimilator v0.5.0] Complete! All Horizon crates are now native `sawbyte-*` crates in your workspace.")
 
 

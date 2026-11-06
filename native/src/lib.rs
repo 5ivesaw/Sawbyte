@@ -963,6 +963,21 @@ impl Session {
                     self.state_table.push_event(format!("block_changed_ack:{seq}"));
                 }
             }
+            id if id == self.packets.cb_set_entity_data => {
+                let _ = self.state_table.apply_set_entity_data(&mut r);
+            }
+            id if id == self.packets.cb_player_info_update => {
+                let _ = self.state_table.apply_player_info_update(&mut r);
+            }
+            id if id == self.packets.cb_set_title_text => {
+                let _ = self.state_table.apply_set_title_text(&mut r);
+            }
+            id if id == self.packets.cb_set_subtitle_text => {
+                let _ = self.state_table.apply_set_subtitle_text(&mut r);
+            }
+            id if id == self.packets.cb_set_action_bar_text => {
+                let _ = self.state_table.apply_set_action_bar_text(&mut r);
+            }
             _ => {}
         }
         Ok(())
@@ -1397,6 +1412,437 @@ impl Session {
         self.nav_deadline_tick = 0;
         let _ = self.scheduler.cancel();
         self.abort_active_mine(None);
+    }
+
+    /// Generates a rich "Seeing the Game with Words" natural-language + structured sensory report.
+    pub fn render_sensory_words(&mut self) -> String {
+        let px = self.player.pos[0];
+        let py = self.player.pos[1];
+        let pz = self.player.pos[2];
+        let bx = px.floor() as i32;
+        let by = py.floor() as i32;
+        let bz = pz.floor() as i32;
+        let cx = bx.div_euclid(16);
+        let cz = bz.div_euclid(16);
+        let vx = self.player.velocity[0];
+        let vy = self.player.velocity[1];
+        let vz = self.player.velocity[2];
+        let speed_mps = (vx * vx + vy * vy + vz * vz).sqrt() * 20.0;
+        let yaw = self.player.yaw.rem_euclid(360.0);
+        let cardinal = if !(22.5..337.5).contains(&yaw) {
+            "South (+Z)"
+        } else if yaw < 67.5 {
+            "South-West (-X, +Z)"
+        } else if yaw < 112.5 {
+            "West (-X)"
+        } else if yaw < 157.5 {
+            "North-West (-X, -Z)"
+        } else if yaw < 202.5 {
+            "North (-Z)"
+        } else if yaw < 247.5 {
+            "North-East (+X, -Z)"
+        } else if yaw < 292.5 {
+            "East (+X)"
+        } else {
+            "South-East (+X, +Z)"
+        };
+        let gm_str = match self.state_table.game_mode {
+            0 => "Survival",
+            1 => "Creative",
+            2 => "Adventure",
+            3 => "Spectator",
+            other => {
+                let _ = other;
+                "Custom"
+            }
+        };
+
+        let mut report = String::with_capacity(4096);
+        report.push_str("================================================================================
+");
+        report.push_str(&format!(
+            "SAWBYTE SENSORY VISION REPORT ("SEEING THE GAME WITH WORDS") | Tick {}
+",
+            self.live_tick
+        ));
+        report.push_str("================================================================================
+");
+        report.push_str("[1. SELF, POSE & VITALS]
+");
+        report.push_str(&format!(
+            "  Position   : ({px:.3}, {py:.3}, {pz:.3}) | Block [{bx}, {by}, {bz}] | Chunk [{cx}, {cz}] (Loaded Chunks: {})
+",
+            self.world.chunks.len()
+        ));
+        report.push_str(&format!(
+            "  Velocity   : ({vx:.4}, {vy:.4}, {vz:.4}) | Speed: {speed_mps:.2} m/s | OnGround: {} | HorizCollision: {}
+",
+            self.player.ground, self.player.horizontal_collision
+        ));
+        report.push_str(&format!(
+            "  Orientation: Yaw={:.2} deg, Pitch={:.2} deg | Facing: {cardinal}
+",
+            self.player.yaw, self.player.pitch
+        ));
+        report.push_str(&format!(
+            "  Vitals     : HP={:.1}/20.0 ({:.1} hearts) | Food={}/20 | Saturation={:.1} | XP=Lvl {} ({:.0}%) | Mode={gm_str}
+",
+            self.state_table.health,
+            self.state_table.health * 0.5,
+            self.state_table.food,
+            self.state_table.saturation,
+            self.state_table.xp_level,
+            self.state_table.xp_progress * 100.0
+        ));
+
+        report.push_str("
+[2. CROSSHAIR & 360-DEGREE SPATIAL ENVIRONMENT]
+");
+        let b_hit = raycast::raycast_block(&self.player, &self.world);
+        let candidates: Vec<(i32, [f64; 6])> = self
+            .state_table
+            .entities
+            .values()
+            .map(|e| (e.entity_id, e.aabb()))
+            .collect();
+        let e_hit = raycast::raycast_entity(&self.player, &self.world, &candidates);
+        match (&b_hit, &e_hit) {
+            (_, Some(eh)) if b_hit.as_ref().map_or(true, |bh| eh.distance < bh.distance) => {
+                let holo = self.state_table.entity_hologram_lines(eh.entity_id);
+                let kind = self
+                    .state_table
+                    .entities
+                    .get(&eh.entity_id)
+                    .map(|e| e.kind_name.as_str())
+                    .unwrap_or("entity");
+                report.push_str(&format!(
+                    "  Crosshair  : Pointing at Entity #{} ({kind}) at {:.2}m | Hologram/Name: {:?}
+",
+                    eh.entity_id, eh.distance, holo
+                ));
+            }
+            (Some(bh), _) => {
+                let bstate = self
+                    .world
+                    .block_state(bh.block_pos[0], bh.block_pos[1], bh.block_pos[2])
+                    .unwrap_or(0);
+                report.push_str(&format!(
+                    "  Crosshair  : Pointing at Block ({}, {}, {}) state_id={} face={:?} at {:.2}m
+",
+                    bh.block_pos[0], bh.block_pos[1], bh.block_pos[2], bstate, bh.face, bh.distance
+                ));
+            }
+            (None, None) => {
+                report.push_str("  Crosshair  : Looking into open air (no block or entity within reach)
+");
+            }
+        }
+
+        let under_feet = self.world.solid(bx, by - 1, bz).unwrap_or(false);
+        let overhead = (2..=6).find(|dy| self.world.solid(bx, by + *dy, bz).unwrap_or(false));
+        report.push_str(&format!(
+            "  Vertical   : Floor under feet ({bx}, {}, {bz}) is {} | Overhead ceiling: {}
+",
+            by - 1,
+            if under_feet { "SOLID" } else { "AIR / DROP" },
+            overhead.map_or_else(|| "Open Sky (>6m)".to_string(), |dy| format!("Solid roof at +{dy}m"))
+        ));
+
+        let dirs = [
+            ("Ahead (0°)", 0.0f32),
+            ("Ahead-Right (+45°)", 45.0),
+            ("Right (+90°)", 90.0),
+            ("Behind (+180°)", 180.0),
+            ("Left (-90°)", -90.0),
+            ("Ahead-Left (-45°)", -45.0),
+        ];
+        for (label, rel_deg) in dirs {
+            let rad = (self.player.yaw + rel_deg).to_radians();
+            let dx = -rad.sin() as f64;
+            let dz = rad.cos() as f64;
+            let mut wall_dist = None;
+            let mut drop_dist = None;
+            for step in 1..=12 {
+                let sx = (px + dx * step as f64).floor() as i32;
+                let sz = (pz + dz * step as f64).floor() as i32;
+                let body_solid = self.world.solid(sx, by, sz).unwrap_or(false)
+                    || self.world.solid(sx, by + 1, sz).unwrap_or(false);
+                if body_solid && wall_dist.is_none() {
+                    let can_step_up = !self.world.solid(sx, by + 1, sz).unwrap_or(false)
+                        && !self.world.solid(sx, by + 2, sz).unwrap_or(false);
+                    wall_dist = Some((step, can_step_up));
+                    break;
+                }
+                let has_floor = self.world.solid(sx, by - 1, sz).unwrap_or(false)
+                    || self.world.solid(sx, by - 2, sz).unwrap_or(false);
+                if !has_floor && drop_dist.is_none() {
+                    drop_dist = Some(step);
+                }
+            }
+            let summary = match (wall_dist, drop_dist) {
+                (Some((d, true)), _) => format!("1-block jumpable step at {d}m"),
+                (Some((d, false)), _) => format!("Solid wall obstruction at {d}m"),
+                (None, Some(drop_d)) => format!("Clear of walls, but DROP/VOID edge at {drop_d}m!"),
+                (None, None) => "Clear walkable ground for 12m+".to_string(),
+            };
+            report.push_str(&format!("  Radar {:<18}: {summary}
+", label));
+        }
+
+        report.push_str("
+[3. INVENTORY & HOTBAR (46 SLOTS)]
+");
+        let held_summary = self
+            .state_table
+            .main_hand_item()
+            .map(|s| {
+                format!(
+                    "{}x {} name={:?} lore={:?}",
+                    s.count, s.id, s.display_name, s.lore
+                )
+            })
+            .unwrap_or_else(|| "Empty Hand".to_string());
+        report.push_str(&format!(
+            "  Active Hotbar: Slot {} (raw slot {}) | Held: {}
+",
+            self.state_table.selected_hotbar,
+            36 + self.state_table.selected_hotbar,
+            held_summary
+        ));
+        let mut any_inv = false;
+        for (idx, opt_item) in self.state_table.inventory_slots.iter().enumerate() {
+            if let Some(st) = opt_item {
+                any_inv = true;
+                let region = match idx {
+                    0 => "CraftOut".to_string(),
+                    1..=4 => format!("Craft[{}]", idx - 1),
+                    5..=8 => format!("Armor[{}]", idx - 5),
+                    9..=35 => format!("MainInv[{}]", idx - 9),
+                    36..=44 => format!("Hotbar[{}]", idx - 36),
+                    45 => "Offhand".to_string(),
+                    _ => format!("Slot[{idx}]"),
+                };
+                report.push_str(&format!(
+                    "    - {:<11} (slot {:>2}): {:>2}x {:<26} | Name: {:?} | Lore: {:?}
+",
+                    region, idx, st.count, st.id, st.display_name, st.lore
+                ));
+            }
+        }
+        if !any_inv {
+            report.push_str("    (All 46 inventory slots are currently empty)
+");
+        }
+
+        report.push_str("
+[4. OPEN GUI CONTAINER SCREEN]
+");
+        if let Some(ref scr) = self.state_table.open_screen {
+            report.push_str(&format!(
+                "  OPEN SCREEN: window_id={} state_id={} kind={:?} title="{}"
+",
+                scr.window_id, scr.state_id, scr.kind, scr.title
+            ));
+            for (sidx, opt_it) in scr.slots.iter().enumerate() {
+                if let Some(it) = opt_it {
+                    let row = sidx / 9;
+                    let col = sidx % 9;
+                    report.push_str(&format!(
+                        "    - Slot {:>2} (Row {}, Col {}): {:>2}x {:<26} | Name: {:?} | Lore: {:?}
+",
+                        sidx, row, col, it.count, it.id, it.display_name, it.lore
+                    ));
+                }
+            }
+        } else {
+            report.push_str("  (No chest/container GUI screen is currently open)
+");
+        }
+
+        report.push_str("
+[5. NEARBY ENTITIES, PLAYERS & HOLOGRAM NPCs]
+");
+        let mut ent_list: Vec<(f64, f64, i32)> = self
+            .state_table
+            .entities
+            .values()
+            .map(|e| {
+                let dx = e.pos[0] - px;
+                let dy = e.pos[1] - py;
+                let dz = e.pos[2] - pz;
+                let dist = (dx * dx + dy * dy + dz * dz).sqrt();
+                let target_yaw = (-dx).atan2(dz).to_degrees();
+                let mut rel_angle = (target_yaw - self.player.yaw as f64) % 360.0;
+                if rel_angle > 180.0 {
+                    rel_angle -= 360.0;
+                } else if rel_angle < -180.0 {
+                    rel_angle += 360.0;
+                }
+                (dist, rel_angle, e.entity_id)
+            })
+            .collect();
+        ent_list.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+        if ent_list.is_empty() {
+            report.push_str("  (No nearby entities or NPCs tracked)
+");
+        } else {
+            for (dist, rel_angle, eid) in ent_list.iter().take(32) {
+                if let Some(ent) = self.state_table.entities.get(eid) {
+                    let holos = self.state_table.entity_hologram_lines(*eid);
+                    let dir_word = if rel_angle.abs() <= 20.0 {
+                        "Directly Ahead"
+                    } else if *rel_angle > 0.0 {
+                        "Right"
+                    } else {
+                        "Left"
+                    };
+                    report.push_str(&format!(
+                        "  - Entity #{:<4} | {:<12} (type {:>3}) | Dist: {:>5.2}m ({:+.1}° {}) | Pos: ({:.2}, {:.2}, {:.2}) | Name/Holograms: {:?}
+",
+                        ent.entity_id,
+                        ent.kind_name,
+                        ent.entity_type,
+                        dist,
+                        rel_angle,
+                        dir_word,
+                        ent.pos[0],
+                        ent.pos[1],
+                        ent.pos[2],
+                        holos
+                    ));
+                }
+            }
+        }
+
+        report.push_str("
+[6. HUD TITLES, ACTIONBAR & RECENT CHAT]
+");
+        report.push_str(&format!(
+            "  Title: {:?} | Subtitle: {:?} | ActionBar: {:?}
+",
+            self.state_table.title_text,
+            self.state_table.subtitle_text,
+            self.state_table.action_bar_text
+        ));
+        let recent_chat: Vec<&String> = self.state_table.chat_log.iter().rev().take(12).collect();
+        if recent_chat.is_empty() {
+            report.push_str("  Chat Log: (no chat messages received yet)
+");
+        } else {
+            for msg in recent_chat.into_iter().rev() {
+                report.push_str(&format!("  Chat > {msg}
+"));
+            }
+        }
+        report
+    }
+
+    /// Generates a structured JSON version of the complete sensory vision report.
+    pub fn render_sensory_json(&mut self) -> String {
+        let narrative = self.render_sensory_words();
+        let px = self.player.pos[0];
+        let py = self.player.pos[1];
+        let pz = self.player.pos[2];
+        let entities_rich: Vec<serde_json::Value> = self
+            .state_table
+            .entities
+            .values()
+            .map(|e| {
+                let dx = e.pos[0] - px;
+                let dy = e.pos[1] - py;
+                let dz = e.pos[2] - pz;
+                let dist = (dx * dx + dy * dy + dz * dz).sqrt();
+                let target_yaw = (-dx).atan2(dz).to_degrees();
+                let mut rel_angle = (target_yaw - self.player.yaw as f64) % 360.0;
+                if rel_angle > 180.0 {
+                    rel_angle -= 360.0;
+                } else if rel_angle < -180.0 {
+                    rel_angle += 360.0;
+                }
+                let holos = self.state_table.entity_hologram_lines(e.entity_id);
+                serde_json::json!({
+                    "id": e.entity_id,
+                    "type": e.entity_type,
+                    "kind": e.kind_name,
+                    "custom_name": e.custom_name,
+                    "hologram_lines": holos,
+                    "pos": e.pos,
+                    "vel": e.velocity,
+                    "distance": dist,
+                    "relative_bearing_deg": rel_angle,
+                })
+            })
+            .collect();
+        let inv_items: Vec<serde_json::Value> = self
+            .state_table
+            .inventory_slots
+            .iter()
+            .enumerate()
+            .filter_map(|(slot, it)| {
+                it.as_ref().map(|s| {
+                    serde_json::json!({
+                        "slot": slot,
+                        "hotbar_slot": if (36..=44).contains(&slot) { Some(slot - 36) } else { None },
+                        "id": s.id,
+                        "count": s.count,
+                        "display_name": s.display_name,
+                        "lore": s.lore,
+                        "damage": s.damage,
+                    })
+                })
+            })
+            .collect();
+        let screen_json = self.state_table.open_screen.as_ref().map(|s| {
+            let slots: Vec<serde_json::Value> = s
+                .slots
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, it)| {
+                    it.as_ref().map(|item| {
+                        serde_json::json!({
+                            "slot": idx,
+                            "row": idx / 9,
+                            "col": idx % 9,
+                            "id": item.id,
+                            "count": item.count,
+                            "display_name": item.display_name,
+                            "lore": item.lore,
+                        })
+                    })
+                })
+                .collect();
+            serde_json::json!({
+                "window_id": s.window_id,
+                "state_id": s.state_id,
+                "kind": format!("{:?}", s.kind),
+                "title": s.title,
+                "slots": slots,
+            })
+        });
+        serde_json::json!({
+            "ok": true,
+            "tick": self.live_tick,
+            "pos": self.player.pos,
+            "vel": self.player.velocity,
+            "yaw": self.player.yaw,
+            "pitch": self.player.pitch,
+            "ground": self.player.ground,
+            "health": self.state_table.health,
+            "food": self.state_table.food,
+            "saturation": self.state_table.saturation,
+            "xp_level": self.state_table.xp_level,
+            "selected_hotbar": self.state_table.selected_hotbar,
+            "title_text": self.state_table.title_text,
+            "subtitle_text": self.state_table.subtitle_text,
+            "action_bar_text": self.state_table.action_bar_text,
+            "inventory": inv_items,
+            "open_screen": screen_json,
+            "entities": entities_rich,
+            "chat_log": self.state_table.chat_log,
+            "events": self.state_table.received_events,
+            "vision_narrative": narrative,
+        })
+        .to_string()
     }
 
     /// Generates full zero-graphics RL / neural network observation JSON.
@@ -2874,15 +3320,27 @@ impl Session {
                     }
                 }
                 ["entities.inspect"] | ["entity.list"] | ["entities.list"] => {
+                    let px = self.player.pos[0];
+                    let py = self.player.pos[1];
+                    let pz = self.player.pos[2];
                     let ents: Vec<String> = self
                         .state_table
                         .entities
                         .values()
                         .map(|e| {
-                            format!(
-                                "id={} type={} pos=({:.2},{:.2},{:.2})",
-                                e.entity_id, e.entity_type, e.pos[0], e.pos[1], e.pos[2]
-                            )
+                            let dist = ((e.pos[0] - px).powi(2) + (e.pos[1] - py).powi(2) + (e.pos[2] - pz).powi(2)).sqrt();
+                            let holos = self.state_table.entity_hologram_lines(e.entity_id);
+                            if holos.is_empty() {
+                                format!(
+                                    "id={} type={} kind={} dist={:.2} pos=({:.2},{:.2},{:.2})",
+                                    e.entity_id, e.entity_type, e.kind_name, dist, e.pos[0], e.pos[1], e.pos[2]
+                                )
+                            } else {
+                                format!(
+                                    "id={} type={} kind={} dist={:.2} pos=({:.2},{:.2},{:.2}) holograms={:?}",
+                                    e.entity_id, e.entity_type, e.kind_name, dist, e.pos[0], e.pos[1], e.pos[2], holos
+                                )
+                            }
                         })
                         .collect();
                     outputs.push(format!(
@@ -2890,6 +3348,110 @@ impl Session {
                         ents.len(),
                         ents.join(", ")
                     ));
+                }
+                ["entity.find", query] | ["npc.find", query] => {
+                    let q = query.to_lowercase();
+                    let px = self.player.pos[0];
+                    let py = self.player.pos[1];
+                    let pz = self.player.pos[2];
+                    let mut best: Option<(f64, i32, Vec<String>)> = None;
+                    for e in self.state_table.entities.values() {
+                        let holos = self.state_table.entity_hologram_lines(e.entity_id);
+                        let matched = q == "nearest"
+                            || q == "any"
+                            || e.kind_name.to_lowercase().contains(&q)
+                            || e.custom_name.as_deref().is_some_and(|n| n.to_lowercase().contains(&q))
+                            || holos.iter().any(|h| h.to_lowercase().contains(&q));
+                        if matched {
+                            let dist = ((e.pos[0] - px).powi(2) + (e.pos[1] - py).powi(2) + (e.pos[2] - pz).powi(2)).sqrt();
+                            if best.as_ref().map_or(true, |(bdist, _, _)| dist < *bdist) {
+                                best = Some((dist, e.entity_id, holos));
+                            }
+                        }
+                    }
+                    if let Some((dist, eid, holos)) = best {
+                        let ent = &self.state_table.entities[&eid];
+                        outputs.push(
+                            serde_json::json!({
+                                "found": true,
+                                "entity_id": eid,
+                                "type": ent.entity_type,
+                                "kind": ent.kind_name,
+                                "custom_name": ent.custom_name,
+                                "hologram_lines": holos,
+                                "pos": ent.pos,
+                                "distance": dist,
+                            })
+                            .to_string(),
+                        );
+                    } else {
+                        outputs.push(serde_json::json!({ "found": false, "query": query }).to_string());
+                    }
+                }
+                ["npc.interact", query] | ["entity.interact_named", query] => {
+                    let q = query.to_lowercase();
+                    let px = self.player.pos[0];
+                    let py = self.player.pos[1];
+                    let pz = self.player.pos[2];
+                    let mut best: Option<(f64, i32)> = None;
+                    for e in self.state_table.entities.values() {
+                        let holos = self.state_table.entity_hologram_lines(e.entity_id);
+                        let matched = q == "nearest"
+                            || q == "any"
+                            || e.kind_name.to_lowercase().contains(&q)
+                            || e.custom_name.as_deref().is_some_and(|n| n.to_lowercase().contains(&q))
+                            || holos.iter().any(|h| h.to_lowercase().contains(&q));
+                        if matched {
+                            let dist = ((e.pos[0] - px).powi(2) + (e.pos[1] - py).powi(2) + (e.pos[2] - pz).powi(2)).sqrt();
+                            if best.as_ref().map_or(true, |(bdist, _)| dist < *bdist) {
+                                best = Some((dist, e.entity_id));
+                            }
+                        }
+                    }
+                    if best.is_none() {
+                        // Fallback to nearest non-item entity within 16m
+                        for e in self.state_table.entities.values() {
+                            if e.entity_type != 59 {
+                                let dist = ((e.pos[0] - px).powi(2) + (e.pos[1] - py).powi(2) + (e.pos[2] - pz).powi(2)).sqrt();
+                                if best.as_ref().map_or(true, |(bdist, _)| dist < *bdist) {
+                                    best = Some((dist, e.entity_id));
+                                }
+                            }
+                        }
+                    }
+                    let (_, id) = best.ok_or_else(|| format!("no entity matching '{query}' found in session"))?;
+                    let ent = self.state_table.entities.get(&id).unwrap();
+                    let eye = self.player.eye_position();
+                    let target_point = [ent.pos[0], ent.pos[1] + ent.height * 0.5, ent.pos[2]];
+                    let dx = target_point[0] - eye[0];
+                    let dy = target_point[1] - eye[1];
+                    let dz = target_point[2] - eye[2];
+                    let horiz_dist = (dx * dx + dz * dz).sqrt();
+                    self.player.yaw = (-dx).atan2(dz).to_degrees() as f32;
+                    self.player.pitch = (-dy).atan2(horiz_dist).to_degrees() as f32;
+                    self.event_queue
+                        .submit(&[
+                            (
+                                next_tick,
+                                SubTickEvent::InteractEntity {
+                                    entity_id: id,
+                                    interaction: EntityInteraction::Interact { hand: Hand::MainHand },
+                                    sneaking: self.player.sneaking,
+                                },
+                            ),
+                            (
+                                next_tick,
+                                SubTickEvent::SwipeArm { hand: Hand::MainHand },
+                            ),
+                        ])
+                        .map_err(|e| format!("{e:?}"))?;
+                    outputs.push(format!("queued right-click NPC interaction on entity {id} (query='{query}')"));
+                }
+                ["inspect.sensory"] | ["observe.words"] | ["see"] | ["inspect.vision"] => {
+                    outputs.push(self.render_sensory_words());
+                }
+                ["inspect.sensory.json"] | ["observe.json"] => {
+                    outputs.push(self.render_sensory_json());
                 }
                 ["chat.send", rest @ ..] if !rest.is_empty() => {
                     let msg = rest.join(" ");
@@ -4492,7 +5054,11 @@ fn run_singleplayer(args: &[String]) -> Result<()> {
             eid,
             inventory::TrackedEntity {
                 entity_id: eid,
+                uuid: [0u8; 16],
                 entity_type: etype,
+                kind_name: inventory::entity_type_name(etype).to_string(),
+                custom_name: None,
+                metadata_texts: Vec::new(),
                 pos: [ex, 64.0, ez],
                 velocity: [0.0; 3],
                 yaw: 0.0,
@@ -5252,7 +5818,11 @@ mod tests {
             42,
             inventory::TrackedEntity {
                 entity_id: 42,
+                uuid: [0u8; 16],
                 entity_type: 1,
+                kind_name: "entity".to_string(),
+                custom_name: None,
+                metadata_texts: Vec::new(),
                 pos: [0.5, -60.0, 2.5],
                 velocity: [0.0, 0.0, 0.0],
                 yaw: 0.0,
