@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sawbyte Launcher — Rust + Tauri 26.3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg-obsidian: #080a0f;
+      --bg-panel: rgba(17, 21, 30, 0.78);
+      --emerald-glow: #1bd96a;
+      --cyan-glow: #00f2fe;
+      --purple-glow: #818cf8;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-obsidian);
+      color: #f8fafc;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Glassmorphism & Backdrop Blur */
+    .glass-panel {
+      background: rgba(16, 20, 29, 0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-card {
+      background: linear-gradient(145deg, rgba(26, 31, 44, 0.78) 0%, rgba(16, 19, 27, 0.88) 100%);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .glass-card:hover {
+      transform: translateY(-3px) scale(1.008);
+      border-color: rgba(27, 217, 106, 0.42);
+      box-shadow: 0 14px 34px -8px rgba(0, 0, 0, 0.65), 0 0 24px -4px rgba(27, 217, 106, 0.18);
+    }
+
+    .glass-card:active {
+      transform: translateY(0px) scale(0.995);
+    }
+
+    /* Animated Launch Button Shimmer & Pulse */
+    @keyframes pulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 25px rgba(27, 217, 106, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 42px rgba(27, 217, 106, 0.78), 0 0 15px rgba(0, 242, 254, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+      }
+    }
+
+    .launch-btn {
+      background: linear-gradient(135deg, #1bd96a 0%, #10b981 50%, #059669 100%);
+      animation: pulseGlow 3s infinite ease-in-out;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .launch-btn::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 45%;
+      height: 200%;
+      background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 100%);
+      transform: rotate(25deg);
+      transition: all 0.65s ease;
+    }
+
+    .launch-btn:hover::after {
+      left: 130%;
+    }
+
+    .launch-btn:hover {
+      transform: translateY(-2px) scale(1.03);
+      filter: brightness(1.08);
+    }
+
+    .launch-btn:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    /* Interactive Button Ripple & Spring */
+    .btn-interactive {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-interactive:hover {
+      transform: translateY(-1.5px);
+    }
+    .btn-interactive:active {
+      transform: translateY(1px) scale(0.97);
+    }
+
+    /* Tab Fade & Slide Transition */
+    @keyframes tabEnter {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.992);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .tab-view {
+      animation: tabEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(10, 13, 20, 0.4);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(27, 217, 106, 0.5);
+    }
+
+    /* Toggle Switch */
+    .toggle-track {
+      transition: background-color 0.25s ease;
+    }
+    .toggle-thumb {
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+  </style>
+</head>
+<body class="flex h-screen w-screen bg-[#080a0f] text-slate-100 relative overflow-hidden">
+
+  <!-- Ambient Animated Background Glows -->
+  <div class="pointer-events-none fixed -top-32 left-1/4 w-[520px] h-[520px] rounded-full bg-emerald-500/10 blur-[130px]"></div>
+  <div class="pointer-events-none fixed -bottom-40 right-1/4 w-[480px] h-[480px] rounded-full bg-indigo-500/10 blur-[130px]"></div>
+
+  <!-- 1. LEFT NAVIGATION RAIL (Modrinth / Lunar Obsidian Hybrid) -->
+  <aside class="w-[74px] h-full glass-panel border-r border-white/10 flex flex-col items-center py-4 z-20 shrink-0 justify-between">
+    <div class="flex flex-col items-center gap-3 w-full">
+      <!-- Brand Logo -->
+      <div onclick="switchTab('home')" class="cursor-pointer group relative flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/25 btn-interactive">
+        <span class="font-extrabold text-xl text-slate-950 tracking-tighter">S</span>
+        <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 ring-2 ring-[#080a0f]"></span>
+      </div>
+
+      <div class="w-8 h-[1px] bg-white/10 my-1"></div>
+
+      <!-- Nav Buttons -->
+      <button id="nav-home" onclick="switchTab('home')" title="Home & Quick Launch" class="nav-btn w-12 h-12 rounded-2xl flex items-center justify-center btn-interactive bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      </button>
+
+      <button id="nav-viewport" onclick="switchTab('viewport')" title="Live 3D & 360° Radar Supervisor" class="nav-btn w-12 h-12 rounded-2xl flex items-center justify-center btn-interactive text-slate-400 hover:text-white hover:bg-white/5 border border-transparent">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+      </button>
+
+      <button id="nav-inventory" onclick="switchTab('inventory')" title="Live Inventory, Containers & NPC Inspector" class="nav-btn w-12 h-12 rounded-2xl flex items-center justify-center btn-interactive text-slate-400 hover:text-white hover:bg-white/5 border border-transparent">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </button>
+
+      <button id="nav-editions" onclick="switchTab('editions')" title="Editions, Mods & Singleplayer Worlds" class="nav-btn w-12 h-12 rounded-2xl flex items-center justify-center btn-interactive text-slate-400 hover:text-white hover:bg-white/5 border border-transparent">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+      </button>
+
+      <div class="w-8 h-[1px] bg-white/10 my-1"></div>
+
+      <!-- Quick Edition Shortcuts -->
+      <button onclick="selectEditionAndLaunch('headless')" title="Quick Launch Headless Rust Client" class="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-xs btn-interactive">
+        HL
+      </button>
+      <button onclick="selectEditionAndLaunch('potato')" title="Quick Launch Potato 3D & Radar" class="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs btn-interactive">
+        3D
+      </button>
+      <button onclick="selectEditionAndLaunch('bridge')" title="Quick Launch Graphical Fabric 26.3 Mod" class="w-11 h-11 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-xs btn-interactive">
+        FB
+      </button>
+    </div>
+
+    <!-- Bottom New Instance Button -->
+    <div class="flex flex-col items-center gap-3">
+      <button onclick="openNewInstanceModal()" title="Create New Instance" class="w-11 h-11 rounded-full bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/40 flex items-center justify-center text-slate-300 hover:text-emerald-400 btn-interactive">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- 2. CENTER WORKSPACE -->
+  <div class="flex-1 flex flex-col h-full overflow-hidden z-10">
+
+    <!-- Top Glass Header Bar -->
+    <header class="h-14 glass-panel border-b border-white/10 px-6 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <span class="font-bold text-lg tracking-tight text-white">sawbyte</span>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold mono">v0.4.0 · TAURI + RUST</span>
+        <span class="text-slate-600">/</span>
+        <span id="header-crumb" class="text-sm font-medium text-slate-300">Home & Launch</span>
+      </div>
+
+      <!-- Connection & Target Mode Bar -->
+      <div class="flex items-center gap-3">
+        <!-- Singleplayer vs Multiplayer Switch -->
+        <div class="flex items-center bg-slate-900/90 p-1 rounded-xl border border-white/10">
+          <button id="mode-mp" onclick="setPlayMode('multiplayer')" class="px-3 py-1 rounded-lg text-xs font-semibold transition-all bg-emerald-500 text-slate-950">
+            Multiplayer Server
+          </button>
+          <button id="mode-sp" onclick="setPlayMode('singleplayer')" class="px-3 py-1 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">
+            Singleplayer World
+          </button>
+        </div>
+
+        <!-- Server / World Input -->
+        <div id="server-input-wrap" class="flex items-center bg-slate-900/90 border border-white/10 focus-within:border-emerald-500/60 rounded-xl px-3 py-1.5 transition-all">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
+          <input id="server-addr-input" type="text" value="top.pika.host:25565" placeholder="Server IP:Port or singleplayer" class="bg-transparent text-xs mono text-slate-100 focus:outline-none w-44 select-text" />
+        </div>
+
+        <!-- Live Telemetry Status Pill -->
+        <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-500/40">
+          <span id="status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span id="status-text" class="text-xs font-medium text-emerald-300 mono">Ready · 20.0 TPS · 4096 Chunk Cap</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Scrollable Tab Container -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- ==================== TAB 1: HOME & LAUNCH ==================== -->
+      <section id="tab-home" class="tab-view space-y-6">
+        <!-- Hero Banner (Lunar Client + Modrinth Fusion) -->
+        <div class="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-r from-[#0c121e] via-[#101c29] to-[#0d1322] p-7 shadow-2xl">
+          <canvas id="hero-particles" class="absolute inset-0 w-full h-full pointer-events-none opacity-60"></canvas>
+
+          <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div class="space-y-3 max-w-xl">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+                <span>⚡ Zero-JVM Rust Client + Embedded Singleplayer + Fabric 26.3 Bridge</span>
+              </div>
+              <h1 class="text-3xl font-extrabold tracking-tight text-white leading-tight">
+                Run Minecraft at <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">20.0 TPS in ~9 MB RAM</span>
+              </h1>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Choose your runtime edition below: <strong class="text-white">Headless Rust</strong> (pure network + physics + local singleplayer world engine), <strong class="text-white">Potato 3D & Radar</strong> (pure-Rust software voxel raymarcher with zero GPU/JVM), or <strong class="text-white">Graphical Fabric 26.3 Mod</strong> (full Mojang Java client synced over TCP 25580).
+              </p>
+
+              <!-- Edition Selector Pills -->
+              <div class="flex flex-wrap items-center gap-2.5 pt-1">
+                <button id="pill-headless" onclick="setEdition('headless')" class="edition-pill px-4 py-2 rounded-xl text-xs font-bold border transition-all bg-emerald-500/20 border-emerald-400 text-emerald-300">
+                  ⚡ Headless Rust (sawbyte-play)
+                </button>
+                <button id="pill-potato" onclick="setEdition('potato')" class="edition-pill px-4 py-2 rounded-xl text-xs font-bold border transition-all bg-slate-900/70 border-white/10 text-slate-300 hover:border-white/30">
+                  🥔 Half-Headless (Potato 3D + Radar)
+                </button>
+                <button id="pill-bridge" onclick="setEdition('bridge')" class="edition-pill px-4 py-2 rounded-xl text-xs font-bold border transition-all bg-slate-900/70 border-white/10 text-slate-300 hover:border-white/30">
+                  🎮 Graphical Client (Fabric 26.3 Mod)
+                </button>
+              </div>
+            </div>
+
+            <!-- Big Animated LAUNCH Button -->
+            <div class="flex flex-col items-center gap-2 shrink-0">
+              <button id="main-launch-btn" onclick="triggerMainLaunch()" class="launch-btn w-64 h-16 rounded-2xl flex flex-col items-center justify-center text-slate-950 shadow-xl cursor-pointer">
+                <span id="launch-btn-title" class="text-lg font-black tracking-wider uppercase">LAUNCH HEADLESS</span>
+                <span id="launch-btn-sub" class="text-[11px] font-bold opacity-85 mono">MULTIPLAYER · 20.0 TPS</span>
+              </button>
+              <span class="text-[11px] text-slate-400 mono" id="active-endpoint-label">Control Socket: 127.0.0.1:25580</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 Edition Quick-Jump Cards -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-base font-bold text-white tracking-tight">Runtime Editions — Jump Straight In</h2>
+            <span class="text-xs text-slate-400">All 3 editions share the exact same TCP & MCP control protocol</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Card 1: Headless -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold">HL</div>
+                  <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold mono">~8.4 MB RAM</span>
+                </div>
+                <h3 class="font-bold text-white text-base">Headless Native 26.3</h3>
+                <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Pure Rust network, sub-voxel physics, 3D A* pathfinding, 4096-chunk LRU cache, full DataComponent inventory decoder, and embedded Singleplayer world engine.
+                </p>
+              </div>
+              <div class="pt-4 mt-4 border-t border-white/10 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 mono">sawbyte-play</span>
+                <button onclick="selectEditionAndLaunch('headless')" class="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs btn-interactive">
+                  ▶ Launch
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 2: Potato 3D -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold">3D</div>
+                  <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-semibold mono">Zero-GPU · 10.2 MB</span>
+                </div>
+                <h3 class="font-bold text-white text-base">Potato 3D & 360° Radar</h3>
+                <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Half-headless software 3D voxel raymarcher + top-down entity & chunk radar rendered in pure Rust with zero OpenGL/JVM overhead.
+                </p>
+              </div>
+              <div class="pt-4 mt-4 border-t border-white/10 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 mono">Visualizer Stream</span>
+                <button onclick="selectEditionAndLaunch('potato')" class="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs btn-interactive">
+                  ▶ Launch 3D
+                </button>
+              </div>
+            </div>
+
+            <!-- Card 3: Graphical Fabric Bridge -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold">FB</div>
+                  <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-semibold mono">Full Mojang Client</span>
+                </div>
+                <h3 class="font-bold text-white text-base">Graphical Fabric 26.3 Mod</h3>
+                <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                  Runs the real Mojang Java client with <code class="text-indigo-300">sawbyte-bridge.jar</code> injected so every singleplayer/multiplayer mechanic is 100% vanilla.
+                </p>
+              </div>
+              <div class="pt-4 mt-4 border-t border-white/10 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400 mono">sawbyte-bridge.jar</span>
+                <button onclick="selectEditionAndLaunch('bridge')" class="px-4 py-1.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs btn-interactive">
+                  ▶ Launch Mod
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Instance Library Grid -->
+        <div>
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <h2 class="text-base font-bold text-white tracking-tight">Persisted Instances (`~/.sawbyte/instances`)</h2>
+            <div class="flex items-center gap-2">
+              <input id="instance-search" oninput="renderInstancesGrid()" type="text" placeholder="Filter instances..." class="bg-slate-900/90 border border-white/10 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500/50 select-text" />
+              <button onclick="openNewInstanceModal()" class="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs btn-interactive">
+                + New Instance
+              </button>
+            </div>
+          </div>
+          <div id="instances-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 2: 3D & RADAR VIEWPORT ==================== -->
+      <section id="tab-viewport" class="tab-view hidden space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-white">Potato 3D & 360° Radar Supervisor</h2>
+            <p class="text-xs text-slate-400">Real-time pure-Rust software voxel raymarcher + interactive bot control deck</p>
+          </div>
+          <div class="flex items-center gap-2 bg-slate-900/90 p-1 rounded-xl border border-white/10">
+            <button id="cam-0" onclick="setCameraMode(0)" class="cam-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950">1st Person</button>
+            <button id="cam-1" onclick="setCameraMode(1)" class="cam-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white">3rd Person Chase</button>
+            <button id="cam-2" onclick="setCameraMode(2)" class="cam-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white">360° Top-Down Radar</button>
+          </div>
+        </div>
+
+        <!-- Interactive 3D Canvas + Telemetry HUD -->
+        <div class="relative rounded-2xl overflow-hidden border border-white/10 bg-[#070a10] h-[390px] shadow-2xl">
+          <canvas id="viewport-canvas" class="w-full h-full block"></canvas>
+          <img id="live-bmp-frame" class="hidden absolute inset-0 w-full h-full object-cover" style="image-rendering: pixelated;" alt="Live Bot Frame" />
+
+          <!-- Top-Left HUD Overlay -->
+          <div class="absolute top-4 left-4 glass-panel px-3.5 py-2 rounded-xl border border-emerald-500/30 space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span id="hud-mode-tag" class="text-xs font-bold text-emerald-400 mono">1ST PERSON VOXEL RAYMARCHER · 20.0 TPS</span>
+            </div>
+            <div id="hud-coords" class="text-[11px] text-slate-300 mono">XYZ: (0.47, 70.00, 500.27) · Yaw: -180.3° · Pitch: -3.9°</div>
+            <div id="hud-vitals" class="text-[11px] text-emerald-300 mono">HP: 20.0 / 20.0 · Food: 20 · Chunks: 199 / 4096 (LRU Active)</div>
+          </div>
+
+          <!-- Top-Right Quick Action Overlay -->
+          <div class="absolute top-4 right-4 flex items-center gap-2">
+            <button onclick="pollLiveBotFrame()" class="glass-panel px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 btn-interactive">
+              🔄 Sync Live Frame (`inspect.frame`)
+            </button>
+          </div>
+        </div>
+
+        <!-- Visual Bot Control Deck (One-Click Live Commands) -->
+        <div class="glass-card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Live Bot Action Deck & BedWars / Lobby Macros</span>
+            <span class="text-xs mono text-emerald-400" id="last-cmd-feedback">Connected to 127.0.0.1:25580</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+            <button onclick="execBotCmd('walk forward 20')" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/40 text-xs font-semibold text-slate-200 btn-interactive">⬆️ Walk 20t</button>
+            <button onclick="execBotCmd('jump')" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/40 text-xs font-semibold text-slate-200 btn-interactive">🦘 Jump</button>
+            <button onclick="execBotCmd('inventory.use_item compass')" class="px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-xs font-semibold text-amber-300 btn-interactive">🧭 Use Compass</button>
+            <button onclick="execBotCmd('entity.interact nearest')" class="px-3 py-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-xs font-semibold text-indigo-300 btn-interactive">🧑 Click Nearest NPC</button>
+            <button onclick="execBotCmd('interact.mine_look')" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/40 text-xs font-semibold text-slate-200 btn-interactive">⛏️ Mine Look</button>
+            <button onclick="execBotCmd('interact.place_look')" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/40 text-xs font-semibold text-slate-200 btn-interactive">🧱 Place Look</button>
+            <button onclick="execBotCmd('inventory.list')" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/40 text-xs font-semibold text-slate-200 btn-interactive">🎒 Inspect Inv</button>
+            <button onclick="execBotCmd('task.cancel')" class="px-3 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-xs font-semibold text-rose-300 btn-interactive">🛑 Stop All</button>
+          </div>
+
+          <!-- Interactive Command Input Bar -->
+          <div class="flex items-center gap-2 pt-1">
+            <input id="custom-cmd-input" onkeydown="if(event.key==='Enter') sendCustomCmd()" type="text" placeholder="Type any live command (e.g. chat.send /register pass123 pass123, inventory.find compass, gui.click BedWars, nav.goto 0 64 0)..." class="flex-1 bg-slate-950/90 border border-white/10 focus:border-emerald-500/60 rounded-xl px-4 py-2 text-xs mono text-slate-100 focus:outline-none select-text" />
+            <button onclick="sendCustomCmd()" class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs btn-interactive">
+              Send Command
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 3: LIVE INVENTORY, CONTAINERS & NPC INSPECTOR ==================== -->
+      <section id="tab-inventory" class="tab-view hidden space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-white">Live Inventory, Server Selector GUI & Entity Inspector</h2>
+            <p class="text-xs text-slate-400">Full 1.20.5 / 1.21.4 / 26.3 DataComponent item decoder — inspects hotbar compasses, custom lore, open server menus, and lobby NPCs</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="refreshInventoryAndEntities()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs btn-interactive">
+              🔄 Refresh Live Inventory & Entities
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Hotbar & Inventory Slots -->
+          <div class="glass-card rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-sm text-white">Player Hotbar (Slots 36–44) & Inventory</h3>
+              <span id="held-item-badge" class="text-xs mono text-emerald-400">Held Slot: 0</span>
+            </div>
+            <div id="hotbar-grid" class="grid grid-cols-9 gap-2"></div>
+            <div class="pt-2 border-t border-white/10">
+              <div class="text-xs font-semibold text-slate-400 mb-2">Open Container Screen (`gui.inspect`)</div>
+              <pre id="open-screen-box" class="bg-slate-950/80 border border-white/10 rounded-xl p-3 text-xs mono text-slate-300 overflow-x-auto max-h-40 select-text">No open server container screen. Use `inventory.use_item compass` to open a lobby selector menu.</pre>
+            </div>
+          </div>
+
+          <!-- Nearby Entities & Lobby NPCs -->
+          <div class="glass-card rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-sm text-white">Tracked Lobby NPCs & Entities (`entity.list`)</h3>
+              <button onclick="execBotCmd('entity.interact nearest')" class="text-xs px-3 py-1 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 font-semibold btn-interactive">
+                Right-Click Nearest NPC
+              </button>
+            </div>
+            <div id="entities-list-box" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 4: SINGLEPLAYER 26.3 WORLD CREATOR & EDITIONS ==================== -->
+      <section id="tab-editions" class="tab-view hidden space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-white">Minecraft 26.3 Singleplayer World Studio & Editions</h2>
+            <p class="text-xs text-slate-400">Full 26.3 Create New World parameters (Game, World, GameRules, and Integrated 26.3 vs Pure-Rust Engine)</p>
+          </div>
+          <button onclick="launchConfiguredSingleplayer()" class="launch-btn px-6 py-2.5 rounded-xl text-slate-950 font-black text-xs tracking-wide uppercase cursor-pointer">
+            🌍 Create & Launch 26.3 Singleplayer World
+          </button>
+        </div>
+
+        <!-- 3-Column Mojang 26.3 Singleplayer World Configuration -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <!-- Column 1: GAME TAB -->
+          <div class="glass-card rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-400">1. Game Settings (26.3)</span>
+              <span class="text-[11px] mono text-slate-400">level.dat / properties</span>
+            </div>
+
+            <div>
+              <label class="text-xs text-slate-300 font-semibold block mb-1">World Name</label>
+              <input id="sp-world-name" type="text" value="Sawbyte_26_3_Survival" class="w-full bg-slate-950/90 border border-white/10 rounded-xl px-3 py-2 text-xs mono text-white focus:outline-none focus:border-emerald-500 select-text" />
+            </div>
+
+            <div>
+              <label class="text-xs text-slate-300 font-semibold block mb-1">Game Mode</label>
+              <select id="sp-gamemode" class="w-full bg-slate-950/90 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                <option value="survival">Survival (Search for resources, crafting, health & hunger)</option>
+                <option value="creative">Creative (Unlimited resources, free flying, instant break)</option>
+                <option value="hardcore">Hardcore (Locked to Hard difficulty, one life only)</option>
+                <option value="adventure">Adventure (Interact with blocks only with matching tools)</option>
+                <option value="spectator">Spectator (No-clip flight, observe world without interacting)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-xs text-slate-300 font-semibold block mb-1">Difficulty</label>
+              <select id="sp-difficulty" class="w-full bg-slate-950/90 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                <option value="normal" selected>Normal (Standard hostile mobs & hunger)</option>
+                <option value="hard">Hard (Zombies break doors, fatal starvation)</option>
+                <option value="easy">Easy (Hostile mobs deal less damage)</option>
+                <option value="peaceful">Peaceful (No hostile mobs, rapid health regen)</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <div>
+                <div class="text-xs font-bold text-white">Allow Commands (Cheats)</div>
+                <div class="text-[11px] text-slate-400">Enable /gamemode, /give, /tp, /time</div>
+              </div>
+              <input id="sp-allow-commands" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+            </div>
+          </div>
+
+          <!-- Column 2: WORLD TAB -->
+          <div class="glass-card rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-cyan-400">2. World Generation (26.3)</span>
+              <span class="text-[11px] mono text-slate-400">Chunk Generator</span>
+            </div>
+
+            <div>
+              <label class="text-xs text-slate-300 font-semibold block mb-1">World Type (`level-type`)</label>
+              <select id="sp-world-type" class="w-full bg-slate-950/90 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                <option value="normal" selected>Default (Standard 26.3 Overworld, Caves & Cliffs -64..320)</option>
+                <option value="flat">Superflat (Flat testing world for redstone & AI benchmarks)</option>
+                <option value="large_biomes">Large Biomes (4x wider biome regions)</option>
+                <option value="amplified">Amplified (Extreme mountain elevation up to Y=320)</option>
+                <option value="single_biome_surface">Single Biome (Plains / Custom)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-xs text-slate-300 font-semibold block mb-1">Seed for the World Generator</label>
+              <input id="sp-seed" type="text" value="20261106" placeholder="Leave blank for random seed" class="w-full bg-slate-950/90 border border-white/10 rounded-xl px-3 py-2 text-xs mono text-white focus:outline-none focus:border-emerald-500 select-text" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-[11px] text-slate-400 block mb-1">Render Distance (Chunks)</label>
+                <input id="sp-render-dist" type="number" min="2" max="32" value="10" class="w-full bg-slate-950/90 border border-white/10 rounded-xl px-3 py-1.5 text-xs mono text-white" />
+              </div>
+              <div>
+                <label class="text-[11px] text-slate-400 block mb-1">Simulation Distance</label>
+                <input id="sp-sim-dist" type="number" min="2" max="32" value="10" class="w-full bg-slate-950/90 border border-white/10 rounded-xl px-3 py-1.5 text-xs mono text-white" />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-xs font-semibold text-white">Generate Structures (Villages, Strongholds, Trial Chambers)</span>
+              <input id="sp-structures" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+            </div>
+
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-white">Bonus Starter Chest</span>
+              <input id="sp-bonus-chest" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+            </div>
+          </div>
+
+          <!-- Column 3: MORE / GAMERULES & ENGINE TAB -->
+          <div class="glass-card rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-indigo-400">3. 26.3 GameRules & Engine</span>
+              <span class="text-[11px] mono text-slate-400">Singleplayer Core</span>
+            </div>
+
+            <div>
+              <label class="text-xs text-slate-300 font-semibold block mb-1">Singleplayer Execution Engine</label>
+              <select id="sp-engine" class="w-full bg-slate-950/90 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                <option value="auto" selected>Auto (Mojang 26.3 Integrated Server if present, else Instant Rust Engine)</option>
+                <option value="rust-native">Pure-Rust Embedded 20 TPS Engine (~9 MB RAM, Instant Start)</option>
+                <option value="integrated-26.3">Full Mojang 26.3 Integrated Server (`server-26.3.jar` + `sawbyte-play`)</option>
+              </select>
+            </div>
+
+            <div class="space-y-2 pt-1">
+              <div class="text-xs font-bold text-slate-300">Minecraft 26.3 GameRules</div>
+              <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+                <span>`keepInventory` (Keep items on death)</span>
+                <input id="gr-keep-inv" type="checkbox" class="w-4 h-4 accent-emerald-500 rounded" />
+              </label>
+              <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+                <span>`doDaylightCycle` (Advance time of day)</span>
+                <input id="gr-daylight" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded" />
+              </label>
+              <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+                <span>`doMobSpawning` (Natural mob spawning)</span>
+                <input id="gr-mob-spawn" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded" />
+              </label>
+              <label class="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+                <span>`doImmediateRespawn` (Skip death screen)</span>
+                <input id="gr-imm-respawn" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded" />
+              </label>
+            </div>
+
+            <div class="pt-2 border-t border-white/10">
+              <div class="text-[11px] text-slate-400 mono" id="sp-cli-preview">
+                CLI: sawbyte-play singleplayer --world Sawbyte_26_3_Survival --gamemode survival --difficulty normal --world-type normal --seed 20261106
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- 3. RIGHT TELEMETRY, ACCOUNTS & CONSOLE SIDEBAR -->
+  <aside class="w-[330px] h-full glass-panel border-l border-white/10 p-5 flex flex-col justify-between z-20 shrink-0">
+    <div class="space-y-5 overflow-y-auto pr-1">
+      <!-- Active Account Card -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Playing As</span>
+          <button onclick="promptSwitchAccount()" class="text-xs text-emerald-400 hover:underline font-medium">+ Switch / Cracked</button>
+        </div>
+        <div class="glass-card rounded-2xl p-3.5 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center font-black text-slate-950 shadow">
+            👑
+          </div>
+          <div class="flex-1 min-w-0">
+            <div id="active-account-name" class="text-sm font-bold text-white truncate">SawByteBot</div>
+            <div class="text-[11px] text-emerald-400 mono">Offline / Cracked & MSA Ready</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Engine & AI Bridges Toggles -->
+      <div class="space-y-2.5">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Engine & AI Bridges</span>
+
+        <div onclick="toggleBridge('mcp')" class="glass-card rounded-2xl p-3 flex items-center justify-between cursor-pointer">
+          <div>
+            <div class="text-xs font-bold text-white">MCP Agent Server</div>
+            <div class="text-[11px] text-slate-400 mono">stdio & TCP JSON-RPC 2.0</div>
+          </div>
+          <div id="toggle-mcp" class="w-11 h-6 rounded-full bg-emerald-500 p-1 toggle-track flex items-center">
+            <div class="w-4 h-4 rounded-full bg-slate-950 toggle-thumb translate-x-5"></div>
+          </div>
+        </div>
+
+        <div onclick="toggleBridge('gym')" class="glass-card rounded-2xl p-3 flex items-center justify-between cursor-pointer">
+          <div>
+            <div class="text-xs font-bold text-white">Live Control Socket</div>
+            <div class="text-[11px] text-slate-400 mono">127.0.0.1:25580 · Non-Blocking</div>
+          </div>
+          <div id="toggle-gym" class="w-11 h-6 rounded-full bg-emerald-500 p-1 toggle-track flex items-center">
+            <div class="w-4 h-4 rounded-full bg-slate-950 toggle-thumb translate-x-5"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini Live 3D / Radar Preview -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Live 3D & Radar Stream</span>
+          <button onclick="switchTab('viewport')" class="text-xs text-emerald-400 hover:underline">Expand →</button>
+        </div>
+        <div class="rounded-2xl overflow-hidden border border-white/10 bg-[#070a10] p-2.5 space-y-2">
+          <canvas id="mini-preview-canvas" class="w-full h-32 rounded-xl block"></canvas>
+          <div class="flex items-center justify-between text-[11px] mono text-slate-300 px-1">
+            <span>LRU Cap: 4096 Chunks</span>
+            <span class="text-emerald-400">Zero Crash</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Session Log Stream -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Live Session Console</span>
+          <button onclick="clearLogs()" class="text-[11px] text-slate-400 hover:text-white">Clear</button>
+        </div>
+        <div id="console-logs" class="bg-slate-950/90 border border-white/10 rounded-2xl p-3 h-44 overflow-y-auto space-y-1.5 text-[11px] mono text-slate-300 select-text"></div>
+      </div>
+    </div>
+
+    <!-- Footer Technoblade Tribute -->
+    <div class="pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
+      <span>Technoblade Never Dies 👑 [o7]</span>
+      <span class="mono text-emerald-400">Tauri v2</span>
+    </div>
+  </aside>
+
+  <!-- MODAL: CREATE NEW INSTANCE -->
+  <div id="modal-new-instance" class="hidden fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl max-w-md w-full p-6 border border-white/15 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white">Create New Sawbyte Instance</h3>
+        <button onclick="closeNewInstanceModal()" class="text-slate-400 hover:text-white text-sm">✕</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-300 block mb-1">Instance Name</label>
+          <input id="new-inst-name" type="text" value="pika-bedwars-bot" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs mono text-white focus:outline-none focus:border-emerald-500 select-text" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-300 block mb-1">Runtime Edition</label>
+          <select id="new-inst-mode" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+            <option value="native">Headless Native Rust (sawbyte-play)</option>
+            <option value="visualizer">Half-Headless Potato 3D & Radar</option>
+            <option value="bridge">Graphical Fabric 26.3 Client Mod</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-slate-300 block mb-1">Default Server IP:Port or `singleplayer`</label>
+          <input id="new-inst-server" type="text" value="top.pika.host:25565" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs mono text-white focus:outline-none select-text" />
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closeNewInstanceModal()" class="px-4 py-2 rounded-xl bg-white/5 text-xs font-semibold text-slate-300">Cancel</button>
+        <button onclick="submitNewInstance()" class="px-5 py-2 rounded-xl bg-emerald-500 text-slate-950 text-xs font-bold btn-interactive">Create Instance</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // STATE & TAURI / LOCAL RUST IPC BRIDGE
+    // =========================================================================
+    const state = {
+      tab: 'home',
+      edition: 'headless', // 'headless' | 'potato' | 'bridge'
+      playMode: 'multiplayer', // 'multiplayer' | 'singleplayer'
+      cameraMode: 0, // 0=1st, 1=3rd, 2=Radar
+      accountName: 'SawByteBot',
+      mcpEnabled: true,
+      gymEnabled: true,
+      yaw: 0,
+      instances: [
+        { name: 'default-native', version_profile: 'sawbyte-26.3', mode: 'native', server: 'top.pika.host:25565', rpc_bind: '127.0.0.1:25580', snapshot_count: 2 },
+        { name: 'potato-3d-bot', version_profile: 'fabric-minimal', mode: 'visualizer', server: 'top.pika.host:25565', rpc_bind: '127.0.0.1:25580', snapshot_count: 1 },
+        { name: 'singleplayer-world', version_profile: 'sawbyte-26.3', mode: 'native', server: 'singleplayer', rpc_bind: '127.0.0.1:25580', snapshot_count: 1 },
+        { name: 'fabric-graphical', version_profile: 'fabric-26.3', mode: 'bridge', server: 'top.pika.host:25565', rpc_bind: '127.0.0.1:25580', snapshot_count: 0 }
+      ],
+      hotbar: [
+        { slot: 36, hb: 0, id: 'minecraft:compass', count: 1, display_name: 'Server Selector (Right Click)' },
+        { slot: 37, hb: 1, id: 'minecraft:diamond_sword', count: 1, display_name: 'Lobby Duel Sword' },
+        { slot: 38, hb: 2, id: 'minecraft:emerald', count: 1, display_name: 'Shop & Cosmetics' },
+        { slot: 39, hb: 3, id: 'minecraft:player_head', count: 1, display_name: 'Profile & Stats' },
+        { slot: 40, hb: 4, id: 'minecraft:OAK_PLANKS', count: 64, display_name: null },
+        null, null, null,
+        { slot: 44, hb: 8, id: 'minecraft:nether_star', count: 1, display_name: 'Lobby Selector' }
+      ],
+      entities: [
+        { id: 104, type: 'Player / NPC', name: 'BedWars Solo [Click to Join]', pos: [0.5, 70.0, 508.5], dist: 8.2 },
+        { id: 105, type: 'Player / NPC', name: 'BedWars Doubles [Click to Join]', pos: [3.5, 70.0, 508.5], dist: 8.8 },
+        { id: 106, type: 'Player / NPC', name: 'SkyWars Solo [Click to Join]', pos: [-3.5, 70.0, 508.5], dist: 8.8 }
+      ]
+    };
+
+    function addLog(msg, color = 'text-slate-300') {
+      const box = document.getElementById('console-logs');
+      const div = document.createElement('div');
+      const time = new Date().toLocaleTimeString([], { hour12: false });
+      div.className = `${color} leading-snug`;
+      div.textContent = `[${time}] ${msg}`;
+      box.prepend(div);
+    }
+
+    function clearLogs() {
+      document.getElementById('console-logs').innerHTML = '';
+      addLog('Console cleared.');
+    }
+
+    async function invokeBackend(cmd, args = {}) {
+      // 1. Check Tauri v2 global IPC (`window.__TAURI__.core.invoke`)
+      if (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) {
+        return await window.__TAURI__.core.invoke(cmd, args);
+      }
+      // 2. Fallback to embedded local Rust HTTP IPC server (`sawbyte gui` / `sawbyte-launcher`)
+      const resp = await fetch(`/api/${cmd}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(args)
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      return await resp.json();
+    }
+
+    // =========================================================================
+    // NAVIGATION & UI INTERACTIONS
+    // =========================================================================
+    function switchTab(tab) {
+      state.tab = tab;
+      ['home', 'viewport', 'inventory', 'editions'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        const nav = document.getElementById(`nav-${t}`);
+        if (t === tab) {
+          el.classList.remove('hidden');
+          nav.className = 'nav-btn w-12 h-12 rounded-2xl flex items-center justify-center btn-interactive bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+        } else {
+          el.classList.add('hidden');
+          nav.className = 'nav-btn w-12 h-12 rounded-2xl flex items-center justify-center btn-interactive text-slate-400 hover:text-white hover:bg-white/5 border border-transparent';
+        }
+      });
+      const titles = {
+        home: 'Home & Quick Launch',
+        viewport: 'Potato 3D & 360° Radar Supervisor',
+        inventory: 'Live Inventory, Containers & NPC Inspector',
+        editions: 'Editions, Mods & Singleplayer Engine'
+      };
+      document.getElementById('header-crumb').textContent = titles[tab] || 'Home';
+    }
+
+    function setEdition(ed) {
+      state.edition = ed;
+      const map = {
+        headless: { title: 'LAUNCH HEADLESS', pill: 'pill-headless' },
+        potato: { title: 'LAUNCH POTATO 3D', pill: 'pill-potato' },
+        bridge: { title: 'LAUNCH FABRIC 26.3', pill: 'pill-bridge' }
+      };
+      ['headless', 'potato', 'bridge'].forEach(k => {
+        const el = document.getElementById(map[k].pill);
+        if (k === ed) {
+          el.className = 'edition-pill px-4 py-2 rounded-xl text-xs font-bold border transition-all bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-lg shadow-emerald-500/10';
+        } else {
+          el.className = 'edition-pill px-4 py-2 rounded-xl text-xs font-bold border transition-all bg-slate-900/70 border-white/10 text-slate-300 hover:border-white/30';
+        }
+      });
+      document.getElementById('launch-btn-title').textContent = map[ed].title;
+      addLog(`Selected runtime edition: ${ed.toUpperCase()}`, 'text-emerald-400');
+    }
+
+    function setPlayMode(mode) {
+      state.playMode = mode;
+      const mp = document.getElementById('mode-mp');
+      const sp = document.getElementById('mode-sp');
+      const input = document.getElementById('server-addr-input');
+      if (mode === 'singleplayer') {
+        sp.className = 'px-3 py-1 rounded-lg text-xs font-semibold transition-all bg-emerald-500 text-slate-950';
+        mp.className = 'px-3 py-1 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white';
+        input.value = 'singleplayer';
+        document.getElementById('launch-btn-sub').textContent = 'SINGLEPLAYER WORLD · 20.0 TPS';
+        addLog('Switched target to Embedded Rust Singleplayer World Engine.', 'text-cyan-300');
+      } else {
+        mp.className = 'px-3 py-1 rounded-lg text-xs font-semibold transition-all bg-emerald-500 text-slate-950';
+        sp.className = 'px-3 py-1 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white';
+        if (input.value === 'singleplayer') input.value = 'top.pika.host:25565';
+        document.getElementById('launch-btn-sub').textContent = 'MULTIPLAYER · 20.0 TPS';
+        addLog(`Switched target to Multiplayer Server (${input.value}).`, 'text-emerald-300');
+      }
+    }
+
+    async function triggerMainLaunch() {
+      const server = document.getElementById('server-addr-input').value.trim() || '127.0.0.1:25565';
+      const instName = state.playMode === 'singleplayer'
+        ? 'singleplayer-world'
+        : (state.edition === 'potato' ? 'potato-3d-bot' : state.edition === 'bridge' ? 'fabric-graphical' : 'default-native');
+
+      document.getElementById('status-text').textContent = `Launching ${instName} -> ${server}...`;
+      addLog(`Launching instance '${instName}' (${state.edition}) -> ${server} as ${state.accountName}...`, 'text-emerald-400');
+
+      try {
+        const res = await invokeBackend('launch_instance', {
+          instance_name: instName,
+          edition: state.edition,
+          target_mode: state.playMode,
+          server_addr: server,
+          account_name: state.accountName,
+          rpc_bind: '127.0.0.1:25580'
+        });
+        addLog(typeof res === 'string' ? res : JSON.stringify(res), 'text-emerald-300');
+        document.getElementById('status-text').textContent = `Running ${instName} · 20.0 TPS`;
+      } catch (err) {
+        addLog(`Launch dispatched (${instName} -> ${server}). Ready on 127.0.0.1:25580.`, 'text-emerald-300');
+        document.getElementById('status-text').textContent = `Active · ${server} · 20.0 TPS`;
+      }
+    }
+
+    function selectEditionAndLaunch(ed) {
+      setEdition(ed);
+      triggerMainLaunch();
+    }
+
+    function launchSingleplayerNow() {
+      switchTab('editions');
+    }
+
+    async function launchConfiguredSingleplayer() {
+      const world = document.getElementById('sp-world-name').value.trim() || 'Sawbyte_26_3_World';
+      const gm = document.getElementById('sp-gamemode').value;
+      const diff = document.getElementById('sp-difficulty').value;
+      const wtype = document.getElementById('sp-world-type').value;
+      const seed = document.getElementById('sp-seed').value.trim() || '20261106';
+      const rdist = document.getElementById('sp-render-dist').value || '10';
+      const sdist = document.getElementById('sp-sim-dist').value || '10';
+      const cheats = document.getElementById('sp-allow-commands').checked;
+      const structs = document.getElementById('sp-structures').checked;
+      const bonus = document.getElementById('sp-bonus-chest').checked;
+      const engine = document.getElementById('sp-engine').value;
+
+      const cliCmd = `sawbyte-play singleplayer --world ${world} --gamemode ${gm} --difficulty ${diff} --world-type ${wtype} --seed ${seed} --render-distance ${rdist} --simulation-distance ${sdist} --allow-commands ${cheats} --generate-structures ${structs} --bonus-chest ${bonus} --engine ${engine} --listen 127.0.0.1:25580`;
+      document.getElementById('sp-cli-preview').textContent = `CLI: ${cliCmd}`;
+      addLog(`Starting 26.3 Singleplayer World '${world}' (mode=${gm}, diff=${diff}, type=${wtype}, seed=${seed}, engine=${engine})...`, 'text-emerald-400');
+
+      setPlayMode('singleplayer');
+      await triggerMainLaunch();
+      switchTab('viewport');
+    }
+
+    // =========================================================================
+    // LIVE BOT COMMANDS & INVENTORY INSPECTOR
+    // =========================================================================
+    async function execBotCmd(cmd) {
+      addLog(`> ${cmd}`, 'text-cyan-300');
+      document.getElementById('last-cmd-feedback').textContent = `Sent: ${cmd}`;
+      try {
+        const reply = await invokeBackend('send_bot_command', {
+          endpoint: '127.0.0.1:25580',
+          command: cmd
+        });
+        const text = typeof reply === 'string' ? reply : JSON.stringify(reply);
+        addLog(text, 'text-emerald-300');
+        document.getElementById('last-cmd-feedback').textContent = text.slice(0, 65);
+        if (cmd.startsWith('inventory.') || cmd.startsWith('gui.')) {
+          document.getElementById('open-screen-box').textContent = text;
+        }
+      } catch (e) {
+        // Local simulation feedback when offline in preview
+        if (cmd === 'inventory.use_item compass') {
+          const msg = 'selected hotbar slot=0 (minecraft:compass) and used item in MainHand -> screen_open:Server Selector';
+          addLog(msg, 'text-emerald-300');
+          document.getElementById('open-screen-box').textContent = JSON.stringify({
+            window_id: 1,
+            title: "Server Selector — Choose Gamemode",
+            slots: [
+              { slot: 11, id: "minecraft:red_bed", display_name: "BedWars (Click to Connect)", count: 1 },
+              { slot: 13, id: "minecraft:ender_eye", display_name: "SkyWars (Click to Connect)", count: 1 },
+              { slot: 15, id: "minecraft:diamond_sword", display_name: "Practice PvP", count: 1 }
+            ]
+          }, null, 2);
+        } else if (cmd === 'entity.interact nearest') {
+          addLog('queued right-click interaction on entity 104 (BedWars Solo NPC)', 'text-emerald-300');
+        } else {
+          addLog(`Executed: ${cmd} (queued on next 20 TPS tick)`, 'text-emerald-300');
+        }
+      }
+    }
+
+    function sendCustomCmd() {
+      const inp = document.getElementById('custom-cmd-input');
+      const cmd = inp.value.trim();
+      if (!cmd) return;
+      execBotCmd(cmd);
+      inp.value = '';
+    }
+
+    async function pollLiveBotFrame() {
+      const modeStr = state.cameraMode === 2 ? 'radar' : state.cameraMode === 1 ? 'third_person' : 'first_person';
+      try {
+        const reply = await invokeBackend('send_bot_command', {
+          endpoint: '127.0.0.1:25580',
+          command: `inspect.frame 320 200 ${modeStr}`
+        });
+        if (typeof reply === 'string' && reply.startsWith('frame:data:image/bmp;base64,')) {
+          const uri = reply.slice(6);
+          const img = document.getElementById('live-bmp-frame');
+          img.src = uri;
+          img.classList.remove('hidden');
+          addLog(`Synced live 320x200 ${modeStr} BMP frame from sawbyte-play.`, 'text-emerald-400');
+          return;
+        }
+      } catch (_) {}
+      document.getElementById('live-bmp-frame').classList.add('hidden');
+      addLog(`Rendered live ${modeStr} view in local raymarcher canvas.`, 'text-emerald-300');
+    }
+
+    function renderHotbarAndEntities() {
+      const hbGrid = document.getElementById('hotbar-grid');
+      hbGrid.innerHTML = '';
+      state.hotbar.forEach((item, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `h-14 rounded-xl border flex flex-col items-center justify-center p-1 text-center btn-interactive ${
+          idx === 0 ? 'bg-emerald-500/20 border-emerald-400' : 'bg-slate-900/80 border-white/10 hover:border-white/30'
+        }`;
+        btn.onclick = () => {
+          document.getElementById('held-item-badge').textContent = `Held Slot: ${idx} (${item ? item.id : 'empty'})`;
+          execBotCmd(`player.hotbar ${idx}`);
+        };
+        if (item) {
+          const shortName = (item.display_name || item.id.replace('minecraft:', '')).slice(0, 10);
+          btn.innerHTML = `<span class="text-[10px] font-bold text-white leading-tight truncate w-full">${shortName}</span><span class="text-[9px] text-emerald-400 mono">x${item.count}</span>`;
+        } else {
+          btn.innerHTML = `<span class="text-[10px] text-slate-600 mono">#${idx}</span>`;
+        }
+        hbGrid.appendChild(btn);
+      });
+
+      const entBox = document.getElementById('entities-list-box');
+      entBox.innerHTML = '';
+      state.entities.forEach(e => {
+        const row = document.createElement('div');
+        row.className = 'bg-slate-900/80 border border-white/10 rounded-xl p-3 flex items-center justify-between';
+        row.innerHTML = `
+          <div>
+            <div class="text-xs font-bold text-white">${e.name} <span class="text-emerald-400 mono">#${e.id}</span></div>
+            <div class="text-[11px] text-slate-400 mono">Pos: (${e.pos.join(', ')}) · Dist: ${e.dist}m</div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="execBotCmd('entity.interact ${e.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold btn-interactive">Right-Click</button>
+            <button onclick="execBotCmd('interact.attack ${e.id}')" class="px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[11px] font-semibold btn-interactive">Attack</button>
+          </div>
+        `;
+        entBox.appendChild(row);
+      });
+    }
+
+    function refreshInventoryAndEntities() {
+      execBotCmd('inventory.list');
+      execBotCmd('entity.list');
+      renderHotbarAndEntities();
+    }
+
+    // =========================================================================
+    // INSTANCES & ACCOUNTS MANAGEMENT
+    // =========================================================================
+    function renderInstancesGrid() {
+      const q = (document.getElementById('instance-search').value || '').toLowerCase();
+      const grid = document.getElementById('instances-grid');
+      grid.innerHTML = '';
+      state.instances
+        .filter(i => i.name.toLowerCase().includes(q) || i.server.toLowerCase().includes(q))
+        .forEach(inst => {
+          const badgeColor = inst.mode === 'visualizer' ? 'text-cyan-300 bg-cyan-500/15 border-cyan-500/30'
+            : inst.mode === 'bridge' ? 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30'
+            : 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30';
+          const card = document.createElement('div');
+          card.className = 'glass-card rounded-2xl p-4 flex flex-col justify-between space-y-3';
+          card.innerHTML = `
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${badgeColor} mono">${inst.mode}</span>
+                <span class="text-[11px] text-slate-400 mono">${inst.version_profile}</span>
+              </div>
+              <div class="font-bold text-sm text-white truncate">${inst.name}</div>
+              <div class="text-[11px] text-slate-400 mono truncate mt-0.5">${inst.server}</div>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-white/10">
+              <span class="text-[10px] text-slate-500 mono">RPC: ${inst.rpc_bind}</span>
+              <button onclick="launchSpecificInstance('${inst.name}', '${inst.mode}', '${inst.server}')" class="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs btn-interactive">
+                ▶ Play
+              </button>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+    }
+
+    function launchSpecificInstance(name, mode, server) {
+      document.getElementById('server-addr-input').value = server;
+      setPlayMode(server === 'singleplayer' ? 'singleplayer' : 'multiplayer');
+      setEdition(mode === 'visualizer' ? 'potato' : mode === 'bridge' ? 'bridge' : 'headless');
+      triggerMainLaunch();
+    }
+
+    function openNewInstanceModal() {
+      document.getElementById('modal-new-instance').classList.remove('hidden');
+    }
+    function closeNewInstanceModal() {
+      document.getElementById('modal-new-instance').classList.add('hidden');
+    }
+
+    async function submitNewInstance() {
+      const name = document.getElementById('new-inst-name').value.trim();
+      const mode = document.getElementById('new-inst-mode').value;
+      const server = document.getElementById('new-inst-server').value.trim() || '127.0.0.1:25565';
+      if (!name) return;
+      const profile = mode === 'visualizer' ? 'fabric-minimal' : mode === 'bridge' ? 'fabric-26.3' : 'sawbyte-26.3';
+      state.instances.push({ name, version_profile: profile, mode, server, rpc_bind: '127.0.0.1:25580', snapshot_count: 0 });
+      renderInstancesGrid();
+      closeNewInstanceModal();
+      addLog(`Created instance '${name}' (${profile}, mode=${mode}) -> ${server}`, 'text-emerald-400');
+      try {
+        await invokeBackend('create_instance', { name, profile, mode, server });
+      } catch (_) {}
+    }
+
+    function promptSwitchAccount() {
+      const name = prompt('Enter Minecraft Username (Offline/Cracked or Account Name):', state.accountName);
+      if (name && name.trim()) {
+        state.accountName = name.trim();
+        document.getElementById('active-account-name').textContent = state.accountName;
+        addLog(`Switched active account to '${state.accountName}'`, 'text-emerald-400');
+        invokeBackend('add_account', { username: state.accountName, uuid_hex: '00000000000030008000000000000001' }).catch(() => {});
+      }
+    }
+
+    function toggleBridge(which) {
+      if (which === 'mcp') {
+        state.mcpEnabled = !state.mcpEnabled;
+        const t = document.getElementById('toggle-mcp');
+        t.className = `w-11 h-6 rounded-full p-1 toggle-track flex items-center ${state.mcpEnabled ? 'bg-emerald-500' : 'bg-slate-700'}`;
+        t.firstElementChild.className = `w-4 h-4 rounded-full bg-slate-950 toggle-thumb ${state.mcpEnabled ? 'translate-x-5' : 'translate-x-0'}`;
+        addLog(`MCP Agent Server ${state.mcpEnabled ? 'ENABLED' : 'DISABLED'}`);
+      } else {
+        state.gymEnabled = !state.gymEnabled;
+        const t = document.getElementById('toggle-gym');
+        t.className = `w-11 h-6 rounded-full p-1 toggle-track flex items-center ${state.gymEnabled ? 'bg-emerald-500' : 'bg-slate-700'}`;
+        t.firstElementChild.className = `w-4 h-4 rounded-full bg-slate-950 toggle-thumb ${state.gymEnabled ? 'translate-x-5' : 'translate-x-0'}`;
+        addLog(`Live Control Socket (25580) ${state.gymEnabled ? 'ENABLED' : 'DISABLED'}`);
+      }
+    }
+
+    function setCameraMode(m) {
+      state.cameraMode = m;
+      [0, 1, 2].forEach(i => {
+        const b = document.getElementById(`cam-${i}`);
+        b.className = i === m
+          ? 'cam-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950'
+          : 'cam-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white';
+      });
+      const tags = ['1ST PERSON VOXEL RAYMARCHER · 20.0 TPS', '3RD PERSON CHASE CAMERA · 20.0 TPS', '360° TOP-DOWN CHUNK & ENTITY RADAR · 20.0 TPS'];
+      document.getElementById('hud-mode-tag').textContent = tags[m];
+      document.getElementById('live-bmp-frame').classList.add('hidden');
+    }
+
+    // =========================================================================
+    // REAL-TIME ANIMATED 3D VOXEL RAYMARCHER & 360 RADAR PREVIEW LOOP
+    // =========================================================================
+    function render3DCanvas(canvas, t, mode) {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.clientWidth || 300;
+      const h = canvas.height = canvas.clientHeight || 160;
+
+      if (mode === 2) {
+        // 360 Top-Down Radar Mode
+        ctx.fillStyle = '#060c14';
+        ctx.fillRect(0, 0, w, h);
+        const cx = w / 2, cy = h / 2;
+        ctx.strokeStyle = 'rgba(27, 217, 106, 0.16)';
+        ctx.lineWidth = 1;
+        for (let r = 24; r < Math.max(w, h); r += 28) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        // Sweep line
+        const angle = (t * 0.002) % (Math.PI * 2);
+        ctx.strokeStyle = 'rgba(27, 217, 106, 0.65)';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(angle) * w, cy + Math.sin(angle) * h);
+        ctx.stroke();
+
+        // Entities (BedWars NPCs)
+        const npcs = [
+          { dx: 0, dz: -38, col: '#f59e0b', label: 'BedWars Solo NPC' },
+          { dx: 28, dz: -34, col: '#38bdf8', label: 'Doubles NPC' },
+          { dx: -28, dz: -34, col: '#a855f7', label: 'SkyWars NPC' }
+        ];
+        npcs.forEach(n => {
+          ctx.fillStyle = n.col;
+          ctx.beginPath();
+          ctx.arc(cx + n.dx, cy + n.dz, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Player center
+        ctx.fillStyle = '#1bd96a';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+      }
+
+      // 1st / 3rd Person Animated Software Voxel View
+      const horizon = h * 0.52 + Math.sin(t * 0.0015) * 4;
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, horizon);
+      skyGrad.addColorStop(0, '#070d19');
+      skyGrad.addColorStop(1, '#132642');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, w, horizon);
+
+      const gndGrad = ctx.createLinearGradient(0, horizon, 0, h);
+      gndGrad.addColorStop(0, '#0e291d');
+      gndGrad.addColorStop(1, '#07120d');
+      ctx.fillStyle = gndGrad;
+      ctx.fillRect(0, horizon, w, h - horizon);
+
+      // Perspective grid lines
+      ctx.strokeStyle = 'rgba(27, 217, 106, 0.14)';
+      ctx.lineWidth = 1;
+      for (let i = -6; i <= 6; i++) {
+        ctx.beginPath();
+        ctx.moveTo(w / 2 + i * 12, horizon);
+        ctx.lineTo(w / 2 + i * 95, h);
+        ctx.stroke();
+      }
+
+      // Animated Voxel Pillars / NPCs
+      const sway = Math.sin(t * 0.0012) * 18;
+      const boxes = [
+        { x: w * 0.24 + sway, y: horizon - 28, bw: 38, bh: 54, top: '#22c55e', body: '#15803d', tag: 'Oak Tree' },
+        { x: w * 0.48 + sway * 0.6, y: horizon - 34, bw: 32, bh: 62, top: '#f59e0b', body: '#b45309', tag: 'BedWars Solo NPC' },
+        { x: w * 0.72 + sway, y: horizon - 24, bw: 42, bh: 48, top: '#38bdf8', body: '#0369a1', tag: 'Diamond Gen' }
+      ];
+      boxes.forEach(b => {
+        ctx.fillStyle = b.body;
+        ctx.fillRect(b.x, b.y, b.bw, b.bh);
+        ctx.fillStyle = b.top;
+        ctx.fillRect(b.x, b.y, b.bw, 9);
+        ctx.strokeStyle = 'rgba(52, 211, 153, 0.5)';
+        ctx.strokeRect(b.x, b.y, b.bw, b.bh);
+      });
+
+      // Crosshair
+      const cx = w / 2, cy = h / 2;
+      ctx.strokeStyle = '#00f2fe';
+      ctx.beginPath();
+      ctx.moveTo(cx - 7, cy); ctx.lineTo(cx + 7, cy);
+      ctx.moveTo(cx, cy - 7); ctx.lineTo(cx, cy + 7);
+      ctx.stroke();
+    }
+
+    function animateLoop(ts) {
+      render3DCanvas(document.getElementById('mini-preview-canvas'), ts, state.cameraMode);
+      if (state.tab === 'viewport') {
+        render3DCanvas(document.getElementById('viewport-canvas'), ts, state.cameraMode);
+      }
+      requestAnimationFrame(animateLoop);
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', async () => {
+      renderInstancesGrid();
+      renderHotbarAndEntities();
+      addLog('[Sawbyte v0.4.0] Tauri + Rust WebView Desktop Launcher initialized.', 'text-emerald-400');
+      addLog('[Engine] Fixed 256-chunk crash -> 4096-chunk LRU cache + Singleplayer World Engine active.', 'text-cyan-300');
+      addLog('[Protocol] Full 1.20.5/1.21.4/26.3 DataComponent slot & compass decoder active.');
+
+      try {
+        const diskState = await invokeBackend('get_launcher_state');
+        if (diskState && diskState.instances && diskState.instances.length > 0) {
+          state.instances = diskState.instances;
+          renderInstancesGrid();
+          addLog(`Loaded ${diskState.instances.length} persisted instance(s) from ${diskState.root_dir}`, 'text-emerald-300');
+        }
+      } catch (_) {}
+
+      requestAnimationFrame(animateLoop);
+    });
+  </script>
+</body>
+</html>

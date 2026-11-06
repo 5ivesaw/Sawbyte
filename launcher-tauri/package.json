@@ -1,0 +1,23 @@
+{
+  "name": "sawbyte-tauri-launcher",
+  "private": true,
+  "version": "0.4.0",
+  "description": "Sawbyte Real Cross-Platform Desktop Launcher (Tauri v2 + React + Tailwind CSS)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.1.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "vite": "^5.4.11"
+  }
+}

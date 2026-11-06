@@ -1,0 +1,17 @@
+[package]
+name = "sawbyte-tauri-launcher"
+version = "0.4.0"
+description = "Sawbyte Native WebView Desktop Launcher powered by Tauri v2 and Rust"
+authors = ["5ivesaw"]
+license = "MIT"
+repository = "https://github.com/5ivesaw/Sawbyte"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sawbyte-core = { path = "../../crates/sawbyte-core" }

@@ -434,6 +434,9 @@ impl SawbyteControlBridge {
                 {{\"name\":\"code_execute\",\"description\":\"Execute multi-line SawbyteScript across the persistent disk launcher and live `sawbyte-play` session.\",\"inputSchema\":{{\"type\":\"object\",\"properties\":{{\"script\":{{\"type\":\"string\"}},\"command\":{{\"type\":\"string\"}}}}}}}}\
                 ]}}}}"
             ),
+            "resources/templates/list" => format!(
+                "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"resourceTemplates\":[{{\"uriTemplate\":\"sawbyte://launcher/{{section}}\",\"name\":\"Launcher & Live Session Resource Template\",\"mimeType\":\"text/plain\"}}]}}}}"
+            ),
             "resources/list" => format!(
                 "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"resources\":[\
                 {{\"uri\":\"sawbyte://launcher/state\",\"name\":\"Persistent Disk Launcher State\",\"mimeType\":\"text/plain\"}},\

@@ -804,14 +804,161 @@ fn draw_software_3d_preview(s: &mut UiSurface, x: i32, y: i32, w: i32, h: i32, m
     s.draw_text(x + 18, y + 14, tag, &FONT_12, 0x1BD96A);
 }
 
-pub fn run_launcher_gui(_port_opt: Option<u16>) -> Result<(), Box<dyn std::error::Error>> {
+pub const TAURI_WEBVIEW_HTML: &str = include_str!("tauri_ui.html");
+
+pub fn start_local_tauri_ipc_server(port: u16) -> Option<u16> {
+    use std::net::TcpListener;
+    let listener = TcpListener::bind(("127.0.0.1", port))
+        .or_else(|_| TcpListener::bind(("127.0.0.1", 0)))
+        .ok()?;
+    let bound_port = listener.local_addr().ok()?.port();
+    thread::spawn(move || {
+        for mut stream in listener.incoming().flatten() {
+            thread::spawn(move || {
+                let mut buf = [0u8; 8192];
+                let Ok(n) = stream.read(&mut buf) else { return; };
+                if n == 0 {
+                    return;
+                }
+                let req = String::from_utf8_lossy(&buf[..n]);
+                let first_line = req.lines().next().unwrap_or("");
+                let body_start = req.find("\r\n\r\n").map(|i| i + 4).unwrap_or(req.len());
+                let body = &req[body_start..];
+
+                if first_line.starts_with("POST /api/send_bot_command") {
+                    let cmd = sawbyte_core::json::JsonValue::parse(body)
+                        .ok()
+                        .and_then(|v| v.get("command").and_then(|c| c.as_str()).map(String::from))
+                        .unwrap_or_else(|| "inspect.status".to_string());
+                    let ep = sawbyte_core::json::JsonValue::parse(body)
+                        .ok()
+                        .and_then(|v| v.get("endpoint").and_then(|c| c.as_str()).map(String::from))
+                        .unwrap_or_else(|| "127.0.0.1:25580".to_string());
+                    let reply = if let Ok(mut bot_sock) = TcpStream::connect(&ep) {
+                        let _ = bot_sock.set_read_timeout(Some(Duration::from_millis(2000)));
+                        let _ = writeln!(bot_sock, "{}", cmd.trim());
+                        let _ = bot_sock.flush();
+                        let mut r = std::io::BufReader::new(bot_sock);
+                        let mut line = String::new();
+                        let _ = std::io::BufRead::read_line(&mut r, &mut line);
+                        line.trim().replace("\\n", "\n")
+                    } else {
+                        format!("bot socket {ep} offline — launch an instance first")
+                    };
+                    let json_resp = format!("{:?}", reply);
+                    let http = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        json_resp.len(),
+                        json_resp
+                    );
+                    let _ = stream.write_all(http.as_bytes());
+                } else if first_line.starts_with("POST /api/launch_instance") {
+                    let parsed = sawbyte_core::json::JsonValue::parse(body).ok();
+                    let inst_name = parsed.as_ref().and_then(|v| v.get("instance_name")).and_then(|s| s.as_str()).unwrap_or("default-native");
+                    let server_addr = parsed.as_ref().and_then(|v| v.get("server_addr")).and_then(|s| s.as_str()).unwrap_or("127.0.0.1:25565");
+                    let account_name = parsed.as_ref().and_then(|v| v.get("account_name")).and_then(|s| s.as_str()).unwrap_or("SawByteBot");
+                    let edition = parsed.as_ref().and_then(|v| v.get("edition")).and_then(|s| s.as_str()).unwrap_or("headless");
+                    let mut msg = format!("Dispatched launch for '{inst_name}' -> {server_addr}");
+                    if let Ok(mut launcher) = PersistentLauncher::load_or_init() {
+                        let mode = match edition {
+                            "potato" | "visualizer" => RuntimeMode::NativeMinimalVisualizer,
+                            "bridge" | "fabric" => RuntimeMode::FullClientBridge,
+                            _ => RuntimeMode::NativeStandalone,
+                        };
+                        let prof = match edition {
+                            "potato" | "visualizer" => "fabric-minimal",
+                            "bridge" | "fabric" => "fabric-26.3",
+                            _ => "sawbyte-26.3",
+                        };
+                        if !launcher.instances.contains_key(inst_name) {
+                            let _ = launcher.create_instance(inst_name, prof, mode);
+                        }
+                        if !launcher.accounts.contains_key(account_name) {
+                            let _ = launcher.add_account(account_name, "00000000000030008000000000000001", None);
+                        }
+                        if let Ok((child, log_p)) = launcher.spawn_live_process(
+                            inst_name,
+                            Some(server_addr),
+                            account_name,
+                            Path::new("block-profile.json"),
+                            &[],
+                        ) {
+                            msg = format!("Launched '{inst_name}' (PID {}) -> {server_addr} [log: {}]", child.id(), log_p.display());
+                        }
+                    }
+                    let json_resp = format!("{:?}", msg);
+                    let http = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        json_resp.len(),
+                        json_resp
+                    );
+                    let _ = stream.write_all(http.as_bytes());
+                } else {
+                    let body_bytes = TAURI_WEBVIEW_HTML.as_bytes();
+                    let http = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        body_bytes.len()
+                    );
+                    let _ = stream.write_all(http.as_bytes());
+                    let _ = stream.write_all(body_bytes);
+                }
+                let _ = stream.flush();
+            });
+        }
+    });
+    Some(bound_port)
+}
+
+pub fn try_launch_tauri_or_native_webview(url: &str) -> bool {
+    // 1. Check if standalone compiled Tauri binary exists
+    for cand in [
+        "launcher-tauri/src-tauri/target/release/sawbyte-tauri-launcher",
+        "launcher-tauri/src-tauri/target/release/sawbyte-tauri-launcher.exe",
+        "sawbyte-tauri-launcher",
+        "sawbyte-tauri-launcher.exe",
+    ] {
+        if Path::new(cand).exists() {
+            if Command::new(cand).status().is_ok() {
+                return true;
+            }
+        }
+    }
+    // 2. On Linux, try Python PyGObject WebKit2GTK native window (same engine as Tauri on Linux!)
+    #[cfg(not(windows))]
+    {
+        let py_webkit = format!(
+            "import gi; gi.require_version('Gtk', '3.0'); gi.require_version('WebKit2', '4.0'); from gi.repository import Gtk, WebKit2; win = Gtk.Window(title='Sawbyte Launcher — Tauri WebView'); win.set_default_size(1340, 840); wv = WebKit2.WebView(); wv.load_uri('{url}'); win.add(wv); win.connect('destroy', Gtk.main_quit); win.show_all(); Gtk.main()"
+        );
+        if Command::new("python3").args(["-c", &py_webkit]).status().is_ok_and(|s| s.success()) {
+            return true;
+        }
+        // Fallback to Chromium/Brave/Chrome/Edge native `--app=` frameless desktop window
+        for browser in ["chromium", "google-chrome", "brave-browser", "microsoft-edge", "firefox"] {
+            if Command::new(browser).arg(format!("--app={url}")).status().is_ok() {
+                return true;
+            }
+        }
+    }
+    #[cfg(windows)]
+    {
+        if Command::new("cmd").args(["/C", "start", "msedge", &format!("--app={url}")]).status().is_ok() {
+            return true;
+        }
+    }
+    false
+}
+
+pub fn run_launcher_gui(port_opt: Option<u16>) -> Result<(), Box<dyn std::error::Error>> {
     let mut state = AppState::default();
     refresh_state_from_disk(&mut state);
 
+    let bound_port = start_local_tauri_ipc_server(port_opt.unwrap_or(8788)).unwrap_or(8788);
+    let url = format!("http://127.0.0.1:{bound_port}");
+
     println!("========================================================================");
-    println!("        SAWBYTE NATIVE DESKTOP APP v0.3.4 (ZERO HTML / ZERO WEB)");
+    println!("        SAWBYTE TAURI + RUST DESKTOP LAUNCHER v0.4.0");
     println!("========================================================================");
-    println!("  Window Backend: Native OS Window (X11 / Win32 GDI Framebuffer)");
+    println!("  WebView UI:     {url} (Tauri v2 / WebView2 / WebKit2GTK)");
     println!("  Launcher Root:  {}", PersistentLauncher::resolve_home().display());
     println!("  CLI Companion:  Active in terminal (`sawbyte>` prompt)");
     println!("========================================================================");
@@ -821,6 +968,10 @@ pub fn run_launcher_gui(_port_opt: Option<u16>) -> Result<(), Box<dyn std::error
         thread::sleep(Duration::from_millis(250));
         crate::run_companion_terminal_repl();
     });
+
+    if try_launch_tauri_or_native_webview(&url) {
+        return Ok(());
+    }
 
     #[cfg(windows)]
     {

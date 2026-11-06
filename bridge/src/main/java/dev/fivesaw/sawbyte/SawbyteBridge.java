@@ -536,6 +536,121 @@ public final class SawbyteBridge implements ClientModInitializer {
                 req.writer.println("gui closed");
                 req.writer.flush();
             }
+            case "inspect.status", "inspect.profile" -> {
+                if (client.player != null && client.level != null) {
+                    req.writer.println(String.format(Locale.ROOT,
+                        "live_tick=%d pos=(%.3f, %.3f, %.3f) yaw=%.2f pitch=%.2f ground=%b health=%.1f food=%d",
+                        tickCounter, client.player.getX(), client.player.getY(), client.player.getZ(),
+                        client.player.getYRot(), client.player.getXRot(), client.player.onGround(),
+                        client.player.getHealth(), client.player.getFoodData().getFoodLevel()
+                    ));
+                } else {
+                    req.writer.println("status:waiting_for_world");
+                }
+                req.writer.flush();
+            }
+            case "chat.send", "cmd.run" -> {
+                String msg = line.substring(cmd.length()).trim();
+                if (client.player != null && client.player.connection != null && !msg.isEmpty()) {
+                    if (msg.startsWith("/")) {
+                        client.player.connection.sendCommand(msg.substring(1));
+                    } else if (cmd.equals("cmd.run")) {
+                        client.player.connection.sendCommand(msg);
+                    } else {
+                        client.player.connection.sendChat(msg);
+                    }
+                    req.writer.println("queued live chat/command: " + msg);
+                } else {
+                    req.writer.println("error: player not connected");
+                }
+                req.writer.flush();
+            }
+            case "player.hotbar", "hotbar.select", "inventory.hotbar" -> {
+                if (client.player != null && parts.length > 1) {
+                    int slot = Integer.parseInt(parts[1]);
+                    if (slot >= 0 && slot < 9) {
+                        client.player.getInventory().setSelectedSlot(slot);
+                    }
+                    req.writer.println("queued live hotbar selection slot=" + slot);
+                }
+                req.writer.flush();
+            }
+            case "interact.use_item", "player.use_item", "inventory.use_item" -> {
+                if (client.player != null && client.gameMode != null) {
+                    if (parts.length > 1) {
+                        String q = parts[1].toLowerCase(Locale.ROOT);
+                        for (int i = 0; i < 9; i++) {
+                            var st = client.player.getInventory().getItem(i);
+                            if (!st.isEmpty()) {
+                                String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(st.getItem()).toString().toLowerCase(Locale.ROOT);
+                                String nm = st.getHoverName().getString().toLowerCase(Locale.ROOT);
+                                if (id.contains(q) || nm.contains(q)) {
+                                    client.player.getInventory().setSelectedSlot(i);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    client.gameMode.useItem(client.player, net.minecraft.world.InteractionHand.MAIN_HAND);
+                    req.writer.println("used held item in MainHand");
+                }
+                req.writer.flush();
+            }
+            case "inventory.list", "inventory.inspect", "inventory.find" -> {
+                if (client.player != null) {
+                    var inv = client.player.getInventory();
+                    var items = new ArrayList<String>();
+                    for (int i = 0; i < inv.getContainerSize(); i++) {
+                        var st = inv.getItem(i);
+                        if (!st.isEmpty()) {
+                            String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(st.getItem()).toString();
+                            String nm = st.getHoverName().getString().replace("\"", "\\\"");
+                            items.add(String.format("{\"slot\":%d,\"id\":\"%s\",\"count\":%d,\"display_name\":\"%s\"}", i, id, st.getCount(), nm));
+                        }
+                    }
+                    req.writer.println("{\"items\":[" + String.join(",", items) + "]}");
+                } else {
+                    req.writer.println("{\"items\":[]}");
+                }
+                req.writer.flush();
+            }
+            case "entity.list", "entities.inspect" -> {
+                if (client.level != null && client.player != null) {
+                    var list = new ArrayList<String>();
+                    for (Entity e : client.level.entitiesForRendering()) {
+                        if (e != client.player) {
+                            list.add(String.format(Locale.ROOT, "id=%d type=%s pos=(%.2f,%.2f,%.2f)", e.getId(), e.getType().getDescriptionId(), e.getX(), e.getY(), e.getZ()));
+                        }
+                    }
+                    req.writer.println("tracked_entities=" + list.size() + " list=[" + String.join(", ", list) + "]");
+                } else {
+                    req.writer.println("tracked_entities=0 list=[]");
+                }
+                req.writer.flush();
+            }
+            case "entity.interact", "interact.entity", "npc.click" -> {
+                if (client.level != null && client.player != null && client.gameMode != null && parts.length > 1) {
+                    Entity target = null;
+                    if (parts[1].equals("nearest")) {
+                        double bestDist = Double.MAX_VALUE;
+                        for (Entity e : client.level.entitiesForRendering()) {
+                            if (e != client.player) {
+                                double d = e.distanceToSqr(client.player);
+                                if (d < bestDist) { bestDist = d; target = e; }
+                            }
+                        }
+                    } else {
+                        target = client.level.getEntity(Integer.parseInt(parts[1]));
+                    }
+                    if (target != null) {
+                        client.gameMode.interact(client.player, target, net.minecraft.world.InteractionHand.MAIN_HAND);
+                        req.writer.println("queued right-click interaction on entity " + target.getId());
+                    } else {
+                        req.writer.println("error: target entity not found");
+                    }
+                }
+                req.writer.flush();
+            }
             default -> {
                 req.writer.println("ack:" + cmd);
                 req.writer.flush();

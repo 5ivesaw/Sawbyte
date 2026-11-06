@@ -627,6 +627,152 @@ fn decode_slot_item(
                     break;
                 }
             }
+            // Additional 1.20.5 / 1.21.4 / 26.3 DataComponents for full server & lobby compatibility:
+            // 14 | 15 = can_place_on / can_break (AdventureModePredicate)
+            14 | 15 => {
+                if let Ok(pred_count) = r.count(64) {
+                    for _ in 0..pred_count {
+                        if let Ok(has_blocks) = r.byte() {
+                            if has_blocks != 0 {
+                                let _ = r.var();
+                            }
+                        }
+                        if let Ok(has_props) = r.byte() {
+                            if has_props != 0 {
+                                let _ = r.count(16);
+                            }
+                        }
+                        if let Ok(has_nbt) = r.byte() {
+                            if has_nbt != 0 {
+                                let _ = r.nbt();
+                            }
+                        }
+                    }
+                    let _ = r.byte(); // show_in_tooltip
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 24 | 25 | 26 = consumable / use_remainder / use_cooldown (1.21.2+ / 26.3)
+            24 => {
+                if let (Ok(consume_secs), Ok(anim), Ok(_sound), Ok(has_particles), Ok(effects)) =
+                    (r.f32(), r.var(), r.var(), r.byte(), r.count(32))
+                {
+                    let _ = (consume_secs, anim, has_particles, effects);
+                    stack.components.push(("consumable".into(), consume_secs.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            25 => {
+                if let Ok((rem_item, _)) = decode_slot_item(r, packets) {
+                    if let Some(ri) = rem_item {
+                        stack.components.push(("use_remainder".into(), ri.id));
+                    }
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            26 => {
+                if let (Ok(secs), Ok(has_group)) = (r.f32(), r.byte()) {
+                    if has_group != 0 {
+                        let _ = r.string();
+                    }
+                    stack.components.push(("use_cooldown".into(), secs.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 29 | 30 = attribute_modifiers (list of attribute entries + show_in_tooltip)
+            29 | 30 => {
+                if let Ok(mod_count) = r.count(64) {
+                    for _ in 0..mod_count {
+                        let _ = r.var(); // attribute_id
+                        let _ = r.string(); // modifier id
+                        let _ = r.f64(); // amount
+                        let _ = r.var(); // operation
+                        let _ = r.var(); // equipment_slot_group
+                    }
+                    stack.components.push(("attribute_modifiers".into(), mod_count.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 31 | 32 = dyed_color (RGB i32 + show_in_tooltip)
+            31 | 32 => {
+                if let Ok(rgb) = r.i32() {
+                    stack.components.push(("dyed_color".into(), format!("#{rgb:06X}")));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 33 | 34 | 35 = map_color / map_id / map_decorations
+            33 | 34 => {
+                if let Ok(v) = r.var() {
+                    stack.components.push((format!("map_comp_{comp_id}"), v.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            35 | 49 | 50 | 51 | 54 | 55 | 56 | 59 | 60 => {
+                // NBT-backed components (entity_data, bucket_entity_data, block_entity_data, debug_stick_state, etc.)
+                if let Ok(tag) = r.nbt() {
+                    stack.components.push((format!("nbt_comp_{comp_id}"), tag.to_string()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 46 | 47 | 48 = lodestone_tracker (for Compass in hubs!)
+            46 | 47 | 48 => {
+                if let Ok(has_target) = r.byte() {
+                    if has_target != 0 {
+                        let _ = r.string(); // dimension identifier
+                        let _ = r.u64(); // packed BlockPos
+                    }
+                    let _ = r.byte(); // tracked boolean
+                    stack.components.push(("lodestone_tracker".into(), "true".into()));
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
+            // 61 | 62 | 63 = profile (Player Head / Skull skin in server selector menus!)
+            61 | 62 | 63 => {
+                if let Ok(has_name) = r.byte() {
+                    if has_name != 0 {
+                        if let Ok(pname) = r.string() {
+                            stack.components.push(("profile_name".into(), pname));
+                        }
+                    }
+                    if let Ok(has_uuid) = r.byte() {
+                        if has_uuid != 0 {
+                            let _ = r.take(16);
+                        }
+                    }
+                    if let Ok(prop_count) = r.count(64) {
+                        for _ in 0..prop_count {
+                            let _ = r.string();
+                            let _ = r.string();
+                            if let Ok(has_sig) = r.byte() {
+                                if has_sig != 0 {
+                                    let _ = r.string();
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    exact_stream = false;
+                    break;
+                }
+            }
             other => {
                 stack
                     .components
