@@ -35,7 +35,7 @@ jobs:
         run: |
           rustup toolchain install 1.90.0 --profile minimal
           python3 tools/fix_rust_edition_and_let_chains.py
-          cargo build --release || cargo build --release --offline
+          cargo build --release
           chmod +x run/bin/sawbyte-play
           sudo apt-get update -qq
           sudo apt-get install -y xvfb libgl1-mesa-dri mesa-vulkan-drivers x11-xserver-utils
@@ -105,8 +105,8 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             native/target
-          key: native-${{ matrix.platform }}-${{ hashFiles('native/Cargo.lock') }}-${{ github.sha }}
-          restore-keys: native-${{ matrix.platform }}-${{ hashFiles('native/Cargo.lock') }}-
+          key: native-${{ matrix.platform }}-${{ hashFiles('native/Cargo.toml') }}-${{ github.sha }}
+          restore-keys: native-${{ matrix.platform }}-${{ hashFiles('native/Cargo.toml') }}-
       - name: Install backend toolchain
         run: rustup toolchain install 1.90.0 --profile minimal --component rustfmt --component clippy
       - uses: ./.github/actions/branding
@@ -115,7 +115,11 @@ jobs:
       - name: Resolve backend lockfile in CI
         working-directory: native
         run: |
-          if [ -f Cargo.lock ]; then cargo fetch --locked || cargo fetch; else cargo generate-lockfile; fi
+          if [ ! -f Cargo.lock ] || ! cargo fetch --locked; then
+            rm -f Cargo.lock
+            cargo generate-lockfile
+            cargo fetch --locked
+          fi
           cargo fmt --all
       - name: Review generated source changes
         if: always()
@@ -131,9 +135,9 @@ jobs:
       - name: Build and check standalone player
         working-directory: native
         run: |
-          cargo clippy --locked --all-targets || cargo clippy --all-targets
-          cargo test --locked || cargo test
-          cargo build --release --locked || cargo build --release
+          cargo clippy --locked --all-targets
+          cargo test --locked
+          cargo build --release --locked
           ./target/release/sawbyte-play --help
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         if: always()
@@ -142,7 +146,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             native/target
-          key: native-${{ matrix.platform }}-${{ hashFiles('native/Cargo.lock') }}-${{ github.sha }}
+          key: native-${{ matrix.platform }}-${{ hashFiles('native/Cargo.toml') }}-${{ github.sha }}
       - name: Package standalone player
         run: |
           mkdir -p run/player

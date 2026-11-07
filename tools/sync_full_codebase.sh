@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# SAWBYTE v0.5.1 — CLEAN FULL-CODEBASE REPLACEMENT & SYNC SCRIPT
+# SAWBYTE v0.5.2 — CLEAN FULL-CODEBASE REPLACEMENT & SYNC SCRIPT
 # (`tools/sync_full_codebase.sh`)
 # ==============================================================================
 # Usage:
@@ -17,7 +17,7 @@ SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_DIR="${1:-$(pwd)}"
 
 echo "========================================================================"
-echo "  SAWBYTE v0.5.1 — FULL CODEBASE ATOMIC REPLACEMENT & SYNC"
+echo "  SAWBYTE v0.5.2 — FULL CODEBASE ATOMIC REPLACEMENT & SYNC"
 echo "========================================================================"
 echo "  Archive Source : $SRC_DIR"
 echo "  Target Repo    : $TARGET_DIR"
@@ -33,7 +33,7 @@ if [ "$SRC_DIR" != "$TARGET_DIR" ]; then
   cp -rf "$SRC_DIR/.github" "$TARGET_DIR/" 2>/dev/null || true
   cp -rf "$SRC_DIR/.agents" "$TARGET_DIR/" 2>/dev/null || true
   cp -rf "$SRC_DIR/.gitignore" "$TARGET_DIR/" 2>/dev/null || true
-  echo "[2/3] Copied complete Sawbyte v0.5.1 codebase into $TARGET_DIR"
+  echo "[2/3] Copied complete Sawbyte v0.5.2 codebase into $TARGET_DIR"
 else
   echo "[1/3] Running in-place inside $TARGET_DIR"
 fi

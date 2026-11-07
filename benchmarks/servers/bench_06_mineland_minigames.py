@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #06: Mineland (play.mineland.net:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #06: Mineland (play.mineland.net:25565)
 Target Gamemode : Murder Mystery Classic (Social Deduction / Tactical Arcade)
 Complex Mission : LOS Suspect Tracking, 10-Gold Scavenger Loop, Detective Bow Craft & Murderer Kill
 Verified Outcome: Hero Win (Murderer Eliminated with Bow)
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='Murderer `iron_sword` Detection & Predictive Bow Elimination (+1 Hero Kill)',
     stage_8_detail='Spotted Entity #118 switching main-hand item to `iron_sword` at 9.4m in `24x11` retinal viewport (`Tier=DIRECT_FOV_LOS`), drew `bow` for 20 ticks with predictive velocity lead, and fired arrow to eliminate the Murderer (`Hero Victory`).',
     stage_8_commands=['inspect.viewport', 'player.look -28.4 -2.1', 'use.item', 'wait.ticks 20', 'inspect.sensory'],
-    evidence_chat_clipped_top='§e§lROLE > §fYou are an §a§lINNOCENT§f! Collect §610 Gold §ffor a Bow!',
-    evidence_chat_setup_lines=['§6+1 Gold Ingot §7(§e9/10§7 collected)', '§6+1 Gold Ingot §7(§a10/10§7 collected!)', '§a§lBOW UNLOCKED! §7You received a §6Detective Bow §7& §f1x Arrow§7!'],
-    evidence_chat_kill_lines=['§cDarkAssassin §7(§4§lMURDERER§7) was shot by §e{username}§7!', '§a§lINNOCENTS WIN! §e{username} §7is the §6§lHERO §7of the game!'],
-    evidence_chat_clipped_bottom='§6+50 Mineland Gold §7| §b+1 Heroic Victory',
-    evidence_actionbar_text='§6§lHERO! §8• §fMurderer eliminated at §e9.4m §7(§aDIRECT_FOV_LOS§7)',
-    evidence_scoreboard_header='§c§lMURDER MYSTERY',
-    evidence_scoreboard_teams=['§fRole: §6§lHERO', '§fInnocents: §a9 Alive', '§fMurderer: §cDead'],
-    evidence_scoreboard_stats=['§fGold: §610/10 ✓', '§fBow: §aEquipped', '§fKills: §a1 (Murderer)'],
     xray_finding_summary='North(-Z 16m): 0.0-1.0m:spruce_planks(wall) -> 1.0-6.0m:air(library room, 2 gold ingots on floor)',
     random_username_prefix='MineSaw',
     register_cmd_template='/register {password} {password}',

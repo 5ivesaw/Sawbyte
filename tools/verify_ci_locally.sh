@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# SAWBYTE v0.5.1 — LOCAL GITHUB ACTIONS CI VERIFICATION HARNESS
+# SAWBYTE v0.5.2 — LOCAL GITHUB ACTIONS CI VERIFICATION HARNESS
 # (`tools/verify_ci_locally.sh`)
 # ==============================================================================
 # Runs the exact same sequence of checks as `.github/workflows/ci.yml` so you can
@@ -13,11 +13,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 echo "========================================================================"
-echo "  SAWBYTE v0.5.1 — FULL CI VERIFICATION PIPELINE"
+echo "  SAWBYTE v0.5.2 — FULL CI VERIFICATION PIPELINE"
 echo "========================================================================"
 
 echo "[Step 1/6] Running Autonomous Bug Hunter & Self-Healer (tools/find_and_fix_bugs.py)..."
-python3 tools/find_and_fix_bugs.py --report-json run/reports/bug_hunt_v0_5_1.json
+python3 tools/find_and_fix_bugs.py --report-json run/reports/bug_hunt_v0_5_2.json
 
 echo "[Step 2/6] Running Rust Edition, Manifest & Lockfile Safeguard..."
 python3 tools/fix_rust_edition_and_let_chains.py
@@ -46,5 +46,5 @@ else
 fi
 
 echo "========================================================================"
-echo "  ALL SAWBYTE v0.5.1 VERIFICATION GATES PASSED!"
+echo "  ALL SAWBYTE v0.5.2 VERIFICATION GATES PASSED!"
 echo "========================================================================"

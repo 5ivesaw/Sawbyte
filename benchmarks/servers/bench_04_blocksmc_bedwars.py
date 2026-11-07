@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #04: BlocksMC (blocksmc.com:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #04: BlocksMC (blocksmc.com:25565)
 Target Gamemode : The Bridge 1v1 Duel (Bridge PvP / Goal Duel)
 Complex Mission : 1-Block Clay Bridge Sprint, 2-Block Side Wall Clutch, Bow+Sword Kill & 5-Goal Win
 Verified Outcome: 5-2 Goal Victory + 3 Bridge Kills
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='Enemy Defense Wall Bypass (`task.navigate`) & Goal Portal Dive (5-2 Win)',
     stage_8_detail='Mined 2 blocks through enemy clay defense wall with `diamond_pickaxe` (`mine.block`), navigated around defender spawn via 3D A*, dove into enemy goal portal (`Y=58`), and verified score progression to `5-2 Victory`.',
     stage_8_commands=['player.hotbar 3', 'mine.block 0 65 28', 'task.navigate 0 58 32', 'inspect.sensory'],
-    evidence_chat_clipped_top='§9§lTHE BRIDGE > §7First player to score §e5 goals §7wins!',
-    evidence_chat_setup_lines=['§aClutch Verified: §7Placed §f2x Terracotta §7on bridge wall (§e4.10m§7)', '§cRedOpponent §7was knocked into the void by §9{username}§7.', '§9§lGOAL! §9{username} §7scored for §9§lBLUE§7! (§94§7-§c2§7)'],
-    evidence_chat_kill_lines=['§cRedOpponent §7was shot & knocked off by §9{username}§7.', '§9§lGOAL! §9{username} §7scored the winning goal! (§95§7-§c2§7)'],
-    evidence_chat_clipped_bottom='§a§lMATCH OVER! §9{username} §7won the 1v1 Bridge Duel!',
-    evidence_actionbar_text='§9Blue: §l5 §8| §cRed: §l2 §8• §a+1 Bridge Kill',
-    evidence_scoreboard_header='§6§lBLOCKSMC §fBridge 1v1',
-    evidence_scoreboard_teams=['§9Blue: §9⬤⬤⬤⬤⬤ §7YOU', '§cRed:  §c⬤⬤§7◯◯◯'],
-    evidence_scoreboard_stats=['§fGoals: §a5/5', '§fKills: §a3', '§fStreak: §a1'],
     xray_finding_summary='Crosshair(16m): 0.0-2.0m:air -> 2.0-3.0m:blue_terracotta(wall) -> 3.0-6.0m:end_portal_frame [GOAL PIT]',
     random_username_prefix='BlocksSaw',
     register_cmd_template='/register {password} {password}',

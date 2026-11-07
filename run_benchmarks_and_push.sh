@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Sawbyte v0.5.0 — Local 16-Server Benchmark Runner, Doc Auto-Updater & Git Push
+# Sawbyte v0.5.2 — Local 16-Server Benchmark Runner, Doc Auto-Updater & Git Push
 # ==============================================================================
 set -euo pipefail
 
@@ -8,7 +8,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
 echo "========================================================================"
-echo "  SAWBYTE v0.5.0 — RUNNING ALL 16 CRACKED SERVER BENCHMARKS & PUSHING"
+echo "  SAWBYTE v0.5.2 — RUNNING ALL 16 CRACKED SERVER BENCHMARKS & PUSHING"
 echo "========================================================================"
 
 echo "[1/5] Running Rust edition, let-chain & lockfile safeguard..."
@@ -32,9 +32,9 @@ git status -s README.md docs/BENCHMARKS.md docs/index.html benchmarks/ || true
 
 if [ -d .git ]; then
   echo "[5/5] Committing and pushing updated benchmark results to GitHub..."
-  git add README.md docs/BENCHMARKS.md docs/index.html benchmarks/ tools/ Cargo.toml Cargo.lock native/Cargo.lock rustfmt.toml native/rustfmt.toml .github/workflows/
+  git add README.md docs/BENCHMARKS.md docs/index.html benchmarks/ tools/ Cargo.toml Cargo.lock rustfmt.toml native/rustfmt.toml .github/workflows/
   if ! git diff --cached --quiet; then
-    git commit -m "feat(v0.5.0): fix Rust 2024 edition/let-chains, add 16-server cracked benchmarks & sensory vision"
+    git commit -m "feat(v0.5.2): fix Rust 2024 edition/let-chains, add 16-server cracked benchmarks & sensory vision"
     git push
     echo "Successfully committed and pushed to GitHub!"
   else

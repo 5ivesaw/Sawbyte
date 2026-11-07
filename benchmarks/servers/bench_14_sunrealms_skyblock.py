@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #14: SunRealms (play.sunrealms.net:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #14: SunRealms (play.sunrealms.net:25565)
 Target Gamemode : 3D Parkour & OneBlock Phase 2 (Precision Parkour & OneBlock)
 Complex Mission : SVPE-1 Trajectory Planner, 12-Jump Zero-Fall Parkour Summit (14.8s) & 50-Cycle OneBlock
 Verified Outcome: 12/12 Parkour Checkpoints + 1 Spider Kill
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='OneBlock 50-Cycle Center Excavation, Cave Spider Defense (+1 Kill) & Phase 2 Unlock',
     stage_8_detail='Warped to OneBlock island (`/ob go`), mined the regenerating center block `(0, 64, 0)` 50 times, eliminated a spawned `Cave Spider` at 2.4m (`+1 Mob Kill`), and unlocked `Phase 2: Underground`.',
     stage_8_commands=['chat.send /ob go', 'player.hotbar 0', 'mine.block 0 64 0', 'mine.block 0 64 0', 'player.hotbar 1', 'attack.entity 320', 'inspect.sensory'],
-    evidence_chat_clipped_top='§e§lPARKOUR > §7Timer started! Reach all §f12 Checkpoints §7without falling.',
-    evidence_chat_setup_lines=['§aCheckpoint #4 §7reached! (§e4.62s §7• 4m Sprint-Jump Verified)', '§aCheckpoint #8 §7reached! (§e9.85s §7• Neo-Fence & Slab Landing)', '§6§lPARKOUR COMPLETE! §e{username} §7finished 12/12 jumps in §a14.80s §7(§a0 Falls§7)!'],
-    evidence_chat_kill_lines=['§cCave Spider §7was slain by §e{username} §7on OneBlock center!', '§b§lONEBLOCK > §750/50 blocks mined! Unlocked §aPhase 2: Underground§7!'],
-    evidence_chat_clipped_bottom='§6+500 SunRealms Coins §7| §aParkour Title Unlocked',
-    evidence_actionbar_text='§6Parkour: §a12/12 (14.8s) §8• §bOneBlock: §e50/50 (Phase 2)',
-    evidence_scoreboard_header='§6§lSUNREALMS §eOneBlock',
-    evidence_scoreboard_teams=['§fParkour: §a14.80s (0 Falls)', '§fOneBlock: §bPhase 2', '§fBlocks: §a50/50 ✓'],
-    evidence_scoreboard_stats=['§fCheckpoints: §a12/12', '§fMob Kills: §a1', '§fCoins: §6+500'],
     xray_finding_summary='Crosshair(16m): 0.0-3.0m:air(3m jump gap) -> 3.0-4.0m:quartz_slab(h, Δy=+1) [CHECKPOINT #8]',
     random_username_prefix='SunSaw',
     register_cmd_template='/register {password} {password}',

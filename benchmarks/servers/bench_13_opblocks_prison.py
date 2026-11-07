@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #13: OPBlocks (fun.opblocks.com:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #13: OPBlocks (fun.opblocks.com:25565)
 Target Gamemode : OP Prison Mine, Enchant & Outpost PvP (OP Prison Quarry & PvP Outpost)
 Complex Mission : 128-Block Serpentine Quarry Sweep, `/sellall` ($250k), Pickaxe Token Enchant, `/rankup` & Outpost Kill
 Verified Outcome: Rankup A->B + 128 Blocks Mined + 1 Outpost Kill
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='PvP Mine Outpost Contest, Rival Prisoner Elimination (+1 Kill) & Legendary Crate Key',
     stage_8_detail='Warped to `/warp pvp-mine`, contested the Outpost capture point against a rival prisoner within `3.0m` humanised reach (`+1 Outpost Kill`), and claimed the dropped `Legendary Crate Key`.',
     stage_8_commands=['chat.send /warp pvp-mine', 'humanisation.perception on', 'player.hotbar 1', 'attack.entity 219', 'inspect.sensory'],
-    evidence_chat_clipped_top='§d§lOPBLOCKS > §7Warped to §fMine A §7(Omni-Pickaxe Haste III active).',
-    evidence_chat_setup_lines=['§a§lSELLALL > §7Sold §f128x Mine A Blocks §7for §a+$250,000§7!', '§b§lENCHANT > §7Upgraded §eEfficiency (+5) §7& §dFortune (+3) §7with Tokens!', '§6§lRANKUP > §e{username} §7ranked up from §fRank A §7to §b§lRank B§7!'],
-    evidence_chat_kill_lines=['§cRivalPrisoner §7was slain by §e{username} §7at §cPvP Outpost§7!', '§6§lOUTPOST CAPTURED > §e{username} §7claimed §d1x Legendary Crate Key§7!'],
-    evidence_chat_clipped_bottom='§a+1,250 Tokens §7| §bMine B Unlocked',
-    evidence_actionbar_text='§bRank: §lB §8• §a+$250,000 §8• §d+1 Legendary Key',
-    evidence_scoreboard_header='§d§lOPBLOCKS §fPrison',
-    evidence_scoreboard_teams=['§fRank: §b[Rank B]', '§fPickaxe: §eEff XV / Fort VIII', '§fOutpost: §aCaptured ✓'],
-    evidence_scoreboard_stats=['§fMined: §a128 Blocks', '§fBalance: §a$250,000', '§fPvP Kills: §a1'],
     xray_finding_summary='UnderFeet(16m): 0.0-8.0m:emerald_ore+diamond_block(Mine B Rich Vein) -> 8.0-9.0m:bedrock',
     random_username_prefix='OPBSaw',
     register_cmd_template='/register {password} {password}',

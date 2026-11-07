@@ -1,6 +1,6 @@
 @echo off
 REM ==============================================================================
-REM SAWBYTE v0.5.1 FULL OVERHAUL — ONE-CLICK REPLACE, ASSIMILATE & BUILD (Windows)
+REM SAWBYTE v0.5.2 FULL OVERHAUL — ONE-CLICK REPLACE, ASSIMILATE & BUILD (Windows)
 REM ==============================================================================
 setlocal EnableDelayedExpansion
 
@@ -12,7 +12,7 @@ if "%TARGET_DIR%"=="" (
 )
 
 echo ========================================================================
-echo   SAWBYTE v0.5.1 — FULL RUST 26.3 UNIFICATION ^& TAURI LAUNCHER BUILD
+echo   SAWBYTE v0.5.2 — FULL RUST 26.3 UNIFICATION ^& TAURI LAUNCHER BUILD
 echo ========================================================================
 echo   Source Archive Dir : %SCRIPT_DIR%
 echo   Target Project Dir : %TARGET_DIR%
@@ -20,20 +20,20 @@ echo ========================================================================
 
 if /I not "%SCRIPT_DIR%"=="%TARGET_DIR%" (
     xcopy /E /I /Y "%SCRIPT_DIR%*" "%TARGET_DIR%\" >nul
-    echo [1/5] Copied all updated v0.5.1 files to %TARGET_DIR%
+    echo [1/5] Copied all updated v0.5.2 files to %TARGET_DIR%
 )
 
 cd /d "%TARGET_DIR%"
 
 where python >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
-    echo [2/5] Running Sawbyte v0.5.1 Full Rust Engine Assimilator...
+    echo [2/5] Running Sawbyte v0.5.2 Full Rust Engine Assimilator...
     python tools\assimilate_horizon_into_sawbyte.py
 )
 
 where cargo >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
-    echo [3/5] Compiling Rust v0.5.1 Workspace (sawbyte.exe, sawbyte-ctl.exe, sawbyte-prepare.exe)...
+    echo [3/5] Compiling Rust v0.5.2 Workspace (sawbyte.exe, sawbyte-ctl.exe, sawbyte-prepare.exe)...
     cargo build --workspace --release
     echo [4/5] Compiling Standalone Headless ^& Singleplayer Engine (sawbyte-play.exe)...
     cargo build --release --manifest-path native\Cargo.toml
@@ -55,12 +55,12 @@ if %ERRORLEVEL% EQU 0 (
         copy /Y "block-profile.json" "%USERPROFILE%\.sawbyte\block-profile.json" >nul
         copy /Y "block-profile.json" "!SAWBYTE_HOME!\block-profile.json" >nul
     )
-    echo [5/5] Installed updated v0.5.1 binaries to !SAWBYTE_HOME!
+    echo [5/5] Installed updated v0.5.2 binaries to !SAWBYTE_HOME!
 ) else (
     echo [!] cargo not found in PATH — source files replaced.
 )
 
 echo ========================================================================
-echo   Sawbyte v0.5.1 Ready! Run "sawbyte-launcher.exe" or "sawbyte.exe gui".
+echo   Sawbyte v0.5.2 Ready! Run "sawbyte-launcher.exe" or "sawbyte.exe gui".
 echo ========================================================================
 pause

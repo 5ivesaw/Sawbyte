@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# SAWBYTE v0.5.1 FULL OVERHAUL — CLEAN REPLACE, BUG-DOCTOR & BUILD (Linux/macOS)
+# SAWBYTE v0.5.2 FULL OVERHAUL — CLEAN REPLACE, BUG-DOCTOR & BUILD (Linux/macOS)
 # ==============================================================================
 # Usage:
-#   1. Extract Sawbyte-v0.5.1-Full.zip anywhere (or inside your Sawbyte repo)
+#   1. Extract Sawbyte-v0.5.2-Full.zip anywhere (or inside your Sawbyte repo)
 #   2. Run:
-#        ./replace_all.sh                           # Cleanly replaces all code, runs bug-doctor, and builds Sawbyte v0.5.1
+#        ./replace_all.sh                           # Cleanly replaces all code, runs bug-doctor, and builds Sawbyte v0.5.2
 #        ./replace_all.sh "/path/to/your/Sawbyte"   # Replaces & builds in custom target folder
 # ==============================================================================
 set -e
@@ -43,7 +43,7 @@ if [ -z "$TARGET_DIR" ]; then
 fi
 
 echo "========================================================================"
-echo "  SAWBYTE v0.5.1 — FULL CODEBASE REPLACEMENT, BUG-DOCTOR & BUILD"
+echo "  SAWBYTE v0.5.2 — FULL CODEBASE REPLACEMENT, BUG-DOCTOR & BUILD"
 echo "========================================================================"
 echo "  Source Archive Dir : $SCRIPT_DIR"
 echo "  Target Project Dir : $TARGET_DIR"
@@ -83,7 +83,7 @@ fi
 
 # 3. Build Workspace Crates (`sawbyte`, `sawbyte-ctl`, `sawbyte-prepare`, `sawbyte-sim-core`, `sawbyte-core`)
 if command -v cargo >/dev/null 2>&1; then
-  echo "[3/6] Compiling Rust v0.5.1 Workspace (sawbyte, sawbyte-ctl, sawbyte-prepare)..."
+  echo "[3/6] Compiling Rust v0.5.2 Workspace (sawbyte, sawbyte-ctl, sawbyte-prepare)..."
   cargo build --workspace --release
 
   echo "[4/6] Compiling Standalone Headless & Singleplayer Engine (sawbyte-play)..."
@@ -123,7 +123,7 @@ else
   echo "[!] cargo not found in current PATH — source files replaced and verified. Install Rust (rustup) to compile locally."
 fi
 
-echo "[6/6] Sawbyte v0.5.1 Ready!"
+echo "[6/6] Sawbyte v0.5.2 Ready!"
 echo "  -> Verify CI Locally       : ./tools/verify_ci_locally.sh"
 echo "  -> Autonomous Bug Doctor   : python3 tools/find_and_fix_bugs.py"
 echo "  -> Launch Tauri Desktop UI : sawbyte-launcher  (or: sawbyte gui)"

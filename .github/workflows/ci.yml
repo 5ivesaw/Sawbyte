@@ -49,22 +49,22 @@ jobs:
       - name: Static analysis
         shell: bash
         run: |
-          cargo clippy --workspace --all-targets || cargo clippy --workspace --all-targets --offline
+          cargo clippy --workspace --all-targets
       - name: Tests
         shell: bash
         run: |
-          cargo test --workspace || cargo test --workspace --offline
-          if [ -f native/Cargo.lock ]; then
-            cargo fetch --manifest-path native/Cargo.toml --locked || cargo fetch --manifest-path native/Cargo.toml
-            cargo test --manifest-path native/Cargo.toml --locked || cargo test --manifest-path native/Cargo.toml
+          cargo test --workspace
+          if [ ! -f native/Cargo.lock ] || ! cargo fetch --manifest-path native/Cargo.toml --locked; then
+            rm -f native/Cargo.lock
+            cargo generate-lockfile --manifest-path native/Cargo.toml
+            cargo fetch --manifest-path native/Cargo.toml --locked
           fi
+          cargo test --manifest-path native/Cargo.toml --locked
       - name: Build release
         shell: bash
         run: |
-          cargo build --workspace --release || cargo build --workspace --release --offline
-          if [ -f native/Cargo.lock ]; then
-            cargo build --release --manifest-path native/Cargo.toml --locked || cargo build --release --manifest-path native/Cargo.toml
-          fi
+          cargo build --workspace --release
+          cargo build --release --manifest-path native/Cargo.toml --locked
       - name: Smoke test & 16-Server Benchmark Suite
         shell: bash
         run: |

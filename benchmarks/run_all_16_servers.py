@@ -2,12 +2,12 @@
 """
 Sawbyte v0.5.2 — Master 16-Server Cracked Multiplayer Benchmark Suite Runner (`benchmarks/run_all_16_servers.py`).
 
-Executes all 16 standalone 8-stage server benchmark scripts in `benchmarks/servers/bench_01_*.py` .. `bench_16_*.py`,
-collects stage-by-stage narratives, kills, economy/raid/parkour metrics, and "Seeing the Game with Words v2"
-(`SVPE-1` + `SVMEM-1`) sensory transcripts, writes:
-  - `run/reports/cracked_servers_benchmark.json`
-  - `run/reports/sensory_vision_samples.txt`
-and optionally invokes `tools/update_benchmarks_docs.py` to update `README.md`, `docs/BENCHMARKS.md`, and `docs/index.html`.
+Executes all 16 standalone 8-stage server benchmark scripts in `benchmarks/servers/bench_01_*.py` .. `bench_16_*.py`.
+CRITICAL INTEGRITY GUARANTEE:
+  - In `--mode harness` (or when `sawbyte-play` is not built or remote servers are unreachable), scripts
+    validate configuration schemas and honestly report `UNVERIFIED (NOT RUN)` with `0/8` stages passed and
+    `0` fabricated evidence events.
+  - A server or stage is only marked `PASS` when connected live to the remote server via `sawbyte-play live`.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ def load_and_run_all(mode: str = "auto") -> Dict[str, Any]:
     sensory_samples: List[str] = []
 
     print("========================================================================================================")
-    print("  SAWBYTE v0.5.2 — 16-SERVER AUTONOMOUS 8-STAGE CRACKED MULTIPLAYER BENCHMARK SUITE (128 STAGES)")
+    print(f"  SAWBYTE v0.5.2 — 16-SERVER CRACKED MULTIPLAYER BENCHMARK SUITE (mode={mode})")
     print("========================================================================================================")
 
     t0 = time.time()
@@ -48,9 +48,9 @@ def load_and_run_all(mode: str = "auto") -> Dict[str, Any]:
         if res.get("sensory_vision_sample"):
             sensory_samples.append(res["sensory_vision_sample"])
         print(
-            f"  [#{res['server_index']:02d} {res['status']}] {res['server_name']:<16} | "
-            f"{res['gamemode_name']:<28} | Stages: {res['stages_passed']}/{res['stages_total']} | "
-            f"Outcome: {res['verified_outcome_badge']}"
+            f"  [#{res['server_index']:02d}] {res['server_name']:<16} | "
+            f"{res['gamemode_name']:<28} | Stages Verified: {res['stages_passed']}/{res['stages_total']} | "
+            f"Status: {res['status']}"
         )
 
     total_servers = len(results)
@@ -83,9 +83,9 @@ def load_and_run_all(mode: str = "auto") -> Dict[str, Any]:
 
     print("========================================================================================================")
     print(
-        f"  TOTAL: {passed_servers}/{total_servers} Servers Passed | "
-        f"{passed_stages}/{total_stages} Autonomous Stages Passed ({summary['pass_rate_pct']}%) | "
-        f"{total_kills} Verified Combat/Raid/Minigame Kills"
+        f"  SUMMARY: {passed_servers}/{total_servers} Live Servers Verified | "
+        f"{passed_stages}/{total_stages} Live Stages Verified ({summary['pass_rate_pct']}%) | "
+        f"Mode: {mode}"
     )
     print(f"  JSON Report   : {report_json}")
     print(f"  Sensory Output: {sensory_txt}")

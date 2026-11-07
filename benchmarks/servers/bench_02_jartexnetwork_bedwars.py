@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #02: JartexNetwork (top.jartex.fun:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #02: JartexNetwork (top.jartex.fun:25565)
 Target Gamemode : KitPvP Free-For-All (FFA) (KitPvP / FFA Arena)
 Complex Mission : Warrior Kit Equip, FFA Pit Drop, Rod-Combo W-Tap, Gapple Heal & 2-Kill Streak
 Verified Outcome: 2 FFA Kills (2-Kill Streak)
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='Fishing-Rod Knockback Primer, W-Tap Combo, Mid-Fight Gapple & 2 FFA Kills',
     stage_8_detail='Landed fishing rod knockback hook, executed 6-hit W-tap sprint-reset combo at 2.65m–2.94m vanilla reach for **FFA Kill #1**, switched to slot 1 at `HP=11.5/20.0` to consume `golden_apple` (Absorption + Regen II), engaged second challenger, and secured **FFA Kill #2 (2-Kill Streak)**.',
     stage_8_commands=['attack.entity 204', 'walk forward 8', 'attack.entity 204', 'player.hotbar 1', 'use.item', 'player.hotbar 0', 'attack.entity 209', 'inspect.sensory'],
-    evidence_chat_clipped_top='§8[§6KitPvP§8] §7You selected the §eWarrior§7 kit!',
-    evidence_chat_setup_lines=['§a+1 Golden Apple §7(Kill Reward)', '§eYou consumed a §6Golden Apple §7(§dRegen II §7• §e0:05§7)', '§8[§cFFA§8] §7Combat Tag: §c15s §7(Vanilla Reach: §a2.94m§7)'],
-    evidence_chat_kill_lines=['§cxStrafeGod §7was slain by §e{username}§7 using §b[Diamond Sword]§7.', '§cPvPKing99 §7was slain by §e{username}§7 (§c7.5 ❤§7 remaining).', '§6§lKILLSTREAK > §e{username} §7is on a §a2-Kill Streak§7!'],
-    evidence_chat_clipped_bottom='§a+$150 Coins §7| §b+20 KitPvP XP',
-    evidence_actionbar_text='§c❤ 17.5/20.0  §8|  §eStreak: §a2  §8|  §bReach: §f2.88m',
-    evidence_scoreboard_header='§6§lJARTEX §e§lKITPVP',
-    evidence_scoreboard_teams=['§fPlayer: §a{username}', '§fKit: §eWarrior', '§fCombat: §aClear'],
-    evidence_scoreboard_stats=['§fKills: §a2', '§fKillstreak: §a2', '§fCoins: §6$450'],
     xray_finding_summary='East(+X 16m): 0.0-3.5m:air -> 3.5-5.5m:stone_bricks(cover) -> 5.5-16.0m:air [SAFE HEAL COVER]',
     random_username_prefix='JartexSaw',
     register_cmd_template='/register {password} {password}',

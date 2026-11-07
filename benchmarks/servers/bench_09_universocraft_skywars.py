@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #09: UniversoCraft (mc.universocraft.com:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #09: UniversoCraft (mc.universocraft.com:25565)
 Target Gamemode : ArenaPvP BuildUHC 1v1 (Spanish Tactical BuildUHC PvP)
 Complex Mission : Cobble Wall Zoning, Offensive Lava-Tick Placement, Golden Head, Shield-Break & 1v1 Win
 Verified Outcome: BuildUHC 1v1 Victory (+1 Kill)
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='Water-Bucket Self-Extinguish, Axe Shield-Disable & Final Sword Elimination',
     stage_8_detail="Placed and collected `water_bucket` at feet (`slot 5`) to clear fire ticks (`SVPE1:DELTA`), swapped to `diamond_axe` to disable opponent's raised shield, and finished with `diamond_sword` (`Ganador BuildUHC 1v1`).",
     stage_8_commands=['player.hotbar 5', 'player.look 0.0 88.0', 'use.item', 'wait.ticks 4', 'use.item', 'player.look 0.0 3.0', 'player.hotbar 6', 'attack.entity 203', 'player.hotbar 0', 'attack.entity 203', 'inspect.sensory'],
-    evidence_chat_clipped_top='§6[ArenaPvP] §7Duelo §eBuildUHC 1v1 §7iniciado contra §cMatadorPvP§7.',
-    evidence_chat_setup_lines=['§eConsumiste una §6§lGolden Head §7(§dRegeneración III §7+ §bVelocidad§7)', '§c¡Rompiste el escudo de §fMatadorPvP §ccon tu Hacha de Diamante!', '§bAgua recogida §7(Estado de fuego extinguido en §a4 ticks§7)'],
-    evidence_chat_kill_lines=['§cMatadorPvP §7fue asesinado por §e{username}§7 con §b[Espada de Diamante]§7.', '§6§lGANADOR > §e{username} §7ganó el duelo §eBuildUHC 1v1 §7(§a14.0 ❤§7)!'],
-    evidence_chat_clipped_bottom='§a+18 ELO §7(Nuevo rango BuildUHC: §e1,042 ELO§7)',
-    evidence_actionbar_text='§6§lGANADOR! §8• §fLava Ticks: §c2 §8• §bShield Break: §a✓',
-    evidence_scoreboard_header='§6§lUNIVERSOCRAFT',
-    evidence_scoreboard_teams=['§fModo: §eBuildUHC 1v1', '§fRival: §cMatadorPvP', '§fGHeads: §62 Left'],
-    evidence_scoreboard_stats=['§fKills: §a1', '§fELO: §a1042 (+18)', '§fEstado: §aVictoria'],
     xray_finding_summary='Crosshair(16m): 0.0-2.5m:air -> 2.5-3.5m:cobblestone(player wall) -> 3.5-6.0m:air [OPPONENT BEHIND WALL]',
     random_username_prefix='UniSaw',
     register_cmd_template='/reg {password} {password}',

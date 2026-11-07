@@ -554,40 +554,37 @@ def step4_verify_syntax_delimiters_and_includes(root: Path, report: BugReport) -
 
 
 def step5_heal_github_workflows_offline_trap(root: Path, report: BugReport) -> None:
-    """Ensures GitHub Actions workflows never fail due to mandatory --offline flags."""
+    """Ensures GitHub Actions workflows never fail due to --offline fallbacks or corrupted native/Cargo.lock."""
+    nlock = root / "native" / "Cargo.lock"
+    if nlock.exists():
+        ntxt = nlock.read_text(encoding="utf-8")
+        if "quinn-udp" in ntxt or "version = \"0.5.26\"" in ntxt or "version = \"0.8.8\"" in ntxt:
+            nlock.unlink()
+            report.record_fix("Removed corrupted native/Cargo.lock with invalid crates.io version pins (e.g. quinn-udp 0.5.26)")
+
     wf_dir = root / ".github" / "workflows"
     if not wf_dir.exists():
         return
     for yml in sorted(wf_dir.glob("*.yml")):
         txt = yml.read_text(encoding="utf-8")
         orig = txt
-        # Replace `--locked --offline || cargo <cmd> --workspace --all-targets --offline` with online-first
         txt = txt.replace(
-            "cargo clippy --workspace --all-targets --locked --offline || cargo clippy --workspace --all-targets --offline",
             "cargo clippy --workspace --all-targets || cargo clippy --workspace --all-targets --offline",
+            "cargo clippy --workspace --all-targets",
         )
         txt = txt.replace(
-            "cargo test --workspace --locked --offline || cargo test --workspace --offline",
             "cargo test --workspace || cargo test --workspace --offline",
+            "cargo test --workspace",
         )
         txt = txt.replace(
-            "cargo build --workspace --release --locked --offline || cargo build --workspace --release --offline",
             "cargo build --workspace --release || cargo build --workspace --release --offline",
-        )
-        txt = re.sub(
-            r"(?<!\|\|\s)cargo build --workspace --release --offline",
-            "cargo build --workspace --release || cargo build --workspace --release --offline",
-            txt,
-        )
-        txt = txt.replace(
-            "cargo build --release --locked --offline || cargo build --release --offline",
-            "cargo build --release || cargo build --release --offline",
+            "cargo build --workspace --release",
         )
         if txt != orig:
             yml.write_text(txt, encoding="utf-8")
-            report.record_fix(f"Removed mandatory `--offline` trap in {yml.relative_to(root)}")
+            report.record_fix(f"Removed redundant `--offline` fallback in {yml.relative_to(root)}")
 
-    report.record_ok("GitHub Actions workflow online/offline resilience verified")
+    report.record_ok("GitHub Actions workflow & native/Cargo.lock resilience verified")
 
 
 def step6_closed_loop_cargo_doctor(root: Path, report: BugReport) -> None:

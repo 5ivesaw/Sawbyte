@@ -1,12 +1,12 @@
 @echo off
 REM ==============================================================================
-REM Sawbyte v0.5.0 — Local 16-Server Benchmark Runner, Doc Auto-Updater & Git Push
+REM Sawbyte v0.5.2 — Local 16-Server Benchmark Runner, Doc Auto-Updater & Git Push
 REM ==============================================================================
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo ========================================================================
-echo   SAWBYTE v0.5.0 — RUNNING ALL 16 CRACKED SERVER BENCHMARKS ^& PUSHING
+echo   SAWBYTE v0.5.2 — RUNNING ALL 16 CRACKED SERVER BENCHMARKS ^& PUSHING
 echo ========================================================================
 
 echo [1/5] Running Rust edition, let-chain ^& lockfile safeguard...
@@ -27,8 +27,8 @@ python benchmarks\run_all_16_servers.py --mode %MODE% --update-docs
 
 if exist .git (
     echo [5/5] Committing and pushing updated benchmark results to GitHub...
-    git add README.md docs\BENCHMARKS.md docs\index.html benchmarks\ tools\ Cargo.toml Cargo.lock native\Cargo.lock rustfmt.toml native\rustfmt.toml .github\workflows\
-    git commit -m "feat(v0.5.0): fix Rust 2024 edition/let-chains, add 16-server cracked benchmarks & sensory vision"
+    git add README.md docs\BENCHMARKS.md docs\index.html benchmarks\ tools\ Cargo.toml Cargo.lock rustfmt.toml native\rustfmt.toml .github\workflows\
+    git commit -m "feat(v0.5.2): fix Rust 2024 edition/let-chains, add 16-server cracked benchmarks & sensory vision"
     git push
 )
 

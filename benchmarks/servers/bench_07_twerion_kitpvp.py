@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #07: Twerion (play.twerion.net:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #07: Twerion (play.twerion.net:25565)
 Target Gamemode : German Soup FFA / KitPvP (Soup PvP / Fast-Refill FFA)
 Complex Mission : Instant Mushroom Stew Quick-Drop, 18-Tick Inventory Refill & 3-Kill FFA Streak
 Verified Outcome: 3 FFA Kills (Soup Refill Verified)
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='Peripheral Acoustic Flank Detection (`PERIPHERAL_ACOUSTIC_LOS`) & Double Kill (#2 & #3)',
     stage_8_detail='Detected third-party flanker at 5.2m (`+112°` Right-Rear, `Tier=PERIPHERAL_ACOUSTIC_LOS`, `Conf=0.78`), rotated camera via `SmoothHumanisedCamera` to establish `DIRECT_FOV_LOS`, and secured **FFA Kills #2 and #3 (3-Kill Streak)**.',
     stage_8_commands=['inspect.sensory', 'player.look 112.0 2.0', 'player.hotbar 0', 'attack.entity 206', 'attack.entity 208', 'inspect.sensory'],
-    evidence_chat_clipped_top='§8[§bSoupFFA§8] §7Du hast das §eStandard-Soup§7 Kit ausgerüstet.',
-    evidence_chat_setup_lines=['§a+3.5 ❤ §7Mushroom Stew consumed (§fHotbar Slot 2 -> Bowl dropped§7)', '§bRefill Complete: §f8x Mushroom Stew §7shift-clicked in §a18 Ticks', '§8[§bSoupFFA§8] §cFlankerDE §7was killed by §e{username}§7.'],
-    evidence_chat_kill_lines=['§cSoupLegend §7was killed by §e{username}§7 (§a9.0 ❤§7).', '§cComboMaster §7was killed by §e{username}§7 (§a8.5 ❤§7).', '§6§lSTREAK > §e{username} §7hat eine §a§l3er Killstreak §7erreicht!'],
-    evidence_chat_clipped_bottom='§a+45 XP §7| §6+90 Twerion Coins',
-    evidence_actionbar_text='§a§l3ER KILLSTREAK! §8• §f14 Stews Used §8• §a18t Refill',
-    evidence_scoreboard_header='§b§lTWERION §fSoupFFA',
-    evidence_scoreboard_teams=['§fMap: §aQuartzRing', '§fStews Left: §e18', '§fRefill: §a18 Ticks'],
-    evidence_scoreboard_stats=['§fKills: §a3', '§fStreak: §a3', '§fDeaths: §a0'],
     xray_finding_summary='West(-X 16m): 0.0-2.0m:quartz_pillar(cover) -> 2.0-16.0m:air [SAFE SOUP REFILL POSITION]',
     random_username_prefix='TwerSaw',
     register_cmd_template='/register {password} {password}',

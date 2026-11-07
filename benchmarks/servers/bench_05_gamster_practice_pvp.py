@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #05: Gamster (mc.gamster.org:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #05: Gamster (mc.gamster.org:25565)
 Target Gamemode : Practice NoDebuff 1v1 Duel (Competitive Practice PvP)
 Complex Mission : Speed II Pre-Buff, 8-Hit W-Tap Strafe Combo, +82° Splash-Pot Micro-Turn & Duel Win
 Verified Outcome: 1v1 NoDebuff Flawless Win (7 Pots Left)
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='+82° Downward Splash-Pot Micro-Turn, Ender Pearl Catch & Final Blow (+1 Kill)',
     stage_8_detail='At `HP=9.0/20.0`, pitched camera down to `+82.0°` while sprinting forward to splash `2x Instant Health II` into own hitbox (`HP -> 19.5/20.0`), threw `ender_pearl` (`slot 1`) to catch retreating opponent, and landed final sword crit (`1v1 NoDebuff Victory`).',
     stage_8_commands=['player.look 0.0 82.0', 'player.hotbar 2', 'use.item', 'player.hotbar 3', 'use.item', 'player.look 0.0 4.0', 'player.hotbar 1', 'use.item', 'player.hotbar 0', 'attack.entity 202', 'inspect.sensory'],
-    evidence_chat_clipped_top='§e[Practice] §7Match started against §cSweatyPotPvP§7 (NoDebuff 1v1).',
-    evidence_chat_setup_lines=['§bApplied §fSpeed II §7(1:30) & §6Fire Resistance §7(8:00)', '§d+2x Splash Potion of Healing II §7(+10.5 ❤ restored at +82° pitch)', '§a8-Hit Combo landed! §7(Max Reach: §f2.97m§7)'],
-    evidence_chat_kill_lines=['§cSweatyPotPvP §7was slain by §e{username}§7 (§a7 Pots §7remaining).', '§a§lWINNER! §e{username} §7defeated §cSweatyPotPvP §7in §dNoDebuff 1v1§7!'],
-    evidence_chat_clipped_bottom='§7Inventories (click to view): §a{username} §7| §cSweatyPotPvP',
-    evidence_actionbar_text='§dPots Left: §a7 §8| §bCombo: §e8 Hits §8| §aAim: §f94.2%',
-    evidence_scoreboard_header='§d§lPRACTICE §7NoDebuff',
-    evidence_scoreboard_teams=['§fOpponent: §cSweatyPotPvP', '§fPing: §a38ms §7vs §c44ms', '§fEnderpearl: §aReady'],
-    evidence_scoreboard_stats=['§fYour Pots: §a7', '§fTheir Pots: §c0', '§fHits: §a34 §7(+11)'],
     xray_finding_summary='Crosshair(16m): 0.0-16.0m:air (Flat NoDebuff Arena — 100% Unobstructed Direct-FOV Sightline)',
     random_username_prefix='GamSaw',
     register_cmd_template='/register {password} {password}',

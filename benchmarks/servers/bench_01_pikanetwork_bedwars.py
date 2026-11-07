@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #01: PikaNetwork (top.pika.host:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #01: PikaNetwork (top.pika.host:25565)
 Target Gamemode : Solo BedWars (BedWars Minigame)
 Complex Mission : Forge Farm, Shop Buy, 18m Void Speed-Bridge, X-Ray Bed Break & Final Kill
 Verified Outcome: 1 Bed Broken + 1 Final Kill
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='Through-Block X-Ray Bed Detection (`inspect.xray`), Bed Break & 3.0m Final Kill',
     stage_8_detail='Cast 16m penetrating X-ray (`inspect.xray`) through Cyan Island defense to pinpoint `cyan_bed` behind 1.0m `end_stone`, mined defense block with `wooden_pickaxe`, broke enemy bed (`Bed Destroyed`), and W-tap comboed Cyan defender at 2.82m vanilla reach for `+1 Final Kill`.',
     stage_8_commands=['inspect.xray', 'player.hotbar 2', 'mine.block 0 65 38', 'interact.raycast', 'player.hotbar 0', 'humanisation.perception on', 'attack.entity 204', 'inspect.sensory'],
-    evidence_chat_clipped_top='§eNylaris §7was knocked into the void by §cwigry.',
-    evidence_chat_setup_lines=['§f+2 Iron', '§aYou purchased §664x Wool', '§aYou purchased §6Stone Sword', "§cYou don't have enough Iron! Need 6 more!"],
-    evidence_chat_kill_lines=['§f§lBED DESTRUCTION > §bCyan Bed §7was destroyed by §e{username}§7!', '§cwigry §7was killed by §e{username}§7. §b§lFINAL KILL!'],
-    evidence_chat_clipped_bottom='§6+25 BedWars Coins! §7(Final Kill + Bed Destroyed)',
-    evidence_actionbar_text='§a§lFINAL KILL! §8• §fCyan Defender §7(§e2.82m§7)',
-    evidence_scoreboard_header='§fDiamond II in §a5:46',
-    evidence_scoreboard_teams=['§cR §fRed: §a✓', '§9B §fBlue: §a✓', '§3C §fCyan: §c✗', '§eY §fYellow: §a✓ §7YOU'],
-    evidence_scoreboard_stats=['§fKills: §a1', '§fFinal Kills: §a1', '§fBeds Broken: §a1'],
     xray_finding_summary='Crosshair(16m): 0.0-1.8m:air -> 1.8-2.8m:end_stone(hardness=3.0) -> 2.8-3.8m:cyan_bed [ENEMY BED]',
     random_username_prefix='PikaSaw',
     register_cmd_template='/register {password} {password}',

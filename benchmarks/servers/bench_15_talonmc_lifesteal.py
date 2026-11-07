@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #15: TalonMC (play.talonmc.net:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #15: TalonMC (play.talonmc.net:25565)
 Target Gamemode : Lifesteal SMP Warzone PvP (Hardcore Lifesteal PvP & Stash Hunt)
 Complex Mission : Downward X-Ray Stash Discovery, 4-Tick Off-Hand Totem Swap & +1 Permanent Heart Kill
 Verified Outcome: +1 Permanent Heart Kill (11 Hearts Max HP)
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='4-Tick Emergency Off-Hand Totem Hot-Swap, Axe+Sword Crit Finisher & +1 Heart Steal',
     stage_8_detail='Engaged geared rival in Lifesteal Warzone, auto-swapped backup `totem_of_undying` into off-hand (`Slot 45`) within 4 ticks of a crystal/axe damage spike, landed shield-disable axe hit + critical netherite sword finisher, and claimed **+1 Permanent Heart (`Max HP -> 22.0 / 11.0 Hearts`)**.',
     stage_8_commands=['player.hotbar 0', 'attack.entity 222', 'gui.inspect', 'gui.click "totem_of_undying"', 'gui.close', 'jump', 'attack.entity 222', 'memory.save', 'inspect.sensory'],
-    evidence_chat_clipped_top='§4§lLIFESTEAL > §7Entered §cWarzone PvP §7(Totem locked in Off-Hand Slot 45).',
-    evidence_chat_setup_lines=['§7[§dX-Ray§7] §fDetected hidden §6Barrel Stash §77m underground at §e(0, 57, 0)', '§aLooted §62x Totem of Undying §7& §b8x Enchanted Golden Apple §7from Stash!', '§eTotem popped! §aAuto-Swapped backup §6Totem of Undying §7to Off-Hand in §a4 Ticks§7!'],
-    evidence_chat_kill_lines=['§cHeartHunter99 §7was slain by §e{username}§7 using §4[Netherite Sword]§7!', '§c§lHEART STOLEN! §e{username} §7gained §c+1 Permanent Heart §7(§c11.0 ❤ Max HP§7)!'],
-    evidence_chat_clipped_bottom='§a[SVMEM-1] §7Saved landmark: §eWarzone Hidden Barrel Stash (-7m)',
-    evidence_actionbar_text='§c❤❤❤❤❤❤❤❤❤❤❤ 22.0/22.0 HP §8• §6Totem Swap: §a4 Ticks',
-    evidence_scoreboard_header='§4§lTALONMC §cLifesteal',
-    evidence_scoreboard_teams=['§fHearts: §c11 ❤ §a(+1)', '§fOff-Hand: §6Totem Ready', '§fWarzone: §aDominated'],
-    evidence_scoreboard_stats=['§fKills: §a1', '§fHearts Stolen: §c+1', '§fStashes Found: §a1'],
     xray_finding_summary='UnderFeet(16m): 0.0-6.0m:deepslate -> 6.0-8.0m:air(hidden cavity) -> 8.0-9.0m:barrel [STASH FOUND]',
     random_username_prefix='TalonSaw',
     register_cmd_template='/register {password} {password}',

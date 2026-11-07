@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #03: Herobrine.org (mc.herobrine.org:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #03: Herobrine.org (mc.herobrine.org:25565)
 Target Gamemode : SkyWars Solo Insane (SkyWars Battle Royale)
 Complex Mission : 3-Chest Island X-Ray Loot, Auto-Armor Equip, Snowball Void Knockoff & Mid Feast Win
 Verified Outcome: 2 Kills (1 Snowball Void Kill + 1 Mid Kill)
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='14-Block Fast-Bridge to Center Feast Island, Ender Pearl Loot & Final Duel Kill',
     stage_8_detail='Verified gap to Center Feast Island via `inspect.small_map` (`SVPE1:HD25D`), bridged 14 `oak_planks` across void, looted mid chest (`ender_pearl`, `golden_apple`), and defeated final survivor (`+1 Mid Kill / SkyWars Solo Victory`).',
     stage_8_commands=['inspect.small_map', 'player.hotbar 3', 'place.block 4 64 12', 'place.block 5 64 12', 'player.hotbar 0', 'attack.entity 211', 'inspect.sensory'],
-    evidence_chat_clipped_top='§eCages opened! §c§lFIGHT!',
-    evidence_chat_setup_lines=['§7[§bSkyWars§7] §fLooted §bDiamond Chestplate §7& §f16x Snowball', '§aAuto-Equipped §bDiamond Helmet §7+ §bDiamond Chestplate', '§eRefill in §a2:15 §7| §fPlayers Remaining: §a3'],
-    evidence_chat_kill_lines=["§cSkyBridger_12 §7was knocked into the void by §e{username}§7's §fSnowball§7.", '§cLastSurvivor §7was killed by §e{username}§7.', '§6§lVICTORY! §e{username} §7won the §bSkyWars Solo Insane §7match!'],
-    evidence_chat_clipped_bottom='§b+35 Souls §7| §6+120 SkyWars Coins',
-    evidence_actionbar_text='§6§lVICTORY! §8• §f2 Kills §7(§b1 Void Knockoff §7+ §a1 Mid Kill§7)',
-    evidence_scoreboard_header='§eRefill in §a1:42',
-    evidence_scoreboard_teams=['§fMode: §cSolo Insane', '§fPlayers left: §a1/12', '§fMap: §bShire'],
-    evidence_scoreboard_stats=['§fKills: §a2', '§fChests: §a4', '§fSouls: §b+35'],
     xray_finding_summary='UnderFeet(16m): 0.0-1.0m:stone -> 1.0-3.0m:air(cave) -> 3.0-4.0m:chest [3RD ISLAND CHEST]',
     random_username_prefix='HeroSaw',
     register_cmd_template='/register {password} {password}',

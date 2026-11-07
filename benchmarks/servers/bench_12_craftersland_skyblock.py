@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #12: CraftersLand (play.craftersland.net:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #12: CraftersLand (play.craftersland.net:25565)
 Target Gamemode : Tech SkyBlock & Redstone Grinder (Redstone Automation & Mob Grinder)
 Complex Mission : Hopper+Furnace Auto-Smelter Build, 4-Tick Redstone Piston Extruder & 5-Mob Grinder Clear
 Verified Outcome: 5 Grinder Mobs Slain + Auto-Smelter Active
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='Half-Slab (`h`) Mob Grinder Kill-Chamber Sweep (+5 Mob Kills & XP Level 14)',
     stage_8_detail='Navigated to island dark-room mob drop chute (`task.navigate`), verified safe half-slab window (`h` symbol in `SVPE1:RLE3D` blocking spider/baby-mob egress), eliminated 5 accumulated mobs (`+5 Grinder Kills`), and reached `XP Level 14`.',
     stage_8_commands=['task.navigate -4 64 8', 'inspect.svpe 4 3 4', 'player.hotbar 0', 'attack.entity 310', 'attack.entity 311', 'attack.entity 312', 'attack.entity 313', 'attack.entity 314', 'inspect.sensory'],
-    evidence_chat_clipped_top='§a[Island] §7Assembled §eHopper -> Chest §7& §6Auto-Furnace §7at (4, 64, 4).',
-    evidence_chat_setup_lines=['§7[§cRedstone§7] §f4-Tick Repeater Clock & Piston Cobble Extruder §aONLINE', '§7[§eSmelter§7] §fLoaded §f32x Raw Iron §7+ §88x Coal §7into Auto-Furnace'],
-    evidence_chat_kill_lines=['§a+5 Grinder Kills! §7Cleared §f3x Zombie §7& §f2x Skeleton §7through half-slab window.', '§b§lLEVEL UP! §e{username} §7reached §aExperience Level 14§7!'],
-    evidence_chat_clipped_bottom='§f+48 Rotten Flesh §7| §f+22 Bone §7deposited into Grinder Chest',
-    evidence_actionbar_text='§aXP Level: §e14 §8• §cRedstone Extruder: §a20 TPS §8• §fGrinder: §a5 Kills',
-    evidence_scoreboard_header='§6§lCRAFTERSLAND §fTech',
-    evidence_scoreboard_teams=['§fSmelter: §aRunning', '§fExtruder: §a4-Tick Loop', '§fGrinder: §aSafe (Slab)'],
-    evidence_scoreboard_stats=['§fGrinder Kills: §a5', '§fXP Level: §a14', '§fIron Bars: §f32'],
     xray_finding_summary='Crosshair(16m): 0.0-1.0m:cobblestone_slab(h) -> 1.0-3.0m:air(kill chute, 5 mobs) -> 3.0-4.0m:cobblestone',
     random_username_prefix='CraftSaw',
     register_cmd_template='/register {password} {password}',

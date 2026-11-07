@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.2 — Autonomous 8-Stage Multi-Mode Cracked Server Benchmark & Evidence Capture Engine
+Sawbyte v0.5.2 — Honest 8-Stage Multi-Mode Cracked Server Benchmark & Live Evidence Capture Engine
 (`benchmarks/engine/cracked_server_runner.py`).
 
-Executes deeply complex, game-mode-specific 8-stage autonomous workflows across 16 cracked servers AND
-captures structured in-game server confirmation evidence (`chat`, `actionbar`, `scoreboard`, `title`)
-with authentic Minecraft `§` color/style formatting for visual snapshot rendering:
-  Stage 1: Offline Cracked Handshake (`SawBot_<rand>`) & 4,096-Chunk LRU Streaming
-  Stage 2: Multi-Language Auth Prompt Detection (`/register`, `/login`) & Non-Vision Chat Math/Code CAPTCHA Solver
-  Stage 3: 46-Slot Inventory & Hotbar Selector Discovery (`inventory.list` + `inventory.find` + `inventory.use_item`)
-  Stage 4: Authoritative `state_id` Container GUI Inspection & Gamemode Selection (`gui.inspect` + `gui.click`)
-  Stage 5: Sub-Server Lobby Transfer, Stacked ArmorStand Hologram NPC Resolution (`npc.interact`) & `SVMEM-1` Landmark Save
-  Stage 6: Game-Mode Preparation Phase (Kit Equip / Chest Looting / Generator Farm / Quarry Excavation / Plot Claim / Pre-Buff)
-  Stage 7: Advanced Spatial & Tactical Execution (`SVPE-1` Void Speed-Bridging / 16m X-Ray Stash & Bed Scan / 64m Horizon Scan / 12-Jump Parkour / Redstone & Economy Loop)
-  Stage 8: High-Complexity Objective Completion & Server Evidence Capture (`inspect.evidence` — Chat, Action Bar & Sidebar Scoreboard Snapshots)
+CRITICAL INTEGRITY RULE:
+  - This runner NEVER fabricates, simulates, or recycles chat messages, scoreboard lines, or `PASS` outcomes.
+  - A stage or server is marked `PASS` ONLY when a live TCP session via `sawbyte-play live` connects to the
+    target remote server and receives genuine network packets over the wire (`inspect.evidence`, `inspect.chat`,
+    `inventory.list`, `gui.inspect`).
+  - When run in `--mode harness` (offline CI configuration check), or when `sawbyte-play` is not yet compiled,
+    or when the remote server is unreachable from the current network, the runner honestly reports:
+      status = "UNVERIFIED (NOT RUN - OFFLINE HARNESS)" | "NOT RUN (NATIVE BINARY NOT BUILT)" | "UNREACHABLE"
+      stages_passed = 0
+      kills_achieved = 0
+      captured_evidence.events = []
 """
 
 from __future__ import annotations
@@ -65,10 +65,9 @@ class ServerBenchmarkConfig:
     stage_7_title: str = "SVPE-1 Spatial Navigation & Tactical Mechanics"
     stage_7_detail: str = ""
     stage_7_commands: List[str] = field(default_factory=list)
-    stage_8_title: str = "Objective Completion & Verified Combat/Economy Outcome"
+    stage_8_title: str = "Objective Completion & Live Server Packet Evidence Capture"
     stage_8_detail: str = ""
     stage_8_commands: List[str] = field(default_factory=list)
-    # Authentic Minecraft server evidence patterns & captured §-formatted snapshots
     evidence_detection_patterns: List[str] = field(
         default_factory=lambda: [
             r"was (?:killed|slain|shot) by",
@@ -83,40 +82,9 @@ class ServerBenchmarkConfig:
             r"Ranked up to",
         ]
     )
-    evidence_chat_clipped_top: str = "§eNylaris §7was knocked into the void by §cwigry."
-    evidence_chat_setup_lines: List[str] = field(
-        default_factory=lambda: [
-            "§f+2 Iron",
-            "§aYou purchased §6End Stone",
-            "§cYou don't have enough Iron! Need 6 more!",
-        ]
-    )
-    evidence_chat_kill_lines: List[str] = field(
-        default_factory=lambda: [
-            "§cwigry §7was killed by §e{username}§7.",
-        ]
-    )
-    evidence_chat_clipped_bottom: str = "§6+25 Coins! §7(Kill Bonus)"
-    evidence_actionbar_text: str = "§a§lTARGET LOCKED §8• §f2.74m §7(§aDIRECT_FOV_LOS§7)"
-    evidence_scoreboard_header: str = "§fDiamond II in §a5:46"
-    evidence_scoreboard_teams: List[str] = field(
-        default_factory=lambda: [
-            "§cR §fRed: §a✓",
-            "§9B §fBlue: §a✓",
-            "§aG §fGreen: §a✓",
-            "§eY §fYellow: §a✓ §7YOU",
-        ]
-    )
-    evidence_scoreboard_stats: List[str] = field(
-        default_factory=lambda: [
-            "§fKills: §a1",
-            "§fFinal Kills: §a1",
-            "§fBeds Broken: §a1",
-        ]
-    )
     svpe1_rle3d_sample: str = "SVPE1:RLE3D|origin=0,64,0|dims=13x7x13|order=YZX|y0=169S|y1=@dup0|y2=84A1O84A|y3=169A|y4=@dup3|y5=@dup3|y6=@dup3"
     svpe1_hd25d_sample: str = "SVPE1:HD25D|center=0,64,0|r=10|grid=21x21|rows=21=/21=/10=1A10=/21="
-    xray_finding_summary: str = "Crosshair(16m): 0.0-2.1m:air -> 2.1-3.1m:end_stone -> 3.1-4.1m:red_bed [TARGET]"
+    xray_finding_summary: str = ""
     random_username_prefix: str = "SawBot"
     username_random_digits: int = 5
     password: str = "SawPass2026!"
@@ -301,9 +269,8 @@ def detect_server_evidence_events(
     actionbar_text: str,
     config: ServerBenchmarkConfig,
 ) -> List[Dict[str, Any]]:
-    """Matches incoming server messages against `config.evidence_detection_patterns` and logs verified evidence."""
+    """Matches incoming live server messages against `config.evidence_detection_patterns`."""
     captured: List[Dict[str, Any]] = []
-    base_tick = 140 + config.server_index * 12
     for idx, styled in enumerate(styled_messages):
         plain = strip_mc_codes(styled)
         matched_pat = None
@@ -312,35 +279,31 @@ def detect_server_evidence_events(
                 matched_pat = pat
                 break
         if matched_pat is None:
-            matched_pat = "server_chat_confirmation"
+            matched_pat = "live_server_chat_packet"
         captured.append({
-            "event_id": f"{config.server_id}_ev_{idx + 1:02d}",
+            "event_id": f"{config.server_id}_live_ev_{idx + 1:02d}",
             "source": "chat",
-            "tick": base_tick + idx * 38,
             "styled_text": styled,
             "plain_text": plain,
             "matched_pattern": matched_pat,
         })
     if actionbar_text:
         captured.append({
-            "event_id": f"{config.server_id}_ev_actionbar",
+            "event_id": f"{config.server_id}_live_ev_actionbar",
             "source": "actionbar",
-            "tick": base_tick + 190,
             "styled_text": actionbar_text,
             "plain_text": strip_mc_codes(actionbar_text),
-            "matched_pattern": "hud_actionbar_indicator",
+            "matched_pattern": "live_actionbar_packet",
         })
     for s_idx, sb_line in enumerate(scoreboard_lines):
         plain_sb = strip_mc_codes(sb_line)
-        if any(k in plain_sb.lower() for k in ("kill", "bed", "goal", "rank", "balance", "coins", "heart", "you", "phase")):
-            captured.append({
-                "event_id": f"{config.server_id}_ev_sb_{s_idx + 1:02d}",
-                "source": "scoreboard",
-                "tick": base_tick + 210 + s_idx * 2,
-                "styled_text": sb_line,
-                "plain_text": plain_sb,
-                "matched_pattern": "scoreboard_objective_update",
-            })
+        captured.append({
+            "event_id": f"{config.server_id}_live_ev_sb_{s_idx + 1:02d}",
+            "source": "scoreboard",
+            "styled_text": sb_line,
+            "plain_text": plain_sb,
+            "matched_pattern": "live_scoreboard_packet",
+        })
     return captured
 
 
@@ -367,24 +330,128 @@ def find_sawbyte_play_binary() -> Optional[Path]:
     return None
 
 
+def _build_stage_definitions(config: ServerBenchmarkConfig, username: str, stage_status: str) -> List[Dict[str, Any]]:
+    wp = config.lobby_search_waypoints[0]
+    reg_cmd = config.register_cmd_template.format(password=config.password)
+    matched_selector_kw = config.selector_hotbar_keywords[0]
+    target_gui_kw = (
+        config.gui_target_item_keywords[0] if config.gui_target_item_keywords else config.gamemode_name.lower()
+    )
+    sec_gui_kw = (
+        config.gui_secondary_item_keywords[0] if config.gui_secondary_item_keywords else "solo"
+    )
+    target_npc_kw = config.npc_target_keywords[0] if config.npc_target_keywords else "solo"
+
+    return [
+        {
+            "stage": 1,
+            "name": "Offline Cracked Handshake & 4,096-Chunk LRU Streaming",
+            "detail": (
+                f"Target endpoint `{config.host}:{config.port}` (protocol {config.protocol_version}, bot `{username}`); "
+                f"initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/{config.server_id}.svmem.json`)."
+            ),
+            "commands_executed": [
+                f"sawbyte-play live {config.host}:{config.port} --offline {username}",
+                "humanisation.perception on",
+                "memory.status",
+            ],
+            "status": stage_status,
+        },
+        {
+            "stage": 2,
+            "name": "Autonomous Auth Prompt & Non-Vision Chat Challenge Solver",
+            "detail": (
+                f"Monitors incoming `cb_system_chat` for `{config.auth_prompt_register_keywords[0]}` / `{config.auth_prompt_login_keywords[0]}`, "
+                f"solves arithmetic/code anti-bot challenges, and dispatches `{reg_cmd}`."
+            ),
+            "commands_executed": [
+                "inspect.chat",
+                f"chat.send {reg_cmd}",
+            ],
+            "status": stage_status,
+        },
+        {
+            "stage": 3,
+            "name": "46-Slot Inventory Scan & Hotbar Selector Activation",
+            "detail": (
+                f"Scans 46 inventory slots (`inventory.list`), matches `{matched_selector_kw}` in hotbar slot "
+                f"`{config.selector_fallback_slot}` (raw slot `{36 + config.selector_fallback_slot}`), and sends right-click `use_item` packet."
+            ),
+            "commands_executed": [
+                "inventory.list",
+                f'inventory.find "{matched_selector_kw}"',
+                f"player.hotbar {config.selector_fallback_slot}",
+                f'inventory.use_item "{matched_selector_kw}"',
+            ],
+            "status": stage_status,
+        },
+        {
+            "stage": 4,
+            "name": f"Container GUI Inspection & `{config.gamemode_name}` Slot Click",
+            "detail": (
+                f"Inspects open container screen (`{config.gui_title_keywords[0]}`), matches item & lore keyword "
+                f"`{target_gui_kw}` (sub-queue `{sec_gui_kw}`), and clicks slot with authoritative `state_id` tracking."
+            ),
+            "commands_executed": [
+                "gui.inspect",
+                f'gui.click "{target_gui_kw}"',
+                f'gui.click "{sec_gui_kw}"',
+            ],
+            "status": stage_status,
+        },
+        {
+            "stage": 5,
+            "name": "Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution & SVMEM-1 Landmark",
+            "detail": (
+                f"Resolves stacked ArmorStand/TextDisplay hologram `{target_npc_kw}` above queue NPC near `{wp}`, "
+                f"navigates via 3D A* (`task.navigate`), interacts (`npc.interact`), and saves landmark to `SVMEM-1`."
+            ),
+            "commands_executed": [
+                f'entity.find "{target_npc_kw}"',
+                f"task.navigate {wp[0]} {wp[1]} {wp[2]}",
+                f'npc.interact "{target_npc_kw}"',
+                f'memory.mark npc "{config.server_name} {config.gamemode_name} Queue NPC"',
+            ],
+            "status": stage_status,
+        },
+        {
+            "stage": 6,
+            "name": config.stage_6_title,
+            "detail": config.stage_6_detail,
+            "commands_executed": list(config.stage_6_commands),
+            "status": stage_status,
+        },
+        {
+            "stage": 7,
+            "name": config.stage_7_title,
+            "detail": config.stage_7_detail,
+            "commands_executed": list(config.stage_7_commands),
+            "status": stage_status,
+        },
+        {
+            "stage": 8,
+            "name": config.stage_8_title,
+            "detail": config.stage_8_detail,
+            "commands_executed": list(config.stage_8_commands) + ["inspect.evidence"],
+            "status": stage_status,
+        },
+    ]
+
+
 def run_simulated_or_live_benchmark(
     config: ServerBenchmarkConfig,
     mode: str = "auto",
     control_port: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Executes all 8 autonomous stages and captures structured in-game server evidence."""
+    """
+    Executes the 8-stage benchmark against a live server when `mode in ('live', 'auto')` and the server + binary
+    are available. NEVER fabricates chat logs, scoreboard lines, or fake PASS results when not connected to a live server.
+    """
     if control_port is None:
         control_port = 25600 + config.server_index
 
     username = generate_random_cracked_username(config.random_username_prefix, config.username_random_digits)
     t_start = time.time()
-
-    reachable, ping_ms = False, -1.0
-    if mode in ("live", "auto"):
-        reachable, ping_ms = probe_server_reachable(config.host, config.port, timeout=1.5)
-
-    native_bin = find_sawbyte_play_binary()
-    use_live = (mode == "live") or (mode == "auto" and reachable and native_bin is not None)
 
     all_gameplay_cmds = (
         list(config.stage_6_commands)
@@ -393,212 +460,42 @@ def run_simulated_or_live_benchmark(
         + list(config.gameplay_loop_commands)
     )
 
-    if use_live and native_bin is not None:
-        try:
-            return _execute_live_session(
-                config, username, native_bin, control_port, ping_ms, t_start, all_gameplay_cmds
-            )
-        except Exception:
-            pass
+    native_bin = find_sawbyte_play_binary()
+    reachable, ping_ms = False, -1.0
+    if mode in ("live", "auto"):
+        reachable, ping_ms = probe_server_reachable(config.host, config.port, timeout=1.5)
 
-    stages: List[Dict[str, Any]] = []
-    wp = config.lobby_search_waypoints[0]
+    if mode == "harness":
+        exec_mode = "offline_harness_config_check"
+        overall_status = "UNVERIFIED (NOT RUN - OFFLINE HARNESS)"
+        stage_status = "NOT RUN"
+        reason = (
+            f"Run with `--mode harness` (offline CI schema/config check). No live connection to "
+            f"`{config.host}:{config.port}` was made; no in-game evidence is claimed."
+        )
+    elif native_bin is None:
+        exec_mode = "not_run_missing_native_binary"
+        overall_status = "NOT RUN (NATIVE BINARY NOT BUILT)"
+        stage_status = "NOT RUN"
+        reason = (
+            "Native client binary `sawbyte-play` was not found in `native/target/release/sawbyte-play`. "
+            "Build it first via `cargo build --release --manifest-path native/Cargo.toml`."
+        )
+    elif not reachable:
+        exec_mode = "not_run_server_unreachable"
+        overall_status = "UNREACHABLE (SERVER OFFLINE OR NO NETWORK)"
+        stage_status = "NOT RUN"
+        reason = (
+            f"Could not establish TCP connection to `{config.host}:{config.port}` from the current environment."
+        )
+    else:
+        return _execute_live_session(
+            config, username, native_bin, control_port, ping_ms, t_start, all_gameplay_cmds
+        )
 
-    setup_lines = [line.replace("{username}", username) for line in config.evidence_chat_setup_lines]
-    kill_lines = [line.replace("{username}", username) for line in config.evidence_chat_kill_lines]
-    clipped_top = config.evidence_chat_clipped_top.replace("{username}", username)
-    clipped_bottom = config.evidence_chat_clipped_bottom.replace("{username}", username)
-    actionbar_line = config.evidence_actionbar_text.replace("{username}", username)
-    sb_header = config.evidence_scoreboard_header.replace("{username}", username)
-    sb_teams = [line.replace("{username}", username) for line in config.evidence_scoreboard_teams]
-    sb_stats = [line.replace("{username}", username) for line in config.evidence_scoreboard_stats]
+    stages = _build_stage_definitions(config, username, stage_status=stage_status)
+    elapsed_ms = round((time.time() - t_start) * 1000.0, 2)
 
-    evidence_events = detect_server_evidence_events(
-        setup_lines + kill_lines,
-        sb_teams + sb_stats,
-        actionbar_line,
-        config,
-    )
-
-    # Stage 1
-    stages.append({
-        "stage": 1,
-        "name": "Offline Cracked Handshake & 4,096-Chunk LRU Streaming",
-        "detail": (
-            f"Connected offline as `{username}` to `{config.host}:{config.port}` (protocol {config.protocol_version}); "
-            f"initialized 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/{config.server_id}.svmem.json`)."
-        ),
-        "commands_executed": [
-            f"sawbyte-play live {config.host}:{config.port} --offline {username}",
-            "humanisation.perception on",
-            "memory.status",
-        ],
-        "status": "PASS",
-    })
-
-    # Stage 2
-    sample_chat = [
-        f"[{config.server_name}] Welcome {username}! Please register using /register <password> <password>",
-        f"[{config.server_name}] AntiBot: What is 4 + 5? Type the answer in chat.",
-    ]
-    captcha_answer = solve_chat_captcha(sample_chat, config) or "9"
-    matched_auth_kw = next(
-        (kw for kw in config.auth_prompt_register_keywords if kw in sample_chat[0].lower()),
-        config.auth_prompt_register_keywords[0],
-    )
-    reg_cmd = config.register_cmd_template.format(password=config.password)
-    stages.append({
-        "stage": 2,
-        "name": "Autonomous Auth Prompt & Non-Vision Chat Challenge Solver",
-        "detail": (
-            f"Detected `{matched_auth_kw}` in chat stream, solved arithmetic/code challenge (`{captcha_answer}`), "
-            f"and dispatched `{reg_cmd}` with humanised typing cadence (`TypingPolicy`)."
-        ),
-        "commands_executed": [
-            "inspect.chat",
-            f"chat.send {captcha_answer}",
-            f"chat.send {reg_cmd}",
-        ],
-        "status": "PASS",
-    })
-
-    # Stage 3
-    matched_selector_kw = config.selector_hotbar_keywords[0]
-    stages.append({
-        "stage": 3,
-        "name": "46-Slot Inventory Scan & Hotbar Selector Activation",
-        "detail": (
-            f"Scanned all 46 inventory slots (`inventory.list`), matched `{matched_selector_kw}` in hotbar slot "
-            f"`{config.selector_fallback_slot}` (raw slot `{36 + config.selector_fallback_slot}`), selected slot, and sent right-click `use_item` packet."
-        ),
-        "commands_executed": [
-            "inventory.list",
-            f'inventory.find "{matched_selector_kw}"',
-            f"player.hotbar {config.selector_fallback_slot}",
-            f'inventory.use_item "{matched_selector_kw}"',
-        ],
-        "status": "PASS",
-    })
-
-    # Stage 4
-    target_gui_kw = (
-        config.gui_target_item_keywords[0] if config.gui_target_item_keywords else config.gamemode_name.lower()
-    )
-    sec_gui_kw = (
-        config.gui_secondary_item_keywords[0] if config.gui_secondary_item_keywords else "solo"
-    )
-    stages.append({
-        "stage": 4,
-        "name": f"Container GUI Inspection & `{config.gamemode_name}` Slot Click",
-        "detail": (
-            f"Verified open container screen (`{config.gui_title_keywords[0]}`), matched item & lore keyword "
-            f"`{target_gui_kw}` (sub-queue `{sec_gui_kw}`), and clicked slot with authoritative `state_id` tracking and `GuiTimingPolicy` cursor travel delay."
-        ),
-        "commands_executed": [
-            "gui.inspect",
-            f'gui.click "{target_gui_kw}"',
-            f'gui.click "{sec_gui_kw}"',
-        ],
-        "status": "PASS",
-    })
-
-    # Stage 5
-    target_npc_kw = config.npc_target_keywords[0] if config.npc_target_keywords else "solo"
-    stages.append({
-        "stage": 5,
-        "name": "Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution & SVMEM-1 Landmark",
-        "detail": (
-            f"Resolved stacked ArmorStand/TextDisplay hologram `{target_npc_kw}` above queue NPC at `{wp}`, "
-            f"navigated via 3D A* (`task.navigate`), interacted (`npc.interact`), and persisted landmark to `SVMEM-1`."
-        ),
-        "commands_executed": [
-            f'entity.find "{target_npc_kw}"',
-            f"task.navigate {wp[0]} {wp[1]} {wp[2]}",
-            f'npc.interact "{target_npc_kw}"',
-            f'memory.mark npc "{config.server_name} {config.gamemode_name} Queue NPC"',
-        ],
-        "status": "PASS",
-    })
-
-    # Stage 6
-    stages.append({
-        "stage": 6,
-        "name": config.stage_6_title,
-        "detail": config.stage_6_detail,
-        "commands_executed": list(config.stage_6_commands),
-        "evidence_lines": setup_lines,
-        "status": "PASS",
-    })
-
-    # Stage 7
-    stages.append({
-        "stage": 7,
-        "name": config.stage_7_title,
-        "detail": config.stage_7_detail,
-        "commands_executed": list(config.stage_7_commands),
-        "status": "PASS",
-    })
-
-    # Stage 8
-    stages.append({
-        "stage": 8,
-        "name": config.stage_8_title,
-        "detail": config.stage_8_detail,
-        "commands_executed": list(config.stage_8_commands) + ["inspect.evidence"],
-        "evidence_lines": kill_lines,
-        "status": "PASS",
-    })
-
-    sensory_lines = [
-        "================================================================================",
-        f'SAWBYTE v0.5.2 SENSORY VISION REPORT ("SEEING THE GAME WITH WORDS v2") | {config.server_name}',
-        "================================================================================",
-        "[1. SELF, POSE & VITALS]",
-        f"  Server     : {config.host}:{config.port} ({config.gamemode_name}) | Player: {username}",
-        f"  Position   : ({wp[0] + 0.5:.3f}, {wp[1]:.3f}, {wp[2] + 0.5:.3f}) | Yaw=18.50 deg, Pitch=4.20 deg | Facing: South (+Z)",
-        "  Vitals     : HP=18.5/20.0 (9.25 hearts) | Food=20/20 | Saturation=5.0 | Mode=Survival",
-        "  Reach Gate : Humanised=ON | EntityReach=3.00m (Vanilla Fair-Play) | BlockReach=4.50m",
-        "[2. CROSSHAIR & 360-DEGREE SPATIAL ENVIRONMENT]",
-        f"  Crosshair  : Pointing at Target in {config.gamemode_name} at 2.74m (Within 3.00m Vanilla Reach)",
-        "  Radar Ahead (0°)       : Clear walkable ground for 12m+",
-        "  Radar Left (-90°)      : 1-block jumpable step at 5m",
-        "  Radar Right (+90°)     : Clear walkable ground for 12m+",
-        "[3. INVENTORY & HOTBAR (46 SLOTS)]",
-        f"  Mission    : {config.complex_mission_title}",
-        f"  Stage 6    : {config.stage_6_detail}",
-        "[4. OPEN GUI CONTAINER SCREEN]",
-        f'  LAST GUI   : window_id=2 state_id=9 title="{config.gamemode_name}" (Verified & Closed)',
-        "[5. NEARBY ENTITIES, PLAYERS & HOLOGRAM NPCs (HUMANISED PERCEPTION GATE)]",
-        "  - Entity #204  | player_rival (type 128) | Dist: 2.74m (+3.2° Ahead) | Tier=DIRECT_FOV_LOS (Conf=1.00, WallBlocks=0, DirectAction=YES)",
-        "  - Entity #104  | player_npc   (type 128) | Dist: 14.20m (-85.0° East) | Tier=MEMORY_RECALLED (Conf=0.65, WallBlocks=2, DirectAction=NO)",
-        "[6. HUD TITLES, ACTIONBAR, SCOREBOARD & VERIFIED SERVER EVIDENCE]",
-        f"  ActionBar  : {strip_mc_codes(actionbar_line)}",
-        *[f"  Chat Evid  : {strip_mc_codes(l)}" for l in (setup_lines + kill_lines)],
-        *[f"  Scoreboard : {strip_mc_codes(l)}" for l in (sb_teams + sb_stats)],
-        "[7. FIRST-PERSON RETINAL ASCII VIEWPORT (24x11) & SVPE-1 DEPTH STREAM]",
-        "  +------------------------+",
-        "  |........................|",
-        "  |.......====##====.......|",
-        "  |.....===########===.....|",
-        "  |....---====@@====---....|",
-        "  |...........+@...........|",
-        "  |,,,,,,,,,,,,,,,,,,,,,,,,|",
-        "  +------------------------+",
-        "  SVPE1:DEPTH24x11|fov=72x44|max=24|rows=24./7.8d9./5.14c5./4.16c4./11.2b11./24a",
-        "[8. COMPACT SVPE-1 3D VOXEL VOLUME & 2.5D SURFACE ELEVATION ENCODING]",
-        f"  {config.svpe1_rle3d_sample}",
-        f"  {config.svpe1_hd25d_sample}",
-        "[9. COMPENSATORY HEADLESS PERCEPTION: X-RAY, 64M HORIZON & SMALL-MAP]",
-        f"  X-Ray      : {config.xray_finding_summary}",
-        f"  Stage 7    : {config.stage_7_detail}",
-        f"  Stage 8    : {config.stage_8_detail}",
-        "[10. PERSISTENT CROSS-RUN WORLD MEMORY (SVMEM-1)]",
-        f'  SVMEM-1 world="{config.server_id}" enabled=true runs=3 explored_chunks=19 landmarks=4',
-    ]
-    sensory_sample = "\n".join(sensory_lines)
-
-    elapsed_ms = round((time.time() - t_start) * 1000.0 + (18.4 + config.server_index * 1.3), 2)
-    passed = sum(1 for s in stages if s["status"] == "PASS")
     return {
         "server_index": config.server_index,
         "server_id": config.server_id,
@@ -609,16 +506,18 @@ def run_simulated_or_live_benchmark(
         "gamemode_name": config.gamemode_name,
         "gamemode_category": config.gamemode_category,
         "complex_mission_title": config.complex_mission_title,
-        "verified_outcome_badge": config.verified_outcome_badge,
-        "kills_achieved": config.kills_achieved,
+        "target_objective_badge": config.verified_outcome_badge,
+        "verified_outcome_badge": "NOT RUN (AWAITING LIVE EXECUTION)",
+        "kills_achieved": 0,
         "secondary_metric_label": config.secondary_metric_label,
-        "secondary_metric_value": config.secondary_metric_value,
+        "secondary_metric_value": "Not Run (Requires Live Server)",
         "protocol_version": config.protocol_version,
-        "execution_mode": "live" if use_live else "verified_state_machine",
+        "execution_mode": exec_mode,
+        "verification_note": reason,
         "username": username,
-        "stages_passed": passed,
+        "stages_passed": 0,
         "stages_total": len(stages),
-        "status": "PASS" if passed == len(stages) else "FAIL",
+        "status": overall_status,
         "duration_ms": elapsed_ms,
         "parameter_counts": {
             "auth_keywords": len(config.auth_prompt_register_keywords) + len(config.auth_prompt_login_keywords),
@@ -635,21 +534,23 @@ def run_simulated_or_live_benchmark(
             "evidence_patterns": len(config.evidence_detection_patterns),
         },
         "captured_evidence": {
-            "chat_clipped_top": clipped_top,
-            "chat_setup_lines": setup_lines,
-            "chat_kill_lines": kill_lines,
-            "chat_clipped_bottom": clipped_bottom,
-            "actionbar_text": actionbar_line,
-            "scoreboard_header": sb_header,
-            "scoreboard_teams": sb_teams,
-            "scoreboard_stats": sb_stats,
-            "events": evidence_events,
+            "chat_clipped_top": "",
+            "chat_setup_lines": [],
+            "chat_kill_lines": [],
+            "chat_clipped_bottom": "",
+            "actionbar_text": "",
+            "scoreboard_header": "",
+            "scoreboard_teams": [],
+            "scoreboard_stats": [],
+            "events": [],
         },
-        "xray_finding_summary": config.xray_finding_summary,
+        "xray_finding_summary": "",
         "svpe1_rle3d_sample": config.svpe1_rle3d_sample,
         "svpe1_hd25d_sample": config.svpe1_hd25d_sample,
         "stages": stages,
-        "sensory_vision_sample": sensory_sample,
+        "sensory_vision_sample": (
+            f"[UNVERIFIED / NOT RUN] {config.server_name} ({config.host}:{config.port}) — {reason}"
+        ),
     }
 
 
@@ -662,7 +563,7 @@ def _execute_live_session(
     t_start: float,
     all_gameplay_cmds: List[str],
 ) -> Dict[str, Any]:
-    """Runs `sawbyte-play live` against the actual remote cracked server and captures live `inspect.evidence`."""
+    """Runs `sawbyte-play live` against the actual remote cracked server and records ONLY genuine packets."""
     block_profile = ROOT / "block-profile.json"
     if not block_profile.exists():
         block_profile = ROOT / "run" / "reports" / "block-profile.json"
@@ -679,23 +580,55 @@ def _execute_live_session(
     env = os.environ.copy()
     env["SAWBYTE_PROTOCOL"] = str(config.protocol_version)
 
-    live_evidence_raw = None
+    stages = _build_stage_definitions(config, username, stage_status="NOT RUN")
+    live_chat_styled: List[str] = []
+    live_scoreboard: List[str] = []
+    live_actionbar: str = ""
+    sensory_sample: str = ""
+    error_reason: Optional[str] = None
+
     proc = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     try:
         client = SawbyteLiveTcpClient(f"127.0.0.1:{control_port}", timeout=5.0)
         client.connect(retry_timeout=8.0)
         with client:
-            time.sleep(0.8)
-            client.send_command("humanisation.perception on")
-            for gcmd in all_gameplay_cmds[:12]:
+            time.sleep(1.0)
+            # Stage 1: Handshake & Perception status
+            st1_resp = client.send_command("humanisation.perception on")
+            if st1_resp:
+                stages[0]["status"] = "PASS"
+
+            # Stage 2: Inspect Chat & Solve Auth/Captcha if prompted
+            chat_raw = client.send_command("inspect.chat")
+            chat_lines = [l.strip() for l in chat_raw.splitlines() if l.strip()]
+            ans = solve_chat_captcha(chat_lines, config)
+            if ans:
+                client.send_command(f"chat.send {ans}")
+            reg_cmd = config.register_cmd_template.format(password=config.password)
+            client.send_command(f"chat.send {reg_cmd}")
+            stages[1]["status"] = "PASS" if chat_raw is not None else "FAILED"
+
+            # Stage 3: Inventory scan
+            inv_raw = client.send_command("inventory.list")
+            if inv_raw:
+                stages[2]["status"] = "PASS"
+
+            # Stage 4..8: Dispatch configured commands and inspect genuine server state
+            for gcmd in all_gameplay_cmds:
                 try:
                     client.send_command(gcmd)
                 except Exception:
                     pass
-            try:
-                live_evidence_raw = client.send_command("inspect.evidence")
-            except Exception:
-                pass
+
+            ev_raw = client.send_command("inspect.evidence")
+            if ev_raw and ev_raw.strip().startswith("{"):
+                parsed = json.loads(ev_raw)
+                live_chat_styled = parsed.get("chat_styled_log") or []
+                live_scoreboard = parsed.get("scoreboard_lines") or []
+                live_actionbar = parsed.get("action_bar_styled") or ""
+            sensory_sample = client.send_command("inspect.sensory") or ""
+    except Exception as exc:
+        error_reason = f"Live session error: {exc}"
     finally:
         proc.terminate()
         try:
@@ -703,19 +636,71 @@ def _execute_live_session(
         except Exception:
             proc.kill()
 
-    res = run_simulated_or_live_benchmark(config, mode="harness", control_port=control_port)
-    res["execution_mode"] = "live"
-    res["ping_ms"] = ping_ms
-    if live_evidence_raw and live_evidence_raw.startswith("{"):
-        try:
-            parsed_ev = json.loads(live_evidence_raw)
-            if parsed_ev.get("chat_styled_log"):
-                res["captured_evidence"]["live_chat_styled_log"] = parsed_ev["chat_styled_log"]
-            if parsed_ev.get("scoreboard_lines"):
-                res["captured_evidence"]["live_scoreboard_lines"] = parsed_ev["scoreboard_lines"]
-        except Exception:
-            pass
-    return res
+    events = detect_server_evidence_events(live_chat_styled, live_scoreboard, live_actionbar, config)
+    passed_stages = sum(1 for s in stages if s["status"] == "PASS")
+    if error_reason:
+        overall_status = f"FAILED ({error_reason})"
+    elif passed_stages == len(stages) and len(events) > 0:
+        overall_status = "PASS"
+    else:
+        overall_status = f"PARTIAL ({passed_stages}/{len(stages)} STAGES, {len(events)} PACKETS)"
+
+    elapsed_ms = round((time.time() - t_start) * 1000.0, 2)
+    return {
+        "server_index": config.server_index,
+        "server_id": config.server_id,
+        "server_name": config.server_name,
+        "host": config.host,
+        "port": config.port,
+        "website_url": config.website_url,
+        "gamemode_name": config.gamemode_name,
+        "gamemode_category": config.gamemode_category,
+        "complex_mission_title": config.complex_mission_title,
+        "target_objective_badge": config.verified_outcome_badge,
+        "verified_outcome_badge": overall_status,
+        "kills_achieved": 0,
+        "secondary_metric_label": config.secondary_metric_label,
+        "secondary_metric_value": f"Ping {ping_ms}ms | {len(events)} Live Packets",
+        "protocol_version": config.protocol_version,
+        "execution_mode": "live",
+        "ping_ms": ping_ms,
+        "verification_note": error_reason or f"Connected live to {config.host}:{config.port} ({ping_ms} ms).",
+        "username": username,
+        "stages_passed": passed_stages,
+        "stages_total": len(stages),
+        "status": overall_status,
+        "duration_ms": elapsed_ms,
+        "parameter_counts": {
+            "auth_keywords": len(config.auth_prompt_register_keywords) + len(config.auth_prompt_login_keywords),
+            "captcha_patterns": len(config.chat_captcha_math_patterns) + len(config.chat_captcha_code_patterns),
+            "selector_keywords": len(config.selector_hotbar_keywords),
+            "gui_keywords": (
+                len(config.gui_title_keywords)
+                + len(config.gui_target_item_keywords)
+                + len(config.gui_secondary_item_keywords)
+            ),
+            "npc_keywords": len(config.npc_target_keywords),
+            "waypoints": len(config.lobby_search_waypoints),
+            "gameplay_commands": len(all_gameplay_cmds),
+            "evidence_patterns": len(config.evidence_detection_patterns),
+        },
+        "captured_evidence": {
+            "chat_clipped_top": live_chat_styled[0] if len(live_chat_styled) > 0 else "",
+            "chat_setup_lines": live_chat_styled[1:4] if len(live_chat_styled) > 1 else [],
+            "chat_kill_lines": live_chat_styled[4:7] if len(live_chat_styled) > 4 else [],
+            "chat_clipped_bottom": live_chat_styled[7] if len(live_chat_styled) > 7 else "",
+            "actionbar_text": live_actionbar,
+            "scoreboard_header": live_scoreboard[0] if len(live_scoreboard) > 0 else "",
+            "scoreboard_teams": live_scoreboard[1:5] if len(live_scoreboard) > 1 else [],
+            "scoreboard_stats": live_scoreboard[5:] if len(live_scoreboard) > 5 else [],
+            "events": events,
+        },
+        "xray_finding_summary": "",
+        "svpe1_rle3d_sample": config.svpe1_rle3d_sample,
+        "svpe1_hd25d_sample": config.svpe1_hd25d_sample,
+        "stages": stages,
+        "sensory_vision_sample": sensory_sample,
+    }
 
 
 def cli_main(config: ServerBenchmarkConfig) -> None:
@@ -730,7 +715,7 @@ def cli_main(config: ServerBenchmarkConfig) -> None:
     print(
         f"[Bench #{config.server_index:02d}] {config.server_name:<18} ({config.host}:{config.port}) | "
         f"Mode={config.gamemode_name:<22} | Stages={result['stages_passed']}/{result['stages_total']} | "
-        f"Outcome={result['verified_outcome_badge']} | Evidence={len(result['captured_evidence']['events'])} events | Status={result['status']}"
+        f"Status={result['status']} | LivePackets={len(result['captured_evidence']['events'])}"
     )
     if args.print_sensory and result.get("sensory_vision_sample"):
         print(result["sensory_vision_sample"])

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #10: Complex Gaming (mp.complex.lat:25565)
+Sawbyte v0.5.2 Autonomous 8-Stage Cracked Server Benchmark #10: Complex Gaming (mp.complex.lat:25565)
 Target Gamemode : Survival & Boss Shrine Raid (Survival Progression & Boss Raid)
 Complex Mission : Wilderness `/rtp`, Tree/Iron Tool Progression, 64m Shrine Scan, Boss Kill & Chest Loot
 Verified Outcome: 1 Boss Guardian Kill + Shrine Chest Looted
@@ -45,14 +45,6 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='Shrine Guardian Elimination (+1 Boss Kill), Loot Extraction & Cross-Run Save',
     stage_8_detail='Defeated the Shrine Guardian entity at `≤3.0m` humanised reach (`+1 Boss Kill`), opened Shrine Loot Chest (`gui.inspect`) to extract `2x diamond` + `rare_candy`, and persisted the explored chunk map to disk (`memory.save`).',
     stage_8_commands=['humanisation.perception on', 'attack.entity 215', 'interact.raycast', 'gui.inspect', 'gui.click "diamond"', 'gui.close', 'memory.save', 'inspect.sensory'],
-    evidence_chat_clipped_top='§a[Wilderness] §7Teleported to safe random location §f(X: 1,420, Z: -890)§7!',
-    evidence_chat_setup_lines=['§7[§bCraft§7] §fCrafted §eStone Pickaxe §7& §fFurnace §7(Smelted §f8x Iron Ingot§7)', '§7[§dHorizonScan§7] §fDetected §6Boss Shrine §7at §e28, 75, -26 §7(Sector NE)', '§7[§aSVMEM-1§7] §fRecorded persistent landmark: §eNE Boss Shrine'],
-    evidence_chat_kill_lines=['§c§lSHRINE GUARDIAN §7was slain by §e{username}§7!', '§6§lSHRINE LOOTED > §e{username} §7extracted §b2x Diamond §7& §d2x Rare Candy§7!'],
-    evidence_chat_clipped_bottom='§a[SVMEM-1] §7Saved 19 explored chunks to §fcomplex_pixelmon_survival.svmem.json',
-    evidence_actionbar_text='§6§lSHRINE CLEARED! §8• §b+2 Diamonds §8• §d+2 Rare Candy',
-    evidence_scoreboard_header='§b§lCOMPLEX §fSurvival',
-    evidence_scoreboard_teams=['§fBiome: §aPlains/Hills', '§fShrine: §aConquered', '§fMemory: §a19 Chunks'],
-    evidence_scoreboard_stats=['§fBoss Kills: §a1', '§fIron Smelted: §a8', '§fDiamonds: §b2'],
     xray_finding_summary='UnderFeet(16m): 0.0-2.0m:dirt -> 2.0-4.0m:stone -> 4.0-6.0m:iron_ore [8x IRON VEIN]',
     random_username_prefix='CmplxSaw',
     register_cmd_template='/register {password} {password}',
