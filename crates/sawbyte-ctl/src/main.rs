@@ -62,7 +62,7 @@ fn main() -> std::process::ExitCode {
             std::process::ExitCode::SUCCESS
         }
         Err(err) => {
-            eprintln!("{{\"error\": {:?}, \"kind\": \"connection\"}}", err);
+            eprintln!("{{"error": {:?}, "kind": "connection"}}", err);
             std::process::ExitCode::from(3)
         }
     }

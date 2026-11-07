@@ -211,12 +211,12 @@ pub fn crc32_bytes(data: &[u8]) -> u32 {
     !crc
 }
 
-/// Scans local file headers (`PK\x03\x04`) in a `.zip` or `.jar` archive without external dependencies.
+/// Scans local file headers (`PK`) in a `.zip` or `.jar` archive without external dependencies.
 pub fn list_zip_entry_names(archive_bytes: &[u8]) -> Vec<String> {
     let mut names = Vec::new();
     let mut i = 0usize;
     while i + 30 <= archive_bytes.len() {
-        if archive_bytes[i..i + 4] == [0x50, 0x4b, 0x03, 0x04] {
+        if &archive_bytes[i..i + 4] == b"PK" {
             let name_len = u16::from_le_bytes([archive_bytes[i + 26], archive_bytes[i + 27]]) as usize;
             let extra_len = u16::from_le_bytes([archive_bytes[i + 28], archive_bytes[i + 29]]) as usize;
             let comp_size = u32::from_le_bytes([

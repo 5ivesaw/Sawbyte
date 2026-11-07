@@ -21,7 +21,26 @@ pub fn compute_exporters_digest(profile_bytes: &[u8]) -> String {
 /// Exports the verified 26.3 block profile and registry manifest into `out_dir`.
 pub fn export_26_3_registries(out_dir: &Path, profile_source: Option<&Path>) -> Result<ExportedRegistrySummary, String> {
     fs::create_dir_all(out_dir).map_err(|e| e.to_string())?;
-    let default_profile: &[u8] = b"{\n  \"minecraft\": \"26.3\",\n  \"air\": [0],\n  \"solid\": [1],\n  \"bottom_slabs\": [],\n  \"top_slabs\": [],\n  \"stairs\": [],\n  \"fences\": [],\n  \"carpets\": [],\n  \"climbable\": [],\n  \"water\": [],\n  \"lava\": [],\n  \"cobwebs\": [],\n  \"soul_sand\": [],\n  \"ice\": [],\n  \"hardness\": {\n    \"1\": 1.5\n  }\n}\n";
+    let default_profile = b"{
+  "minecraft": "26.3",
+  "air": [0],
+  "solid": [1],
+  "bottom_slabs": [],
+  "top_slabs": [],
+  "stairs": [],
+  "fences": [],
+  "carpets": [],
+  "climbable": [],
+  "water": [],
+  "lava": [],
+  "cobwebs": [],
+  "soul_sand": [],
+  "ice": [],
+  "hardness": {
+    "1": 1.5
+  }
+}
+";
 
     let profile_bytes = match profile_source {
         Some(p) if p.exists() => fs::read(p).unwrap_or_else(|_| default_profile.to_vec()),
