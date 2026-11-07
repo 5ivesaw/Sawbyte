@@ -3,42 +3,42 @@
 > **Evidence Integrity Policy**:
 > Sawbyte never fabricates, simulates, or recycles chat messages, scoreboard lines, or `PASS` outcomes.
 > - **Offline CI (`--mode harness`)**: Validates the 16 benchmark configurations and SDK command schemas without connecting to external servers. All 16 servers are honestly marked **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** with `0/8` stages passed and `0` live packets recorded.
-> - **Live Server Execution (`--mode live`)**: Requires a compiled `native/target/release/sawbyte-play` binary and outbound TCP access to the target server (`0/16` servers verified in the latest `harness` run).
+> - **Live Server Execution (`--mode live`)**: Requires a compiled `native/target/release/sawbyte-play` binary and outbound TCP access to the target server (`0/16` servers verified in the latest `auto` run).
 
-## 1. 16-Server Cracked Multiplayer Benchmark Suite (Live Verified: 0/16 Servers · 0/128 Stages · Mode: `harness`)
+## 1. 16-Server Cracked Multiplayer Benchmark Suite (Live Verified: 0/16 Servers · 0/128 Stages · Mode: `auto`)
 
 | # | Server & Address | Flagship Gamemode | Configured 8-Stage Autonomous Mission | Target Objective | Live Stages | Verification Status |
 | :---: | :--- | :--- | :--- | :--- | :---: | :---: |
-| **01** | [PikaNetwork](https://pika-network.net) (`top.pika.host:25565`) | **Solo BedWars** | Forge Farm, Shop Buy, 18m Void Speed-Bridge, X-Ray Bed Break & Final Kill | `1 Bed Broken + 1 Final Kill` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **02** | [JartexNetwork](https://jartexnetwork.com) (`top.jartex.fun:25565`) | **KitPvP Free-For-All (FFA)** | Warrior Kit Equip, FFA Pit Drop, Rod-Combo W-Tap, Gapple Heal & 2-Kill Streak | `2 FFA Kills (2-Kill Streak)` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **03** | [Herobrine.org](https://herobrine.org) (`mc.herobrine.org:25565`) | **SkyWars Solo Insane** | 3-Chest Island X-Ray Loot, Auto-Armor Equip, Snowball Void Knockoff & Mid Feast Win | `2 Kills (1 Snowball Void Kill + 1 Mid Kill)` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **04** | [BlocksMC](https://blocksmc.com) (`blocksmc.com:25565`) | **The Bridge 1v1 Duel** | 1-Block Clay Bridge Sprint, 2-Block Side Wall Clutch, Bow+Sword Kill & 5-Goal Win | `5-2 Goal Victory + 3 Bridge Kills` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **05** | [Gamster](https://gamster.org) (`mc.gamster.org:25565`) | **Practice NoDebuff 1v1 Duel** | Speed II Pre-Buff, 8-Hit W-Tap Strafe Combo, +82° Splash-Pot Micro-Turn & Duel Win | `1v1 NoDebuff Flawless Win (7 Pots Left)` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **06** | [Mineland](https://mineland.net) (`play.mineland.net:25565`) | **Murder Mystery Classic** | LOS Suspect Tracking, 10-Gold Scavenger Loop, Detective Bow Craft & Murderer Kill | `Hero Win (Murderer Eliminated with Bow)` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **07** | [Twerion](https://twerion.net) (`play.twerion.net:25565`) | **German Soup FFA / KitPvP** | Instant Mushroom Stew Quick-Drop, 18-Tick Inventory Refill & 3-Kill FFA Streak | `3 FFA Kills (Soup Refill Verified)` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **08** | [ExtremeCraft](https://extremecraft.net) (`play.extremecraft.net:25565`) | **SkyBlock Economy & Auction Flip** | Cobble Generator Build, 64-Block Mine + 32-Wheat Harvest, `/shop` Sale & `/ah` Flip | `+$6,050 Net SkyBlock Profit` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **09** | [UniversoCraft](https://universocraft.com) (`mc.universocraft.com:25565`) | **ArenaPvP BuildUHC 1v1** | Cobble Wall Zoning, Offensive Lava-Tick Placement, Golden Head, Shield-Break & 1v1 Win | `BuildUHC 1v1 Victory (+1 Kill)` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **10** | [Complex Gaming](https://www.mc-complex.com) (`mp.complex.lat:25565`) | **Survival & Boss Shrine Raid** | Wilderness `/rtp`, Tree/Iron Tool Progression, 64m Shrine Scan, Boss Kill & Chest Loot | `1 Boss Guardian Kill + Shrine Chest Looted` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **11** | [AppleCraft](https://applecraft.org) (`play.applecraft.org:25565`) | **Economy Survival SMP** | 10x10 Golden-Shovel Claim, Fletcher Emerald Trading, Bow Purchase & 3-Mob Night Defense | `3 Hostile Mobs Slain + 4 Emeralds Traded` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **12** | [CraftersLand](https://www.craftersland.net) (`play.craftersland.net:25565`) | **Tech SkyBlock & Redstone Grinder** | Hopper+Furnace Auto-Smelter Build, 4-Tick Redstone Piston Extruder & 5-Mob Grinder Clear | `5 Grinder Mobs Slain + Auto-Smelter Active` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **13** | [OPBlocks](https://opblocks.com) (`fun.opblocks.com:25565`) | **OP Prison Mine, Enchant & Outpost PvP** | 128-Block Serpentine Quarry Sweep, `/sellall` ($250k), Pickaxe Token Enchant, `/rankup` & Outpost Kill | `Rankup A->B + 128 Blocks Mined + 1 Outpost Kill` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **14** | [SunRealms](https://sunrealms.net) (`play.sunrealms.net:25565`) | **3D Parkour & OneBlock Phase 2** | SVPE-1 Trajectory Planner, 12-Jump Zero-Fall Parkour Summit (14.8s) & 50-Cycle OneBlock | `12/12 Parkour Checkpoints + 1 Spider Kill` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **15** | [TalonMC](https://talonmc.net) (`play.talonmc.net:25565`) | **Lifesteal SMP Warzone PvP** | Downward X-Ray Stash Discovery, 4-Tick Off-Hand Totem Swap & +1 Permanent Heart Kill | `+1 Permanent Heart Kill (11 Hearts Max HP)` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
-| **16** | [LemonCloud](https://lemoncloud.org) (`play.lemoncloud.org:25565`) | **Factions TNT Raid & Base Breach** | Water-Wall Obsidian Bunker Claim, X-Ray Enemy Wall Scan, TNT Breach, Guard Kill & Spawner Loot | `1 Raid Guard Kill + 2 Blaze Spawners Looted` | `0/8` | **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** |
+| **01** | [PikaNetwork](https://pika-network.net) (`top.pika.host:25565`) | **Solo BedWars** | Forge Farm, Shop Buy, 18m Void Speed-Bridge, X-Ray Bed Break & Final Kill | `1 Bed Broken + 1 Final Kill` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25601 within 8.0s: [Errno 111] Connection refused)`** |
+| **02** | [JartexNetwork](https://jartexnetwork.com) (`top.jartex.fun:25565`) | **KitPvP Free-For-All (FFA)** | Warrior Kit Equip, FFA Pit Drop, Rod-Combo W-Tap, Gapple Heal & 2-Kill Streak | `2 FFA Kills (2-Kill Streak)` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25602 within 8.0s: [Errno 111] Connection refused)`** |
+| **03** | [Herobrine.org](https://herobrine.org) (`mc.herobrine.org:25565`) | **SkyWars Solo Insane** | 3-Chest Island X-Ray Loot, Auto-Armor Equip, Snowball Void Knockoff & Mid Feast Win | `2 Kills (1 Snowball Void Kill + 1 Mid Kill)` | `0/8` | **`UNREACHABLE (SERVER OFFLINE OR NO NETWORK)`** |
+| **04** | [BlocksMC](https://blocksmc.com) (`blocksmc.com:25565`) | **The Bridge 1v1 Duel** | 1-Block Clay Bridge Sprint, 2-Block Side Wall Clutch, Bow+Sword Kill & 5-Goal Win | `5-2 Goal Victory + 3 Bridge Kills` | `0/8` | **`UNREACHABLE (SERVER OFFLINE OR NO NETWORK)`** |
+| **05** | [Gamster](https://gamster.org) (`mc.gamster.org:25565`) | **Practice NoDebuff 1v1 Duel** | Speed II Pre-Buff, 8-Hit W-Tap Strafe Combo, +82° Splash-Pot Micro-Turn & Duel Win | `1v1 NoDebuff Flawless Win (7 Pots Left)` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25605 within 8.0s: [Errno 111] Connection refused)`** |
+| **06** | [Mineland](https://mineland.net) (`play.mineland.net:25565`) | **Murder Mystery Classic** | LOS Suspect Tracking, 10-Gold Scavenger Loop, Detective Bow Craft & Murderer Kill | `Hero Win (Murderer Eliminated with Bow)` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25606 within 8.0s: [Errno 111] Connection refused)`** |
+| **07** | [Twerion](https://twerion.net) (`play.twerion.net:25565`) | **German Soup FFA / KitPvP** | Instant Mushroom Stew Quick-Drop, 18-Tick Inventory Refill & 3-Kill FFA Streak | `3 FFA Kills (Soup Refill Verified)` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25607 within 8.0s: [Errno 111] Connection refused)`** |
+| **08** | [ExtremeCraft](https://extremecraft.net) (`play.extremecraft.net:25565`) | **SkyBlock Economy & Auction Flip** | Cobble Generator Build, 64-Block Mine + 32-Wheat Harvest, `/shop` Sale & `/ah` Flip | `+$6,050 Net SkyBlock Profit` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25608 within 8.0s: [Errno 111] Connection refused)`** |
+| **09** | [UniversoCraft](https://universocraft.com) (`mc.universocraft.com:25565`) | **ArenaPvP BuildUHC 1v1** | Cobble Wall Zoning, Offensive Lava-Tick Placement, Golden Head, Shield-Break & 1v1 Win | `BuildUHC 1v1 Victory (+1 Kill)` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25609 within 8.0s: [Errno 111] Connection refused)`** |
+| **10** | [Complex Gaming](https://www.mc-complex.com) (`mp.complex.lat:25565`) | **Survival & Boss Shrine Raid** | Wilderness `/rtp`, Tree/Iron Tool Progression, 64m Shrine Scan, Boss Kill & Chest Loot | `1 Boss Guardian Kill + Shrine Chest Looted` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25610 within 8.0s: [Errno 111] Connection refused)`** |
+| **11** | [AppleCraft](https://applecraft.org) (`play.applecraft.org:25565`) | **Economy Survival SMP** | 10x10 Golden-Shovel Claim, Fletcher Emerald Trading, Bow Purchase & 3-Mob Night Defense | `3 Hostile Mobs Slain + 4 Emeralds Traded` | `0/8` | **`UNREACHABLE (SERVER OFFLINE OR NO NETWORK)`** |
+| **12** | [CraftersLand](https://www.craftersland.net) (`play.craftersland.net:25565`) | **Tech SkyBlock & Redstone Grinder** | Hopper+Furnace Auto-Smelter Build, 4-Tick Redstone Piston Extruder & 5-Mob Grinder Clear | `5 Grinder Mobs Slain + Auto-Smelter Active` | `0/8` | **`UNREACHABLE (SERVER OFFLINE OR NO NETWORK)`** |
+| **13** | [OPBlocks](https://opblocks.com) (`fun.opblocks.com:25565`) | **OP Prison Mine, Enchant & Outpost PvP** | 128-Block Serpentine Quarry Sweep, `/sellall` ($250k), Pickaxe Token Enchant, `/rankup` & Outpost Kill | `Rankup A->B + 128 Blocks Mined + 1 Outpost Kill` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25613 within 8.0s: [Errno 111] Connection refused)`** |
+| **14** | [SunRealms](https://sunrealms.net) (`play.sunrealms.net:25565`) | **3D Parkour & OneBlock Phase 2** | SVPE-1 Trajectory Planner, 12-Jump Zero-Fall Parkour Summit (14.8s) & 50-Cycle OneBlock | `12/12 Parkour Checkpoints + 1 Spider Kill` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25614 within 8.0s: [Errno 111] Connection refused)`** |
+| **15** | [TalonMC](https://talonmc.net) (`play.talonmc.net:25565`) | **Lifesteal SMP Warzone PvP** | Downward X-Ray Stash Discovery, 4-Tick Off-Hand Totem Swap & +1 Permanent Heart Kill | `+1 Permanent Heart Kill (11 Hearts Max HP)` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25615 within 8.0s: [Errno 111] Connection refused)`** |
+| **16** | [LemonCloud](https://lemoncloud.org) (`play.lemoncloud.org:25565`) | **Factions TNT Raid & Base Breach** | Water-Wall Obsidian Bunker Claim, X-Ray Enemy Wall Scan, TNT Breach, Guard Kill & Spawner Loot | `1 Raid Guard Kill + 2 Blaze Spawners Looted` | `0/8` | **`FAILED (Live session error: Failed to connect to 127.0.0.1:25616 within 8.0s: [Errno 111] Connection refused)`** |
 
 ## 2. Detailed Stage-by-Stage Workflow Specifications & Live Evidence Logs
 
 <details>
-<summary><strong>#01 PikaNetwork (<code>top.pika.host:25565</code>) — Solo BedWars: Forge Farm, Shop Buy, 18m Void Speed-Bridge, X-Ray Bed Break & Final Kill [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#01 PikaNetwork (<code>top.pika.host:25565</code>) — Solo BedWars: Forge Farm, Shop Buy, 18m Void Speed-Bridge, X-Ray Bed Break & Final Kill [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25601 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [PikaNetwork](https://pika-network.net) (`top.pika.host:25565`, Protocol `766`, Bot `PikaSaw_YZDIG`)
 - **Flagship Gamemode & Category**: `Solo BedWars` (BedWars Minigame)
 - **Configured 8-Stage Mission**: Forge Farm, Shop Buy, 18m Void Speed-Bridge, X-Ray Bed Break & Final Kill
 - **Target Objective**: `1 Bed Broken + 1 Final Kill`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `top.pika.host:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25601 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25601 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `top.pika.host:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25601 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_01_pikanetwork_bedwars.py` (`97` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `top.pika.host:25565` (protocol 766, bot `PikaSaw_YZDIG`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/pikanetwork_bedwars.svmem.json`). *(Commands: `sawbyte-play live top.pika.host:25565 --offline PikaSaw_YZDIG`, `humanisation.perception on`, `memory.status`)*
@@ -53,16 +53,16 @@
 </details>
 
 <details>
-<summary><strong>#02 JartexNetwork (<code>top.jartex.fun:25565</code>) — KitPvP Free-For-All (FFA): Warrior Kit Equip, FFA Pit Drop, Rod-Combo W-Tap, Gapple Heal & 2-Kill Streak [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#02 JartexNetwork (<code>top.jartex.fun:25565</code>) — KitPvP Free-For-All (FFA): Warrior Kit Equip, FFA Pit Drop, Rod-Combo W-Tap, Gapple Heal & 2-Kill Streak [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25602 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [JartexNetwork](https://jartexnetwork.com) (`top.jartex.fun:25565`, Protocol `766`, Bot `JartexSaw_9YIY9`)
 - **Flagship Gamemode & Category**: `KitPvP Free-For-All (FFA)` (KitPvP / FFA Arena)
 - **Configured 8-Stage Mission**: Warrior Kit Equip, FFA Pit Drop, Rod-Combo W-Tap, Gapple Heal & 2-Kill Streak
 - **Target Objective**: `2 FFA Kills (2-Kill Streak)`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `top.jartex.fun:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25602 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25602 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `top.jartex.fun:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25602 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_02_jartexnetwork_bedwars.py` (`83` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `top.jartex.fun:25565` (protocol 766, bot `JartexSaw_9YIY9`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/jartexnetwork_bedwars.svmem.json`). *(Commands: `sawbyte-play live top.jartex.fun:25565 --offline JartexSaw_9YIY9`, `humanisation.perception on`, `memory.status`)*
@@ -77,16 +77,16 @@
 </details>
 
 <details>
-<summary><strong>#03 Herobrine.org (<code>mc.herobrine.org:25565</code>) — SkyWars Solo Insane: 3-Chest Island X-Ray Loot, Auto-Armor Equip, Snowball Void Knockoff & Mid Feast Win [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#03 Herobrine.org (<code>mc.herobrine.org:25565</code>) — SkyWars Solo Insane: 3-Chest Island X-Ray Loot, Auto-Armor Equip, Snowball Void Knockoff & Mid Feast Win [Status: <code>UNREACHABLE (SERVER OFFLINE OR NO NETWORK)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [Herobrine.org](https://herobrine.org) (`mc.herobrine.org:25565`, Protocol `766`, Bot `HeroSaw_JU8N1`)
 - **Flagship Gamemode & Category**: `SkyWars Solo Insane` (SkyWars Battle Royale)
 - **Configured 8-Stage Mission**: 3-Chest Island X-Ray Loot, Auto-Armor Equip, Snowball Void Knockoff & Mid Feast Win
 - **Target Objective**: `2 Kills (1 Snowball Void Kill + 1 Mid Kill)`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `mc.herobrine.org:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`UNREACHABLE (SERVER OFFLINE OR NO NETWORK)`** (`execution_mode=not_run_server_unreachable`)
+- **Verification Note**: Could not establish TCP connection to `mc.herobrine.org:25565` from the current environment.
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `mc.herobrine.org:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Could not establish TCP connection to `mc.herobrine.org:25565` from the current environment.*
 - **Benchmark Script**: `benchmarks/servers/bench_03_herobrine_skywars.py` (`81` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `mc.herobrine.org:25565` (protocol 766, bot `HeroSaw_JU8N1`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/herobrine_skywars.svmem.json`). *(Commands: `sawbyte-play live mc.herobrine.org:25565 --offline HeroSaw_JU8N1`, `humanisation.perception on`, `memory.status`)*
@@ -101,16 +101,16 @@
 </details>
 
 <details>
-<summary><strong>#04 BlocksMC (<code>blocksmc.com:25565</code>) — The Bridge 1v1 Duel: 1-Block Clay Bridge Sprint, 2-Block Side Wall Clutch, Bow+Sword Kill & 5-Goal Win [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#04 BlocksMC (<code>blocksmc.com:25565</code>) — The Bridge 1v1 Duel: 1-Block Clay Bridge Sprint, 2-Block Side Wall Clutch, Bow+Sword Kill & 5-Goal Win [Status: <code>UNREACHABLE (SERVER OFFLINE OR NO NETWORK)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [BlocksMC](https://blocksmc.com) (`blocksmc.com:25565`, Protocol `766`, Bot `BlocksSaw_PUBHT`)
 - **Flagship Gamemode & Category**: `The Bridge 1v1 Duel` (Bridge PvP / Goal Duel)
 - **Configured 8-Stage Mission**: 1-Block Clay Bridge Sprint, 2-Block Side Wall Clutch, Bow+Sword Kill & 5-Goal Win
 - **Target Objective**: `5-2 Goal Victory + 3 Bridge Kills`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `blocksmc.com:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`UNREACHABLE (SERVER OFFLINE OR NO NETWORK)`** (`execution_mode=not_run_server_unreachable`)
+- **Verification Note**: Could not establish TCP connection to `blocksmc.com:25565` from the current environment.
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `blocksmc.com:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Could not establish TCP connection to `blocksmc.com:25565` from the current environment.*
 - **Benchmark Script**: `benchmarks/servers/bench_04_blocksmc_bedwars.py` (`76` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `blocksmc.com:25565` (protocol 766, bot `BlocksSaw_PUBHT`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/blocksmc_bedwars.svmem.json`). *(Commands: `sawbyte-play live blocksmc.com:25565 --offline BlocksSaw_PUBHT`, `humanisation.perception on`, `memory.status`)*
@@ -125,16 +125,16 @@
 </details>
 
 <details>
-<summary><strong>#05 Gamster (<code>mc.gamster.org:25565</code>) — Practice NoDebuff 1v1 Duel: Speed II Pre-Buff, 8-Hit W-Tap Strafe Combo, +82° Splash-Pot Micro-Turn & Duel Win [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#05 Gamster (<code>mc.gamster.org:25565</code>) — Practice NoDebuff 1v1 Duel: Speed II Pre-Buff, 8-Hit W-Tap Strafe Combo, +82° Splash-Pot Micro-Turn & Duel Win [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25605 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [Gamster](https://gamster.org) (`mc.gamster.org:25565`, Protocol `766`, Bot `GamSaw_ISP91`)
 - **Flagship Gamemode & Category**: `Practice NoDebuff 1v1 Duel` (Competitive Practice PvP)
 - **Configured 8-Stage Mission**: Speed II Pre-Buff, 8-Hit W-Tap Strafe Combo, +82° Splash-Pot Micro-Turn & Duel Win
 - **Target Objective**: `1v1 NoDebuff Flawless Win (7 Pots Left)`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `mc.gamster.org:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25605 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25605 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `mc.gamster.org:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25605 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_05_gamster_practice_pvp.py` (`83` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `mc.gamster.org:25565` (protocol 766, bot `GamSaw_ISP91`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/gamster_practice_pvp.svmem.json`). *(Commands: `sawbyte-play live mc.gamster.org:25565 --offline GamSaw_ISP91`, `humanisation.perception on`, `memory.status`)*
@@ -149,16 +149,16 @@
 </details>
 
 <details>
-<summary><strong>#06 Mineland (<code>play.mineland.net:25565</code>) — Murder Mystery Classic: LOS Suspect Tracking, 10-Gold Scavenger Loop, Detective Bow Craft & Murderer Kill [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#06 Mineland (<code>play.mineland.net:25565</code>) — Murder Mystery Classic: LOS Suspect Tracking, 10-Gold Scavenger Loop, Detective Bow Craft & Murderer Kill [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25606 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [Mineland](https://mineland.net) (`play.mineland.net:25565`, Protocol `766`, Bot `MineSaw_D74K8`)
 - **Flagship Gamemode & Category**: `Murder Mystery Classic` (Social Deduction / Tactical Arcade)
 - **Configured 8-Stage Mission**: LOS Suspect Tracking, 10-Gold Scavenger Loop, Detective Bow Craft & Murderer Kill
 - **Target Objective**: `Hero Win (Murderer Eliminated with Bow)`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `play.mineland.net:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25606 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25606 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `play.mineland.net:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25606 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_06_mineland_minigames.py` (`72` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `play.mineland.net:25565` (protocol 766, bot `MineSaw_D74K8`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/mineland_minigames.svmem.json`). *(Commands: `sawbyte-play live play.mineland.net:25565 --offline MineSaw_D74K8`, `humanisation.perception on`, `memory.status`)*
@@ -173,16 +173,16 @@
 </details>
 
 <details>
-<summary><strong>#07 Twerion (<code>play.twerion.net:25565</code>) — German Soup FFA / KitPvP: Instant Mushroom Stew Quick-Drop, 18-Tick Inventory Refill & 3-Kill FFA Streak [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#07 Twerion (<code>play.twerion.net:25565</code>) — German Soup FFA / KitPvP: Instant Mushroom Stew Quick-Drop, 18-Tick Inventory Refill & 3-Kill FFA Streak [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25607 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [Twerion](https://twerion.net) (`play.twerion.net:25565`, Protocol `766`, Bot `TwerSaw_52XVT`)
 - **Flagship Gamemode & Category**: `German Soup FFA / KitPvP` (Soup PvP / Fast-Refill FFA)
 - **Configured 8-Stage Mission**: Instant Mushroom Stew Quick-Drop, 18-Tick Inventory Refill & 3-Kill FFA Streak
 - **Target Objective**: `3 FFA Kills (Soup Refill Verified)`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `play.twerion.net:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25607 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25607 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `play.twerion.net:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25607 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_07_twerion_kitpvp.py` (`79` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `play.twerion.net:25565` (protocol 766, bot `TwerSaw_52XVT`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/twerion_kitpvp.svmem.json`). *(Commands: `sawbyte-play live play.twerion.net:25565 --offline TwerSaw_52XVT`, `humanisation.perception on`, `memory.status`)*
@@ -197,16 +197,16 @@
 </details>
 
 <details>
-<summary><strong>#08 ExtremeCraft (<code>play.extremecraft.net:25565</code>) — SkyBlock Economy & Auction Flip: Cobble Generator Build, 64-Block Mine + 32-Wheat Harvest, `/shop` Sale & `/ah` Flip [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#08 ExtremeCraft (<code>play.extremecraft.net:25565</code>) — SkyBlock Economy & Auction Flip: Cobble Generator Build, 64-Block Mine + 32-Wheat Harvest, `/shop` Sale & `/ah` Flip [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25608 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [ExtremeCraft](https://extremecraft.net) (`play.extremecraft.net:25565`, Protocol `766`, Bot `ExtrmSaw_48XLS`)
 - **Flagship Gamemode & Category**: `SkyBlock Economy & Auction Flip` (SkyBlock Automation & Economy)
 - **Configured 8-Stage Mission**: Cobble Generator Build, 64-Block Mine + 32-Wheat Harvest, `/shop` Sale & `/ah` Flip
 - **Target Objective**: `+$6,050 Net SkyBlock Profit`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `play.extremecraft.net:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25608 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25608 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `play.extremecraft.net:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25608 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_08_extremecraft_skyblock.py` (`79` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `play.extremecraft.net:25565` (protocol 766, bot `ExtrmSaw_48XLS`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/extremecraft_skyblock.svmem.json`). *(Commands: `sawbyte-play live play.extremecraft.net:25565 --offline ExtrmSaw_48XLS`, `humanisation.perception on`, `memory.status`)*
@@ -221,16 +221,16 @@
 </details>
 
 <details>
-<summary><strong>#09 UniversoCraft (<code>mc.universocraft.com:25565</code>) — ArenaPvP BuildUHC 1v1: Cobble Wall Zoning, Offensive Lava-Tick Placement, Golden Head, Shield-Break & 1v1 Win [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#09 UniversoCraft (<code>mc.universocraft.com:25565</code>) — ArenaPvP BuildUHC 1v1: Cobble Wall Zoning, Offensive Lava-Tick Placement, Golden Head, Shield-Break & 1v1 Win [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25609 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [UniversoCraft](https://universocraft.com) (`mc.universocraft.com:25565`, Protocol `766`, Bot `UniSaw_5N47Q`)
 - **Flagship Gamemode & Category**: `ArenaPvP BuildUHC 1v1` (Spanish Tactical BuildUHC PvP)
 - **Configured 8-Stage Mission**: Cobble Wall Zoning, Offensive Lava-Tick Placement, Golden Head, Shield-Break & 1v1 Win
 - **Target Objective**: `BuildUHC 1v1 Victory (+1 Kill)`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `mc.universocraft.com:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25609 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25609 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `mc.universocraft.com:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25609 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_09_universocraft_skywars.py` (`84` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `mc.universocraft.com:25565` (protocol 766, bot `UniSaw_5N47Q`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/universocraft_skywars.svmem.json`). *(Commands: `sawbyte-play live mc.universocraft.com:25565 --offline UniSaw_5N47Q`, `humanisation.perception on`, `memory.status`)*
@@ -245,16 +245,16 @@
 </details>
 
 <details>
-<summary><strong>#10 Complex Gaming (<code>mp.complex.lat:25565</code>) — Survival & Boss Shrine Raid: Wilderness `/rtp`, Tree/Iron Tool Progression, 64m Shrine Scan, Boss Kill & Chest Loot [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#10 Complex Gaming (<code>mp.complex.lat:25565</code>) — Survival & Boss Shrine Raid: Wilderness `/rtp`, Tree/Iron Tool Progression, 64m Shrine Scan, Boss Kill & Chest Loot [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25610 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [Complex Gaming](https://www.mc-complex.com) (`mp.complex.lat:25565`, Protocol `766`, Bot `CmplxSaw_NN665`)
 - **Flagship Gamemode & Category**: `Survival & Boss Shrine Raid` (Survival Progression & Boss Raid)
 - **Configured 8-Stage Mission**: Wilderness `/rtp`, Tree/Iron Tool Progression, 64m Shrine Scan, Boss Kill & Chest Loot
 - **Target Objective**: `1 Boss Guardian Kill + Shrine Chest Looted`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `mp.complex.lat:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25610 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25610 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `mp.complex.lat:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25610 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_10_complex_pixelmon_survival.py` (`78` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `mp.complex.lat:25565` (protocol 766, bot `CmplxSaw_NN665`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/complex_pixelmon_survival.svmem.json`). *(Commands: `sawbyte-play live mp.complex.lat:25565 --offline CmplxSaw_NN665`, `humanisation.perception on`, `memory.status`)*
@@ -269,16 +269,16 @@
 </details>
 
 <details>
-<summary><strong>#11 AppleCraft (<code>play.applecraft.org:25565</code>) — Economy Survival SMP: 10x10 Golden-Shovel Claim, Fletcher Emerald Trading, Bow Purchase & 3-Mob Night Defense [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#11 AppleCraft (<code>play.applecraft.org:25565</code>) — Economy Survival SMP: 10x10 Golden-Shovel Claim, Fletcher Emerald Trading, Bow Purchase & 3-Mob Night Defense [Status: <code>UNREACHABLE (SERVER OFFLINE OR NO NETWORK)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [AppleCraft](https://applecraft.org) (`play.applecraft.org:25565`, Protocol `766`, Bot `AppleSaw_12ZWE`)
 - **Flagship Gamemode & Category**: `Economy Survival SMP` (Land-Claim SMP & Villager Trading)
 - **Configured 8-Stage Mission**: 10x10 Golden-Shovel Claim, Fletcher Emerald Trading, Bow Purchase & 3-Mob Night Defense
 - **Target Objective**: `3 Hostile Mobs Slain + 4 Emeralds Traded`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `play.applecraft.org:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`UNREACHABLE (SERVER OFFLINE OR NO NETWORK)`** (`execution_mode=not_run_server_unreachable`)
+- **Verification Note**: Could not establish TCP connection to `play.applecraft.org:25565` from the current environment.
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `play.applecraft.org:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Could not establish TCP connection to `play.applecraft.org:25565` from the current environment.*
 - **Benchmark Script**: `benchmarks/servers/bench_11_applecraft_survival_smp.py` (`80` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `play.applecraft.org:25565` (protocol 766, bot `AppleSaw_12ZWE`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/applecraft_survival_smp.svmem.json`). *(Commands: `sawbyte-play live play.applecraft.org:25565 --offline AppleSaw_12ZWE`, `humanisation.perception on`, `memory.status`)*
@@ -293,16 +293,16 @@
 </details>
 
 <details>
-<summary><strong>#12 CraftersLand (<code>play.craftersland.net:25565</code>) — Tech SkyBlock & Redstone Grinder: Hopper+Furnace Auto-Smelter Build, 4-Tick Redstone Piston Extruder & 5-Mob Grinder Clear [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#12 CraftersLand (<code>play.craftersland.net:25565</code>) — Tech SkyBlock & Redstone Grinder: Hopper+Furnace Auto-Smelter Build, 4-Tick Redstone Piston Extruder & 5-Mob Grinder Clear [Status: <code>UNREACHABLE (SERVER OFFLINE OR NO NETWORK)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [CraftersLand](https://www.craftersland.net) (`play.craftersland.net:25565`, Protocol `766`, Bot `CraftSaw_TAZOH`)
 - **Flagship Gamemode & Category**: `Tech SkyBlock & Redstone Grinder` (Redstone Automation & Mob Grinder)
 - **Configured 8-Stage Mission**: Hopper+Furnace Auto-Smelter Build, 4-Tick Redstone Piston Extruder & 5-Mob Grinder Clear
 - **Target Objective**: `5 Grinder Mobs Slain + Auto-Smelter Active`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `play.craftersland.net:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`UNREACHABLE (SERVER OFFLINE OR NO NETWORK)`** (`execution_mode=not_run_server_unreachable`)
+- **Verification Note**: Could not establish TCP connection to `play.craftersland.net:25565` from the current environment.
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `play.craftersland.net:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Could not establish TCP connection to `play.craftersland.net:25565` from the current environment.*
 - **Benchmark Script**: `benchmarks/servers/bench_12_craftersland_skyblock.py` (`84` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `play.craftersland.net:25565` (protocol 766, bot `CraftSaw_TAZOH`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/craftersland_skyblock.svmem.json`). *(Commands: `sawbyte-play live play.craftersland.net:25565 --offline CraftSaw_TAZOH`, `humanisation.perception on`, `memory.status`)*
@@ -317,16 +317,16 @@
 </details>
 
 <details>
-<summary><strong>#13 OPBlocks (<code>fun.opblocks.com:25565</code>) — OP Prison Mine, Enchant & Outpost PvP: 128-Block Serpentine Quarry Sweep, `/sellall` ($250k), Pickaxe Token Enchant, `/rankup` & Outpost Kill [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#13 OPBlocks (<code>fun.opblocks.com:25565</code>) — OP Prison Mine, Enchant & Outpost PvP: 128-Block Serpentine Quarry Sweep, `/sellall` ($250k), Pickaxe Token Enchant, `/rankup` & Outpost Kill [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25613 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [OPBlocks](https://opblocks.com) (`fun.opblocks.com:25565`, Protocol `766`, Bot `OPBSaw_L6AGS`)
 - **Flagship Gamemode & Category**: `OP Prison Mine, Enchant & Outpost PvP` (OP Prison Quarry & PvP Outpost)
 - **Configured 8-Stage Mission**: 128-Block Serpentine Quarry Sweep, `/sellall` ($250k), Pickaxe Token Enchant, `/rankup` & Outpost Kill
 - **Target Objective**: `Rankup A->B + 128 Blocks Mined + 1 Outpost Kill`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `fun.opblocks.com:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25613 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25613 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `fun.opblocks.com:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25613 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_13_opblocks_prison.py` (`77` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `fun.opblocks.com:25565` (protocol 766, bot `OPBSaw_L6AGS`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/opblocks_prison.svmem.json`). *(Commands: `sawbyte-play live fun.opblocks.com:25565 --offline OPBSaw_L6AGS`, `humanisation.perception on`, `memory.status`)*
@@ -341,16 +341,16 @@
 </details>
 
 <details>
-<summary><strong>#14 SunRealms (<code>play.sunrealms.net:25565</code>) — 3D Parkour & OneBlock Phase 2: SVPE-1 Trajectory Planner, 12-Jump Zero-Fall Parkour Summit (14.8s) & 50-Cycle OneBlock [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#14 SunRealms (<code>play.sunrealms.net:25565</code>) — 3D Parkour & OneBlock Phase 2: SVPE-1 Trajectory Planner, 12-Jump Zero-Fall Parkour Summit (14.8s) & 50-Cycle OneBlock [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25614 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [SunRealms](https://sunrealms.net) (`play.sunrealms.net:25565`, Protocol `766`, Bot `SunSaw_FFNC1`)
 - **Flagship Gamemode & Category**: `3D Parkour & OneBlock Phase 2` (Precision Parkour & OneBlock)
 - **Configured 8-Stage Mission**: SVPE-1 Trajectory Planner, 12-Jump Zero-Fall Parkour Summit (14.8s) & 50-Cycle OneBlock
 - **Target Objective**: `12/12 Parkour Checkpoints + 1 Spider Kill`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `play.sunrealms.net:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25614 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25614 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `play.sunrealms.net:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25614 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_14_sunrealms_skyblock.py` (`74` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `play.sunrealms.net:25565` (protocol 766, bot `SunSaw_FFNC1`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/sunrealms_skyblock.svmem.json`). *(Commands: `sawbyte-play live play.sunrealms.net:25565 --offline SunSaw_FFNC1`, `humanisation.perception on`, `memory.status`)*
@@ -365,16 +365,16 @@
 </details>
 
 <details>
-<summary><strong>#15 TalonMC (<code>play.talonmc.net:25565</code>) — Lifesteal SMP Warzone PvP: Downward X-Ray Stash Discovery, 4-Tick Off-Hand Totem Swap & +1 Permanent Heart Kill [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#15 TalonMC (<code>play.talonmc.net:25565</code>) — Lifesteal SMP Warzone PvP: Downward X-Ray Stash Discovery, 4-Tick Off-Hand Totem Swap & +1 Permanent Heart Kill [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25615 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [TalonMC](https://talonmc.net) (`play.talonmc.net:25565`, Protocol `766`, Bot `TalonSaw_UB6SP`)
 - **Flagship Gamemode & Category**: `Lifesteal SMP Warzone PvP` (Hardcore Lifesteal PvP & Stash Hunt)
 - **Configured 8-Stage Mission**: Downward X-Ray Stash Discovery, 4-Tick Off-Hand Totem Swap & +1 Permanent Heart Kill
 - **Target Objective**: `+1 Permanent Heart Kill (11 Hearts Max HP)`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `play.talonmc.net:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25615 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25615 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `play.talonmc.net:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25615 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_15_talonmc_lifesteal.py` (`79` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `play.talonmc.net:25565` (protocol 766, bot `TalonSaw_UB6SP`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/talonmc_lifesteal.svmem.json`). *(Commands: `sawbyte-play live play.talonmc.net:25565 --offline TalonSaw_UB6SP`, `humanisation.perception on`, `memory.status`)*
@@ -389,16 +389,16 @@
 </details>
 
 <details>
-<summary><strong>#16 LemonCloud (<code>play.lemoncloud.org:25565</code>) — Factions TNT Raid & Base Breach: Water-Wall Obsidian Bunker Claim, X-Ray Enemy Wall Scan, TNT Breach, Guard Kill & Spawner Loot [Status: <code>UNVERIFIED (NOT RUN - OFFLINE HARNESS)</code> · 0/8 Live Stages]</strong></summary>
+<summary><strong>#16 LemonCloud (<code>play.lemoncloud.org:25565</code>) — Factions TNT Raid & Base Breach: Water-Wall Obsidian Bunker Claim, X-Ray Enemy Wall Scan, TNT Breach, Guard Kill & Spawner Loot [Status: <code>FAILED (Live session error: Failed to connect to 127.0.0.1:25616 within 8.0s: [Errno 111] Connection refused)</code> · 0/8 Live Stages]</strong></summary>
 
 - **Server & Endpoint**: [LemonCloud](https://lemoncloud.org) (`play.lemoncloud.org:25565`, Protocol `766`, Bot `LemonSaw_JY3HM`)
 - **Flagship Gamemode & Category**: `Factions TNT Raid & Base Breach` (Factions Warfare & TNT Raiding)
 - **Configured 8-Stage Mission**: Water-Wall Obsidian Bunker Claim, X-Ray Enemy Wall Scan, TNT Breach, Guard Kill & Spawner Loot
 - **Target Objective**: `1 Raid Guard Kill + 2 Blaze Spawners Looted`
-- **Execution Mode & Verification Status**: **`UNVERIFIED (NOT RUN - OFFLINE HARNESS)`** (`execution_mode=offline_harness_config_check`)
-- **Verification Note**: Run with `--mode harness` (offline CI schema/config check). No live connection to `play.lemoncloud.org:25565` was made; no in-game evidence is claimed.
+- **Execution Mode & Verification Status**: **`FAILED (Live session error: Failed to connect to 127.0.0.1:25616 within 8.0s: [Errno 111] Connection refused)`** (`execution_mode=live`)
+- **Verification Note**: Live session error: Failed to connect to 127.0.0.1:25616 within 8.0s: [Errno 111] Connection refused
 - **Live Server Packet Evidence (`inspect.evidence`)**:
-  > `[NO LIVE PACKETS RECORDED]` *Run with `--mode harness` (offline CI schema/config check). No live connection to `play.lemoncloud.org:25565` was made; no in-game evidence is claimed.*
+  > `[NO LIVE PACKETS RECORDED]` *Live session error: Failed to connect to 127.0.0.1:25616 within 8.0s: [Errno 111] Connection refused*
 - **Benchmark Script**: `benchmarks/servers/bench_16_lemoncloud_factions.py` (`83` configured parameters)
 - **8-Stage Workflow Specification & Status**:
   - **Stage 1 — Offline Cracked Handshake & 4,096-Chunk LRU Streaming** (`NOT RUN`): Target endpoint `play.lemoncloud.org:25565` (protocol 766, bot `LemonSaw_JY3HM`); initializes 4,096-chunk LRU cache and `SVMEM-1` world memory (`~/.sawbyte/memory/lemoncloud_factions.svmem.json`). *(Commands: `sawbyte-play live play.lemoncloud.org:25565 --offline LemonSaw_JY3HM`, `humanisation.perception on`, `memory.status`)*
