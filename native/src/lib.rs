@@ -1498,8 +1498,15 @@ impl Session {
             .map(|e| (e.entity_id, e.aabb()))
             .collect();
         let e_hit = raycast::raycast_entity(&self.player, &self.world, &candidates);
-        match (&b_hit, &e_hit) {
-            (_, Some(eh)) if b_hit.as_ref().map_or(true, |bh| eh.distance < bh.distance) => {
+        // Entity wins only when it is closer than the block (or there is no block). The decision is
+        // made up front so the final match has no guarded arms and is exhaustive by construction.
+        let entity_target = match (&b_hit, &e_hit) {
+            (None, Some(eh)) => Some(eh),
+            (Some(bh), Some(eh)) if eh.distance < bh.distance => Some(eh),
+            _ => None,
+        };
+        match (entity_target, &b_hit) {
+            (Some(eh), _) => {
                 let holo = self.state_table.entity_hologram_lines(eh.entity_id);
                 let kind = self
                     .state_table
@@ -1512,7 +1519,7 @@ impl Session {
                     eh.entity_id, eh.distance, holo
                 ));
             }
-            (Some(bh), _) => {
+            (None, Some(bh)) => {
                 let bstate = self
                     .world
                     .block_state(bh.block_pos[0], bh.block_pos[1], bh.block_pos[2])
