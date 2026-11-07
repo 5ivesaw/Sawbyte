@@ -60,8 +60,17 @@ CONFIG = ServerBenchmarkConfig(
 )
 
 
-def run_benchmark(mode: str = "auto") -> dict:
-    return run_simulated_or_live_benchmark(CONFIG, mode=mode)
+def run_benchmark(
+    mode: str = "auto",
+    native_bin_path: Path | None = None,
+    custom_username: str | None = None,
+) -> dict:
+    return run_simulated_or_live_benchmark(
+        CONFIG,
+        mode=mode,
+        native_bin_path=native_bin_path,
+        custom_username=custom_username,
+    )
 
 
 if __name__ == "__main__":
