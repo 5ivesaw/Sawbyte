@@ -217,7 +217,7 @@ jobs:
           BRIDGE_MAIN=$(find release-artifacts/sawbyte-bridge-26.3 -type f -name "sawbyte-bridge-*.jar" | grep -vE '(-dev|-sources)\.jar' | head -n 1 || true)
           if [ -n "$BRIDGE_MAIN" ] && [ -f "$BRIDGE_MAIN" ]; then
             cp "$BRIDGE_MAIN" release-assets/
-            cp "$BRIDGE_MAIN" release-assets/sawbyte-bridge-0.5.1.jar 2>/dev/null || true
+            cp "$BRIDGE_MAIN" release-assets/sawbyte-bridge-0.5.2.jar 2>/dev/null || true
             cp "$BRIDGE_MAIN" release-assets/sawbyte-bridge-0.3.4.jar 2>/dev/null || true
             cp "$BRIDGE_MAIN" release-assets/sawbyte-bridge-26.3.jar
           fi
@@ -252,7 +252,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           if [[ "$TAG" != v* ]]; then
-            TAG="v0.5.1"
+            TAG="v0.5.2"
           fi
           echo "Publishing player assets for $TAG"
           if gh release view "$TAG" >/dev/null 2>&1; then

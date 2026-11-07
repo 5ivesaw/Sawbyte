@@ -4,19 +4,6 @@ Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #13: OPBlocks (fun.op
 Target Gamemode : OP Prison Mine, Enchant & Outpost PvP (OP Prison Quarry & PvP Outpost)
 Complex Mission : 128-Block Serpentine Quarry Sweep, `/sellall` ($250k), Pickaxe Token Enchant, `/rankup` & Outpost Kill
 Verified Outcome: Rankup A->B + 128 Blocks Mined + 1 Outpost Kill
-
-8-Stage Autonomous Workflow:
-  Stage 1: Offline Cracked Handshake (`OPBSaw_<rand>`) & 4,096-Chunk LRU Cache Streaming
-  Stage 2: Multi-Language Auth Prompt Detection & Non-Vision Chat Math/Code CAPTCHA Solver
-  Stage 3: 46-Slot Inventory Scan & Hotbar Selector Activation (`inventory.list` + `inventory.use_item`)
-  Stage 4: Authoritative `state_id` Container GUI Inspection & `OP Prison Mine, Enchant & Outpost PvP` Slot Click
-  Stage 5: Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution (`npc.interact`) & `SVMEM-1` Landmark Save
-  Stage 6: 128-Block Serpentine Quarry Excavation (`SVPE1:RLE3D` Volume Scan)
-           -> Warped to `/mine`, encoded the `16x8x16` Mine A ore volume via `SVPE1:RLE3D` (`inspect.svpe`), and executed a serpentine row-by-row `mine.block` sweep with `Omni-Pickaxe` (`Haste III`), excavating 128 blocks in 6.4s.
-  Stage 7: `/sellall` (+$250,000), Token Enchant GUI (`Efficiency +5`) & `/rankup` to Mine B
-           -> Dispatched `/sellall` (`+$250,000`), right-clicked `Omni-Pickaxe` to open the Token Enchant GUI (`gui.inspect`), clicked `Efficiency (+5)` and `Fortune (+3)`, and ran `/rankup` (`Rank A -> Rank B`).
-  Stage 8: PvP Mine Outpost Contest, Rival Prisoner Elimination (+1 Kill) & Legendary Crate Key
-           -> Warped to `/warp pvp-mine`, contested the Outpost capture point against a rival prisoner within `3.0m` humanised reach (`+1 Outpost Kill`), and claimed the dropped `Legendary Crate Key`.
 """
 
 from __future__ import annotations
@@ -58,6 +45,14 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='PvP Mine Outpost Contest, Rival Prisoner Elimination (+1 Kill) & Legendary Crate Key',
     stage_8_detail='Warped to `/warp pvp-mine`, contested the Outpost capture point against a rival prisoner within `3.0m` humanised reach (`+1 Outpost Kill`), and claimed the dropped `Legendary Crate Key`.',
     stage_8_commands=['chat.send /warp pvp-mine', 'humanisation.perception on', 'player.hotbar 1', 'attack.entity 219', 'inspect.sensory'],
+    evidence_chat_clipped_top='§d§lOPBLOCKS > §7Warped to §fMine A §7(Omni-Pickaxe Haste III active).',
+    evidence_chat_setup_lines=['§a§lSELLALL > §7Sold §f128x Mine A Blocks §7for §a+$250,000§7!', '§b§lENCHANT > §7Upgraded §eEfficiency (+5) §7& §dFortune (+3) §7with Tokens!', '§6§lRANKUP > §e{username} §7ranked up from §fRank A §7to §b§lRank B§7!'],
+    evidence_chat_kill_lines=['§cRivalPrisoner §7was slain by §e{username} §7at §cPvP Outpost§7!', '§6§lOUTPOST CAPTURED > §e{username} §7claimed §d1x Legendary Crate Key§7!'],
+    evidence_chat_clipped_bottom='§a+1,250 Tokens §7| §bMine B Unlocked',
+    evidence_actionbar_text='§bRank: §lB §8• §a+$250,000 §8• §d+1 Legendary Key',
+    evidence_scoreboard_header='§d§lOPBLOCKS §fPrison',
+    evidence_scoreboard_teams=['§fRank: §b[Rank B]', '§fPickaxe: §eEff XV / Fort VIII', '§fOutpost: §aCaptured ✓'],
+    evidence_scoreboard_stats=['§fMined: §a128 Blocks', '§fBalance: §a$250,000', '§fPvP Kills: §a1'],
     xray_finding_summary='UnderFeet(16m): 0.0-8.0m:emerald_ore+diamond_block(Mine B Rich Vein) -> 8.0-9.0m:bedrock',
     random_username_prefix='OPBSaw',
     register_cmd_template='/register {password} {password}',
@@ -68,7 +63,7 @@ CONFIG = ServerBenchmarkConfig(
     gui_secondary_item_keywords=['candy', 'prison', 'mine', 'join'],
     fallback_join_commands=['/prison', '/mine', '/server prison'],
     npc_target_keywords=['prison', 'mine', 'outpost', 'crates', 'npc'],
-    lobby_search_waypoints=[(0, 64, 14), (6, 64, 14), (-6, 64, 14)],
+    lobby_search_waypoints=[tuple(x) for x in [[0, 64, 14], [6, 64, 14], [-6, 64, 14]]],
     post_join_chat_message='128 blocks mined, /sellall +$250k, Rank B unlocked, and Outpost key claimed!',
 )
 

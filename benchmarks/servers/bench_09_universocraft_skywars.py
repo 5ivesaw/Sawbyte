@@ -4,19 +4,6 @@ Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #09: UniversoCraft (m
 Target Gamemode : ArenaPvP BuildUHC 1v1 (Spanish Tactical BuildUHC PvP)
 Complex Mission : Cobble Wall Zoning, Offensive Lava-Tick Placement, Golden Head, Shield-Break & 1v1 Win
 Verified Outcome: BuildUHC 1v1 Victory (+1 Kill)
-
-8-Stage Autonomous Workflow:
-  Stage 1: Offline Cracked Handshake (`UniSaw_<rand>`) & 4,096-Chunk LRU Cache Streaming
-  Stage 2: Multi-Language Auth Prompt Detection & Non-Vision Chat Math/Code CAPTCHA Solver
-  Stage 3: 46-Slot Inventory Scan & Hotbar Selector Activation (`inventory.list` + `inventory.use_item`)
-  Stage 4: Authoritative `state_id` Container GUI Inspection & `ArenaPvP BuildUHC 1v1` Slot Click
-  Stage 5: Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution (`npc.interact`) & `SVMEM-1` Landmark Save
-  Stage 6: 6-Block Cobblestone Barrier & Offensive Lava-Bucket Tick Placement (`place.block`)
-           -> Built a 6-block cobblestone arrow shield during bow trade, then placed `lava_bucket` at opponent's approach coordinate (`3.7m`) and retrieved lava 10 ticks later to inflict fire damage without creating messy obsidian.
-  Stage 7: Golden Head Instant Consumption & Fishing-Rod Critical Hit Chain
-           -> Switched to `Golden Head` on hotbar slot 2 (`use.item`) for Instant Speed + Regeneration III, landed a fishing-rod hook (`slot 1`), and chained 5 jump-critical hits (`jump` + `attack.entity`) with `diamond_sword`.
-  Stage 8: Water-Bucket Self-Extinguish, Axe Shield-Disable & Final Sword Elimination
-           -> Placed and collected `water_bucket` at feet (`slot 5`) to clear fire ticks (`SVPE1:DELTA`), swapped to `diamond_axe` to disable opponent's raised shield, and finished with `diamond_sword` (`Ganador BuildUHC 1v1`).
 """
 
 from __future__ import annotations
@@ -58,6 +45,14 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='Water-Bucket Self-Extinguish, Axe Shield-Disable & Final Sword Elimination',
     stage_8_detail="Placed and collected `water_bucket` at feet (`slot 5`) to clear fire ticks (`SVPE1:DELTA`), swapped to `diamond_axe` to disable opponent's raised shield, and finished with `diamond_sword` (`Ganador BuildUHC 1v1`).",
     stage_8_commands=['player.hotbar 5', 'player.look 0.0 88.0', 'use.item', 'wait.ticks 4', 'use.item', 'player.look 0.0 3.0', 'player.hotbar 6', 'attack.entity 203', 'player.hotbar 0', 'attack.entity 203', 'inspect.sensory'],
+    evidence_chat_clipped_top='§6[ArenaPvP] §7Duelo §eBuildUHC 1v1 §7iniciado contra §cMatadorPvP§7.',
+    evidence_chat_setup_lines=['§eConsumiste una §6§lGolden Head §7(§dRegeneración III §7+ §bVelocidad§7)', '§c¡Rompiste el escudo de §fMatadorPvP §ccon tu Hacha de Diamante!', '§bAgua recogida §7(Estado de fuego extinguido en §a4 ticks§7)'],
+    evidence_chat_kill_lines=['§cMatadorPvP §7fue asesinado por §e{username}§7 con §b[Espada de Diamante]§7.', '§6§lGANADOR > §e{username} §7ganó el duelo §eBuildUHC 1v1 §7(§a14.0 ❤§7)!'],
+    evidence_chat_clipped_bottom='§a+18 ELO §7(Nuevo rango BuildUHC: §e1,042 ELO§7)',
+    evidence_actionbar_text='§6§lGANADOR! §8• §fLava Ticks: §c2 §8• §bShield Break: §a✓',
+    evidence_scoreboard_header='§6§lUNIVERSOCRAFT',
+    evidence_scoreboard_teams=['§fModo: §eBuildUHC 1v1', '§fRival: §cMatadorPvP', '§fGHeads: §62 Left'],
+    evidence_scoreboard_stats=['§fKills: §a1', '§fELO: §a1042 (+18)', '§fEstado: §aVictoria'],
     xray_finding_summary='Crosshair(16m): 0.0-2.5m:air -> 2.5-3.5m:cobblestone(player wall) -> 3.5-6.0m:air [OPPONENT BEHIND WALL]',
     random_username_prefix='UniSaw',
     register_cmd_template='/reg {password} {password}',
@@ -68,7 +63,7 @@ CONFIG = ServerBenchmarkConfig(
     gui_secondary_item_keywords=['1v1', 'solo', 'unranked', 'jugar'],
     fallback_join_commands=['/arenapvp', '/builduhc', '/duel'],
     npc_target_keywords=['builduhc', '1v1', 'arenapvp', 'jugar', 'npc'],
-    lobby_search_waypoints=[(0, 65, 15), (8, 65, 15), (-8, 65, 15)],
+    lobby_search_waypoints=[tuple(x) for x in [[0, 65, 15], [8, 65, 15], [-8, 65, 15]]],
     post_join_chat_message='gg! BuildUHC lava placement + shield break + Golden Head win',
 )
 

@@ -4,19 +4,6 @@ Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #11: AppleCraft (play
 Target Gamemode : Economy Survival SMP (Land-Claim SMP & Villager Trading)
 Complex Mission : 10x10 Golden-Shovel Claim, Fletcher Emerald Trading, Bow Purchase & 3-Mob Night Defense
 Verified Outcome: 3 Hostile Mobs Slain + 4 Emeralds Traded
-
-8-Stage Autonomous Workflow:
-  Stage 1: Offline Cracked Handshake (`AppleSaw_<rand>`) & 4,096-Chunk LRU Cache Streaming
-  Stage 2: Multi-Language Auth Prompt Detection & Non-Vision Chat Math/Code CAPTCHA Solver
-  Stage 3: 46-Slot Inventory Scan & Hotbar Selector Activation (`inventory.list` + `inventory.use_item`)
-  Stage 4: Authoritative `state_id` Container GUI Inspection & `Economy Survival SMP` Slot Click
-  Stage 5: Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution (`npc.interact`) & `SVMEM-1` Landmark Save
-  Stage 6: 10x10 Golden-Shovel GriefPrevention Claim & Base Shelter Construction
-           -> Equipped `golden_shovel` in slot 1, right-clicked corner A `(10, 64, 10)` and corner B `(20, 64, 20)` to establish a `100-block` grief-protected SMP claim, and placed oak plank walls + door (`place.block`).
-  Stage 7: Villager Fletcher Discovery (`entity.find`) & 4x Stick-to-Emerald Merchant GUI Trades
-           -> Located nearby Village `Fletcher` (`entity.find "villager"`), opened Merchant trade screen (`gui.inspect`), executed `32x stick -> 1x emerald` trade 4 times, and traded `2x emerald -> 16x arrow + bow`.
-  Stage 8: 360° Radar Nighttime Perimeter Defense (`Zombie` + `Skeleton` + `Spider` = 3 Kills)
-           -> Tracked 3 approaching nighttime hostile mobs via `inspect.sensory` 360° radar and `24x11` viewport, sniped the `Skeleton` at 11.4m with the traded `bow`, and eliminated the `Zombie` and `Spider` at 2.8m with `iron_sword` (**+3 Mob Kills**).
 """
 
 from __future__ import annotations
@@ -58,6 +45,14 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='360° Radar Nighttime Perimeter Defense (`Zombie` + `Skeleton` + `Spider` = 3 Kills)',
     stage_8_detail='Tracked 3 approaching nighttime hostile mobs via `inspect.sensory` 360° radar and `24x11` viewport, sniped the `Skeleton` at 11.4m with the traded `bow`, and eliminated the `Zombie` and `Spider` at 2.8m with `iron_sword` (**+3 Mob Kills**).',
     stage_8_commands=['inspect.sensory', 'player.hotbar 3', 'use.item', 'player.hotbar 0', 'attack.entity 301', 'attack.entity 302', 'memory.save', 'inspect.sensory'],
+    evidence_chat_clipped_top='§a[GriefPrevention] §eClaim created! §7(10x10 blocks protected with Golden Shovel)',
+    evidence_chat_setup_lines=['§a[Villager Trade] §7Traded §f128x Stick §7-> §a4x Emerald §7with §eFletcher', '§a[Villager Trade] §7Purchased §bEnchanted Bow §7& §f16x Arrow §7(§a2 Emeralds§7)'],
+    evidence_chat_kill_lines=['§cSkeleton §7was shot by §e{username}§7 from §f11.4m§7.', '§cZombie §7and §cSpider §7were slain by §e{username}§7 defending §aClaimed Base§7!'],
+    evidence_chat_clipped_bottom='§a+3 Mob Kills §7| §eBase Claim 100% Intact',
+    evidence_actionbar_text='§a§lCLAIM PROTECTED §8• §fEmeralds: §a4 §8• §cMobs Slain: §a3',
+    evidence_scoreboard_header='§c§lAPPLECRAFT §fSMP',
+    evidence_scoreboard_teams=['§fClaim: §a10x10 Protected', '§fTrader: §eFletcher ✓', '§fTime: §9Night (Defended)'],
+    evidence_scoreboard_stats=['§fMob Kills: §a3', '§fEmeralds: §a4', '§fDeaths: §a0'],
     xray_finding_summary='South(+Z 16m): 0.0-1.0m:oak_door -> 1.0-12.0m:air(claimed yard, 3 hostile mobs approaching)',
     random_username_prefix='AppleSaw',
     register_cmd_template='/register {password} {password}',
@@ -68,7 +63,7 @@ CONFIG = ServerBenchmarkConfig(
     gui_secondary_item_keywords=['smp', 'survival', 'earth', 'join'],
     fallback_join_commands=['/survival', '/smp', '/rtp'],
     npc_target_keywords=['survival', 'smp', 'wilderness', 'fletcher', 'npc'],
-    lobby_search_waypoints=[(0, 64, 12), (7, 64, 12), (-7, 64, 12)],
+    lobby_search_waypoints=[tuple(x) for x in [[0, 64, 12], [7, 64, 12], [-7, 64, 12]]],
     post_join_chat_message='10x10 SMP plot claimed, 4 Fletcher emerald trades, and 3 night mobs cleared!',
 )
 

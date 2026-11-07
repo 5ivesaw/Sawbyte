@@ -4,19 +4,6 @@ Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #16: LemonCloud (play
 Target Gamemode : Factions TNT Raid & Base Breach (Factions Warfare & TNT Raiding)
 Complex Mission : Water-Wall Obsidian Bunker Claim, X-Ray Enemy Wall Scan, TNT Breach, Guard Kill & Spawner Loot
 Verified Outcome: 1 Raid Guard Kill + 2 Blaze Spawners Looted
-
-8-Stage Autonomous Workflow:
-  Stage 1: Offline Cracked Handshake (`LemonSaw_<rand>`) & 4,096-Chunk LRU Cache Streaming
-  Stage 2: Multi-Language Auth Prompt Detection & Non-Vision Chat Math/Code CAPTCHA Solver
-  Stage 3: 46-Slot Inventory Scan & Hotbar Selector Activation (`inventory.list` + `inventory.use_item`)
-  Stage 4: Authoritative `state_id` Container GUI Inspection & `Factions TNT Raid & Base Breach` Slot Click
-  Stage 5: Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution (`npc.interact`) & `SVMEM-1` Landmark Save
-  Stage 6: Faction Creation (`/f create`), Chunk Claim & Water-Protected Obsidian Core (`SVPE1:RLE3D`)
-           -> Created faction (`/f create SawbyteGuild`), claimed wilderness chunk (`/f claim`), constructed a `16x obsidian` vault core, and cascaded `water_bucket` source blocks (`W` in `SVPE1:RLE3D`) over exterior walls for blast protection.
-  Stage 7: 64m Horizon Scan & 16m Penetrating X-Ray Enemy Faction Base Wall Analysis (`inspect.xray`)
-           -> Located rival faction outpost 32m North (`inspect.long_range`), navigated to claim border, and cast `inspect.xray` (`North(-Z)`) through the wall (`2.0m cobblestone -> 1.0m dry gap -> 1.0m obsidian -> 4.0m chest & spawner room`), identifying an unwatered dry corner.
-  Stage 8: TNT Breach Ignition, Defending Guard Elimination (+1 Raid Kill) & Blaze Spawner Extraction
-           -> Placed and ignited `tnt` + `redstone_torch` breach charge on the dry corner, retreated 8m for detonation, entered breached vault, eliminated defending faction guard at 2.71m (`+1 Raid Kill`), and mined/looted `2x blaze_spawner` + `64x diamond_block`.
 """
 
 from __future__ import annotations
@@ -58,6 +45,14 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='TNT Breach Ignition, Defending Guard Elimination (+1 Raid Kill) & Blaze Spawner Extraction',
     stage_8_detail='Placed and ignited `tnt` + `redstone_torch` breach charge on the dry corner, retreated 8m for detonation, entered breached vault, eliminated defending faction guard at 2.71m (`+1 Raid Kill`), and mined/looted `2x blaze_spawner` + `64x diamond_block`.',
     stage_8_commands=['player.hotbar 3', 'place.block 0 64 -30', 'player.hotbar 4', 'place.block 1 64 -30', 'walk back 20', 'wait.ticks 80', 'walk forward 24', 'player.hotbar 0', 'attack.entity 225', 'player.hotbar 5', 'mine.block 0 65 -33', 'memory.save', 'inspect.sensory'],
+    evidence_chat_clipped_top='§e[Factions] §a{username} §7created faction §6SawbyteGuild §7& claimed chunk!',
+    evidence_chat_setup_lines=['§7[§dX-Ray§7] §fScanned rival wall North(-Z): §cUnwatered dry corner §7at §e(0, 64, -30)', '§c§lBREACH > §7TNT detonation breached §fRivalVault §7obsidian/cobble wall!'],
+    evidence_chat_kill_lines=['§cVaultGuard_01 §7was slain by §e{username} §7inside breached Faction Vault!', '§6§lRAID SUCCESS > §e{username} §7mined §e2x Blaze Spawner §7& §b64x Diamond Block§7!'],
+    evidence_chat_clipped_bottom='§a+$1,200,000 Faction Value Added to §6SawbyteGuild',
+    evidence_actionbar_text='§6§lRAID BREACH! §8• §e+2 Blaze Spawners §8• §b+64 Diamond Blocks',
+    evidence_scoreboard_header='§e§lLEMONCLOUD §6Factions',
+    evidence_scoreboard_teams=['§fFaction: §6SawbyteGuild', '§fPower: §a10/10', '§fRaid Target: §aBreached ✓'],
+    evidence_scoreboard_stats=['§fRaid Kills: §a1', '§fSpawners: §e+2 Blaze', '§fValue: §a+$1.2M'],
     xray_finding_summary='North(-Z 16m): 0.0-2.0m:cobblestone(dry) -> 2.0-6.0m:air(vault) -> 6.0-7.0m:spawner+trapped_chest [BREACHABLE]',
     random_username_prefix='LemonSaw',
     register_cmd_template='/register {password} {password}',
@@ -68,7 +63,7 @@ CONFIG = ServerBenchmarkConfig(
     gui_secondary_item_keywords=['factions', 'raid', 'play', 'join'],
     fallback_join_commands=['/factions', '/server factions', '/f home'],
     npc_target_keywords=['factions', 'wilderness', 'raid', 'play', 'npc'],
-    lobby_search_waypoints=[(0, 64, 15), (7, 64, 15), (-7, 64, 15)],
+    lobby_search_waypoints=[tuple(x) for x in [[0, 64, 15], [7, 64, 15], [-7, 64, 15]]],
     post_join_chat_message='gg! Unwatered corner X-rayed, TNT breached, guard eliminated, and 2 spawners looted!',
 )
 

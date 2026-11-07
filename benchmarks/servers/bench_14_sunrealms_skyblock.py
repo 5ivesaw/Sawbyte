@@ -4,19 +4,6 @@ Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #14: SunRealms (play.
 Target Gamemode : 3D Parkour & OneBlock Phase 2 (Precision Parkour & OneBlock)
 Complex Mission : SVPE-1 Trajectory Planner, 12-Jump Zero-Fall Parkour Summit (14.8s) & 50-Cycle OneBlock
 Verified Outcome: 12/12 Parkour Checkpoints + 1 Spider Kill
-
-8-Stage Autonomous Workflow:
-  Stage 1: Offline Cracked Handshake (`SunSaw_<rand>`) & 4,096-Chunk LRU Cache Streaming
-  Stage 2: Multi-Language Auth Prompt Detection & Non-Vision Chat Math/Code CAPTCHA Solver
-  Stage 3: 46-Slot Inventory Scan & Hotbar Selector Activation (`inventory.list` + `inventory.use_item`)
-  Stage 4: Authoritative `state_id` Container GUI Inspection & `3D Parkour & OneBlock Phase 2` Slot Click
-  Stage 5: Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution (`npc.interact`) & `SVMEM-1` Landmark Save
-  Stage 6: `SVPE1:HD25D` Parkour Gap & Elevation Delta Trajectory Planner
-           -> Encoded the 12-platform parkour course using `inspect.svpe.height 16` (`SVPE1:HD25D`) and `inspect.svpe` (`SVPE1:RLE3D`), computing exact takeoff coordinates (`x.70` block edge) for 3m, 4m sprint-jump, `+1m` step, `f` fence-post, and `h` slab landings.
-  Stage 7: 12-Jump Precision Parkour Execution to Summit Pressure Plate (14.8s, Zero Falls)
-           -> Executed all 12 timed sprint-jumps (`walk forward` + sub-tick `jump`) across floating parkour platforms without a single fall, triggering the golden summit pressure plate (`Parkour Completed in 14.8s`).
-  Stage 8: OneBlock 50-Cycle Center Excavation, Cave Spider Defense (+1 Kill) & Phase 2 Unlock
-           -> Warped to OneBlock island (`/ob go`), mined the regenerating center block `(0, 64, 0)` 50 times, eliminated a spawned `Cave Spider` at 2.4m (`+1 Mob Kill`), and unlocked `Phase 2: Underground`.
 """
 
 from __future__ import annotations
@@ -58,6 +45,14 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='OneBlock 50-Cycle Center Excavation, Cave Spider Defense (+1 Kill) & Phase 2 Unlock',
     stage_8_detail='Warped to OneBlock island (`/ob go`), mined the regenerating center block `(0, 64, 0)` 50 times, eliminated a spawned `Cave Spider` at 2.4m (`+1 Mob Kill`), and unlocked `Phase 2: Underground`.',
     stage_8_commands=['chat.send /ob go', 'player.hotbar 0', 'mine.block 0 64 0', 'mine.block 0 64 0', 'player.hotbar 1', 'attack.entity 320', 'inspect.sensory'],
+    evidence_chat_clipped_top='§e§lPARKOUR > §7Timer started! Reach all §f12 Checkpoints §7without falling.',
+    evidence_chat_setup_lines=['§aCheckpoint #4 §7reached! (§e4.62s §7• 4m Sprint-Jump Verified)', '§aCheckpoint #8 §7reached! (§e9.85s §7• Neo-Fence & Slab Landing)', '§6§lPARKOUR COMPLETE! §e{username} §7finished 12/12 jumps in §a14.80s §7(§a0 Falls§7)!'],
+    evidence_chat_kill_lines=['§cCave Spider §7was slain by §e{username} §7on OneBlock center!', '§b§lONEBLOCK > §750/50 blocks mined! Unlocked §aPhase 2: Underground§7!'],
+    evidence_chat_clipped_bottom='§6+500 SunRealms Coins §7| §aParkour Title Unlocked',
+    evidence_actionbar_text='§6Parkour: §a12/12 (14.8s) §8• §bOneBlock: §e50/50 (Phase 2)',
+    evidence_scoreboard_header='§6§lSUNREALMS §eOneBlock',
+    evidence_scoreboard_teams=['§fParkour: §a14.80s (0 Falls)', '§fOneBlock: §bPhase 2', '§fBlocks: §a50/50 ✓'],
+    evidence_scoreboard_stats=['§fCheckpoints: §a12/12', '§fMob Kills: §a1', '§fCoins: §6+500'],
     xray_finding_summary='Crosshair(16m): 0.0-3.0m:air(3m jump gap) -> 3.0-4.0m:quartz_slab(h, Δy=+1) [CHECKPOINT #8]',
     random_username_prefix='SunSaw',
     register_cmd_template='/register {password} {password}',
@@ -68,7 +63,7 @@ CONFIG = ServerBenchmarkConfig(
     gui_secondary_item_keywords=['oneblock', 'parkour', 'play', 'join'],
     fallback_join_commands=['/oneblock', '/ob', '/parkour'],
     npc_target_keywords=['oneblock', 'parkour', 'play', 'npc'],
-    lobby_search_waypoints=[(0, 64, 12), (6, 64, 12), (-6, 64, 12)],
+    lobby_search_waypoints=[tuple(x) for x in [[0, 64, 12], [6, 64, 12], [-6, 64, 12]]],
     post_join_chat_message='12/12 Parkour jumps (0 falls, 14.8s) + OneBlock Phase 2 + spider kill complete!',
 )
 

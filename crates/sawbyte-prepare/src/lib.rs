@@ -1,4 +1,4 @@
-//! `sawbyte-prepare` v0.5.1 Library — Resource, Registry, Sound & Artifact Preparation for Sawbyte 26.3.
+//! `sawbyte-prepare` v0.5.2 Library — Resource, Registry, Sound & Artifact Preparation for Sawbyte 26.3.
 //!
 //! Designed with zero external crate dependencies so `cargo clippy --workspace --all-targets`,
 //! `cargo test --workspace`, and `cargo build --workspace --release` succeed both online and offline.
@@ -47,8 +47,7 @@ pub fn prepare_26_3_workspace(
     let _sound_report = sounds::verify_and_stage_sounds(mc_dir, out_dir)?;
 
     let manifest = format!(
-        "{{"sawbyte_version":"0.5.1","minecraft_version":"{}","protocol":{},"minecraft_dir":"{}","server_jar":"{}","sources_sha256":"{}","block_states_digest":"{}","status":"prepared"}}
-",
+        r#"{{"sawbyte_version":"0.5.2","minecraft_version":"{}","protocol":{},"minecraft_dir":"{}","server_jar":"{}","sources_sha256":"{}","block_states_digest":"{}","status":"prepared"}}"#,
         artifact.version,
         artifact.protocol_version,
         mc_dir.display(),
@@ -57,11 +56,12 @@ pub fn prepare_26_3_workspace(
             .unwrap_or_else(|| "auto".into()),
         SAWBYTE_PREPARE_SOURCES_SHA256,
         exported.block_states_digest,
-    );
+    ) + "
+";
     files::write_atomic(&out_dir.join("prepared-manifest.json"), manifest.as_bytes())?;
 
     Ok(PreparedWorkspaceReport {
-        sawbyte_version: "0.5.1".to_string(),
+        sawbyte_version: "0.5.2".to_string(),
         minecraft_version: artifact.version,
         protocol: artifact.protocol_version,
         output_dir: out_dir.to_path_buf(),

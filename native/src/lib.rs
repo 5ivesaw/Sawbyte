@@ -983,6 +983,12 @@ impl Session {
             id if id == self.packets.cb_set_action_bar_text => {
                 let _ = self.state_table.apply_set_action_bar_text(&mut r);
             }
+            id if id == self.packets.cb_set_objective => {
+                let _ = self.state_table.apply_set_objective(&mut r);
+            }
+            id if id == self.packets.cb_set_score => {
+                let _ = self.state_table.apply_set_score(&mut r);
+            }
             _ => {}
         }
         Ok(())
@@ -1498,8 +1504,15 @@ impl Session {
             .map(|e| (e.entity_id, e.aabb()))
             .collect();
         let e_hit = raycast::raycast_entity(&self.player, &self.world, &candidates);
-        match (&b_hit, &e_hit) {
-            (_, Some(eh)) if b_hit.as_ref().map_or(true, |bh| eh.distance < bh.distance) => {
+        // Entity wins only when it is closer than the block (or there is no block). The decision is
+        // made up front so the final match has no guarded arms and is exhaustive by construction.
+        let entity_target = match (&b_hit, &e_hit) {
+            (None, Some(eh)) => Some(eh),
+            (Some(bh), Some(eh)) if eh.distance < bh.distance => Some(eh),
+            _ => None,
+        };
+        match (entity_target, &b_hit) {
+            (Some(eh), _) => {
                 let holo = self.state_table.entity_hologram_lines(eh.entity_id);
                 let kind = self
                     .state_table
@@ -1512,7 +1525,7 @@ impl Session {
                     eh.entity_id, eh.distance, holo
                 ));
             }
-            (Some(bh), _) => {
+            (None, Some(bh)) => {
                 let bstate = self
                     .world
                     .block_state(bh.block_pos[0], bh.block_pos[1], bh.block_pos[2])
@@ -3573,6 +3586,34 @@ impl Session {
                 }
                 ["inspect.sensory"] | ["observe.words"] | ["see"] | ["inspect.vision"] => {
                     outputs.push(self.render_sensory_words());
+                }
+                ["inspect.evidence"] | ["evidence.list"] => {
+                    let ev_json: Vec<serde_json::Value> = self
+                        .state_table
+                        .evidence_log
+                        .iter()
+                        .map(|ev| {
+                            serde_json::json!({
+                                "source": ev.source,
+                                "category": ev.category,
+                                "styled_text": ev.styled_text,
+                                "plain_text": ev.plain_text,
+                                "matched_pattern": ev.matched_pattern,
+                            })
+                        })
+                        .collect();
+                    outputs.push(
+                        serde_json::json!({
+                            "ok": true,
+                            "evidence_count": ev_json.len(),
+                            "evidence": ev_json,
+                            "chat_styled_log": self.state_table.chat_styled_log,
+                            "scoreboard_title": self.state_table.scoreboard_title,
+                            "scoreboard_lines": self.state_table.scoreboard_lines,
+                            "action_bar_text": self.state_table.action_bar_text,
+                        })
+                        .to_string(),
+                    );
                 }
                 ["inspect.sensory.json"] | ["observe.json"] => {
                     outputs.push(self.render_sensory_json());

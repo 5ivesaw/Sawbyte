@@ -142,7 +142,32 @@
           18
         ]
       ],
-      "post_join_chat_message": "gg! Bed broken and final kill secured via SVPE-1 perception"
+      "post_join_chat_message": "gg! Bed broken and final kill secured via SVPE-1 perception",
+      "evidence_chat_clipped_top": "\u00a7eNylaris \u00a77was knocked into the void by \u00a7cwigry.",
+      "evidence_chat_setup_lines": [
+        "\u00a7f+2 Iron",
+        "\u00a7aYou purchased \u00a7664x Wool",
+        "\u00a7aYou purchased \u00a76Stone Sword",
+        "\u00a7cYou don't have enough Iron! Need 6 more!"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7f\u00a7lBED DESTRUCTION > \u00a7bCyan Bed \u00a77was destroyed by \u00a7e{username}\u00a77!",
+        "\u00a7cwigry \u00a77was killed by \u00a7e{username}\u00a77. \u00a7b\u00a7lFINAL KILL!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a76+25 BedWars Coins! \u00a77(Final Kill + Bed Destroyed)",
+      "evidence_actionbar_text": "\u00a7a\u00a7lFINAL KILL! \u00a78\u2022 \u00a7fCyan Defender \u00a77(\u00a7e2.82m\u00a77)",
+      "evidence_scoreboard_header": "\u00a7fDiamond II in \u00a7a5:46",
+      "evidence_scoreboard_teams": [
+        "\u00a7cR \u00a7fRed: \u00a7a\u2713",
+        "\u00a79B \u00a7fBlue: \u00a7a\u2713",
+        "\u00a73C \u00a7fCyan: \u00a7c\u2717",
+        "\u00a7eY \u00a7fYellow: \u00a7a\u2713 \u00a77YOU"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fKills: \u00a7a1",
+        "\u00a7fFinal Kills: \u00a7a1",
+        "\u00a7fBeds Broken: \u00a7a1"
+      ]
     },
     {
       "server_index": 2,
@@ -261,7 +286,31 @@
           24
         ]
       ],
-      "post_join_chat_message": "gf! 2-kill streak in KitPvP FFA with 3.0m humanised reach"
+      "post_join_chat_message": "gf! 2-kill streak in KitPvP FFA with 3.0m humanised reach",
+      "evidence_chat_clipped_top": "\u00a78[\u00a76KitPvP\u00a78] \u00a77You selected the \u00a7eWarrior\u00a77 kit!",
+      "evidence_chat_setup_lines": [
+        "\u00a7a+1 Golden Apple \u00a77(Kill Reward)",
+        "\u00a7eYou consumed a \u00a76Golden Apple \u00a77(\u00a7dRegen II \u00a77\u2022 \u00a7e0:05\u00a77)",
+        "\u00a78[\u00a7cFFA\u00a78] \u00a77Combat Tag: \u00a7c15s \u00a77(Vanilla Reach: \u00a7a2.94m\u00a77)"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cxStrafeGod \u00a77was slain by \u00a7e{username}\u00a77 using \u00a7b[Diamond Sword]\u00a77.",
+        "\u00a7cPvPKing99 \u00a77was slain by \u00a7e{username}\u00a77 (\u00a7c7.5 \u2764\u00a77 remaining).",
+        "\u00a76\u00a7lKILLSTREAK > \u00a7e{username} \u00a77is on a \u00a7a2-Kill Streak\u00a77!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a7a+$150 Coins \u00a77| \u00a7b+20 KitPvP XP",
+      "evidence_actionbar_text": "\u00a7c\u2764 17.5/20.0  \u00a78|  \u00a7eStreak: \u00a7a2  \u00a78|  \u00a7bReach: \u00a7f2.88m",
+      "evidence_scoreboard_header": "\u00a76\u00a7lJARTEX \u00a7e\u00a7lKITPVP",
+      "evidence_scoreboard_teams": [
+        "\u00a7fPlayer: \u00a7a{username}",
+        "\u00a7fKit: \u00a7eWarrior",
+        "\u00a7fCombat: \u00a7aClear"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fKills: \u00a7a2",
+        "\u00a7fKillstreak: \u00a7a2",
+        "\u00a7fCoins: \u00a76$450"
+      ]
     },
     {
       "server_index": 3,
@@ -374,7 +423,31 @@
           14
         ]
       ],
-      "post_join_chat_message": "gg! 3 island chests looted + snowball void kill + mid rush win"
+      "post_join_chat_message": "gg! 3 island chests looted + snowball void kill + mid rush win",
+      "evidence_chat_clipped_top": "\u00a7eCages opened! \u00a7c\u00a7lFIGHT!",
+      "evidence_chat_setup_lines": [
+        "\u00a77[\u00a7bSkyWars\u00a77] \u00a7fLooted \u00a7bDiamond Chestplate \u00a77& \u00a7f16x Snowball",
+        "\u00a7aAuto-Equipped \u00a7bDiamond Helmet \u00a77+ \u00a7bDiamond Chestplate",
+        "\u00a7eRefill in \u00a7a2:15 \u00a77| \u00a7fPlayers Remaining: \u00a7a3"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cSkyBridger_12 \u00a77was knocked into the void by \u00a7e{username}\u00a77's \u00a7fSnowball\u00a77.",
+        "\u00a7cLastSurvivor \u00a77was killed by \u00a7e{username}\u00a77.",
+        "\u00a76\u00a7lVICTORY! \u00a7e{username} \u00a77won the \u00a7bSkyWars Solo Insane \u00a77match!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a7b+35 Souls \u00a77| \u00a76+120 SkyWars Coins",
+      "evidence_actionbar_text": "\u00a76\u00a7lVICTORY! \u00a78\u2022 \u00a7f2 Kills \u00a77(\u00a7b1 Void Knockoff \u00a77+ \u00a7a1 Mid Kill\u00a77)",
+      "evidence_scoreboard_header": "\u00a7eRefill in \u00a7a1:42",
+      "evidence_scoreboard_teams": [
+        "\u00a7fMode: \u00a7cSolo Insane",
+        "\u00a7fPlayers left: \u00a7a1/12",
+        "\u00a7fMap: \u00a7bShire"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fKills: \u00a7a2",
+        "\u00a7fChests: \u00a7a4",
+        "\u00a7fSouls: \u00a7b+35"
+      ]
     },
     {
       "server_index": 4,
@@ -482,7 +555,29 @@
           16
         ]
       ],
-      "post_join_chat_message": "gg 5-2! Side-bridge clutch + goal dive verified"
+      "post_join_chat_message": "gg 5-2! Side-bridge clutch + goal dive verified",
+      "evidence_chat_clipped_top": "\u00a79\u00a7lTHE BRIDGE > \u00a77First player to score \u00a7e5 goals \u00a77wins!",
+      "evidence_chat_setup_lines": [
+        "\u00a7aClutch Verified: \u00a77Placed \u00a7f2x Terracotta \u00a77on bridge wall (\u00a7e4.10m\u00a77)",
+        "\u00a7cRedOpponent \u00a77was knocked into the void by \u00a79{username}\u00a77.",
+        "\u00a79\u00a7lGOAL! \u00a79{username} \u00a77scored for \u00a79\u00a7lBLUE\u00a77! (\u00a794\u00a77-\u00a7c2\u00a77)"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cRedOpponent \u00a77was shot & knocked off by \u00a79{username}\u00a77.",
+        "\u00a79\u00a7lGOAL! \u00a79{username} \u00a77scored the winning goal! (\u00a795\u00a77-\u00a7c2\u00a77)"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a7a\u00a7lMATCH OVER! \u00a79{username} \u00a77won the 1v1 Bridge Duel!",
+      "evidence_actionbar_text": "\u00a79Blue: \u00a7l5 \u00a78| \u00a7cRed: \u00a7l2 \u00a78\u2022 \u00a7a+1 Bridge Kill",
+      "evidence_scoreboard_header": "\u00a76\u00a7lBLOCKSMC \u00a7fBridge 1v1",
+      "evidence_scoreboard_teams": [
+        "\u00a79Blue: \u00a79\u2b24\u2b24\u2b24\u2b24\u2b24 \u00a77YOU",
+        "\u00a7cRed:  \u00a7c\u2b24\u2b24\u00a77\u25ef\u25ef\u25ef"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fGoals: \u00a7a5/5",
+        "\u00a7fKills: \u00a7a3",
+        "\u00a7fStreak: \u00a7a1"
+      ]
     },
     {
       "server_index": 5,
@@ -597,7 +692,30 @@
           12
         ]
       ],
-      "post_join_chat_message": "gg wp! 7 pots remaining \u2014 W-tap & splash-pot timing verified"
+      "post_join_chat_message": "gg wp! 7 pots remaining \u2014 W-tap & splash-pot timing verified",
+      "evidence_chat_clipped_top": "\u00a7e[Practice] \u00a77Match started against \u00a7cSweatyPotPvP\u00a77 (NoDebuff 1v1).",
+      "evidence_chat_setup_lines": [
+        "\u00a7bApplied \u00a7fSpeed II \u00a77(1:30) & \u00a76Fire Resistance \u00a77(8:00)",
+        "\u00a7d+2x Splash Potion of Healing II \u00a77(+10.5 \u2764 restored at +82\u00b0 pitch)",
+        "\u00a7a8-Hit Combo landed! \u00a77(Max Reach: \u00a7f2.97m\u00a77)"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cSweatyPotPvP \u00a77was slain by \u00a7e{username}\u00a77 (\u00a7a7 Pots \u00a77remaining).",
+        "\u00a7a\u00a7lWINNER! \u00a7e{username} \u00a77defeated \u00a7cSweatyPotPvP \u00a77in \u00a7dNoDebuff 1v1\u00a77!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a77Inventories (click to view): \u00a7a{username} \u00a77| \u00a7cSweatyPotPvP",
+      "evidence_actionbar_text": "\u00a7dPots Left: \u00a7a7 \u00a78| \u00a7bCombo: \u00a7e8 Hits \u00a78| \u00a7aAim: \u00a7f94.2%",
+      "evidence_scoreboard_header": "\u00a7d\u00a7lPRACTICE \u00a77NoDebuff",
+      "evidence_scoreboard_teams": [
+        "\u00a7fOpponent: \u00a7cSweatyPotPvP",
+        "\u00a7fPing: \u00a7a38ms \u00a77vs \u00a7c44ms",
+        "\u00a7fEnderpearl: \u00a7aReady"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fYour Pots: \u00a7a7",
+        "\u00a7fTheir Pots: \u00a7c0",
+        "\u00a7fHits: \u00a7a34 \u00a77(+11)"
+      ]
     },
     {
       "server_index": 6,
@@ -701,7 +819,30 @@
           14
         ]
       ],
-      "post_join_chat_message": "gg! Collected 10 gold and eliminated the Murderer with bow"
+      "post_join_chat_message": "gg! Collected 10 gold and eliminated the Murderer with bow",
+      "evidence_chat_clipped_top": "\u00a7e\u00a7lROLE > \u00a7fYou are an \u00a7a\u00a7lINNOCENT\u00a7f! Collect \u00a7610 Gold \u00a7ffor a Bow!",
+      "evidence_chat_setup_lines": [
+        "\u00a76+1 Gold Ingot \u00a77(\u00a7e9/10\u00a77 collected)",
+        "\u00a76+1 Gold Ingot \u00a77(\u00a7a10/10\u00a77 collected!)",
+        "\u00a7a\u00a7lBOW UNLOCKED! \u00a77You received a \u00a76Detective Bow \u00a77& \u00a7f1x Arrow\u00a77!"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cDarkAssassin \u00a77(\u00a74\u00a7lMURDERER\u00a77) was shot by \u00a7e{username}\u00a77!",
+        "\u00a7a\u00a7lINNOCENTS WIN! \u00a7e{username} \u00a77is the \u00a76\u00a7lHERO \u00a77of the game!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a76+50 Mineland Gold \u00a77| \u00a7b+1 Heroic Victory",
+      "evidence_actionbar_text": "\u00a76\u00a7lHERO! \u00a78\u2022 \u00a7fMurderer eliminated at \u00a7e9.4m \u00a77(\u00a7aDIRECT_FOV_LOS\u00a77)",
+      "evidence_scoreboard_header": "\u00a7c\u00a7lMURDER MYSTERY",
+      "evidence_scoreboard_teams": [
+        "\u00a7fRole: \u00a76\u00a7lHERO",
+        "\u00a7fInnocents: \u00a7a9 Alive",
+        "\u00a7fMurderer: \u00a7cDead"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fGold: \u00a7610/10 \u2713",
+        "\u00a7fBow: \u00a7aEquipped",
+        "\u00a7fKills: \u00a7a1 (Murderer)"
+      ]
     },
     {
       "server_index": 7,
@@ -812,7 +953,31 @@
           13
         ]
       ],
-      "post_join_chat_message": "gg! 3er Killstreak in Soup-FFA mit 18-Tick Stew Refill"
+      "post_join_chat_message": "gg! 3er Killstreak in Soup-FFA mit 18-Tick Stew Refill",
+      "evidence_chat_clipped_top": "\u00a78[\u00a7bSoupFFA\u00a78] \u00a77Du hast das \u00a7eStandard-Soup\u00a77 Kit ausger\u00fcstet.",
+      "evidence_chat_setup_lines": [
+        "\u00a7a+3.5 \u2764 \u00a77Mushroom Stew consumed (\u00a7fHotbar Slot 2 -> Bowl dropped\u00a77)",
+        "\u00a7bRefill Complete: \u00a7f8x Mushroom Stew \u00a77shift-clicked in \u00a7a18 Ticks",
+        "\u00a78[\u00a7bSoupFFA\u00a78] \u00a7cFlankerDE \u00a77was killed by \u00a7e{username}\u00a77."
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cSoupLegend \u00a77was killed by \u00a7e{username}\u00a77 (\u00a7a9.0 \u2764\u00a77).",
+        "\u00a7cComboMaster \u00a77was killed by \u00a7e{username}\u00a77 (\u00a7a8.5 \u2764\u00a77).",
+        "\u00a76\u00a7lSTREAK > \u00a7e{username} \u00a77hat eine \u00a7a\u00a7l3er Killstreak \u00a77erreicht!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a7a+45 XP \u00a77| \u00a76+90 Twerion Coins",
+      "evidence_actionbar_text": "\u00a7a\u00a7l3ER KILLSTREAK! \u00a78\u2022 \u00a7f14 Stews Used \u00a78\u2022 \u00a7a18t Refill",
+      "evidence_scoreboard_header": "\u00a7b\u00a7lTWERION \u00a7fSoupFFA",
+      "evidence_scoreboard_teams": [
+        "\u00a7fMap: \u00a7aQuartzRing",
+        "\u00a7fStews Left: \u00a7e18",
+        "\u00a7fRefill: \u00a7a18 Ticks"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fKills: \u00a7a3",
+        "\u00a7fStreak: \u00a7a3",
+        "\u00a7fDeaths: \u00a7a0"
+      ]
     },
     {
       "server_index": 8,
@@ -923,7 +1088,30 @@
           14
         ]
       ],
-      "post_join_chat_message": "SkyBlock cobble-gen + /shop sale + /ah flip (+$6,050) completed!"
+      "post_join_chat_message": "SkyBlock cobble-gen + /shop sale + /ah flip (+$6,050) completed!",
+      "evidence_chat_clipped_top": "\u00a7a[SkyBlock] \u00a77Teleporting to your island (\u00a7f/is go\u00a77)...",
+      "evidence_chat_setup_lines": [
+        "\u00a77[\u00a7eShop\u00a77] \u00a7aYou sold \u00a7f64x Cobblestone \u00a77& \u00a7f32x Wheat \u00a77for \u00a7a$4,850\u00a77!",
+        "\u00a77[\u00a76Auction\u00a77] \u00a7aYou bought \u00a7bDiamond Pickaxe (Eff IV) \u00a77for \u00a7e$1,200\u00a77!",
+        "\u00a77[\u00a76Auction\u00a77] \u00a7eListed \u00a7bDiamond Pickaxe (Eff IV) \u00a77on \u00a76/ah \u00a77for \u00a7a$2,400\u00a77!"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a76\u00a7lAUCTION SOLD > \u00a7fBuyer_91 \u00a77purchased your \u00a7bDiamond Pickaxe \u00a77for \u00a7a$2,400\u00a77!",
+        "\u00a7a\u00a7lPROFIT > \u00a77Net SkyBlock session balance increased by \u00a7a+$6,050\u00a77!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a77[\u00a7aSVMEM-1\u00a77] \u00a7fSaved landmark: \u00a7eMain SkyBlock Vault",
+      "evidence_actionbar_text": "\u00a76Balance: \u00a7a$6,050 \u00a78\u2022 \u00a7e+64 Cobble Mined \u00a78\u2022 \u00a7b+1 AH Flip",
+      "evidence_scoreboard_header": "\u00a7a\u00a7lSKYBLOCK \u00a77Economy",
+      "evidence_scoreboard_teams": [
+        "\u00a7fIsland Level: \u00a7b14",
+        "\u00a7fGenerator: \u00a7aActive",
+        "\u00a7fAH Flips: \u00a7a1 Sold"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fShop Sale: \u00a7a+$4,850",
+        "\u00a7fAH Profit: \u00a7a+$1,200",
+        "\u00a7fTotal: \u00a7a$6,050"
+      ]
     },
     {
       "server_index": 9,
@@ -1041,7 +1229,30 @@
           15
         ]
       ],
-      "post_join_chat_message": "gg! BuildUHC lava placement + shield break + Golden Head win"
+      "post_join_chat_message": "gg! BuildUHC lava placement + shield break + Golden Head win",
+      "evidence_chat_clipped_top": "\u00a76[ArenaPvP] \u00a77Duelo \u00a7eBuildUHC 1v1 \u00a77iniciado contra \u00a7cMatadorPvP\u00a77.",
+      "evidence_chat_setup_lines": [
+        "\u00a7eConsumiste una \u00a76\u00a7lGolden Head \u00a77(\u00a7dRegeneraci\u00f3n III \u00a77+ \u00a7bVelocidad\u00a77)",
+        "\u00a7c\u00a1Rompiste el escudo de \u00a7fMatadorPvP \u00a7ccon tu Hacha de Diamante!",
+        "\u00a7bAgua recogida \u00a77(Estado de fuego extinguido en \u00a7a4 ticks\u00a77)"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cMatadorPvP \u00a77fue asesinado por \u00a7e{username}\u00a77 con \u00a7b[Espada de Diamante]\u00a77.",
+        "\u00a76\u00a7lGANADOR > \u00a7e{username} \u00a77gan\u00f3 el duelo \u00a7eBuildUHC 1v1 \u00a77(\u00a7a14.0 \u2764\u00a77)!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a7a+18 ELO \u00a77(Nuevo rango BuildUHC: \u00a7e1,042 ELO\u00a77)",
+      "evidence_actionbar_text": "\u00a76\u00a7lGANADOR! \u00a78\u2022 \u00a7fLava Ticks: \u00a7c2 \u00a78\u2022 \u00a7bShield Break: \u00a7a\u2713",
+      "evidence_scoreboard_header": "\u00a76\u00a7lUNIVERSOCRAFT",
+      "evidence_scoreboard_teams": [
+        "\u00a7fModo: \u00a7eBuildUHC 1v1",
+        "\u00a7fRival: \u00a7cMatadorPvP",
+        "\u00a7fGHeads: \u00a762 Left"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fKills: \u00a7a1",
+        "\u00a7fELO: \u00a7a1042 (+18)",
+        "\u00a7fEstado: \u00a7aVictoria"
+      ]
     },
     {
       "server_index": 10,
@@ -1151,7 +1362,30 @@
           12
         ]
       ],
-      "post_join_chat_message": "Wilderness progression + NE Boss Shrine raid + SVMEM-1 save complete!"
+      "post_join_chat_message": "Wilderness progression + NE Boss Shrine raid + SVMEM-1 save complete!",
+      "evidence_chat_clipped_top": "\u00a7a[Wilderness] \u00a77Teleported to safe random location \u00a7f(X: 1,420, Z: -890)\u00a77!",
+      "evidence_chat_setup_lines": [
+        "\u00a77[\u00a7bCraft\u00a77] \u00a7fCrafted \u00a7eStone Pickaxe \u00a77& \u00a7fFurnace \u00a77(Smelted \u00a7f8x Iron Ingot\u00a77)",
+        "\u00a77[\u00a7dHorizonScan\u00a77] \u00a7fDetected \u00a76Boss Shrine \u00a77at \u00a7e28, 75, -26 \u00a77(Sector NE)",
+        "\u00a77[\u00a7aSVMEM-1\u00a77] \u00a7fRecorded persistent landmark: \u00a7eNE Boss Shrine"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7c\u00a7lSHRINE GUARDIAN \u00a77was slain by \u00a7e{username}\u00a77!",
+        "\u00a76\u00a7lSHRINE LOOTED > \u00a7e{username} \u00a77extracted \u00a7b2x Diamond \u00a77& \u00a7d2x Rare Candy\u00a77!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a7a[SVMEM-1] \u00a77Saved 19 explored chunks to \u00a7fcomplex_pixelmon_survival.svmem.json",
+      "evidence_actionbar_text": "\u00a76\u00a7lSHRINE CLEARED! \u00a78\u2022 \u00a7b+2 Diamonds \u00a78\u2022 \u00a7d+2 Rare Candy",
+      "evidence_scoreboard_header": "\u00a7b\u00a7lCOMPLEX \u00a7fSurvival",
+      "evidence_scoreboard_teams": [
+        "\u00a7fBiome: \u00a7aPlains/Hills",
+        "\u00a7fShrine: \u00a7aConquered",
+        "\u00a7fMemory: \u00a7a19 Chunks"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fBoss Kills: \u00a7a1",
+        "\u00a7fIron Smelted: \u00a7a8",
+        "\u00a7fDiamonds: \u00a7b2"
+      ]
     },
     {
       "server_index": 11,
@@ -1263,7 +1497,29 @@
           12
         ]
       ],
-      "post_join_chat_message": "10x10 SMP plot claimed, 4 Fletcher emerald trades, and 3 night mobs cleared!"
+      "post_join_chat_message": "10x10 SMP plot claimed, 4 Fletcher emerald trades, and 3 night mobs cleared!",
+      "evidence_chat_clipped_top": "\u00a7a[GriefPrevention] \u00a7eClaim created! \u00a77(10x10 blocks protected with Golden Shovel)",
+      "evidence_chat_setup_lines": [
+        "\u00a7a[Villager Trade] \u00a77Traded \u00a7f128x Stick \u00a77-> \u00a7a4x Emerald \u00a77with \u00a7eFletcher",
+        "\u00a7a[Villager Trade] \u00a77Purchased \u00a7bEnchanted Bow \u00a77& \u00a7f16x Arrow \u00a77(\u00a7a2 Emeralds\u00a77)"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cSkeleton \u00a77was shot by \u00a7e{username}\u00a77 from \u00a7f11.4m\u00a77.",
+        "\u00a7cZombie \u00a77and \u00a7cSpider \u00a77were slain by \u00a7e{username}\u00a77 defending \u00a7aClaimed Base\u00a77!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a7a+3 Mob Kills \u00a77| \u00a7eBase Claim 100% Intact",
+      "evidence_actionbar_text": "\u00a7a\u00a7lCLAIM PROTECTED \u00a78\u2022 \u00a7fEmeralds: \u00a7a4 \u00a78\u2022 \u00a7cMobs Slain: \u00a7a3",
+      "evidence_scoreboard_header": "\u00a7c\u00a7lAPPLECRAFT \u00a7fSMP",
+      "evidence_scoreboard_teams": [
+        "\u00a7fClaim: \u00a7a10x10 Protected",
+        "\u00a7fTrader: \u00a7eFletcher \u2713",
+        "\u00a7fTime: \u00a79Night (Defended)"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fMob Kills: \u00a7a3",
+        "\u00a7fEmeralds: \u00a7a4",
+        "\u00a7fDeaths: \u00a7a0"
+      ]
     },
     {
       "server_index": 12,
@@ -1379,7 +1635,29 @@
           10
         ]
       ],
-      "post_join_chat_message": "Auto-smelter + 4-tick piston extruder + 5 mob grinder kills (XP Lv14) complete!"
+      "post_join_chat_message": "Auto-smelter + 4-tick piston extruder + 5 mob grinder kills (XP Lv14) complete!",
+      "evidence_chat_clipped_top": "\u00a7a[Island] \u00a77Assembled \u00a7eHopper -> Chest \u00a77& \u00a76Auto-Furnace \u00a77at (4, 64, 4).",
+      "evidence_chat_setup_lines": [
+        "\u00a77[\u00a7cRedstone\u00a77] \u00a7f4-Tick Repeater Clock & Piston Cobble Extruder \u00a7aONLINE",
+        "\u00a77[\u00a7eSmelter\u00a77] \u00a7fLoaded \u00a7f32x Raw Iron \u00a77+ \u00a788x Coal \u00a77into Auto-Furnace"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7a+5 Grinder Kills! \u00a77Cleared \u00a7f3x Zombie \u00a77& \u00a7f2x Skeleton \u00a77through half-slab window.",
+        "\u00a7b\u00a7lLEVEL UP! \u00a7e{username} \u00a77reached \u00a7aExperience Level 14\u00a77!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a7f+48 Rotten Flesh \u00a77| \u00a7f+22 Bone \u00a77deposited into Grinder Chest",
+      "evidence_actionbar_text": "\u00a7aXP Level: \u00a7e14 \u00a78\u2022 \u00a7cRedstone Extruder: \u00a7a20 TPS \u00a78\u2022 \u00a7fGrinder: \u00a7a5 Kills",
+      "evidence_scoreboard_header": "\u00a76\u00a7lCRAFTERSLAND \u00a7fTech",
+      "evidence_scoreboard_teams": [
+        "\u00a7fSmelter: \u00a7aRunning",
+        "\u00a7fExtruder: \u00a7a4-Tick Loop",
+        "\u00a7fGrinder: \u00a7aSafe (Slab)"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fGrinder Kills: \u00a7a5",
+        "\u00a7fXP Level: \u00a7a14",
+        "\u00a7fIron Bars: \u00a7f32"
+      ]
     },
     {
       "server_index": 13,
@@ -1488,7 +1766,30 @@
           14
         ]
       ],
-      "post_join_chat_message": "128 blocks mined, /sellall +$250k, Rank B unlocked, and Outpost key claimed!"
+      "post_join_chat_message": "128 blocks mined, /sellall +$250k, Rank B unlocked, and Outpost key claimed!",
+      "evidence_chat_clipped_top": "\u00a7d\u00a7lOPBLOCKS > \u00a77Warped to \u00a7fMine A \u00a77(Omni-Pickaxe Haste III active).",
+      "evidence_chat_setup_lines": [
+        "\u00a7a\u00a7lSELLALL > \u00a77Sold \u00a7f128x Mine A Blocks \u00a77for \u00a7a+$250,000\u00a77!",
+        "\u00a7b\u00a7lENCHANT > \u00a77Upgraded \u00a7eEfficiency (+5) \u00a77& \u00a7dFortune (+3) \u00a77with Tokens!",
+        "\u00a76\u00a7lRANKUP > \u00a7e{username} \u00a77ranked up from \u00a7fRank A \u00a77to \u00a7b\u00a7lRank B\u00a77!"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cRivalPrisoner \u00a77was slain by \u00a7e{username} \u00a77at \u00a7cPvP Outpost\u00a77!",
+        "\u00a76\u00a7lOUTPOST CAPTURED > \u00a7e{username} \u00a77claimed \u00a7d1x Legendary Crate Key\u00a77!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a7a+1,250 Tokens \u00a77| \u00a7bMine B Unlocked",
+      "evidence_actionbar_text": "\u00a7bRank: \u00a7lB \u00a78\u2022 \u00a7a+$250,000 \u00a78\u2022 \u00a7d+1 Legendary Key",
+      "evidence_scoreboard_header": "\u00a7d\u00a7lOPBLOCKS \u00a7fPrison",
+      "evidence_scoreboard_teams": [
+        "\u00a7fRank: \u00a7b[Rank B]",
+        "\u00a7fPickaxe: \u00a7eEff XV / Fort VIII",
+        "\u00a7fOutpost: \u00a7aCaptured \u2713"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fMined: \u00a7a128 Blocks",
+        "\u00a7fBalance: \u00a7a$250,000",
+        "\u00a7fPvP Kills: \u00a7a1"
+      ]
     },
     {
       "server_index": 14,
@@ -1594,7 +1895,30 @@
           12
         ]
       ],
-      "post_join_chat_message": "12/12 Parkour jumps (0 falls, 14.8s) + OneBlock Phase 2 + spider kill complete!"
+      "post_join_chat_message": "12/12 Parkour jumps (0 falls, 14.8s) + OneBlock Phase 2 + spider kill complete!",
+      "evidence_chat_clipped_top": "\u00a7e\u00a7lPARKOUR > \u00a77Timer started! Reach all \u00a7f12 Checkpoints \u00a77without falling.",
+      "evidence_chat_setup_lines": [
+        "\u00a7aCheckpoint #4 \u00a77reached! (\u00a7e4.62s \u00a77\u2022 4m Sprint-Jump Verified)",
+        "\u00a7aCheckpoint #8 \u00a77reached! (\u00a7e9.85s \u00a77\u2022 Neo-Fence & Slab Landing)",
+        "\u00a76\u00a7lPARKOUR COMPLETE! \u00a7e{username} \u00a77finished 12/12 jumps in \u00a7a14.80s \u00a77(\u00a7a0 Falls\u00a77)!"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cCave Spider \u00a77was slain by \u00a7e{username} \u00a77on OneBlock center!",
+        "\u00a7b\u00a7lONEBLOCK > \u00a7750/50 blocks mined! Unlocked \u00a7aPhase 2: Underground\u00a77!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a76+500 SunRealms Coins \u00a77| \u00a7aParkour Title Unlocked",
+      "evidence_actionbar_text": "\u00a76Parkour: \u00a7a12/12 (14.8s) \u00a78\u2022 \u00a7bOneBlock: \u00a7e50/50 (Phase 2)",
+      "evidence_scoreboard_header": "\u00a76\u00a7lSUNREALMS \u00a7eOneBlock",
+      "evidence_scoreboard_teams": [
+        "\u00a7fParkour: \u00a7a14.80s (0 Falls)",
+        "\u00a7fOneBlock: \u00a7bPhase 2",
+        "\u00a7fBlocks: \u00a7a50/50 \u2713"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fCheckpoints: \u00a7a12/12",
+        "\u00a7fMob Kills: \u00a7a1",
+        "\u00a7fCoins: \u00a76+500"
+      ]
     },
     {
       "server_index": 15,
@@ -1705,7 +2029,30 @@
           14
         ]
       ],
-      "post_join_chat_message": "gf! Underground barrel stash looted + 4-tick totem swap + +1 Heart stolen (11 Hearts)!"
+      "post_join_chat_message": "gf! Underground barrel stash looted + 4-tick totem swap + +1 Heart stolen (11 Hearts)!",
+      "evidence_chat_clipped_top": "\u00a74\u00a7lLIFESTEAL > \u00a77Entered \u00a7cWarzone PvP \u00a77(Totem locked in Off-Hand Slot 45).",
+      "evidence_chat_setup_lines": [
+        "\u00a77[\u00a7dX-Ray\u00a77] \u00a7fDetected hidden \u00a76Barrel Stash \u00a777m underground at \u00a7e(0, 57, 0)",
+        "\u00a7aLooted \u00a762x Totem of Undying \u00a77& \u00a7b8x Enchanted Golden Apple \u00a77from Stash!",
+        "\u00a7eTotem popped! \u00a7aAuto-Swapped backup \u00a76Totem of Undying \u00a77to Off-Hand in \u00a7a4 Ticks\u00a77!"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cHeartHunter99 \u00a77was slain by \u00a7e{username}\u00a77 using \u00a74[Netherite Sword]\u00a77!",
+        "\u00a7c\u00a7lHEART STOLEN! \u00a7e{username} \u00a77gained \u00a7c+1 Permanent Heart \u00a77(\u00a7c11.0 \u2764 Max HP\u00a77)!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a7a[SVMEM-1] \u00a77Saved landmark: \u00a7eWarzone Hidden Barrel Stash (-7m)",
+      "evidence_actionbar_text": "\u00a7c\u2764\u2764\u2764\u2764\u2764\u2764\u2764\u2764\u2764\u2764\u2764 22.0/22.0 HP \u00a78\u2022 \u00a76Totem Swap: \u00a7a4 Ticks",
+      "evidence_scoreboard_header": "\u00a74\u00a7lTALONMC \u00a7cLifesteal",
+      "evidence_scoreboard_teams": [
+        "\u00a7fHearts: \u00a7c11 \u2764 \u00a7a(+1)",
+        "\u00a7fOff-Hand: \u00a76Totem Ready",
+        "\u00a7fWarzone: \u00a7aDominated"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fKills: \u00a7a1",
+        "\u00a7fHearts Stolen: \u00a7c+1",
+        "\u00a7fStashes Found: \u00a7a1"
+      ]
     },
     {
       "server_index": 16,
@@ -1820,7 +2167,29 @@
           15
         ]
       ],
-      "post_join_chat_message": "gg! Unwatered corner X-rayed, TNT breached, guard eliminated, and 2 spawners looted!"
+      "post_join_chat_message": "gg! Unwatered corner X-rayed, TNT breached, guard eliminated, and 2 spawners looted!",
+      "evidence_chat_clipped_top": "\u00a7e[Factions] \u00a7a{username} \u00a77created faction \u00a76SawbyteGuild \u00a77& claimed chunk!",
+      "evidence_chat_setup_lines": [
+        "\u00a77[\u00a7dX-Ray\u00a77] \u00a7fScanned rival wall North(-Z): \u00a7cUnwatered dry corner \u00a77at \u00a7e(0, 64, -30)",
+        "\u00a7c\u00a7lBREACH > \u00a77TNT detonation breached \u00a7fRivalVault \u00a77obsidian/cobble wall!"
+      ],
+      "evidence_chat_kill_lines": [
+        "\u00a7cVaultGuard_01 \u00a77was slain by \u00a7e{username} \u00a77inside breached Faction Vault!",
+        "\u00a76\u00a7lRAID SUCCESS > \u00a7e{username} \u00a77mined \u00a7e2x Blaze Spawner \u00a77& \u00a7b64x Diamond Block\u00a77!"
+      ],
+      "evidence_chat_clipped_bottom": "\u00a7a+$1,200,000 Faction Value Added to \u00a76SawbyteGuild",
+      "evidence_actionbar_text": "\u00a76\u00a7lRAID BREACH! \u00a78\u2022 \u00a7e+2 Blaze Spawners \u00a78\u2022 \u00a7b+64 Diamond Blocks",
+      "evidence_scoreboard_header": "\u00a7e\u00a7lLEMONCLOUD \u00a76Factions",
+      "evidence_scoreboard_teams": [
+        "\u00a7fFaction: \u00a76SawbyteGuild",
+        "\u00a7fPower: \u00a7a10/10",
+        "\u00a7fRaid Target: \u00a7aBreached \u2713"
+      ],
+      "evidence_scoreboard_stats": [
+        "\u00a7fRaid Kills: \u00a7a1",
+        "\u00a7fSpawners: \u00a7e+2 Blaze",
+        "\u00a7fValue: \u00a7a+$1.2M"
+      ]
     }
   ]
 }

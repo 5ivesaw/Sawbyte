@@ -4,19 +4,6 @@ Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #01: PikaNetwork (top
 Target Gamemode : Solo BedWars (BedWars Minigame)
 Complex Mission : Forge Farm, Shop Buy, 18m Void Speed-Bridge, X-Ray Bed Break & Final Kill
 Verified Outcome: 1 Bed Broken + 1 Final Kill
-
-8-Stage Autonomous Workflow:
-  Stage 1: Offline Cracked Handshake (`PikaSaw_<rand>`) & 4,096-Chunk LRU Cache Streaming
-  Stage 2: Multi-Language Auth Prompt Detection & Non-Vision Chat Math/Code CAPTCHA Solver
-  Stage 3: 46-Slot Inventory Scan & Hotbar Selector Activation (`inventory.list` + `inventory.use_item`)
-  Stage 4: Authoritative `state_id` Container GUI Inspection & `Solo BedWars` Slot Click
-  Stage 5: Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution (`npc.interact`) & `SVMEM-1` Landmark Save
-  Stage 6: Iron/Gold Generator Farm, Item Shop GUI Purchase & 8-Block Bed Pyramid
-           -> Strafed into base generator at (-2, 65, 18), collected 16x iron_ingot + 4x gold_ingot, opened Item Shop Villager GUI (`gui.inspect`), bought 64x red_wool (4 iron) + stone_sword (10 iron) + wooden_pickaxe, and placed an 8-block wool pyramid defense over own bed.
-  Stage 7: 64m Horizon Scan (`inspect.long_range`) & 18-Block Sneak-Eagle Void Speed-Bridge
-           -> Executed `inspect.long_range` and `inspect.svpe.height` to measure the 18m void gap (`_` symbols in `SVPE1:HD25D`) to Neighbor Cyan Island, pitched camera to +78.5 deg, and sneak-bridged 18 wool blocks across the void with zero falls.
-  Stage 8: Through-Block X-Ray Bed Detection (`inspect.xray`), Bed Break & 3.0m Final Kill
-           -> Cast 16m penetrating X-ray (`inspect.xray`) through Cyan Island defense to pinpoint `cyan_bed` behind 1.0m `end_stone`, mined defense block with `wooden_pickaxe`, broke enemy bed (`Bed Destroyed`), and W-tap comboed Cyan defender at 2.82m vanilla reach for `+1 Final Kill`.
 """
 
 from __future__ import annotations
@@ -58,6 +45,14 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='Through-Block X-Ray Bed Detection (`inspect.xray`), Bed Break & 3.0m Final Kill',
     stage_8_detail='Cast 16m penetrating X-ray (`inspect.xray`) through Cyan Island defense to pinpoint `cyan_bed` behind 1.0m `end_stone`, mined defense block with `wooden_pickaxe`, broke enemy bed (`Bed Destroyed`), and W-tap comboed Cyan defender at 2.82m vanilla reach for `+1 Final Kill`.',
     stage_8_commands=['inspect.xray', 'player.hotbar 2', 'mine.block 0 65 38', 'interact.raycast', 'player.hotbar 0', 'humanisation.perception on', 'attack.entity 204', 'inspect.sensory'],
+    evidence_chat_clipped_top='§eNylaris §7was knocked into the void by §cwigry.',
+    evidence_chat_setup_lines=['§f+2 Iron', '§aYou purchased §664x Wool', '§aYou purchased §6Stone Sword', "§cYou don't have enough Iron! Need 6 more!"],
+    evidence_chat_kill_lines=['§f§lBED DESTRUCTION > §bCyan Bed §7was destroyed by §e{username}§7!', '§cwigry §7was killed by §e{username}§7. §b§lFINAL KILL!'],
+    evidence_chat_clipped_bottom='§6+25 BedWars Coins! §7(Final Kill + Bed Destroyed)',
+    evidence_actionbar_text='§a§lFINAL KILL! §8• §fCyan Defender §7(§e2.82m§7)',
+    evidence_scoreboard_header='§fDiamond II in §a5:46',
+    evidence_scoreboard_teams=['§cR §fRed: §a✓', '§9B §fBlue: §a✓', '§3C §fCyan: §c✗', '§eY §fYellow: §a✓ §7YOU'],
+    evidence_scoreboard_stats=['§fKills: §a1', '§fFinal Kills: §a1', '§fBeds Broken: §a1'],
     xray_finding_summary='Crosshair(16m): 0.0-1.8m:air -> 1.8-2.8m:end_stone(hardness=3.0) -> 2.8-3.8m:cyan_bed [ENEMY BED]',
     random_username_prefix='PikaSaw',
     register_cmd_template='/register {password} {password}',
@@ -68,7 +63,7 @@ CONFIG = ServerBenchmarkConfig(
     gui_secondary_item_keywords=['solo', '1v1', 'bedwars solo', 'eight_one', 'normal', 'play'],
     fallback_join_commands=['/bedwars', '/bw', '/server bedwars'],
     npc_target_keywords=['solo', 'bedwars', 'click to play', 'solo mode', '1v1', 'join', 'npc', 'player_npc'],
-    lobby_search_waypoints=[(0, 64, 14), (6, 64, 14), (-6, 64, 14), (0, 64, 22), (10, 64, 18), (-10, 64, 18)],
+    lobby_search_waypoints=[tuple(x) for x in [[0, 64, 14], [6, 64, 14], [-6, 64, 14], [0, 64, 22], [10, 64, 18], [-10, 64, 18]]],
     post_join_chat_message='gg! Bed broken and final kill secured via SVPE-1 perception',
 )
 

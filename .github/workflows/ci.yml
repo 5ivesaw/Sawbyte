@@ -161,7 +161,7 @@ jobs:
           mkdir -p release-assets
           TAG_VER="${GITHUB_REF_NAME#v}"
           if [[ ! "$TAG_VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            TAG_VER="0.5.1"
+            TAG_VER="0.5.2"
           fi
 
           LINUX_LAUNCHER_DIR=$(find release-artifacts -maxdepth 1 -type d -name "sawbyte-launcher-ubuntu*" | head -n 1)
@@ -232,7 +232,7 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           if [[ "$TAG" != v* ]]; then
-            TAG="v0.5.1"
+            TAG="v0.5.2"
           fi
           echo "Publishing release for $TAG"
           if gh release view "$TAG" >/dev/null 2>&1; then

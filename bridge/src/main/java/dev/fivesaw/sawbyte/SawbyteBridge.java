@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.EntityHitResult;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -643,7 +644,7 @@ public final class SawbyteBridge implements ClientModInitializer {
                         target = client.level.getEntity(Integer.parseInt(parts[1]));
                     }
                     if (target != null) {
-                        client.gameMode.interact(client.player, target, net.minecraft.world.InteractionHand.MAIN_HAND);
+                        client.gameMode.interact(client.player, target, new EntityHitResult(target), net.minecraft.world.InteractionHand.MAIN_HAND);
                         req.writer.println("queued right-click interaction on entity " + target.getId());
                     } else {
                         req.writer.println("error: target entity not found");

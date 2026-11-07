@@ -1,4 +1,4 @@
-//! `sawbyte-prepare` v0.5.1 — Resource & Registry Preparation Tool for Sawbyte 26.3
+//! `sawbyte-prepare` v0.5.2 — Resource & Registry Preparation Tool for Sawbyte 26.3
 //! (Refactored from `horizon-prepare` into native Sawbyte naming).
 #![allow(clippy::all, warnings, unused)]
 
@@ -8,7 +8,7 @@ use std::path::PathBuf;
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.iter().any(|a| a == "--help" || a == "-h") {
-        println!("sawbyte-prepare 0.5.1 — Prepare Minecraft 26.3 resources & registries for Sawbyte");
+        println!("sawbyte-prepare 0.5.2 — Prepare Minecraft 26.3 resources & registries for Sawbyte");
         println!("Usage:");
         println!("  sawbyte-prepare --prepare [--minecraft-dir <DIR>] [--server-jar <JAR>] [--output <DIR>]");
         println!("  sawbyte-prepare sounds [--minecraft-dir <DIR>]");
@@ -60,12 +60,12 @@ fn main() {
 
     if args.first().map(String::as_str) == Some("sounds") {
         let _ = sounds::verify_and_stage_sounds(&mc_dir, &out_dir);
-        println!("[sawbyte-prepare 0.5.1] Verified and staged sounds in {}", out_dir.display());
+        println!("[sawbyte-prepare 0.5.2] Verified and staged sounds in {}", out_dir.display());
         return;
     }
     if args.first().map(String::as_str) == Some("panorama") {
         let _ = sounds::verify_panorama_assets(&mc_dir, &out_dir);
-        println!("[sawbyte-prepare 0.5.1] Verified panorama assets in {}", out_dir.display());
+        println!("[sawbyte-prepare 0.5.2] Verified panorama assets in {}", out_dir.display());
         return;
     }
 
@@ -77,5 +77,5 @@ fn main() {
         profile_cand.as_deref(),
     );
 
-    println!("[sawbyte-prepare 0.5.1] Prepared Minecraft 26.3 resources in {}", out_dir.display());
+    println!("[sawbyte-prepare 0.5.2] Prepared Minecraft 26.3 resources in {}", out_dir.display());
 }

@@ -32,7 +32,7 @@ pub fn match_artifact_pattern(candidate: &str, expected_prefix: &str, expected_e
 
 /// Extracts a string value for `"key": "value"` from a JSON document.
 pub fn extract_json_string_field(json_text: &str, key: &str) -> Option<String> {
-    let needle = format!(""{key}"");
+    let needle = format!(r#""{key}""#);
     let pos = json_text.find(&needle)?;
     let after_key = &json_text[pos + needle.len()..];
     let colon = after_key.find(':')?;

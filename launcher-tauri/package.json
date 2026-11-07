@@ -1,7 +1,7 @@
 {
   "name": "sawbyte-tauri-launcher",
   "private": true,
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Sawbyte Real Cross-Platform Desktop Launcher (Tauri v2 + React + Tailwind CSS)",
   "type": "module",
   "scripts": {

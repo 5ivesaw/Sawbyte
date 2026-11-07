@@ -71,7 +71,7 @@ impl Default for AppState {
             headless_installed: true,
             cli_installed: true,
             logs: vec![
-                "[Sawbyte v0.5.1] Native Desktop App initialized (Zero HTML / Zero Browser)".to_string(),
+                "[Sawbyte v0.5.2] Native Desktop App initialized (Zero HTML / Zero Browser)".to_string(),
                 "[Engine] Persistent root: ~/.sawbyte | Protocol: Minecraft 26.3 (777)".to_string(),
                 "[MCP] AI Agent Server active on stdio & TCP 127.0.0.1:8765".to_string(),
                 "[RL] Gymnasium sub-voxel observation socket ready on 127.0.0.1:25580".to_string(),
@@ -563,7 +563,7 @@ fn render_home_tab(s: &mut UiSurface, state: &AppState) {
             3u8,
             "Graphical Fabric 26.3",
             "Bridge Mod",
-            "Fabric 26.3 · Auto-injects sawbyte-bridge-0.5.1.jar",
+            "Fabric 26.3 · Auto-injects sawbyte-bridge-0.5.2.jar",
             "Full Visual Client Sync",
         ),
     ];
@@ -707,7 +707,7 @@ fn render_mods_tab(s: &mut UiSurface, state: &AppState) {
             188,
             0x4F46E5,
             3u8,
-            "sawbyte-bridge-0.5.1.jar (Fabric 26.3 Mod)",
+            "sawbyte-bridge-0.5.2.jar (Fabric 26.3 Mod)",
             "Syncs & spectates headless bots inside Java Fabric 26.3 · Auto-binds port 25580",
             "Installed",
             true,
@@ -758,11 +758,11 @@ fn render_mods_tab(s: &mut UiSurface, state: &AppState) {
 
     // Bottom Native Release Formats Summary Card
     s.fill_rounded_rect(84, 526, 866, 244, 12, 0x1C1F26, Some(0x2A2F3A));
-    s.draw_text(106, 548, "Native Distro & OS Packages (v0.5.1)", &FONT_18, 0xF8FAFC);
-    s.draw_text(106, 582, "• Debian / Ubuntu / Mint:  sawbyte-launcher_0.5.1_amd64.deb (apt / dpkg installer)", &FONT_14, 0x1BD96A);
+    s.draw_text(106, 548, "Native Distro & OS Packages (v0.5.2)", &FONT_18, 0xF8FAFC);
+    s.draw_text(106, 582, "• Debian / Ubuntu / Mint:  sawbyte-launcher_0.5.2_amd64.deb (apt / dpkg installer)", &FONT_14, 0x1BD96A);
     s.draw_text(106, 612, "• Universal Linux App:     Sawbyte-Launcher-x86_64.AppImage (single clickable file)", &FONT_14, 0xE2E8F0);
     s.draw_text(106, 642, "• Windows 10 / 11 (x64):   Sawbyte-Launcher-x64.exe (native Win32 app, no unzip needed)", &FONT_14, 0xE2E8F0);
-    s.draw_text(106, 672, "• Standalone CLI & Engine: sawbyte-cli, sawbyte-play, and sawbyte-bridge-0.5.1.jar", &FONT_14, 0x94A3B8);
+    s.draw_text(106, 672, "• Standalone CLI & Engine: sawbyte-cli, sawbyte-play, and sawbyte-bridge-0.5.2.jar", &FONT_14, 0x94A3B8);
     s.draw_text(106, 712, "Zero HTML · Zero Localhost Web Server · Zero 200 MB Electron Bloat", &FONT_12, 0x8B94A5);
 }
 
@@ -956,7 +956,7 @@ pub fn run_launcher_gui(port_opt: Option<u16>) -> Result<(), Box<dyn std::error:
     let url = format!("http://127.0.0.1:{bound_port}");
 
     println!("========================================================================");
-    println!("        SAWBYTE TAURI + RUST DESKTOP LAUNCHER v0.5.1");
+    println!("        SAWBYTE TAURI + RUST DESKTOP LAUNCHER v0.5.2");
     println!("========================================================================");
     println!("  WebView UI:     {url} (Tauri v2 / WebView2 / WebKit2GTK)");
     println!("  Launcher Root:  {}", PersistentLauncher::resolve_home().display());
@@ -986,7 +986,7 @@ pub fn run_launcher_gui(port_opt: Option<u16>) -> Result<(), Box<dyn std::error:
 
 pub fn refresh_state_from_disk(state: &mut AppState) {
     if let Ok(launcher) = PersistentLauncher::load_or_init() {
-        let bridge_p = launcher.root_dir.join("editions").join("sawbyte-bridge-0.5.1.jar");
+        let bridge_p = launcher.root_dir.join("editions").join("sawbyte-bridge-0.5.2.jar");
         state.bridge_installed = bridge_p.exists();
         state.headless_installed = PersistentLauncher::locate_sawbyte_play_binary().is_ok();
         let (cli_ok, _, _) = crate::check_cli_status();

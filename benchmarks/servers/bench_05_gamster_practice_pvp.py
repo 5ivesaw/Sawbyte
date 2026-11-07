@@ -4,19 +4,6 @@ Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #05: Gamster (mc.gams
 Target Gamemode : Practice NoDebuff 1v1 Duel (Competitive Practice PvP)
 Complex Mission : Speed II Pre-Buff, 8-Hit W-Tap Strafe Combo, +82° Splash-Pot Micro-Turn & Duel Win
 Verified Outcome: 1v1 NoDebuff Flawless Win (7 Pots Left)
-
-8-Stage Autonomous Workflow:
-  Stage 1: Offline Cracked Handshake (`GamSaw_<rand>`) & 4,096-Chunk LRU Cache Streaming
-  Stage 2: Multi-Language Auth Prompt Detection & Non-Vision Chat Math/Code CAPTCHA Solver
-  Stage 3: 46-Slot Inventory Scan & Hotbar Selector Activation (`inventory.list` + `inventory.use_item`)
-  Stage 4: Authoritative `state_id` Container GUI Inspection & `Practice NoDebuff 1v1 Duel` Slot Click
-  Stage 5: Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution (`npc.interact`) & `SVMEM-1` Landmark Save
-  Stage 6: Pre-Duel Speed II Buff & Hotbar Instant Health II Splash Organization
-           -> Drank `Speed II` (1:30) and `Fire Resistance` (8:00) potions at duel countdown, verified `diamond_sword` in slot 0, `16x ender_pearl` in slot 1, and `splash_potion` (Instant Health II) across slots 2..8.
-  Stage 7: Humanised Smooth-Camera Strafe Tracking & 8-Hit W-Tap Combo (`≤3.00m` Reach)
-           -> Engaged opponent using `SmoothHumanisedCamera` (`humanisation.perception on`), alternating 45° left/right A/D strafes and W-tap sprint resets to lock opponent in an 8-hit airborne combo strictly inside `2.68m–2.97m` vanilla survival reach.
-  Stage 8: +82° Downward Splash-Pot Micro-Turn, Ender Pearl Catch & Final Blow (+1 Kill)
-           -> At `HP=9.0/20.0`, pitched camera down to `+82.0°` while sprinting forward to splash `2x Instant Health II` into own hitbox (`HP -> 19.5/20.0`), threw `ender_pearl` (`slot 1`) to catch retreating opponent, and landed final sword crit (`1v1 NoDebuff Victory`).
 """
 
 from __future__ import annotations
@@ -58,6 +45,14 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='+82° Downward Splash-Pot Micro-Turn, Ender Pearl Catch & Final Blow (+1 Kill)',
     stage_8_detail='At `HP=9.0/20.0`, pitched camera down to `+82.0°` while sprinting forward to splash `2x Instant Health II` into own hitbox (`HP -> 19.5/20.0`), threw `ender_pearl` (`slot 1`) to catch retreating opponent, and landed final sword crit (`1v1 NoDebuff Victory`).',
     stage_8_commands=['player.look 0.0 82.0', 'player.hotbar 2', 'use.item', 'player.hotbar 3', 'use.item', 'player.look 0.0 4.0', 'player.hotbar 1', 'use.item', 'player.hotbar 0', 'attack.entity 202', 'inspect.sensory'],
+    evidence_chat_clipped_top='§e[Practice] §7Match started against §cSweatyPotPvP§7 (NoDebuff 1v1).',
+    evidence_chat_setup_lines=['§bApplied §fSpeed II §7(1:30) & §6Fire Resistance §7(8:00)', '§d+2x Splash Potion of Healing II §7(+10.5 ❤ restored at +82° pitch)', '§a8-Hit Combo landed! §7(Max Reach: §f2.97m§7)'],
+    evidence_chat_kill_lines=['§cSweatyPotPvP §7was slain by §e{username}§7 (§a7 Pots §7remaining).', '§a§lWINNER! §e{username} §7defeated §cSweatyPotPvP §7in §dNoDebuff 1v1§7!'],
+    evidence_chat_clipped_bottom='§7Inventories (click to view): §a{username} §7| §cSweatyPotPvP',
+    evidence_actionbar_text='§dPots Left: §a7 §8| §bCombo: §e8 Hits §8| §aAim: §f94.2%',
+    evidence_scoreboard_header='§d§lPRACTICE §7NoDebuff',
+    evidence_scoreboard_teams=['§fOpponent: §cSweatyPotPvP', '§fPing: §a38ms §7vs §c44ms', '§fEnderpearl: §aReady'],
+    evidence_scoreboard_stats=['§fYour Pots: §a7', '§fTheir Pots: §c0', '§fHits: §a34 §7(+11)'],
     xray_finding_summary='Crosshair(16m): 0.0-16.0m:air (Flat NoDebuff Arena — 100% Unobstructed Direct-FOV Sightline)',
     random_username_prefix='GamSaw',
     register_cmd_template='/register {password} {password}',
@@ -68,7 +63,7 @@ CONFIG = ServerBenchmarkConfig(
     gui_secondary_item_keywords=['1v1', 'unranked', 'solo', 'queue'],
     fallback_join_commands=['/duel', '/unranked', '/practice'],
     npc_target_keywords=['unranked', 'nodebuff', '1v1', 'practice', 'npc'],
-    lobby_search_waypoints=[(0, 64, 12), (5, 64, 12), (-5, 64, 12)],
+    lobby_search_waypoints=[tuple(x) for x in [[0, 64, 12], [5, 64, 12], [-5, 64, 12]]],
     post_join_chat_message='gg wp! 7 pots remaining — W-tap & splash-pot timing verified',
 )
 

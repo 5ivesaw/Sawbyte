@@ -314,6 +314,91 @@ pub fn nbt_to_plain_text(val: &serde_json::Value) -> String {
     }
 }
 
+pub fn mc_color_name_to_code(color: &str) -> &'static str {
+    match color.trim().to_ascii_lowercase().as_str() {
+        "black" | "#000000" => "§0",
+        "dark_blue" | "#0000aa" => "§1",
+        "dark_green" | "#00aa00" => "§2",
+        "dark_aqua" | "#00aaaa" => "§3",
+        "dark_red" | "#aa0000" => "§4",
+        "dark_purple" | "#aa00aa" => "§5",
+        "gold" | "#ffaa00" => "§6",
+        "gray" | "#aaaaaa" => "§7",
+        "dark_gray" | "#555555" => "§8",
+        "blue" | "#5555ff" => "§9",
+        "green" | "#55ff55" => "§a",
+        "aqua" | "#55ffff" => "§b",
+        "red" | "#ff5555" => "§c",
+        "light_purple" | "#ff55ff" => "§d",
+        "yellow" | "#ffff55" => "§e",
+        "white" | "#ffffff" => "§f",
+        _ => "",
+    }
+}
+
+/// Converts an NBT/JSON text component tree into an authentic `§`-formatted Minecraft string
+/// preserving colors (`§0`..`§f`) and styles (`§l`, `§o`, `§n`, `§m`) for evidence snapshots.
+pub fn nbt_to_styled_minecraft_text(val: &serde_json::Value) -> String {
+    match val {
+        serde_json::Value::String(s) => s.clone(),
+        serde_json::Value::Array(arr) => {
+            let mut out = String::new();
+            for item in arr {
+                out.push_str(&nbt_to_styled_minecraft_text(item));
+            }
+            out
+        }
+        serde_json::Value::Object(map) => {
+            let mut out = String::new();
+            if let Some(col) = map.get("color").and_then(|v| v.as_str()) {
+                out.push_str(mc_color_name_to_code(col));
+            }
+            if map.get("bold").and_then(|v| v.as_bool()) == Some(true) {
+                out.push_str("§l");
+            }
+            if map.get("italic").and_then(|v| v.as_bool()) == Some(true) {
+                out.push_str("§o");
+            }
+            if map.get("underlined").and_then(|v| v.as_bool()) == Some(true) {
+                out.push_str("§n");
+            }
+            if map.get("strikethrough").and_then(|v| v.as_bool()) == Some(true) {
+                out.push_str("§m");
+            }
+            if let Some(t) = map.get("text").and_then(|v| v.as_str()) {
+                out.push_str(t);
+            } else if let Some(tr) = map.get("translate").and_then(|v| v.as_str()) {
+                out.push_str(tr);
+                if let Some(with_args) = map.get("with").and_then(|v| v.as_array()) {
+                    let rendered: Vec<String> =
+                        with_args.iter().map(nbt_to_styled_minecraft_text).collect();
+                    if !rendered.is_empty() {
+                        out.push('(');
+                        out.push_str(&rendered.join(", "));
+                        out.push(')');
+                    }
+                }
+            }
+            if let Some(extra) = map.get("extra").and_then(|v| v.as_array()) {
+                for item in extra {
+                    out.push_str(&nbt_to_styled_minecraft_text(item));
+                }
+            }
+            out
+        }
+        _ => String::new(),
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ServerEvidenceRecord {
+    pub source: String,
+    pub category: String,
+    pub styled_text: String,
+    pub plain_text: String,
+    pub matched_pattern: String,
+}
+
 #[derive(Clone, Debug)]
 pub struct TrackedEntity {
     pub entity_id: i32,
@@ -410,11 +495,14 @@ pub struct PlayerStateTable {
     pub game_mode: u8,
     pub action_sequence: i32,
     pub chat_log: Vec<String>,
+    pub chat_styled_log: Vec<String>,
+    pub evidence_log: Vec<ServerEvidenceRecord>,
     pub received_events: Vec<String>,
     pub player_profiles: HashMap<[u8; 16], String>,
     pub title_text: Option<String>,
     pub subtitle_text: Option<String>,
     pub action_bar_text: Option<String>,
+    pub scoreboard_title: Option<String>,
     pub scoreboard_lines: Vec<String>,
     pub decode_errors: u64,
     pub last_decode_error: Option<String>,
@@ -438,11 +526,14 @@ impl Default for PlayerStateTable {
             game_mode: 0,
             action_sequence: 1,
             chat_log: Vec::new(),
+            chat_styled_log: Vec::new(),
+            evidence_log: Vec::new(),
             received_events: Vec::new(),
             player_profiles: HashMap::new(),
             title_text: None,
             subtitle_text: None,
             action_bar_text: None,
+            scoreboard_title: None,
             scoreboard_lines: Vec::new(),
             decode_errors: 0,
             last_decode_error: None,
@@ -1205,11 +1296,44 @@ impl PlayerStateTable {
         Ok(())
     }
 
+    pub fn detect_and_record_evidence(&mut self, source: &str, styled: &str, plain: &str) {
+        let low = plain.to_ascii_lowercase();
+        let rules: &[(&str, &[&str])] = &[
+            ("final_kill", &["final kill", "final eliminated"]),
+            ("bed_break", &["bed was destroyed", "bed destruction", "broke", "bed broken"]),
+            ("kill", &["was killed by", "was slain by", "knocked into the void by", "was shot by", "killstreak", "murderer was eliminated"]),
+            ("shop_purchase", &["you purchased", "you bought", "need ", "not enough iron", "not enough gold", "+2 iron", "+1 gold", "+4 iron"]),
+            ("goal_scored", &["scored a goal", "goal!", "won the duel", "victory", "ganador"]),
+            ("economy_sale", &["sold ", "+$", "auction", "listed on ah", "emerald"]),
+            ("rankup_or_phase", &["ranked up", "rankup", "phase 2", "parkour completed", "checkpoint", "heart stolen", "+1 heart", "claimed"]),
+            ("auth_verified", &["successfully registered", "successfully logged", "authenticated", "sesion iniciada"]),
+        ];
+        for (cat, patterns) in rules {
+            for pat in *patterns {
+                if low.contains(pat) {
+                    if self.evidence_log.len() >= 128 {
+                        self.evidence_log.remove(0);
+                    }
+                    self.evidence_log.push(ServerEvidenceRecord {
+                        source: source.to_string(),
+                        category: (*cat).to_string(),
+                        styled_text: styled.to_string(),
+                        plain_text: plain.to_string(),
+                        matched_pattern: (*pat).to_string(),
+                    });
+                    return;
+                }
+            }
+        }
+    }
+
     pub fn apply_set_title_text(&mut self, r: &mut Reader<'_>) -> Result<()> {
         let nbt = r.nbt()?;
         let text = nbt_to_plain_text(&nbt);
+        let styled = nbt_to_styled_minecraft_text(&nbt);
         if !text.is_empty() {
             self.title_text = Some(text.clone());
+            self.detect_and_record_evidence("title", &styled, &text);
             self.push_event(format!("title:{text}"));
         }
         Ok(())
@@ -1218,8 +1342,10 @@ impl PlayerStateTable {
     pub fn apply_set_subtitle_text(&mut self, r: &mut Reader<'_>) -> Result<()> {
         let nbt = r.nbt()?;
         let text = nbt_to_plain_text(&nbt);
+        let styled = nbt_to_styled_minecraft_text(&nbt);
         if !text.is_empty() {
             self.subtitle_text = Some(text.clone());
+            self.detect_and_record_evidence("subtitle", &styled, &text);
             self.push_event(format!("subtitle:{text}"));
         }
         Ok(())
@@ -1228,9 +1354,55 @@ impl PlayerStateTable {
     pub fn apply_set_action_bar_text(&mut self, r: &mut Reader<'_>) -> Result<()> {
         let nbt = r.nbt()?;
         let text = nbt_to_plain_text(&nbt);
+        let styled = nbt_to_styled_minecraft_text(&nbt);
         if !text.is_empty() {
             self.action_bar_text = Some(text.clone());
+            self.detect_and_record_evidence("actionbar", &styled, &text);
             self.push_event(format!("actionbar:{text}"));
+        }
+        Ok(())
+    }
+
+    pub fn apply_set_objective(&mut self, r: &mut Reader<'_>) -> Result<()> {
+        let _obj_name = r.string()?;
+        let mode = r.byte()?;
+        if mode == 0 || mode == 2 {
+            if let Ok(nbt) = r.nbt() {
+                let styled = nbt_to_styled_minecraft_text(&nbt);
+                if !styled.is_empty() {
+                    self.scoreboard_title = Some(styled);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn apply_set_score(&mut self, r: &mut Reader<'_>) -> Result<()> {
+        let owner = r.string()?;
+        let _objective = r.string()?;
+        let score = r.var()?;
+        let display_line = if let Ok(has_display) = r.byte() {
+            if has_display != 0 {
+                if let Ok(nbt) = r.nbt() {
+                    let s = nbt_to_styled_minecraft_text(&nbt);
+                    if !s.is_empty() { s } else { format!("{owner}: §a{score}") }
+                } else {
+                    format!("{owner}: §a{score}")
+                }
+            } else {
+                format!("{owner}: §a{score}")
+            }
+        } else {
+            format!("{owner}: §a{score}")
+        };
+        if !display_line.trim().is_empty() {
+            if !self.scoreboard_lines.contains(&display_line) {
+                if self.scoreboard_lines.len() >= 16 {
+                    self.scoreboard_lines.remove(0);
+                }
+                self.scoreboard_lines.push(display_line.clone());
+            }
+            self.detect_and_record_evidence("scoreboard", &display_line, &display_line);
         }
         Ok(())
     }
@@ -1329,13 +1501,26 @@ impl PlayerStateTable {
 
     pub fn apply_system_chat(&mut self, r: &mut Reader<'_>) -> Result<()> {
         let content = r.nbt()?;
+        let is_overlay = r.byte().unwrap_or(0) != 0;
         let text = nbt_to_plain_text(&content);
+        let styled = nbt_to_styled_minecraft_text(&content);
         if !text.is_empty() {
-            self.push_event(format!("chat:{text}"));
-            if self.chat_log.len() >= 128 {
-                self.chat_log.remove(0);
+            let src = if is_overlay { "actionbar" } else { "chat" };
+            self.detect_and_record_evidence(src, &styled, &text);
+            if is_overlay {
+                self.action_bar_text = Some(text.clone());
+                self.push_event(format!("actionbar:{text}"));
+            } else {
+                self.push_event(format!("chat:{text}"));
+                if self.chat_log.len() >= 128 {
+                    self.chat_log.remove(0);
+                }
+                self.chat_log.push(text);
+                if self.chat_styled_log.len() >= 128 {
+                    self.chat_styled_log.remove(0);
+                }
+                self.chat_styled_log.push(styled);
             }
-            self.chat_log.push(text);
         }
         Ok(())
     }

@@ -4452,3 +4452,177 @@ window.toggleDiscMakerDrawer = function () {
   box.classList.toggle('studio-expanded');
   playMcClick(1.05);
 };
+
+// ==============================================================================
+// 9. Interactive 16-Server Benchmark Spotlight Explorer & Rare Dancing Mascot
+// ==============================================================================
+
+window.selectBenchmarkServer = function (serverIndex) {
+  const container = document.getElementById('bench-spotlight-container');
+  const chips = document.querySelectorAll('.bench-server-chip');
+  const cards = document.querySelectorAll('.bench-spotlight-card');
+  chips.forEach((chip) => {
+    const idx = parseInt(chip.getAttribute('data-server-index') || '0', 10);
+    chip.classList.toggle('active', idx === serverIndex);
+  });
+  cards.forEach((card) => {
+    const idx = parseInt(card.getAttribute('data-server-index') || '0', 10);
+    card.classList.toggle('active', idx === serverIndex);
+  });
+  if (container && container.classList.contains('table-only-mode')) {
+    window.setBenchmarkViewMode('spotlight');
+  }
+  if (typeof playMcClick === 'function') playMcClick(1.12);
+};
+
+window.stepBenchmarkServer = function (delta) {
+  const visibleChips = Array.from(document.querySelectorAll('.bench-server-chip')).filter(
+    (c) => c.style.display !== 'none'
+  );
+  if (!visibleChips.length) return;
+  let curPos = visibleChips.findIndex((c) => c.classList.contains('active'));
+  if (curPos < 0) curPos = 0;
+  const nextPos = (curPos + delta + visibleChips.length) % visibleChips.length;
+  const nextIdx = parseInt(visibleChips[nextPos].getAttribute('data-server-index') || '1', 10);
+  window.selectBenchmarkServer(nextIdx);
+};
+
+window.filterBenchmarkCategory = function (category, btnEl) {
+  const buttons = document.querySelectorAll('.bench-cat-filter-btn');
+  buttons.forEach((b) => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+
+  const chips = document.querySelectorAll('.bench-server-chip');
+  const cards = document.querySelectorAll('.bench-spotlight-card');
+  const rows = document.querySelectorAll('.bench-compact-row');
+  let firstMatchIdx = null;
+
+  chips.forEach((chip) => {
+    const cat = chip.getAttribute('data-category-group') || 'all';
+    const idx = parseInt(chip.getAttribute('data-server-index') || '0', 10);
+    const match = category === 'all' || cat === category;
+    chip.style.display = match ? '' : 'none';
+    if (match && firstMatchIdx === null) firstMatchIdx = idx;
+  });
+
+  cards.forEach((card) => {
+    const cat = card.getAttribute('data-category-group') || 'all';
+    const match = category === 'all' || cat === category;
+    card.classList.toggle('filtered-out', !match);
+  });
+
+  rows.forEach((row) => {
+    const cat = row.getAttribute('data-category-group') || 'all';
+    const match = category === 'all' || cat === category;
+    row.style.display = match ? '' : 'none';
+  });
+
+  if (firstMatchIdx !== null) {
+    window.selectBenchmarkServer(firstMatchIdx);
+  }
+};
+
+window.setBenchmarkViewMode = function (mode, btnEl) {
+  const buttons = document.querySelectorAll('.bench-view-mode-btn');
+  buttons.forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('data-view-mode') === mode);
+  });
+  if (btnEl) btnEl.classList.add('active');
+
+  const chipGrid = document.getElementById('bench-server-chip-grid');
+  const spotlightContainer = document.getElementById('bench-spotlight-container');
+  const compactTableWrap = document.getElementById('bench-compact-table-wrap');
+
+  if (mode === 'all-cards') {
+    if (chipGrid) chipGrid.style.display = 'grid';
+    if (spotlightContainer) {
+      spotlightContainer.style.display = 'block';
+      spotlightContainer.classList.add('show-all-cards');
+      spotlightContainer.classList.remove('table-only-mode');
+    }
+    if (compactTableWrap) compactTableWrap.style.display = 'none';
+  } else if (mode === 'compact-table') {
+    if (chipGrid) chipGrid.style.display = 'none';
+    if (spotlightContainer) {
+      spotlightContainer.style.display = 'none';
+      spotlightContainer.classList.add('table-only-mode');
+    }
+    if (compactTableWrap) compactTableWrap.style.display = 'block';
+  } else {
+    // Default 'spotlight': 16-server chip grid + single active spotlight card + compact table below
+    if (chipGrid) chipGrid.style.display = 'grid';
+    if (spotlightContainer) {
+      spotlightContainer.style.display = 'block';
+      spotlightContainer.classList.remove('show-all-cards');
+      spotlightContainer.classList.remove('table-only-mode');
+    }
+    if (compactTableWrap) compactTableWrap.style.display = 'block';
+  }
+  if (typeof playMcClick === 'function') playMcClick(1.08);
+};
+
+window.switchServerStageTab = function (serverIndex, tabKey, btnEl) {
+  const card = document.querySelector(`.bench-spotlight-card[data-server-index="${serverIndex}"]`);
+  if (!card) return;
+  card.querySelectorAll('.bench-stage-tab-btn').forEach((b) => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  card.querySelectorAll('.bench-stage-pane').forEach((p) => {
+    p.classList.toggle('active', p.getAttribute('data-pane-key') === tabKey);
+  });
+  if (typeof playMcClick === 'function') playMcClick(1.15);
+};
+
+// Rare Random Easter Egg: Top-Left Sawbyte Mascot Dances!
+(function initRareDancingMascotEasterEgg() {
+  let isDancing = false;
+  let originalSrc = null;
+
+  function triggerMascotDance() {
+    if (isDancing) return;
+    const brandImg = document.querySelector('.navbar .brand-slot img');
+    const brandSlot = document.querySelector('.navbar .brand-slot');
+    if (!brandImg || !brandSlot) return;
+
+    isDancing = true;
+    originalSrc = brandImg.getAttribute('src') || 'assets/sawbyte.png';
+    brandImg.setAttribute('src', 'assets/sawbyte_dance.gif');
+    brandSlot.classList.add('dancing-easter-egg');
+
+    setTimeout(() => {
+      brandImg.setAttribute('src', originalSrc);
+      brandSlot.classList.remove('dancing-easter-egg');
+      isDancing = false;
+    }, 4800);
+  }
+
+  window.triggerSawbyteMascotDance = triggerMascotDance;
+
+  window.addEventListener('DOMContentLoaded', () => {
+    // Allow triple-clicking the top-left logo to trigger the dance on demand
+    const brandSlot = document.querySelector('.navbar .brand-slot');
+    if (brandSlot) {
+      let clicks = 0;
+      let clickTimer = null;
+      brandSlot.addEventListener('click', () => {
+        clicks += 1;
+        clearTimeout(clickTimer);
+        if (clicks >= 3) {
+          clicks = 0;
+          triggerMascotDance();
+        } else {
+          clickTimer = setTimeout(() => { clicks = 0; }, 900);
+        }
+      });
+    }
+
+    // Rare random check: ~10% chance after 12s, then ~8% chance every 45s
+    setTimeout(() => {
+      if (Math.random() < 0.10) triggerMascotDance();
+    }, 12000);
+
+    setInterval(() => {
+      if (Math.random() < 0.08) triggerMascotDance();
+    }, 45000);
+  });
+})();
+

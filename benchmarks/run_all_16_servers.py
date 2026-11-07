@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 — Master 16-Server Cracked Multiplayer Benchmark Suite Runner (`benchmarks/run_all_16_servers.py`).
+Sawbyte v0.5.2 — Master 16-Server Cracked Multiplayer Benchmark Suite Runner (`benchmarks/run_all_16_servers.py`).
 
 Executes all 16 standalone 8-stage server benchmark scripts in `benchmarks/servers/bench_01_*.py` .. `bench_16_*.py`,
 collects stage-by-stage narratives, kills, economy/raid/parkour metrics, and "Seeing the Game with Words v2"
@@ -34,7 +34,7 @@ def load_and_run_all(mode: str = "auto") -> Dict[str, Any]:
     sensory_samples: List[str] = []
 
     print("========================================================================================================")
-    print("  SAWBYTE v0.5.1 — 16-SERVER AUTONOMOUS 8-STAGE CRACKED MULTIPLAYER BENCHMARK SUITE (128 STAGES)")
+    print("  SAWBYTE v0.5.2 — 16-SERVER AUTONOMOUS 8-STAGE CRACKED MULTIPLAYER BENCHMARK SUITE (128 STAGES)")
     print("========================================================================================================")
 
     t0 = time.time()
@@ -60,7 +60,7 @@ def load_and_run_all(mode: str = "auto") -> Dict[str, Any]:
     total_kills = sum(r.get("kills_achieved", 0) for r in results)
 
     summary = {
-        "version": "0.5.1",
+        "version": "0.5.2",
         "minecraft_version": "26.3",
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "mode": mode,

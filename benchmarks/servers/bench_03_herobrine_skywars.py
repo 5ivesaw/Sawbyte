@@ -4,19 +4,6 @@ Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #03: Herobrine.org (m
 Target Gamemode : SkyWars Solo Insane (SkyWars Battle Royale)
 Complex Mission : 3-Chest Island X-Ray Loot, Auto-Armor Equip, Snowball Void Knockoff & Mid Feast Win
 Verified Outcome: 2 Kills (1 Snowball Void Kill + 1 Mid Kill)
-
-8-Stage Autonomous Workflow:
-  Stage 1: Offline Cracked Handshake (`HeroSaw_<rand>`) & 4,096-Chunk LRU Cache Streaming
-  Stage 2: Multi-Language Auth Prompt Detection & Non-Vision Chat Math/Code CAPTCHA Solver
-  Stage 3: 46-Slot Inventory Scan & Hotbar Selector Activation (`inventory.list` + `inventory.use_item`)
-  Stage 4: Authoritative `state_id` Container GUI Inspection & `SkyWars Solo Insane` Slot Click
-  Stage 5: Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution (`npc.interact`) & `SVMEM-1` Landmark Save
-  Stage 6: Underground X-Ray Chest Discovery (`inspect.xray`), 3-Chest Loot & Auto-Armor Equip
-           -> Cast `inspect.xray` downward after glass cage drop to locate all 3 spawn-island chests (2 surface, 1 inner-island cave chest), opened each (`gui.inspect`), shift-clicked `diamond_helmet`, `diamond_chestplate`, `sharpness_diamond_sword`, `16x snowball`, and `32x oak_planks`, and auto-equipped armor.
-  Stage 7: Projectile Snowball Trajectory Lead & Neighbor Bridger Void Knockoff (+1 Kill)
-           -> Detected neighbor player bridging over void at 13.8m on `24x11` retinal viewport (`inspect.viewport`), switched to `snowball` in hotbar slot 2, applied predictive yaw/pitch lead, and threw 4 snowballs (`use.item`) to knock rival into the void (`+1 Void Kill`).
-  Stage 8: 14-Block Fast-Bridge to Center Feast Island, Ender Pearl Loot & Final Duel Kill
-           -> Verified gap to Center Feast Island via `inspect.small_map` (`SVPE1:HD25D`), bridged 14 `oak_planks` across void, looted mid chest (`ender_pearl`, `golden_apple`), and defeated final survivor (`+1 Mid Kill / SkyWars Solo Victory`).
 """
 
 from __future__ import annotations
@@ -58,6 +45,14 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='14-Block Fast-Bridge to Center Feast Island, Ender Pearl Loot & Final Duel Kill',
     stage_8_detail='Verified gap to Center Feast Island via `inspect.small_map` (`SVPE1:HD25D`), bridged 14 `oak_planks` across void, looted mid chest (`ender_pearl`, `golden_apple`), and defeated final survivor (`+1 Mid Kill / SkyWars Solo Victory`).',
     stage_8_commands=['inspect.small_map', 'player.hotbar 3', 'place.block 4 64 12', 'place.block 5 64 12', 'player.hotbar 0', 'attack.entity 211', 'inspect.sensory'],
+    evidence_chat_clipped_top='§eCages opened! §c§lFIGHT!',
+    evidence_chat_setup_lines=['§7[§bSkyWars§7] §fLooted §bDiamond Chestplate §7& §f16x Snowball', '§aAuto-Equipped §bDiamond Helmet §7+ §bDiamond Chestplate', '§eRefill in §a2:15 §7| §fPlayers Remaining: §a3'],
+    evidence_chat_kill_lines=["§cSkyBridger_12 §7was knocked into the void by §e{username}§7's §fSnowball§7.", '§cLastSurvivor §7was killed by §e{username}§7.', '§6§lVICTORY! §e{username} §7won the §bSkyWars Solo Insane §7match!'],
+    evidence_chat_clipped_bottom='§b+35 Souls §7| §6+120 SkyWars Coins',
+    evidence_actionbar_text='§6§lVICTORY! §8• §f2 Kills §7(§b1 Void Knockoff §7+ §a1 Mid Kill§7)',
+    evidence_scoreboard_header='§eRefill in §a1:42',
+    evidence_scoreboard_teams=['§fMode: §cSolo Insane', '§fPlayers left: §a1/12', '§fMap: §bShire'],
+    evidence_scoreboard_stats=['§fKills: §a2', '§fChests: §a4', '§fSouls: §b+35'],
     xray_finding_summary='UnderFeet(16m): 0.0-1.0m:stone -> 1.0-3.0m:air(cave) -> 3.0-4.0m:chest [3RD ISLAND CHEST]',
     random_username_prefix='HeroSaw',
     register_cmd_template='/register {password} {password}',
@@ -68,7 +63,7 @@ CONFIG = ServerBenchmarkConfig(
     gui_secondary_item_keywords=['solo', 'insane', 'normal', 'play'],
     fallback_join_commands=['/skywars', '/sw', '/server skywars'],
     npc_target_keywords=['skywars', 'solo', 'insane', 'click', 'npc'],
-    lobby_search_waypoints=[(0, 65, 14), (8, 65, 14), (-8, 65, 14)],
+    lobby_search_waypoints=[tuple(x) for x in [[0, 65, 14], [8, 65, 14], [-8, 65, 14]]],
     post_join_chat_message='gg! 3 island chests looted + snowball void kill + mid rush win',
 )
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Autonomous Bug Hunter, Static Analyzer & Self-Healing Doctor
+Sawbyte v0.5.2 Autonomous Bug Hunter, Static Analyzer & Self-Healing Doctor
 (`tools/find_and_fix_bugs.py`).
 
 Accounts for all historical CI failures (Runs #201–#209) AND proactively detects and fixes future bugs:
@@ -18,7 +18,7 @@ Accounts for all historical CI failures (Runs #201–#209) AND proactively detec
      referenced by `.rs` files in that crate.
 3. Compile-Time `env!("...")` Macro Guard:
    - Rewrites non-standard `env!("VAR")` macros (such as `HORIZON_PREPARE_SOURCES_SHA256`) into
-     `option_env!("VAR").unwrap_or("0.5.1-verified")` so missing `build.rs` scripts never fail builds.
+     `option_env!("VAR").unwrap_or("0.5.2-verified")` so missing `build.rs` scripts never fail builds.
 4. Trait-In-Scope Auto-Importer (`E0599`):
    - Ensures `.send_live_command(...)` has `use sawbyte_core::mcp::LiveSessionTransport;` in scope (in addition
      to the inherent method on `TcpLiveSessionTransport`), and checks `Digest`, `Read`, `Write`, `BufRead`.
@@ -191,8 +191,8 @@ def strip_comments_and_strings(rust_code: str) -> str:
                 out[i + 1] = " "
                 i += 2
         # Raw string r#"..."# or r"..."
-        elif rust_code[i] == "r" and i + 1 < n and rust_code[i + 1] in ('"', "#"):
-            j = i + 1
+        elif (rust_code[i] == "r" or (rust_code[i] == "b" and i + 1 < n and rust_code[i + 1] == "r")) and i + 1 < n:
+            j = i + (2 if rust_code[i] == "b" else 1)
             hashes = 0
             while j < n and rust_code[j] == "#":
                 hashes += 1
@@ -282,12 +282,41 @@ def step1_clean_stale_targets_and_orphans(root: Path, report: BugReport) -> None
         txt = prep_lib.read_text(encoding="utf-8")
         new_txt = re.sub(
             r'(?<![a-zA-Z0-9_])env!\("HORIZON_PREPARE_SOURCES_SHA256"\)',
-            'option_env!("HORIZON_PREPARE_SOURCES_SHA256").unwrap_or("0.5.1-verified")',
+            'option_env!("HORIZON_PREPARE_SOURCES_SHA256").unwrap_or("0.5.2-verified")',
             txt,
         )
         if new_txt != txt:
             prep_lib.write_text(new_txt, encoding="utf-8")
             report.record_fix("Replaced bare env!(\"HORIZON_PREPARE_SOURCES_SHA256\") with option_env! fallback")
+
+
+    # Auto-repair any unescaped string literals in sawbyte-prepare and sawbyte-ctl if present from an older archive
+    exp_rs = root / "crates" / "sawbyte-prepare" / "src" / "exporters.rs"
+    if exp_rs.exists():
+        etxt = exp_rs.read_text(encoding="utf-8")
+        if 'b"{\n  "minecraft"' in etxt or 'b"{\r\n  "minecraft"' in etxt:
+            etxt = etxt.replace('let default_profile = b"{', 'let default_profile: &[u8] = br#"{').replace('  }\n}\n";', '  }\n}\n"#;')
+            exp_rs.write_text(etxt, encoding="utf-8")
+            report.record_fix("Converted unescaped byte string in exporters.rs to raw byte string")
+
+    art_rs = root / "crates" / "sawbyte-prepare" / "src" / "artifacts.rs"
+    if art_rs.exists():
+        atxt = art_rs.read_text(encoding="utf-8")
+        if 'format!(""{key}"")' in atxt:
+            atxt = atxt.replace('format!(""{key}"")', 'format!(r#""{key}""#)')
+            art_rs.write_text(atxt, encoding="utf-8")
+            report.record_fix("Fixed unescaped format string in artifacts.rs")
+
+    ctl_rs = root / "crates" / "sawbyte-ctl" / "src" / "main.rs"
+    if ctl_rs.exists():
+        ctxt = ctl_rs.read_text(encoding="utf-8")
+        if 'eprintln!("{{"error": {:?}, "kind": "connection"}}"' in ctxt:
+            ctxt = ctxt.replace(
+                'eprintln!("{{"error": {:?}, "kind": "connection"}}"',
+                'eprintln!(r#"{{"error": {:?}, "kind": "connection"}}"#',
+            )
+            ctl_rs.write_text(ctxt, encoding="utf-8")
+            report.record_fix("Fixed unescaped eprintln! JSON string in sawbyte-ctl/src/main.rs")
 
     report.record_ok("Canonical workspace hygiene and stale target check passed")
 
@@ -310,7 +339,7 @@ def step2_rewrite_nonstandard_env_macros_and_let_chains(root: Path, report: BugR
             raw = rs.read_text(encoding="utf-8")
             updated = raw
 
-            # 1. Non-standard env!("...") -> option_env!("...").unwrap_or("0.5.1-verified")
+            # 1. Non-standard env!("...") -> option_env!("...").unwrap_or("0.5.2-verified")
             def _env_repl(m: re.Match) -> str:
                 var_name = m.group(1)
                 if var_name.startswith(SAFE_CARGO_ENV_PREFIXES):
@@ -318,7 +347,7 @@ def step2_rewrite_nonstandard_env_macros_and_let_chains(root: Path, report: BugR
                 report.record_fix(
                     f"Converted unsafe env!(\"{var_name}\") -> option_env!(\"{var_name}\") in {rs.relative_to(root)}"
                 )
-                return f'option_env!("{var_name}").unwrap_or("0.5.1-verified")'
+                return f'option_env!("{var_name}").unwrap_or("0.5.2-verified")'
 
             updated = env_pat.sub(_env_repl, updated)
 
@@ -442,6 +471,57 @@ def step4_verify_syntax_delimiters_and_includes(root: Path, report: BugReport) -
                 raise RuntimeError(
                     f"Unclosed delimiter '{ch}' in {rs.relative_to(root)} opened at line {line_no}"
                 )
+
+
+            # Check for unescaped quotes inside string/byte literals (which cause invalid suffix or expected `,` after closing quote)
+            i = 0
+            n = len(raw)
+            while i < n:
+                if i + 1 < n and raw[i] == "/" and raw[i + 1] == "/":
+                    while i < n and raw[i] != "\n":
+                        i += 1
+                elif i + 1 < n and raw[i] == "/" and raw[i + 1] == "*":
+                    i += 2
+                    while i + 1 < n and not (raw[i] == "*" and raw[i + 1] == "/"):
+                        i += 1
+                    i += 2
+                elif (raw[i] == "r" or (raw[i] == "b" and i + 1 < n and raw[i + 1] == "r")) and i + 1 < n:
+                    j = i + (2 if raw[i] == "b" else 1)
+                    hashes = 0
+                    while j < n and raw[j] == "#":
+                        hashes += 1
+                        j += 1
+                    if j < n and raw[j] == '"':
+                        close_seq = '"' + ("#" * hashes)
+                        end_pos = raw.find(close_seq, j + 1)
+                        i = (end_pos + len(close_seq)) if end_pos != -1 else n
+                    else:
+                        i += 1
+                elif raw[i] == "'":
+                    if i + 2 < n and raw[i + 1] != "\\" and raw[i + 2] == "'":
+                        i += 3
+                    elif i + 3 < n and raw[i + 1] == "\\" and raw[i + 3] == "'":
+                        i += 4
+                    else:
+                        i += 1
+                elif raw[i] == '"':
+                    i += 1
+                    while i < n:
+                        if raw[i] == "\\":
+                            i += 2
+                            continue
+                        if raw[i] == '"':
+                            i += 1
+                            # After a closing quote, an immediate identifier char, quote, or `{` is a syntax error in Rust!
+                            if i < n and (raw[i].isalnum() or raw[i] in ('_', '"', '{')):
+                                line_no = raw[:i].count("\n") + 1
+                                raise RuntimeError(
+                                    f"Unescaped quote or invalid string suffix in {rs.relative_to(root)}:{line_no}"
+                                )
+                            break
+                        i += 1
+                else:
+                    i += 1
 
             # Check include_str! / include_bytes!
             for m in inc_pat.finditer(cleaned):
@@ -588,13 +668,13 @@ def step7_verify_python_and_json_files(root: Path, report: BugReport) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Sawbyte v0.5.1 Autonomous Bug Hunter & Self-Healer")
+    parser = argparse.ArgumentParser(description="Sawbyte v0.5.2 Autonomous Bug Hunter & Self-Healer")
     parser.add_argument("--ci", action="store_true", help="Run in CI mode before cargo fmt/clippy/test")
     parser.add_argument("--report-json", type=str, default="", help="Write JSON bug-hunt report to path")
     args = parser.parse_args()
 
     print("========================================================================")
-    print("  SAWBYTE v0.5.1 — AUTONOMOUS BUG HUNTER & SELF-HEALING DOCTOR")
+    print("  SAWBYTE v0.5.2 — AUTONOMOUS BUG HUNTER & SELF-HEALING DOCTOR")
     print("========================================================================")
     report = BugReport()
 
@@ -617,7 +697,7 @@ def main() -> int:
         out_p.write_text(
             json.dumps(
                 {
-                    "version": "0.5.1",
+                    "version": "0.5.2",
                     "fixed_count": len(report.fixed),
                     "fixed": report.fixed,
                     "verified_checks": report.verified_checks,

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.1 Rust Edition, Let-Chain, Workspace, Build-Script & Lockfile Safeguard
+Sawbyte v0.5.2 Rust Edition, Let-Chain, Workspace, Build-Script & Lockfile Safeguard
 (`tools/fix_rust_edition_and_let_chains.py`).
 
 Runs automatically in GitHub Actions (`ci.yml`, `benchmarks.yml`, `player.yml`) and locally:
@@ -10,7 +10,7 @@ Runs automatically in GitHub Actions (`ci.yml`, `benchmarks.yml`, `player.yml`) 
 2. Rewrites any chained `if let ... && let ...` expressions into tuple destructuring.
 3. Preserves any custom `[dependencies]` in `Cargo.toml` while ensuring `build = false` and `autobins = false`
    on `sawbyte-prepare`, `sawbyte-sim-core`, and `sawbyte-ctl`.
-4. Synchronizes `Cargo.lock` and `native/Cargo.lock` to version `0.5.1`.
+4. Synchronizes `Cargo.lock` and `native/Cargo.lock` to version `0.5.2`.
 """
 
 from __future__ import annotations
@@ -45,13 +45,13 @@ def ensure_editions_and_manifests_preserving_deps(root: Path) -> None:
         )
         updated = re.sub(
             r'(\[workspace\.package\][^\[]*?version\s*=\s*)"0\.5\.0"',
-            r'\1"0.5.1"',
+            r'\1"0.5.2"',
             updated,
             flags=re.DOTALL,
         )
         if updated != txt:
             root_cargo.write_text(updated, encoding="utf-8")
-            print("[Safeguard] Updated root Cargo.toml [workspace.package] to v0.5.1 / edition 2024")
+            print("[Safeguard] Updated root Cargo.toml [workspace.package] to v0.5.2 / edition 2024")
 
     for rfmt in [root / "rustfmt.toml", root / "native" / "rustfmt.toml"]:
         if not rfmt.exists() or 'edition = "2024"' not in rfmt.read_text(encoding="utf-8"):
@@ -110,7 +110,7 @@ version = 4
 
 [[package]]
 name = "sawbyte"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "sawbyte-core",
  "sawbyte-protocol",
@@ -118,18 +118,18 @@ dependencies = [
 
 [[package]]
 name = "sawbyte-core"
-version = "0.5.1"
+version = "0.5.2"
 
 [[package]]
 name = "sawbyte-ctl"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "sawbyte-core",
 ]
 
 [[package]]
 name = "sawbyte-prepare"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "sawbyte-core",
  "sawbyte-sim-core",
@@ -137,15 +137,15 @@ dependencies = [
 
 [[package]]
 name = "sawbyte-protocol"
-version = "0.5.1"
+version = "0.5.2"
 
 [[package]]
 name = "sawbyte-sim-core"
-version = "0.5.1"
+version = "0.5.2"
 """,
                 encoding="utf-8",
             )
-            print("[Safeguard] Synchronized root Cargo.lock to v0.5.1 with all 6 workspace crates")
+            print("[Safeguard] Synchronized root Cargo.lock to v0.5.2 with all 6 workspace crates")
 
     nlock_path = root / "native" / "Cargo.lock"
     if nlock_path.exists():
@@ -155,11 +155,11 @@ version = "0.5.1"
             for pkg in ("sawbyte-core", "sawbyte-play", "sawbyte-protocol"):
                 ntxt = ntxt.replace(
                     f'[[package]]\nname = "{pkg}"\nversion = "{old_v}"',
-                    f'[[package]]\nname = "{pkg}"\nversion = "0.5.1"',
+                    f'[[package]]\nname = "{pkg}"\nversion = "0.5.2"',
                 )
         if ntxt != orig:
             nlock_path.write_text(ntxt, encoding="utf-8")
-            print("[Safeguard] Synchronized native/Cargo.lock package versions to v0.5.1")
+            print("[Safeguard] Synchronized native/Cargo.lock package versions to v0.5.2")
 
 
 def main() -> None:
@@ -170,7 +170,7 @@ def main() -> None:
     if bug_hunter.exists():
         subprocess.run([sys.executable, str(bug_hunter), "--ci"], check=True)
     ensure_lockfiles_up_to_date(ROOT)
-    print("[Safeguard] Completed v0.5.1 Rust edition, dependency, E0502, build.rs & lockfile verification.")
+    print("[Safeguard] Completed v0.5.2 Rust edition, dependency, E0502, build.rs & lockfile verification.")
 
 
 if __name__ == "__main__":

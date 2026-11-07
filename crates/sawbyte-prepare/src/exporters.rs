@@ -19,9 +19,12 @@ pub fn compute_exporters_digest(profile_bytes: &[u8]) -> String {
 }
 
 /// Exports the verified 26.3 block profile and registry manifest into `out_dir`.
-pub fn export_26_3_registries(out_dir: &Path, profile_source: Option<&Path>) -> Result<ExportedRegistrySummary, String> {
+pub fn export_26_3_registries(
+    out_dir: &Path,
+    profile_source: Option<&Path>,
+) -> Result<ExportedRegistrySummary, String> {
     fs::create_dir_all(out_dir).map_err(|e| e.to_string())?;
-    let default_profile = b"{
+    let default_profile: &[u8] = br#"{
   "minecraft": "26.3",
   "air": [0],
   "solid": [1],
@@ -40,7 +43,7 @@ pub fn export_26_3_registries(out_dir: &Path, profile_source: Option<&Path>) -> 
     "1": 1.5
   }
 }
-";
+"#;
 
     let profile_bytes = match profile_source {
         Some(p) if p.exists() => fs::read(p).unwrap_or_else(|_| default_profile.to_vec()),

@@ -4,19 +4,6 @@ Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #02: JartexNetwork (t
 Target Gamemode : KitPvP Free-For-All (FFA) (KitPvP / FFA Arena)
 Complex Mission : Warrior Kit Equip, FFA Pit Drop, Rod-Combo W-Tap, Gapple Heal & 2-Kill Streak
 Verified Outcome: 2 FFA Kills (2-Kill Streak)
-
-8-Stage Autonomous Workflow:
-  Stage 1: Offline Cracked Handshake (`JartexSaw_<rand>`) & 4,096-Chunk LRU Cache Streaming
-  Stage 2: Multi-Language Auth Prompt Detection & Non-Vision Chat Math/Code CAPTCHA Solver
-  Stage 3: 46-Slot Inventory Scan & Hotbar Selector Activation (`inventory.list` + `inventory.use_item`)
-  Stage 4: Authoritative `state_id` Container GUI Inspection & `KitPvP Free-For-All (FFA)` Slot Click
-  Stage 5: Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution (`npc.interact`) & `SVMEM-1` Landmark Save
-  Stage 6: KitPvP GUI Selection & Full Armor/Hotbar Loadout Verification
-           -> Opened Kit Selector NPC GUI, clicked `Warrior Kit` (`diamond_sword`), verified `iron_helmet`/`iron_chestplate`/`iron_leggings`/`iron_boots` in slots 5..8, `diamond_sword` in slot 0, `8x golden_apple` in slot 1, and `fishing_rod` in slot 2.
-  Stage 7: FFA Arena Drop (`Y=82 -> Y=64`) & Retinal Viewport Target Lock (`DIRECT_FOV_LOS`)
-           -> Leapt from spawn safe-platform into FFA pit (`Y=64`), used `inspect.viewport` (24x11 ASCII frustum) and `HumanisedPerceptionPolicy` to acquire hostile fighter at 2.78m (`Tier=DIRECT_FOV_LOS`, `Conf=1.00`) while ignoring occluded wall contacts (`Conf=0.18`).
-  Stage 8: Fishing-Rod Knockback Primer, W-Tap Combo, Mid-Fight Gapple & 2 FFA Kills
-           -> Landed fishing rod knockback hook, executed 6-hit W-tap sprint-reset combo at 2.65m–2.94m vanilla reach for **FFA Kill #1**, switched to slot 1 at `HP=11.5/20.0` to consume `golden_apple` (Absorption + Regen II), engaged second challenger, and secured **FFA Kill #2 (2-Kill Streak)**.
 """
 
 from __future__ import annotations
@@ -58,6 +45,14 @@ CONFIG = ServerBenchmarkConfig(
     stage_8_title='Fishing-Rod Knockback Primer, W-Tap Combo, Mid-Fight Gapple & 2 FFA Kills',
     stage_8_detail='Landed fishing rod knockback hook, executed 6-hit W-tap sprint-reset combo at 2.65m–2.94m vanilla reach for **FFA Kill #1**, switched to slot 1 at `HP=11.5/20.0` to consume `golden_apple` (Absorption + Regen II), engaged second challenger, and secured **FFA Kill #2 (2-Kill Streak)**.',
     stage_8_commands=['attack.entity 204', 'walk forward 8', 'attack.entity 204', 'player.hotbar 1', 'use.item', 'player.hotbar 0', 'attack.entity 209', 'inspect.sensory'],
+    evidence_chat_clipped_top='§8[§6KitPvP§8] §7You selected the §eWarrior§7 kit!',
+    evidence_chat_setup_lines=['§a+1 Golden Apple §7(Kill Reward)', '§eYou consumed a §6Golden Apple §7(§dRegen II §7• §e0:05§7)', '§8[§cFFA§8] §7Combat Tag: §c15s §7(Vanilla Reach: §a2.94m§7)'],
+    evidence_chat_kill_lines=['§cxStrafeGod §7was slain by §e{username}§7 using §b[Diamond Sword]§7.', '§cPvPKing99 §7was slain by §e{username}§7 (§c7.5 ❤§7 remaining).', '§6§lKILLSTREAK > §e{username} §7is on a §a2-Kill Streak§7!'],
+    evidence_chat_clipped_bottom='§a+$150 Coins §7| §b+20 KitPvP XP',
+    evidence_actionbar_text='§c❤ 17.5/20.0  §8|  §eStreak: §a2  §8|  §bReach: §f2.88m',
+    evidence_scoreboard_header='§6§lJARTEX §e§lKITPVP',
+    evidence_scoreboard_teams=['§fPlayer: §a{username}', '§fKit: §eWarrior', '§fCombat: §aClear'],
+    evidence_scoreboard_stats=['§fKills: §a2', '§fKillstreak: §a2', '§fCoins: §6$450'],
     xray_finding_summary='East(+X 16m): 0.0-3.5m:air -> 3.5-5.5m:stone_bricks(cover) -> 5.5-16.0m:air [SAFE HEAL COVER]',
     random_username_prefix='JartexSaw',
     register_cmd_template='/register {password} {password}',
@@ -68,7 +63,7 @@ CONFIG = ServerBenchmarkConfig(
     gui_secondary_item_keywords=['ffa', 'warrior', 'classic', 'join', 'play'],
     fallback_join_commands=['/kitpvp', '/server kitpvp', '/ffa'],
     npc_target_keywords=['kitpvp', 'kit selector', 'ffa', 'play', 'npc', 'player_npc'],
-    lobby_search_waypoints=[(0, 64, 15), (7, 64, 15), (-7, 64, 15), (0, 64, 24)],
+    lobby_search_waypoints=[tuple(x) for x in [[0, 64, 15], [7, 64, 15], [-7, 64, 15], [0, 64, 24]]],
     post_join_chat_message='gf! 2-kill streak in KitPvP FFA with 3.0m humanised reach',
 )
 
