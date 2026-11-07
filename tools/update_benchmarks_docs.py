@@ -102,7 +102,7 @@ Sawbyte v0.5.1 bridges the gap between human graphical vision and headless AI pe
 - **Compensatory Headless Perception (`inspect.xray`, `inspect.long_range`, `inspect.small_map`)**:
   - **Through-Block Penetrating X-Ray (`inspect.xray`)**: Casts 16m multi-layer rays through solid walls and floors to reveal wall thickness, hidden cavities/rooms behind walls, and underground lava hazards.
   - **Long-Range 64m 8-Sector Horizon Scanner (`inspect.long_range`)**: Detects void gaps, distant BedWars/SkyWars islands, and bridges up to 64m away.
-  - **Small-Map Full-Arena Inspector (`inspect.small_map`)**: Automatically detects small maps ($\le 49$ chunks) and encodes the entire arena footprint in `SVPE1:HD25D`.
+  - **Small-Map Full-Arena Inspector (`inspect.small_map`)**: Automatically detects small maps (49 or fewer chunks) and encodes the entire arena footprint in `SVPE1:HD25D`.
 - **Humanisation & Fair-Play Perception Gate (`humanisation.perception [on|off|status]`)**: Enforces strict vanilla survival reach (`3.0m` entity combat, `4.5m` block interaction) and classifies all entities into 4 epistemic tiers (`DIRECT_FOV_LOS` `1.00`, `PERIPHERAL_ACOUSTIC_LOS` `0.78`, `MEMORY_RECALLED` `0.65`, and `PRIVILEGED_THROUGH_WALL_HINT` `0.18`), preventing unnatural pre-aiming or wall-tracking through solid blocks.
 - **Persistent Cross-Run World Memory (`SVMEM-1`, `memory.status|save|load|landmarks|mark|clear`)**: Automatically caches compact `SVPE1:HD25D` chunk surface tiles and discovered NPC/container landmarks across runs in `~/.sawbyte/memory/<world_id>.svmem.json` (< 100 KB on disk).
 

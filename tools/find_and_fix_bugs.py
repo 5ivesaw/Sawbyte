@@ -443,6 +443,57 @@ def step4_verify_syntax_delimiters_and_includes(root: Path, report: BugReport) -
                     f"Unclosed delimiter '{ch}' in {rs.relative_to(root)} opened at line {line_no}"
                 )
 
+
+            # Check for unescaped quotes inside string/byte literals (which cause invalid suffix or expected `,` after closing quote)
+            i = 0
+            n = len(raw)
+            while i < n:
+                if i + 1 < n and raw[i] == "/" and raw[i + 1] == "/":
+                    while i < n and raw[i] != "\n":
+                        i += 1
+                elif i + 1 < n and raw[i] == "/" and raw[i + 1] == "*":
+                    i += 2
+                    while i + 1 < n and not (raw[i] == "*" and raw[i + 1] == "/"):
+                        i += 1
+                    i += 2
+                elif raw[i] == "r" and i + 1 < n and raw[i + 1] in ('"', "#"):
+                    j = i + 1
+                    hashes = 0
+                    while j < n and raw[j] == "#":
+                        hashes += 1
+                        j += 1
+                    if j < n and raw[j] == '"':
+                        close_seq = '"' + ("#" * hashes)
+                        end_pos = raw.find(close_seq, j + 1)
+                        i = (end_pos + len(close_seq)) if end_pos != -1 else n
+                    else:
+                        i += 1
+                elif raw[i] == "'":
+                    if i + 2 < n and raw[i + 1] != "\\" and raw[i + 2] == "'":
+                        i += 3
+                    elif i + 3 < n and raw[i + 1] == "\\" and raw[i + 3] == "'":
+                        i += 4
+                    else:
+                        i += 1
+                elif raw[i] == '"':
+                    i += 1
+                    while i < n:
+                        if raw[i] == "\\":
+                            i += 2
+                            continue
+                        if raw[i] == '"':
+                            i += 1
+                            # After a closing quote, an immediate identifier char, quote, or `{` is a syntax error in Rust!
+                            if i < n and (raw[i].isalnum() or raw[i] in ('_', '"', '{')):
+                                line_no = raw[:i].count("\n") + 1
+                                raise RuntimeError(
+                                    f"Unescaped quote or invalid string suffix in {rs.relative_to(root)}:{line_no}"
+                                )
+                            break
+                        i += 1
+                else:
+                    i += 1
+
             # Check include_str! / include_bytes!
             for m in inc_pat.finditer(cleaned):
                 # extract path from raw using match span

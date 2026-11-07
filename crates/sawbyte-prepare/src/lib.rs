@@ -47,8 +47,7 @@ pub fn prepare_26_3_workspace(
     let _sound_report = sounds::verify_and_stage_sounds(mc_dir, out_dir)?;
 
     let manifest = format!(
-        "{{"sawbyte_version":"0.5.1","minecraft_version":"{}","protocol":{},"minecraft_dir":"{}","server_jar":"{}","sources_sha256":"{}","block_states_digest":"{}","status":"prepared"}}
-",
+        "{{\"sawbyte_version\":\"0.5.1\",\"minecraft_version\":\"{}\",\"protocol\":{},\"minecraft_dir\":\"{}\",\"server_jar\":\"{}\",\"sources_sha256\":\"{}\",\"block_states_digest\":\"{}\",\"status\":\"prepared\"}}\n",
         artifact.version,
         artifact.protocol_version,
         mc_dir.display(),
