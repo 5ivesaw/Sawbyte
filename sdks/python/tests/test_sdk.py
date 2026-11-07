@@ -152,5 +152,49 @@ class TestSawbytePythonSdk(unittest.TestCase):
         self.assertEqual(hd["height_deltas"][2], [None, None, None])
 
 
+
+    def test_autonomous_bug_doctor_detects_and_heals_stale_files_env_macros_and_deps(self) -> None:
+        import importlib.util
+        import tempfile
+        root_dir = Path(__file__).resolve().parents[3]
+        doctor_path = root_dir / "tools" / "find_and_fix_bugs.py"
+        spec = importlib.util.spec_from_file_location("find_and_fix_bugs", doctor_path)
+        assert spec and spec.loader
+        doctor = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(doctor)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            troot = Path(tmp)
+            prep_dir = troot / "crates" / "sawbyte-prepare" / "src"
+            prep_dir.mkdir(parents=True, exist_ok=True)
+            (troot / "crates" / "sawbyte-prepare" / "Cargo.toml").write_text(
+                '[package]\nname = "sawbyte-prepare"\nversion = "0.5.1"\n\n[dependencies]\nsawbyte-core = { path = "../sawbyte-core" }\n',
+                encoding="utf-8",
+            )
+            # 1. Create a stale build.rs and a stale non-canonical file
+            (troot / "crates" / "sawbyte-prepare" / "build.rs").write_text("use sha2::Sha256;\n", encoding="utf-8")
+            (prep_dir / "stale_orphan.rs").write_text("use crc32fast::Hasher;\n", encoding="utf-8")
+            # 2. Create lib.rs with bare env! macro and external zip + crc32fast + sha2 + regex + sha1 imports
+            (prep_dir / "lib.rs").write_text(
+                'use sha2::Sha256;\nuse regex::Regex;\nuse sha1::Sha1;\nuse zip::ZipArchive;\nuse crc32fast::Hasher;\n'
+                'pub const H: &str = env!("HORIZON_PREPARE_SOURCES_SHA256");\n'
+                'pub fn call_live(t: &mut TcpLiveSessionTransport) { let _ = t.send_live_command("see"); }\n',
+                encoding="utf-8",
+            )
+            rep = doctor.BugReport()
+            doctor.step1_clean_stale_targets_and_orphans(troot, rep)
+            doctor.step2_rewrite_nonstandard_env_macros_and_let_chains(troot, rep)
+            doctor.step3_scan_and_heal_external_crate_dependencies(troot, rep)
+
+            assert not (troot / "crates" / "sawbyte-prepare" / "build.rs").exists()
+            assert not (prep_dir / "stale_orphan.rs").exists()
+            healed_lib = (prep_dir / "lib.rs").read_text(encoding="utf-8")
+            assert 'option_env!("HORIZON_PREPARE_SOURCES_SHA256")' in healed_lib
+            assert "LiveSessionTransport" in healed_lib
+            healed_toml = (troot / "crates" / "sawbyte-prepare" / "Cargo.toml").read_text(encoding="utf-8")
+            for dep in ("sha2 =", "regex =", "sha1 =", "zip =", "crc32fast ="):
+                assert dep in healed_toml, f"Missing auto-injected {dep} in {healed_toml}"
+
+
 if __name__ == "__main__":
     unittest.main()

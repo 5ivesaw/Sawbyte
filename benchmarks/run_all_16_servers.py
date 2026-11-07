@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.0 — Master 16-Server Cracked Multiplayer Benchmark Suite Runner (`benchmarks/run_all_16_servers.py`).
+Sawbyte v0.5.1 — Master 16-Server Cracked Multiplayer Benchmark Suite Runner (`benchmarks/run_all_16_servers.py`).
 
-Executes all 16 standalone server benchmark scripts in `benchmarks/servers/bench_01_*.py` .. `bench_16_*.py`,
-collects stage-by-stage results and "Seeing the Game with Words" sensory transcripts, writes:
+Executes all 16 standalone 8-stage server benchmark scripts in `benchmarks/servers/bench_01_*.py` .. `bench_16_*.py`,
+collects stage-by-stage narratives, kills, economy/raid/parkour metrics, and "Seeing the Game with Words v2"
+(`SVPE-1` + `SVMEM-1`) sensory transcripts, writes:
   - `run/reports/cracked_servers_benchmark.json`
   - `run/reports/sensory_vision_samples.txt`
 and optionally invokes `tools/update_benchmarks_docs.py` to update `README.md`, `docs/BENCHMARKS.md`, and `docs/index.html`.
@@ -32,9 +33,9 @@ def load_and_run_all(mode: str = "auto") -> Dict[str, Any]:
     results: List[Dict[str, Any]] = []
     sensory_samples: List[str] = []
 
-    print("========================================================================================")
-    print("  SAWBYTE v0.5.0 — 16-SERVER AUTONOMOUS CRACKED MULTIPLAYER BENCHMARK SUITE")
-    print("========================================================================================")
+    print("========================================================================================================")
+    print("  SAWBYTE v0.5.1 — 16-SERVER AUTONOMOUS 8-STAGE CRACKED MULTIPLAYER BENCHMARK SUITE (128 STAGES)")
+    print("========================================================================================================")
 
     t0 = time.time()
     for script_path in scripts:
@@ -47,19 +48,19 @@ def load_and_run_all(mode: str = "auto") -> Dict[str, Any]:
         if res.get("sensory_vision_sample"):
             sensory_samples.append(res["sensory_vision_sample"])
         print(
-            f"  [#{res['server_index']:02d} {res['status']}] {res['server_name']:<18} | "
-            f"{res['host']}:{res['port']:<5} | {res['gamemode_name']:<18} | "
-            f"Stages: {res['stages_passed']}/{res['stages_total']} | "
-            f"Params: {sum(res['parameter_counts'].values())} | {res['duration_ms']} ms"
+            f"  [#{res['server_index']:02d} {res['status']}] {res['server_name']:<16} | "
+            f"{res['gamemode_name']:<28} | Stages: {res['stages_passed']}/{res['stages_total']} | "
+            f"Outcome: {res['verified_outcome_badge']}"
         )
 
     total_servers = len(results)
     passed_servers = sum(1 for r in results if r["status"] == "PASS")
     total_stages = sum(r["stages_total"] for r in results)
     passed_stages = sum(r["stages_passed"] for r in results)
+    total_kills = sum(r.get("kills_achieved", 0) for r in results)
 
     summary = {
-        "version": "0.5.0",
+        "version": "0.5.1",
         "minecraft_version": "26.3",
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "mode": mode,
@@ -67,6 +68,7 @@ def load_and_run_all(mode: str = "auto") -> Dict[str, Any]:
         "passed_servers": passed_servers,
         "total_stages": total_stages,
         "passed_stages": passed_stages,
+        "total_kills_achieved": total_kills,
         "pass_rate_pct": round((passed_stages / max(1, total_stages)) * 100.0, 1),
         "total_duration_ms": round((time.time() - t0) * 1000.0, 2),
         "servers": results,
@@ -79,14 +81,15 @@ def load_and_run_all(mode: str = "auto") -> Dict[str, Any]:
     sensory_txt = REPORTS_DIR / "sensory_vision_samples.txt"
     sensory_txt.write_text("\n\n".join(sensory_samples) + "\n", encoding="utf-8")
 
-    print("========================================================================================")
+    print("========================================================================================================")
     print(
         f"  TOTAL: {passed_servers}/{total_servers} Servers Passed | "
-        f"{passed_stages}/{total_stages} Autonomous Stages Passed ({summary['pass_rate_pct']}%)"
+        f"{passed_stages}/{total_stages} Autonomous Stages Passed ({summary['pass_rate_pct']}%) | "
+        f"{total_kills} Verified Combat/Raid/Minigame Kills"
     )
     print(f"  JSON Report   : {report_json}")
     print(f"  Sensory Output: {sensory_txt}")
-    print("========================================================================================")
+    print("========================================================================================================")
     return summary
 
 

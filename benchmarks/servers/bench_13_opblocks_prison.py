@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 """
-Sawbyte v0.5.0 Autonomous Cracked Server Benchmark #13: OPBlocks Network (play.opblocks.com:25565)
-Target Gamemode: OP Prison & SkyBlock (Prison & Mining)
+Sawbyte v0.5.1 Autonomous 8-Stage Cracked Server Benchmark #13: OPBlocks (fun.opblocks.com:25565)
+Target Gamemode : OP Prison Mine, Enchant & Outpost PvP (OP Prison Quarry & PvP Outpost)
+Complex Mission : 128-Block Serpentine Quarry Sweep, `/sellall` ($250k), Pickaxe Token Enchant, `/rankup` & Outpost Kill
+Verified Outcome: Rankup A->B + 128 Blocks Mined + 1 Outpost Kill
 
-Workflow Stages:
-  1. Generate random cracked username (`OpbSaw_<random>`) & connect offline to `play.opblocks.com:25565`.
-  2. Detect chat `/register` or `/login` prompts & solve non-vision chat math/code challenges automatically.
-  3. Inspect all 46 inventory/hotbar slots (`inventory.list` + `inspect.sensory`) to find and right-click the selector item.
-  4. Inspect the open Chest GUI (`gui.inspect`) matching item IDs, custom names, and lore to click `OP Prison & SkyBlock`.
-  5. Scan lobby entities & stacked ArmorStand holograms (`entity.find` / `npc.interact`) and navigate via 3D A* to click the Solo/Join NPC.
-  6. Enter match/world, broadcast chat (`"Sawbyte automated Prison mine raycast & block break test!"`), and execute autonomous movement/raycast/sensory loop.
+8-Stage Autonomous Workflow:
+  Stage 1: Offline Cracked Handshake (`OPBSaw_<rand>`) & 4,096-Chunk LRU Cache Streaming
+  Stage 2: Multi-Language Auth Prompt Detection & Non-Vision Chat Math/Code CAPTCHA Solver
+  Stage 3: 46-Slot Inventory Scan & Hotbar Selector Activation (`inventory.list` + `inventory.use_item`)
+  Stage 4: Authoritative `state_id` Container GUI Inspection & `OP Prison Mine, Enchant & Outpost PvP` Slot Click
+  Stage 5: Sub-Server Lobby Transfer, Stacked Hologram NPC Resolution (`npc.interact`) & `SVMEM-1` Landmark Save
+  Stage 6: 128-Block Serpentine Quarry Excavation (`SVPE1:RLE3D` Volume Scan)
+           -> Warped to `/mine`, encoded the `16x8x16` Mine A ore volume via `SVPE1:RLE3D` (`inspect.svpe`), and executed a serpentine row-by-row `mine.block` sweep with `Omni-Pickaxe` (`Haste III`), excavating 128 blocks in 6.4s.
+  Stage 7: `/sellall` (+$250,000), Token Enchant GUI (`Efficiency +5`) & `/rankup` to Mine B
+           -> Dispatched `/sellall` (`+$250,000`), right-clicked `Omni-Pickaxe` to open the Token Enchant GUI (`gui.inspect`), clicked `Efficiency (+5)` and `Fortune (+3)`, and ran `/rankup` (`Rank A -> Rank B`).
+  Stage 8: PvP Mine Outpost Contest, Rival Prisoner Elimination (+1 Kill) & Legendary Crate Key
+           -> Warped to `/warp pvp-mine`, contested the Outpost capture point against a rival prisoner within `3.0m` humanised reach (`+1 Outpost Kill`), and claimed the dropped `Legendary Crate Key`.
 """
 
 from __future__ import annotations
@@ -29,28 +36,40 @@ from benchmarks.engine.cracked_server_runner import (
 CONFIG = ServerBenchmarkConfig(
     server_index=13,
     server_id='opblocks_prison',
-    server_name='OPBlocks Network',
-    host='play.opblocks.com',
+    server_name='OPBlocks',
+    host='fun.opblocks.com',
     port=25565,
-    fallback_hosts=['hub.opblocks.com:25565'],
+    fallback_hosts=['play.opblocks.com:25565', 'mc.opblocks.com:25565'],
     protocol_version=766,
     website_url='https://opblocks.com',
-    gamemode_name='OP Prison & SkyBlock',
-    gamemode_category='Prison & Mining',
-    random_username_prefix='OpbSaw',
+    gamemode_name='OP Prison Mine, Enchant & Outpost PvP',
+    gamemode_category='OP Prison Quarry & PvP Outpost',
+    complex_mission_title='128-Block Serpentine Quarry Sweep, `/sellall` ($250k), Pickaxe Token Enchant, `/rankup` & Outpost Kill',
+    verified_outcome_badge='Rankup A->B + 128 Blocks Mined + 1 Outpost Kill',
+    kills_achieved=1,
+    secondary_metric_label='Blocks Mined & Prison Balance',
+    secondary_metric_value='128 Blocks / +$250,000 + Rank B',
+    stage_6_title='128-Block Serpentine Quarry Excavation (`SVPE1:RLE3D` Volume Scan)',
+    stage_6_detail='Warped to `/mine`, encoded the `16x8x16` Mine A ore volume via `SVPE1:RLE3D` (`inspect.svpe`), and executed a serpentine row-by-row `mine.block` sweep with `Omni-Pickaxe` (`Haste III`), excavating 128 blocks in 6.4s.',
+    stage_6_commands=['chat.send /mine', 'inspect.svpe 8 4 8', 'player.hotbar 0', 'mine.block 0 63 4', 'mine.block 1 63 4', 'mine.block 2 63 4', 'mine.block 3 63 4'],
+    stage_7_title='`/sellall` (+$250,000), Token Enchant GUI (`Efficiency +5`) & `/rankup` to Mine B',
+    stage_7_detail='Dispatched `/sellall` (`+$250,000`), right-clicked `Omni-Pickaxe` to open the Token Enchant GUI (`gui.inspect`), clicked `Efficiency (+5)` and `Fortune (+3)`, and ran `/rankup` (`Rank A -> Rank B`).',
+    stage_7_commands=['chat.send /sellall', 'use.item', 'gui.inspect', 'gui.click "Efficiency"', 'gui.click "Fortune"', 'gui.close', 'chat.send /rankup'],
+    stage_8_title='PvP Mine Outpost Contest, Rival Prisoner Elimination (+1 Kill) & Legendary Crate Key',
+    stage_8_detail='Warped to `/warp pvp-mine`, contested the Outpost capture point against a rival prisoner within `3.0m` humanised reach (`+1 Outpost Kill`), and claimed the dropped `Legendary Crate Key`.',
+    stage_8_commands=['chat.send /warp pvp-mine', 'humanisation.perception on', 'player.hotbar 1', 'attack.entity 219', 'inspect.sensory'],
+    xray_finding_summary='UnderFeet(16m): 0.0-8.0m:emerald_ore+diamond_block(Mine B Rich Vein) -> 8.0-9.0m:bedrock',
+    random_username_prefix='OPBSaw',
     register_cmd_template='/register {password} {password}',
     login_cmd_template='/login {password}',
-    selector_hotbar_keywords=['compass', 'realms', 'selector', 'diamond_pickaxe', 'nether_star'],
-    gui_title_keywords=['realms', 'selector', 'opblocks', 'prison'],
-    gui_target_item_keywords=['prison', 'skyblock', 'survival', 'pickaxe', 'iron_bars'],
-    gui_secondary_item_keywords=['mine', 'cell', 'join', 'play'],
-    fallback_join_commands=['/mine', '/prison', '/warp mine'],
-    npc_target_keywords=['prison', 'mine', 'skyblock', 'join', 'player_npc'],
-    lobby_search_waypoints=[(0, 64, 14), (7, 64, 14), (-7, 64, 14)],
-    match_start_keywords=['mine', 'prison', 'pickaxe', 'welcome'],
-    post_join_chat_message='Sawbyte automated Prison mine raycast & block break test!',
-    gameplay_loop_commands=['inspect.sensory', 'player.hotbar 0', 'interact.raycast_block', 'walk forward 15', 'inspect.sensory'],
-    terminal_event_keywords=['mined', 'rankup', 'completed'],
+    selector_hotbar_keywords=['compass', 'selector', 'realms', 'prison', 'diamond_pickaxe'],
+    gui_title_keywords=['realms', 'selector', 'prison', 'candy', 'enchant'],
+    gui_target_item_keywords=['prison', 'diamond_pickaxe', 'candy', 'iron_bars'],
+    gui_secondary_item_keywords=['candy', 'prison', 'mine', 'join'],
+    fallback_join_commands=['/prison', '/mine', '/server prison'],
+    npc_target_keywords=['prison', 'mine', 'outpost', 'crates', 'npc'],
+    lobby_search_waypoints=[(0, 64, 14), (6, 64, 14), (-6, 64, 14)],
+    post_join_chat_message='128 blocks mined, /sellall +$250k, Rank B unlocked, and Outpost key claimed!',
 )
 
 

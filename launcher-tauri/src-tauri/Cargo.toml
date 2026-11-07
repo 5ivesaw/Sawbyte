@@ -1,6 +1,6 @@
 [package]
 name = "sawbyte-tauri-launcher"
-version = "0.5.0"
+version = "0.5.1"
 description = "Sawbyte Native WebView Desktop Launcher powered by Tauri v2 and Rust"
 authors = ["5ivesaw"]
 license = "MIT"

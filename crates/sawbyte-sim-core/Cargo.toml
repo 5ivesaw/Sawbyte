@@ -16,11 +16,3 @@ path = "src/lib.rs"
 
 [lints]
 workspace = true
-
-[dependencies]
-sha2 = "0.10"
-regex = "1.10"
-zip = "0.6"
-crc32fast = "1.4"
-libc = "0.2"
-sha1 = "0.10"

@@ -186,7 +186,7 @@ To instruct an agent to complete long-horizon goals (such as obtaining diamond o
 
 ## 7. "Seeing the Game with Words v2" & `SVPE-1` Encoding Reference
 
-Sawbyte v0.5.0 includes a 10-section text-and-code visual perception engine (`inspect.sensory` / `see`) and the **Sawbyte Voxel Perception Encoding (`SVPE-1`)** format (`docs/SENSORY_ENCODING.md`):
+Sawbyte v0.5.1 includes a 10-section text-and-code visual perception engine (`inspect.sensory` / `see`) and the **Sawbyte Voxel Perception Encoding (`SVPE-1`)** format (`docs/SENSORY_ENCODING.md`):
 
 ### Live Perception & Memory Commands
 | Command | Purpose |

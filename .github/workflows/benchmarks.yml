@@ -27,7 +27,7 @@ jobs:
       - name: Build Sawbyte CLI & Native Headless Client
         run: |
           python3 tools/fix_rust_edition_and_let_chains.py
-          cargo build --workspace --release --offline
+          cargo build --workspace --release || cargo build --workspace --release --offline
           cargo build --release --manifest-path native/Cargo.toml || true
       - name: Run All 16 Cracked Server Benchmarks & Update README + Website
         run: |

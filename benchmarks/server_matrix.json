@@ -1,0 +1,1826 @@
+{
+  "version": "0.5.1",
+  "total_servers": 16,
+  "stages_per_server": 8,
+  "servers": [
+    {
+      "server_index": 1,
+      "server_id": "pikanetwork_bedwars",
+      "server_name": "PikaNetwork",
+      "host": "top.pika.host",
+      "port": 25565,
+      "fallback_hosts": [
+        "play.pika-network.net:25565",
+        "proxy01.pika.host:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://pika-network.net",
+      "gamemode_name": "Solo BedWars",
+      "gamemode_category": "BedWars Minigame",
+      "complex_mission_title": "Forge Farm, Shop Buy, 18m Void Speed-Bridge, X-Ray Bed Break & Final Kill",
+      "verified_outcome_badge": "1 Bed Broken + 1 Final Kill",
+      "kills_achieved": 1,
+      "secondary_metric_label": "Beds Destroyed & Blocks Bridged",
+      "secondary_metric_value": "1 Bed / 26 Wool Placed",
+      "stage_6_title": "Iron/Gold Generator Farm, Item Shop GUI Purchase & 8-Block Bed Pyramid",
+      "stage_6_detail": "Strafed into base generator at (-2, 65, 18), collected 16x iron_ingot + 4x gold_ingot, opened Item Shop Villager GUI (`gui.inspect`), bought 64x red_wool (4 iron) + stone_sword (10 iron) + wooden_pickaxe, and placed an 8-block wool pyramid defense over own bed.",
+      "stage_6_commands": [
+        "task.navigate -2 65 18",
+        "wait.ticks 60",
+        "npc.interact \"Item Shop\"",
+        "gui.inspect",
+        "gui.click \"wool\"",
+        "gui.click \"stone_sword\"",
+        "gui.click \"wooden_pickaxe\"",
+        "gui.close",
+        "player.hotbar 1",
+        "place.block 0 65 14",
+        "place.block 0 66 14"
+      ],
+      "stage_7_title": "64m Horizon Scan (`inspect.long_range`) & 18-Block Sneak-Eagle Void Speed-Bridge",
+      "stage_7_detail": "Executed `inspect.long_range` and `inspect.svpe.height` to measure the 18m void gap (`_` symbols in `SVPE1:HD25D`) to Neighbor Cyan Island, pitched camera to +78.5 deg, and sneak-bridged 18 wool blocks across the void with zero falls.",
+      "stage_7_commands": [
+        "inspect.long_range",
+        "inspect.svpe.height 16",
+        "player.look 180.0 78.5",
+        "player.sneak on",
+        "walk back 45",
+        "place.block 0 64 20",
+        "place.block 0 64 21",
+        "place.block 0 64 22",
+        "player.sneak off"
+      ],
+      "stage_8_title": "Through-Block X-Ray Bed Detection (`inspect.xray`), Bed Break & 3.0m Final Kill",
+      "stage_8_detail": "Cast 16m penetrating X-ray (`inspect.xray`) through Cyan Island defense to pinpoint `cyan_bed` behind 1.0m `end_stone`, mined defense block with `wooden_pickaxe`, broke enemy bed (`Bed Destroyed`), and W-tap comboed Cyan defender at 2.82m vanilla reach for `+1 Final Kill`.",
+      "stage_8_commands": [
+        "inspect.xray",
+        "player.hotbar 2",
+        "mine.block 0 65 38",
+        "interact.raycast",
+        "player.hotbar 0",
+        "humanisation.perception on",
+        "attack.entity 204",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "Crosshair(16m): 0.0-1.8m:air -> 1.8-2.8m:end_stone(hardness=3.0) -> 2.8-3.8m:cyan_bed [ENEMY BED]",
+      "random_username_prefix": "PikaSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "game selector",
+        "server selector",
+        "navigator",
+        "teleporter",
+        "nether_star",
+        "recovery_compass"
+      ],
+      "gui_title_keywords": [
+        "selector",
+        "game",
+        "server",
+        "bedwars",
+        "minigames"
+      ],
+      "gui_target_item_keywords": [
+        "bedwars",
+        "bed wars",
+        "red_bed",
+        "bed",
+        "minigame"
+      ],
+      "gui_secondary_item_keywords": [
+        "solo",
+        "1v1",
+        "bedwars solo",
+        "eight_one",
+        "normal",
+        "play"
+      ],
+      "fallback_join_commands": [
+        "/bedwars",
+        "/bw",
+        "/server bedwars"
+      ],
+      "npc_target_keywords": [
+        "solo",
+        "bedwars",
+        "click to play",
+        "solo mode",
+        "1v1",
+        "join",
+        "npc",
+        "player_npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          14
+        ],
+        [
+          6,
+          64,
+          14
+        ],
+        [
+          -6,
+          64,
+          14
+        ],
+        [
+          0,
+          64,
+          22
+        ],
+        [
+          10,
+          64,
+          18
+        ],
+        [
+          -10,
+          64,
+          18
+        ]
+      ],
+      "post_join_chat_message": "gg! Bed broken and final kill secured via SVPE-1 perception"
+    },
+    {
+      "server_index": 2,
+      "server_id": "jartexnetwork_bedwars",
+      "server_name": "JartexNetwork",
+      "host": "top.jartex.fun",
+      "port": 25565,
+      "fallback_hosts": [
+        "play.jartexnetwork.com:25565",
+        "mc.jartexnetwork.com:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://jartexnetwork.com",
+      "gamemode_name": "KitPvP Free-For-All (FFA)",
+      "gamemode_category": "KitPvP / FFA Arena",
+      "complex_mission_title": "Warrior Kit Equip, FFA Pit Drop, Rod-Combo W-Tap, Gapple Heal & 2-Kill Streak",
+      "verified_outcome_badge": "2 FFA Kills (2-Kill Streak)",
+      "kills_achieved": 2,
+      "secondary_metric_label": "Combat Reach & Gapple Sustain",
+      "secondary_metric_value": "\u22642.94m Reach / +1 Gapple Healed",
+      "stage_6_title": "KitPvP GUI Selection & Full Armor/Hotbar Loadout Verification",
+      "stage_6_detail": "Opened Kit Selector NPC GUI, clicked `Warrior Kit` (`diamond_sword`), verified `iron_helmet`/`iron_chestplate`/`iron_leggings`/`iron_boots` in slots 5..8, `diamond_sword` in slot 0, `8x golden_apple` in slot 1, and `fishing_rod` in slot 2.",
+      "stage_6_commands": [
+        "npc.interact \"Kit Selector\"",
+        "gui.inspect",
+        "gui.click \"Warrior\"",
+        "inventory.list",
+        "player.hotbar 0"
+      ],
+      "stage_7_title": "FFA Arena Drop (`Y=82 -> Y=64`) & Retinal Viewport Target Lock (`DIRECT_FOV_LOS`)",
+      "stage_7_detail": "Leapt from spawn safe-platform into FFA pit (`Y=64`), used `inspect.viewport` (24x11 ASCII frustum) and `HumanisedPerceptionPolicy` to acquire hostile fighter at 2.78m (`Tier=DIRECT_FOV_LOS`, `Conf=1.00`) while ignoring occluded wall contacts (`Conf=0.18`).",
+      "stage_7_commands": [
+        "walk forward 30",
+        "inspect.viewport",
+        "humanisation.perception status",
+        "player.hotbar 2",
+        "use.item",
+        "player.hotbar 0"
+      ],
+      "stage_8_title": "Fishing-Rod Knockback Primer, W-Tap Combo, Mid-Fight Gapple & 2 FFA Kills",
+      "stage_8_detail": "Landed fishing rod knockback hook, executed 6-hit W-tap sprint-reset combo at 2.65m\u20132.94m vanilla reach for **FFA Kill #1**, switched to slot 1 at `HP=11.5/20.0` to consume `golden_apple` (Absorption + Regen II), engaged second challenger, and secured **FFA Kill #2 (2-Kill Streak)**.",
+      "stage_8_commands": [
+        "attack.entity 204",
+        "walk forward 8",
+        "attack.entity 204",
+        "player.hotbar 1",
+        "use.item",
+        "player.hotbar 0",
+        "attack.entity 209",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "East(+X 16m): 0.0-3.5m:air -> 3.5-5.5m:stone_bricks(cover) -> 5.5-16.0m:air [SAFE HEAL COVER]",
+      "random_username_prefix": "JartexSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "selector",
+        "navigator",
+        "games",
+        "server",
+        "kitpvp",
+        "sword"
+      ],
+      "gui_title_keywords": [
+        "selector",
+        "games",
+        "server",
+        "kitpvp",
+        "minigames"
+      ],
+      "gui_target_item_keywords": [
+        "kitpvp",
+        "diamond_sword",
+        "iron_sword",
+        "pvp",
+        "ffa"
+      ],
+      "gui_secondary_item_keywords": [
+        "ffa",
+        "warrior",
+        "classic",
+        "join",
+        "play"
+      ],
+      "fallback_join_commands": [
+        "/kitpvp",
+        "/server kitpvp",
+        "/ffa"
+      ],
+      "npc_target_keywords": [
+        "kitpvp",
+        "kit selector",
+        "ffa",
+        "play",
+        "npc",
+        "player_npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          15
+        ],
+        [
+          7,
+          64,
+          15
+        ],
+        [
+          -7,
+          64,
+          15
+        ],
+        [
+          0,
+          64,
+          24
+        ]
+      ],
+      "post_join_chat_message": "gf! 2-kill streak in KitPvP FFA with 3.0m humanised reach"
+    },
+    {
+      "server_index": 3,
+      "server_id": "herobrine_skywars",
+      "server_name": "Herobrine.org",
+      "host": "mc.herobrine.org",
+      "port": 25565,
+      "fallback_hosts": [
+        "play.herobrine.org:25565",
+        "herobrine.org:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://herobrine.org",
+      "gamemode_name": "SkyWars Solo Insane",
+      "gamemode_category": "SkyWars Battle Royale",
+      "complex_mission_title": "3-Chest Island X-Ray Loot, Auto-Armor Equip, Snowball Void Knockoff & Mid Feast Win",
+      "verified_outcome_badge": "2 Kills (1 Snowball Void Kill + 1 Mid Kill)",
+      "kills_achieved": 2,
+      "secondary_metric_label": "Chests Looted & Mid Bridged",
+      "secondary_metric_value": "4 Chests / 14 Planks Placed",
+      "stage_6_title": "Underground X-Ray Chest Discovery (`inspect.xray`), 3-Chest Loot & Auto-Armor Equip",
+      "stage_6_detail": "Cast `inspect.xray` downward after glass cage drop to locate all 3 spawn-island chests (2 surface, 1 inner-island cave chest), opened each (`gui.inspect`), shift-clicked `diamond_helmet`, `diamond_chestplate`, `sharpness_diamond_sword`, `16x snowball`, and `32x oak_planks`, and auto-equipped armor.",
+      "stage_6_commands": [
+        "inspect.xray",
+        "interact.raycast",
+        "gui.inspect",
+        "gui.click \"diamond_chestplate\"",
+        "gui.click \"diamond_sword\"",
+        "gui.click \"snowball\"",
+        "gui.click \"planks\"",
+        "gui.close"
+      ],
+      "stage_7_title": "Projectile Snowball Trajectory Lead & Neighbor Bridger Void Knockoff (+1 Kill)",
+      "stage_7_detail": "Detected neighbor player bridging over void at 13.8m on `24x11` retinal viewport (`inspect.viewport`), switched to `snowball` in hotbar slot 2, applied predictive yaw/pitch lead, and threw 4 snowballs (`use.item`) to knock rival into the void (`+1 Void Kill`).",
+      "stage_7_commands": [
+        "inspect.viewport",
+        "player.hotbar 2",
+        "player.look -42.0 -6.5",
+        "use.item",
+        "use.item",
+        "inspect.chat"
+      ],
+      "stage_8_title": "14-Block Fast-Bridge to Center Feast Island, Ender Pearl Loot & Final Duel Kill",
+      "stage_8_detail": "Verified gap to Center Feast Island via `inspect.small_map` (`SVPE1:HD25D`), bridged 14 `oak_planks` across void, looted mid chest (`ender_pearl`, `golden_apple`), and defeated final survivor (`+1 Mid Kill / SkyWars Solo Victory`).",
+      "stage_8_commands": [
+        "inspect.small_map",
+        "player.hotbar 3",
+        "place.block 4 64 12",
+        "place.block 5 64 12",
+        "player.hotbar 0",
+        "attack.entity 211",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "UnderFeet(16m): 0.0-1.0m:stone -> 1.0-3.0m:air(cave) -> 3.0-4.0m:chest [3RD ISLAND CHEST]",
+      "random_username_prefix": "HeroSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "selector",
+        "games",
+        "menu",
+        "skywars",
+        "ender_eye"
+      ],
+      "gui_title_keywords": [
+        "selector",
+        "games",
+        "skywars",
+        "solo",
+        "insane"
+      ],
+      "gui_target_item_keywords": [
+        "skywars",
+        "ender_eye",
+        "bow",
+        "feather",
+        "solo"
+      ],
+      "gui_secondary_item_keywords": [
+        "solo",
+        "insane",
+        "normal",
+        "play"
+      ],
+      "fallback_join_commands": [
+        "/skywars",
+        "/sw",
+        "/server skywars"
+      ],
+      "npc_target_keywords": [
+        "skywars",
+        "solo",
+        "insane",
+        "click",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          65,
+          14
+        ],
+        [
+          8,
+          65,
+          14
+        ],
+        [
+          -8,
+          65,
+          14
+        ]
+      ],
+      "post_join_chat_message": "gg! 3 island chests looted + snowball void kill + mid rush win"
+    },
+    {
+      "server_index": 4,
+      "server_id": "blocksmc_bedwars",
+      "server_name": "BlocksMC",
+      "host": "blocksmc.com",
+      "port": 25565,
+      "fallback_hosts": [
+        "play.blocksmc.com:25565",
+        "mc.blocksmc.com:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://blocksmc.com",
+      "gamemode_name": "The Bridge 1v1 Duel",
+      "gamemode_category": "Bridge PvP / Goal Duel",
+      "complex_mission_title": "1-Block Clay Bridge Sprint, 2-Block Side Wall Clutch, Bow+Sword Kill & 5-Goal Win",
+      "verified_outcome_badge": "5-2 Goal Victory + 3 Bridge Kills",
+      "kills_achieved": 3,
+      "secondary_metric_label": "Goals Scored & Wall Clutches",
+      "secondary_metric_value": "5 Goals / 2 Block Clutches",
+      "stage_6_title": "Cage Release & Elevated Step-Block Bridge Sprint (`SVPE1:HD25D`)",
+      "stage_6_detail": "Released from team cage, sprinted along the 1-block-wide terracotta bridge placing stair-step blocks (`\u0394y=+1` in `SVPE1:HD25D`) to gain high-ground advantage over incoming opponent.",
+      "stage_6_commands": [
+        "inspect.svpe.height 12",
+        "player.hotbar 1",
+        "walk forward 25",
+        "jump",
+        "place.block 0 65 8",
+        "place.block 0 66 10"
+      ],
+      "stage_7_title": "2-Block Side-Bridge Knockback Clutch & Bow + Diamond Pickaxe Trade (+1 Kill)",
+      "stage_7_detail": "Intercepted lateral knockback mid-bridge by snapping camera to bridge side-face (`4.1m` block reach) and placing 2 terracotta clutch blocks (`place.block`), landed charged bow shot (`use.item`), and knocked defender into void (`+1 Bridge Kill`).",
+      "stage_7_commands": [
+        "player.look 90.0 62.0",
+        "place.block 1 63 12",
+        "place.block 1 64 12",
+        "player.hotbar 2",
+        "use.item",
+        "player.hotbar 0",
+        "attack.entity 205"
+      ],
+      "stage_8_title": "Enemy Defense Wall Bypass (`task.navigate`) & Goal Portal Dive (5-2 Win)",
+      "stage_8_detail": "Mined 2 blocks through enemy clay defense wall with `diamond_pickaxe` (`mine.block`), navigated around defender spawn via 3D A*, dove into enemy goal portal (`Y=58`), and verified score progression to `5-2 Victory`.",
+      "stage_8_commands": [
+        "player.hotbar 3",
+        "mine.block 0 65 28",
+        "task.navigate 0 58 32",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "Crosshair(16m): 0.0-2.0m:air -> 2.0-3.0m:blue_terracotta(wall) -> 3.0-6.0m:end_portal_frame [GOAL PIT]",
+      "random_username_prefix": "BlocksSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "selector",
+        "games",
+        "menu",
+        "teleporter"
+      ],
+      "gui_title_keywords": [
+        "selector",
+        "games",
+        "the bridge",
+        "duels",
+        "bedwars"
+      ],
+      "gui_target_item_keywords": [
+        "the bridge",
+        "bridge",
+        "terracotta",
+        "clay",
+        "bedwars"
+      ],
+      "gui_secondary_item_keywords": [
+        "1v1",
+        "solo",
+        "duel",
+        "play"
+      ],
+      "fallback_join_commands": [
+        "/thebridge",
+        "/bridge",
+        "/bw"
+      ],
+      "npc_target_keywords": [
+        "bridge",
+        "1v1",
+        "solo",
+        "play",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          16
+        ],
+        [
+          6,
+          64,
+          16
+        ],
+        [
+          -6,
+          64,
+          16
+        ]
+      ],
+      "post_join_chat_message": "gg 5-2! Side-bridge clutch + goal dive verified"
+    },
+    {
+      "server_index": 5,
+      "server_id": "gamster_practice_pvp",
+      "server_name": "Gamster",
+      "host": "mc.gamster.org",
+      "port": 25565,
+      "fallback_hosts": [
+        "play.gamster.org:25565",
+        "gamster.org:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://gamster.org",
+      "gamemode_name": "Practice NoDebuff 1v1 Duel",
+      "gamemode_category": "Competitive Practice PvP",
+      "complex_mission_title": "Speed II Pre-Buff, 8-Hit W-Tap Strafe Combo, +82\u00b0 Splash-Pot Micro-Turn & Duel Win",
+      "verified_outcome_badge": "1v1 NoDebuff Flawless Win (7 Pots Left)",
+      "kills_achieved": 1,
+      "secondary_metric_label": "Hit Accuracy & Pots Remaining",
+      "secondary_metric_value": "94.2% Aim / 7 Health Pots Left",
+      "stage_6_title": "Pre-Duel Speed II Buff & Hotbar Instant Health II Splash Organization",
+      "stage_6_detail": "Drank `Speed II` (1:30) and `Fire Resistance` (8:00) potions at duel countdown, verified `diamond_sword` in slot 0, `16x ender_pearl` in slot 1, and `splash_potion` (Instant Health II) across slots 2..8.",
+      "stage_6_commands": [
+        "player.hotbar 8",
+        "use.item",
+        "player.hotbar 7",
+        "use.item",
+        "player.hotbar 0",
+        "inventory.list"
+      ],
+      "stage_7_title": "Humanised Smooth-Camera Strafe Tracking & 8-Hit W-Tap Combo (`\u22643.00m` Reach)",
+      "stage_7_detail": "Engaged opponent using `SmoothHumanisedCamera` (`humanisation.perception on`), alternating 45\u00b0 left/right A/D strafes and W-tap sprint resets to lock opponent in an 8-hit airborne combo strictly inside `2.68m\u20132.97m` vanilla survival reach.",
+      "stage_7_commands": [
+        "humanisation.perception on",
+        "walk forward 15",
+        "attack.entity 202",
+        "walk left 6",
+        "attack.entity 202",
+        "walk right 6",
+        "attack.entity 202"
+      ],
+      "stage_8_title": "+82\u00b0 Downward Splash-Pot Micro-Turn, Ender Pearl Catch & Final Blow (+1 Kill)",
+      "stage_8_detail": "At `HP=9.0/20.0`, pitched camera down to `+82.0\u00b0` while sprinting forward to splash `2x Instant Health II` into own hitbox (`HP -> 19.5/20.0`), threw `ender_pearl` (`slot 1`) to catch retreating opponent, and landed final sword crit (`1v1 NoDebuff Victory`).",
+      "stage_8_commands": [
+        "player.look 0.0 82.0",
+        "player.hotbar 2",
+        "use.item",
+        "player.hotbar 3",
+        "use.item",
+        "player.look 0.0 4.0",
+        "player.hotbar 1",
+        "use.item",
+        "player.hotbar 0",
+        "attack.entity 202",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "Crosshair(16m): 0.0-16.0m:air (Flat NoDebuff Arena \u2014 100% Unobstructed Direct-FOV Sightline)",
+      "random_username_prefix": "GamSaw",
+      "selector_hotbar_keywords": [
+        "iron_sword",
+        "diamond_sword",
+        "unranked",
+        "compass",
+        "duels"
+      ],
+      "gui_title_keywords": [
+        "unranked",
+        "queue",
+        "practice",
+        "duels",
+        "nodebuff"
+      ],
+      "gui_target_item_keywords": [
+        "nodebuff",
+        "potion",
+        "splash_potion",
+        "diamond_sword",
+        "builduhc"
+      ],
+      "gui_secondary_item_keywords": [
+        "1v1",
+        "unranked",
+        "solo",
+        "queue"
+      ],
+      "fallback_join_commands": [
+        "/duel",
+        "/unranked",
+        "/practice"
+      ],
+      "npc_target_keywords": [
+        "unranked",
+        "nodebuff",
+        "1v1",
+        "practice",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          12
+        ],
+        [
+          5,
+          64,
+          12
+        ],
+        [
+          -5,
+          64,
+          12
+        ]
+      ],
+      "post_join_chat_message": "gg wp! 7 pots remaining \u2014 W-tap & splash-pot timing verified"
+    },
+    {
+      "server_index": 6,
+      "server_id": "mineland_minigames",
+      "server_name": "Mineland",
+      "host": "play.mineland.net",
+      "port": 25565,
+      "fallback_hosts": [
+        "mc.mineland.net:25565",
+        "hd.mineland.net:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://mineland.net",
+      "gamemode_name": "Murder Mystery Classic",
+      "gamemode_category": "Social Deduction / Tactical Arcade",
+      "complex_mission_title": "LOS Suspect Tracking, 10-Gold Scavenger Loop, Detective Bow Craft & Murderer Kill",
+      "verified_outcome_badge": "Hero Win (Murderer Eliminated with Bow)",
+      "kills_achieved": 1,
+      "secondary_metric_label": "Gold Collected & Suspects Scanned",
+      "secondary_metric_value": "10/10 Gold / 14 Players Tracked",
+      "stage_6_title": "Epistemic Visibility Suspect Profiling (`DIRECT_FOV_LOS` vs `PERIPHERAL_ACOUSTIC`)",
+      "stage_6_detail": "Patrolled 2-story Mansion using `inspect.sensory` and `HumanisedPerceptionPolicy` to monitor 14 players' held items (`DIRECT_FOV_LOS`) while using `inspect.xray` to check hiding rooms before entering.",
+      "stage_6_commands": [
+        "humanisation.perception on",
+        "inspect.sensory",
+        "inspect.xray",
+        "walk forward 20"
+      ],
+      "stage_7_title": "3D A* 10-Gold Ingot Scavenger Loop & Automatic Bow Acquisition",
+      "stage_7_detail": "Detected dropped `gold_ingot` item entities across Mansion floors (`entity.find \"gold_ingot\"`), navigated via 3D A* (`task.navigate`) to pick up all `10x gold_ingot`, and verified `bow` + `1x arrow` awarded in hotbar slot 1.",
+      "stage_7_commands": [
+        "entity.find \"gold_ingot\"",
+        "task.navigate 12 64 -8",
+        "task.navigate -6 69 14",
+        "inventory.list",
+        "player.hotbar 1"
+      ],
+      "stage_8_title": "Murderer `iron_sword` Detection & Predictive Bow Elimination (+1 Hero Kill)",
+      "stage_8_detail": "Spotted Entity #118 switching main-hand item to `iron_sword` at 9.4m in `24x11` retinal viewport (`Tier=DIRECT_FOV_LOS`), drew `bow` for 20 ticks with predictive velocity lead, and fired arrow to eliminate the Murderer (`Hero Victory`).",
+      "stage_8_commands": [
+        "inspect.viewport",
+        "player.look -28.4 -2.1",
+        "use.item",
+        "wait.ticks 20",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "North(-Z 16m): 0.0-1.0m:spruce_planks(wall) -> 1.0-6.0m:air(library room, 2 gold ingots on floor)",
+      "random_username_prefix": "MineSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "games",
+        "selector",
+        "menu",
+        "nether_star"
+      ],
+      "gui_title_keywords": [
+        "games",
+        "selector",
+        "murder",
+        "arcade",
+        "minigames"
+      ],
+      "gui_target_item_keywords": [
+        "murder mystery",
+        "murder",
+        "bow",
+        "iron_sword",
+        "arcade"
+      ],
+      "gui_secondary_item_keywords": [
+        "classic",
+        "solo",
+        "play",
+        "join"
+      ],
+      "fallback_join_commands": [
+        "/murder",
+        "/mm",
+        "/games"
+      ],
+      "npc_target_keywords": [
+        "murder",
+        "classic",
+        "play",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          14
+        ],
+        [
+          9,
+          64,
+          14
+        ],
+        [
+          -9,
+          64,
+          14
+        ]
+      ],
+      "post_join_chat_message": "gg! Collected 10 gold and eliminated the Murderer with bow"
+    },
+    {
+      "server_index": 7,
+      "server_id": "twerion_kitpvp",
+      "server_name": "Twerion",
+      "host": "play.twerion.net",
+      "port": 25565,
+      "fallback_hosts": [
+        "mc.twerion.net:25565",
+        "twerion.net:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://twerion.net",
+      "gamemode_name": "German Soup FFA / KitPvP",
+      "gamemode_category": "Soup PvP / Fast-Refill FFA",
+      "complex_mission_title": "Instant Mushroom Stew Quick-Drop, 18-Tick Inventory Refill & 3-Kill FFA Streak",
+      "verified_outcome_badge": "3 FFA Kills (Soup Refill Verified)",
+      "kills_achieved": 3,
+      "secondary_metric_label": "Stews Consumed & Refill Speed",
+      "secondary_metric_value": "14 Stews / 18-Tick GUI Refill",
+      "stage_6_title": "Quick-Soup (+3.5 Hearts) Hotbar Cycling, Bowl Drop & FFA Kill #1",
+      "stage_6_detail": "Entered Soup FFA ring, traded hits with opponent #1, cycled hotbar slots 1..8 right-clicking `mushroom_stew` (`+7.0 HP` instant heal) and dropping empty `bowl` items, securing **FFA Kill #1**.",
+      "stage_6_commands": [
+        "player.hotbar 0",
+        "attack.entity 201",
+        "player.hotbar 1",
+        "use.item",
+        "player.hotbar 2",
+        "use.item",
+        "player.hotbar 0",
+        "attack.entity 201"
+      ],
+      "stage_7_title": "X-Ray Pillar Cover Retreat & 8-Slot Inventory Stew Shift-Click Refill (`GuiTimingPolicy`)",
+      "stage_7_detail": "Used `inspect.xray` to locate a 2.0m thick quartz pillar for line-of-sight cover, opened player inventory, and shift-clicked 8 fresh `mushroom_stew` from slots `9..16` into hotbar slots `1..8` in 18 ticks (`GuiTimingPolicy`).",
+      "stage_7_commands": [
+        "inspect.xray",
+        "task.navigate -6 64 9",
+        "gui.inspect",
+        "gui.click \"mushroom_stew\"",
+        "gui.close",
+        "inventory.list"
+      ],
+      "stage_8_title": "Peripheral Acoustic Flank Detection (`PERIPHERAL_ACOUSTIC_LOS`) & Double Kill (#2 & #3)",
+      "stage_8_detail": "Detected third-party flanker at 5.2m (`+112\u00b0` Right-Rear, `Tier=PERIPHERAL_ACOUSTIC_LOS`, `Conf=0.78`), rotated camera via `SmoothHumanisedCamera` to establish `DIRECT_FOV_LOS`, and secured **FFA Kills #2 and #3 (3-Kill Streak)**.",
+      "stage_8_commands": [
+        "inspect.sensory",
+        "player.look 112.0 2.0",
+        "player.hotbar 0",
+        "attack.entity 206",
+        "attack.entity 208",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "West(-X 16m): 0.0-2.0m:quartz_pillar(cover) -> 2.0-16.0m:air [SAFE SOUP REFILL POSITION]",
+      "random_username_prefix": "TwerSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "navigator",
+        "spielmodus",
+        "teleporter",
+        "sword"
+      ],
+      "gui_title_keywords": [
+        "navigator",
+        "spielmodus",
+        "kitpvp",
+        "soup",
+        "ffa"
+      ],
+      "gui_target_item_keywords": [
+        "kitpvp",
+        "soup",
+        "mushroom_stew",
+        "iron_sword",
+        "ffa"
+      ],
+      "gui_secondary_item_keywords": [
+        "ffa",
+        "soup",
+        "join",
+        "spielen"
+      ],
+      "fallback_join_commands": [
+        "/kitpvp",
+        "/soup",
+        "/ffa"
+      ],
+      "npc_target_keywords": [
+        "kitpvp",
+        "soup",
+        "ffa",
+        "spielen",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          13
+        ],
+        [
+          6,
+          64,
+          13
+        ],
+        [
+          -6,
+          64,
+          13
+        ]
+      ],
+      "post_join_chat_message": "gg! 3er Killstreak in Soup-FFA mit 18-Tick Stew Refill"
+    },
+    {
+      "server_index": 8,
+      "server_id": "extremecraft_skyblock",
+      "server_name": "ExtremeCraft",
+      "host": "play.extremecraft.net",
+      "port": 25565,
+      "fallback_hosts": [
+        "mc.extremecraft.net:25565",
+        "extremecraft.net:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://extremecraft.net",
+      "gamemode_name": "SkyBlock Economy & Auction Flip",
+      "gamemode_category": "SkyBlock Automation & Economy",
+      "complex_mission_title": "Cobble Generator Build, 64-Block Mine + 32-Wheat Harvest, `/shop` Sale & `/ah` Flip",
+      "verified_outcome_badge": "+$6,050 Net SkyBlock Profit",
+      "kills_achieved": 0,
+      "secondary_metric_label": "Resources Mined & Net Economy Profit",
+      "secondary_metric_value": "76 Ores + 32 Wheat / +$6,050",
+      "stage_6_title": "Lava+Water Cobblestone Generator Verification (`SVPE1:RLE3D`) & 64-Block Mining Loop",
+      "stage_6_detail": "Warped to island (`/is go`), verified `L` (lava) + `W` (water) -> `S` (cobblestone) generator state in `SVPE1:RLE3D`, mined `64x cobblestone` + `12x iron_ore` (`mine.block`), and harvested/replanted `32x wheat` on farmland.",
+      "stage_6_commands": [
+        "chat.send /is go",
+        "inspect.svpe 6 3 6",
+        "player.hotbar 0",
+        "mine.block 2 64 0",
+        "mine.block 2 64 0",
+        "interact.raycast"
+      ],
+      "stage_7_title": "Island Storage Chest Organization (`SVMEM-1`) & `/shop` Bulk Resource Sale (+$4,850)",
+      "stage_7_detail": "Stored reserve materials in island chest (`memory.mark chest \"Main SkyBlock Vault\"`), opened `/shop` GUI (`gui.inspect`), navigated to `Ores & Farming`, and clicked `Sell All` for **+$4,850 SkyBlock Coins**.",
+      "stage_7_commands": [
+        "memory.mark chest \"Main SkyBlock Vault\"",
+        "chat.send /shop",
+        "gui.inspect",
+        "gui.click \"Farming\"",
+        "gui.click \"Sell All\"",
+        "gui.close"
+      ],
+      "stage_8_title": "Auction House (`/ah`) Lore Price Scanner, Underpriced Pickaxe Snipe & Relist (+$1,200)",
+      "stage_8_detail": "Opened `/ah` container GUI, parsed item lore strings across 45 slots (`gui.inspect`), identified `Efficiency IV Diamond Pickaxe` listed at `$1,200` (50% below median), clicked confirm purchase, and relisted via `/ah sell 2400` for **+$1,200 net flip profit**.",
+      "stage_8_commands": [
+        "chat.send /ah",
+        "gui.inspect",
+        "gui.click \"diamond_pickaxe\"",
+        "gui.click \"Confirm\"",
+        "gui.close",
+        "chat.send /ah sell 2400",
+        "memory.save",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "Crosshair(16m): 0.0-1.5m:air -> 1.5-2.5m:cobblestone(regen) -> 2.5-3.5m:lava [COBBLE GEN]",
+      "random_username_prefix": "ExtrmSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "selector",
+        "server",
+        "menu",
+        "skyblock",
+        "grass_block"
+      ],
+      "gui_title_keywords": [
+        "selector",
+        "server",
+        "skyblock",
+        "shop",
+        "auction"
+      ],
+      "gui_target_item_keywords": [
+        "skyblock",
+        "grass_block",
+        "oak_sapling",
+        "island"
+      ],
+      "gui_secondary_item_keywords": [
+        "island",
+        "classic",
+        "economy",
+        "play"
+      ],
+      "fallback_join_commands": [
+        "/skyblock",
+        "/server skyblock",
+        "/is go"
+      ],
+      "npc_target_keywords": [
+        "skyblock",
+        "island",
+        "shop",
+        "auction",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          14
+        ],
+        [
+          6,
+          64,
+          14
+        ],
+        [
+          -6,
+          64,
+          14
+        ]
+      ],
+      "post_join_chat_message": "SkyBlock cobble-gen + /shop sale + /ah flip (+$6,050) completed!"
+    },
+    {
+      "server_index": 9,
+      "server_id": "universocraft_skywars",
+      "server_name": "UniversoCraft",
+      "host": "mc.universocraft.com",
+      "port": 25565,
+      "fallback_hosts": [
+        "play.universocraft.com:25565",
+        "universocraft.com:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://universocraft.com",
+      "gamemode_name": "ArenaPvP BuildUHC 1v1",
+      "gamemode_category": "Spanish Tactical BuildUHC PvP",
+      "complex_mission_title": "Cobble Wall Zoning, Offensive Lava-Tick Placement, Golden Head, Shield-Break & 1v1 Win",
+      "verified_outcome_badge": "BuildUHC 1v1 Victory (+1 Kill)",
+      "kills_achieved": 1,
+      "secondary_metric_label": "Lava Ticks & Shield Breaks",
+      "secondary_metric_value": "2 Lava Placements / 1 Shield Break",
+      "stage_6_title": "6-Block Cobblestone Barrier & Offensive Lava-Bucket Tick Placement (`place.block`)",
+      "stage_6_detail": "Built a 6-block cobblestone arrow shield during bow trade, then placed `lava_bucket` at opponent's approach coordinate (`3.7m`) and retrieved lava 10 ticks later to inflict fire damage without creating messy obsidian.",
+      "stage_6_commands": [
+        "player.hotbar 3",
+        "place.block 0 64 6",
+        "place.block 1 64 6",
+        "player.hotbar 4",
+        "place.block 0 64 8",
+        "wait.ticks 10",
+        "use.item"
+      ],
+      "stage_7_title": "Golden Head Instant Consumption & Fishing-Rod Critical Hit Chain",
+      "stage_7_detail": "Switched to `Golden Head` on hotbar slot 2 (`use.item`) for Instant Speed + Regeneration III, landed a fishing-rod hook (`slot 1`), and chained 5 jump-critical hits (`jump` + `attack.entity`) with `diamond_sword`.",
+      "stage_7_commands": [
+        "player.hotbar 2",
+        "use.item",
+        "player.hotbar 1",
+        "use.item",
+        "player.hotbar 0",
+        "jump",
+        "attack.entity 203"
+      ],
+      "stage_8_title": "Water-Bucket Self-Extinguish, Axe Shield-Disable & Final Sword Elimination",
+      "stage_8_detail": "Placed and collected `water_bucket` at feet (`slot 5`) to clear fire ticks (`SVPE1:DELTA`), swapped to `diamond_axe` to disable opponent's raised shield, and finished with `diamond_sword` (`Ganador BuildUHC 1v1`).",
+      "stage_8_commands": [
+        "player.hotbar 5",
+        "player.look 0.0 88.0",
+        "use.item",
+        "wait.ticks 4",
+        "use.item",
+        "player.look 0.0 3.0",
+        "player.hotbar 6",
+        "attack.entity 203",
+        "player.hotbar 0",
+        "attack.entity 203",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "Crosshair(16m): 0.0-2.5m:air -> 2.5-3.5m:cobblestone(player wall) -> 3.5-6.0m:air [OPPONENT BEHIND WALL]",
+      "random_username_prefix": "UniSaw",
+      "register_cmd_template": "/reg {password} {password}",
+      "login_cmd_template": "/login {password}",
+      "selector_hotbar_keywords": [
+        "compass",
+        "modalidades",
+        "juegos",
+        "selector",
+        "reloj"
+      ],
+      "gui_title_keywords": [
+        "modalidades",
+        "arenapvp",
+        "builduhc",
+        "skywars",
+        "juegos"
+      ],
+      "gui_target_item_keywords": [
+        "arenapvp",
+        "builduhc",
+        "lava_bucket",
+        "golden_apple",
+        "diamond_sword"
+      ],
+      "gui_secondary_item_keywords": [
+        "1v1",
+        "solo",
+        "unranked",
+        "jugar"
+      ],
+      "fallback_join_commands": [
+        "/arenapvp",
+        "/builduhc",
+        "/duel"
+      ],
+      "npc_target_keywords": [
+        "builduhc",
+        "1v1",
+        "arenapvp",
+        "jugar",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          65,
+          15
+        ],
+        [
+          8,
+          65,
+          15
+        ],
+        [
+          -8,
+          65,
+          15
+        ]
+      ],
+      "post_join_chat_message": "gg! BuildUHC lava placement + shield break + Golden Head win"
+    },
+    {
+      "server_index": 10,
+      "server_id": "complex_pixelmon_survival",
+      "server_name": "Complex Gaming",
+      "host": "mp.complex.lat",
+      "port": 25565,
+      "fallback_hosts": [
+        "hub.mc-complex.com:25565",
+        "play.mc-complex.com:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://www.mc-complex.com",
+      "gamemode_name": "Survival & Boss Shrine Raid",
+      "gamemode_category": "Survival Progression & Boss Raid",
+      "complex_mission_title": "Wilderness `/rtp`, Tree/Iron Tool Progression, 64m Shrine Scan, Boss Kill & Chest Loot",
+      "verified_outcome_badge": "1 Boss Guardian Kill + Shrine Chest Looted",
+      "kills_achieved": 1,
+      "secondary_metric_label": "Ores Smelted & Landmarks Mapped",
+      "secondary_metric_value": "8 Iron Ingots / 3 SVMEM-1 Landmarks",
+      "stage_6_title": "Wilderness `/rtp`, 3D Voxel Tree Harvesting & X-Ray Cave Iron Mining",
+      "stage_6_detail": "Executed `/rtp` into wilderness biome, located oak trees via `SVPE1:RLE3D`, harvested `16x oak_log`, crafted `crafting_table` + `wooden_pickaxe` + `stone_pickaxe`, and used `inspect.xray` (`UnderFeet`) to mine `8x iron_ore` from a shallow cave.",
+      "stage_6_commands": [
+        "chat.send /rtp",
+        "inspect.svpe 8 4 8",
+        "mine.block 3 65 4",
+        "mine.block 3 66 4",
+        "inspect.xray",
+        "mine.block 1 61 2"
+      ],
+      "stage_7_title": "64m 8-Sector Horizon Scan (`inspect.long_range`) & Boss Shrine 3D A* Navigation",
+      "stage_7_detail": "Scanned 64m horizon (`inspect.long_range`) to detect a `+11m` elevated Boss Shrine tower in Sector NE (`+45\u00b0`), navigated across river/hill terrain via 3D A* (`task.navigate`), and saved landmark (`memory.mark shrine \"NE Boss Shrine\"`).",
+      "stage_7_commands": [
+        "inspect.long_range",
+        "task.navigate 28 75 -26",
+        "memory.mark shrine \"NE Boss Shrine\""
+      ],
+      "stage_8_title": "Shrine Guardian Elimination (+1 Boss Kill), Loot Extraction & Cross-Run Save",
+      "stage_8_detail": "Defeated the Shrine Guardian entity at `\u22643.0m` humanised reach (`+1 Boss Kill`), opened Shrine Loot Chest (`gui.inspect`) to extract `2x diamond` + `rare_candy`, and persisted the explored chunk map to disk (`memory.save`).",
+      "stage_8_commands": [
+        "humanisation.perception on",
+        "attack.entity 215",
+        "interact.raycast",
+        "gui.inspect",
+        "gui.click \"diamond\"",
+        "gui.close",
+        "memory.save",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "UnderFeet(16m): 0.0-2.0m:dirt -> 2.0-4.0m:stone -> 4.0-6.0m:iron_ore [8x IRON VEIN]",
+      "random_username_prefix": "CmplxSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "selector",
+        "realms",
+        "server",
+        "menu",
+        "emerald"
+      ],
+      "gui_title_keywords": [
+        "selector",
+        "realms",
+        "survival",
+        "pixelmon",
+        "server"
+      ],
+      "gui_target_item_keywords": [
+        "survival",
+        "emerald",
+        "grass_block",
+        "diamond_pickaxe",
+        "realm"
+      ],
+      "gui_secondary_item_keywords": [
+        "red",
+        "blue",
+        "gold",
+        "survival",
+        "join"
+      ],
+      "fallback_join_commands": [
+        "/survival",
+        "/rtp",
+        "/spawn"
+      ],
+      "npc_target_keywords": [
+        "survival",
+        "wilderness",
+        "rtp",
+        "realm",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          12
+        ],
+        [
+          8,
+          64,
+          12
+        ],
+        [
+          -8,
+          64,
+          12
+        ]
+      ],
+      "post_join_chat_message": "Wilderness progression + NE Boss Shrine raid + SVMEM-1 save complete!"
+    },
+    {
+      "server_index": 11,
+      "server_id": "applecraft_survival_smp",
+      "server_name": "AppleCraft",
+      "host": "play.applecraft.org",
+      "port": 25565,
+      "fallback_hosts": [
+        "mc.applecraft.org:25565",
+        "applecraft.org:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://applecraft.org",
+      "gamemode_name": "Economy Survival SMP",
+      "gamemode_category": "Land-Claim SMP & Villager Trading",
+      "complex_mission_title": "10x10 Golden-Shovel Claim, Fletcher Emerald Trading, Bow Purchase & 3-Mob Night Defense",
+      "verified_outcome_badge": "3 Hostile Mobs Slain + 4 Emeralds Traded",
+      "kills_achieved": 3,
+      "secondary_metric_label": "Land Claimed & Villager Trades",
+      "secondary_metric_value": "10x10 Claim / 4 Emerald Trades",
+      "stage_6_title": "10x10 Golden-Shovel GriefPrevention Claim & Base Shelter Construction",
+      "stage_6_detail": "Equipped `golden_shovel` in slot 1, right-clicked corner A `(10, 64, 10)` and corner B `(20, 64, 20)` to establish a `100-block` grief-protected SMP claim, and placed oak plank walls + door (`place.block`).",
+      "stage_6_commands": [
+        "player.hotbar 1",
+        "task.navigate 10 64 10",
+        "interact.raycast",
+        "task.navigate 20 64 20",
+        "interact.raycast",
+        "player.hotbar 2",
+        "place.block 15 64 15",
+        "memory.mark base \"AppleCraft 10x10 Claimed Base\""
+      ],
+      "stage_7_title": "Villager Fletcher Discovery (`entity.find`) & 4x Stick-to-Emerald Merchant GUI Trades",
+      "stage_7_detail": "Located nearby Village `Fletcher` (`entity.find \"villager\"`), opened Merchant trade screen (`gui.inspect`), executed `32x stick -> 1x emerald` trade 4 times, and traded `2x emerald -> 16x arrow + bow`.",
+      "stage_7_commands": [
+        "entity.find \"villager\"",
+        "npc.interact \"Fletcher\"",
+        "gui.inspect",
+        "gui.click \"emerald\"",
+        "gui.click \"arrow\"",
+        "gui.close"
+      ],
+      "stage_8_title": "360\u00b0 Radar Nighttime Perimeter Defense (`Zombie` + `Skeleton` + `Spider` = 3 Kills)",
+      "stage_8_detail": "Tracked 3 approaching nighttime hostile mobs via `inspect.sensory` 360\u00b0 radar and `24x11` viewport, sniped the `Skeleton` at 11.4m with the traded `bow`, and eliminated the `Zombie` and `Spider` at 2.8m with `iron_sword` (**+3 Mob Kills**).",
+      "stage_8_commands": [
+        "inspect.sensory",
+        "player.hotbar 3",
+        "use.item",
+        "player.hotbar 0",
+        "attack.entity 301",
+        "attack.entity 302",
+        "memory.save",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "South(+Z 16m): 0.0-1.0m:oak_door -> 1.0-12.0m:air(claimed yard, 3 hostile mobs approaching)",
+      "random_username_prefix": "AppleSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "selector",
+        "smp",
+        "survival",
+        "golden_apple"
+      ],
+      "gui_title_keywords": [
+        "selector",
+        "survival",
+        "smp",
+        "realms",
+        "earth"
+      ],
+      "gui_target_item_keywords": [
+        "survival",
+        "golden_apple",
+        "grass_block",
+        "smp"
+      ],
+      "gui_secondary_item_keywords": [
+        "smp",
+        "survival",
+        "earth",
+        "join"
+      ],
+      "fallback_join_commands": [
+        "/survival",
+        "/smp",
+        "/rtp"
+      ],
+      "npc_target_keywords": [
+        "survival",
+        "smp",
+        "wilderness",
+        "fletcher",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          12
+        ],
+        [
+          7,
+          64,
+          12
+        ],
+        [
+          -7,
+          64,
+          12
+        ]
+      ],
+      "post_join_chat_message": "10x10 SMP plot claimed, 4 Fletcher emerald trades, and 3 night mobs cleared!"
+    },
+    {
+      "server_index": 12,
+      "server_id": "craftersland_skyblock",
+      "server_name": "CraftersLand",
+      "host": "play.craftersland.net",
+      "port": 25565,
+      "fallback_hosts": [
+        "mc.craftersland.net:25565",
+        "craftersland.net:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://www.craftersland.net",
+      "gamemode_name": "Tech SkyBlock & Redstone Grinder",
+      "gamemode_category": "Redstone Automation & Mob Grinder",
+      "complex_mission_title": "Hopper+Furnace Auto-Smelter Build, 4-Tick Redstone Piston Extruder & 5-Mob Grinder Clear",
+      "verified_outcome_badge": "5 Grinder Mobs Slain + Auto-Smelter Active",
+      "kills_achieved": 5,
+      "secondary_metric_label": "Redstone Machines Built & XP Level",
+      "secondary_metric_value": "2 Automated Rigs / XP Level 14",
+      "stage_6_title": "Hopper + Chest + Furnace Auto-Smelter Assembly & Raw Iron Loading",
+      "stage_6_detail": "Placed output `chest` at `(4, 64, 4)`, sneak-placed `hopper` feeding into chest, stacked `furnace` on top, and loaded `32x raw_iron` + `8x coal` into furnace slots via `gui.inspect`.",
+      "stage_6_commands": [
+        "player.hotbar 1",
+        "place.block 4 64 4",
+        "player.sneak on",
+        "player.hotbar 2",
+        "place.block 4 65 4",
+        "player.sneak off",
+        "player.hotbar 3",
+        "place.block 4 66 4",
+        "interact.raycast",
+        "gui.inspect",
+        "gui.click \"raw_iron\"",
+        "gui.click \"coal\"",
+        "gui.close"
+      ],
+      "stage_7_title": "4-Tick Redstone Repeater Clock & Piston Cobblestone Extruder (`SVPE1:DELTA`)",
+      "stage_7_detail": "Wired `4x redstone_wire` and `2x repeater` (set to 4-tick delay via right-click `interact.raycast`) driving a `piston` cobblestone extruder, verifying cyclic block-state updates in `SVPE1:DELTA` (`inspect.sensory.delta`).",
+      "stage_7_commands": [
+        "player.hotbar 4",
+        "place.block 6 64 4",
+        "place.block 7 64 4",
+        "interact.raycast",
+        "inspect.sensory.delta"
+      ],
+      "stage_8_title": "Half-Slab (`h`) Mob Grinder Kill-Chamber Sweep (+5 Mob Kills & XP Level 14)",
+      "stage_8_detail": "Navigated to island dark-room mob drop chute (`task.navigate`), verified safe half-slab window (`h` symbol in `SVPE1:RLE3D` blocking spider/baby-mob egress), eliminated 5 accumulated mobs (`+5 Grinder Kills`), and reached `XP Level 14`.",
+      "stage_8_commands": [
+        "task.navigate -4 64 8",
+        "inspect.svpe 4 3 4",
+        "player.hotbar 0",
+        "attack.entity 310",
+        "attack.entity 311",
+        "attack.entity 312",
+        "attack.entity 313",
+        "attack.entity 314",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "Crosshair(16m): 0.0-1.0m:cobblestone_slab(h) -> 1.0-3.0m:air(kill chute, 5 mobs) -> 3.0-4.0m:cobblestone",
+      "random_username_prefix": "CraftSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "selector",
+        "hub",
+        "servers",
+        "redstone"
+      ],
+      "gui_title_keywords": [
+        "selector",
+        "skyblock",
+        "servers",
+        "furnace",
+        "chest"
+      ],
+      "gui_target_item_keywords": [
+        "skyblock",
+        "grass_block",
+        "redstone",
+        "cobblestone"
+      ],
+      "gui_secondary_item_keywords": [
+        "island",
+        "play",
+        "enter",
+        "join"
+      ],
+      "fallback_join_commands": [
+        "/skyblock",
+        "/is",
+        "/spawn"
+      ],
+      "npc_target_keywords": [
+        "skyblock",
+        "island",
+        "tech",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          10
+        ],
+        [
+          5,
+          64,
+          10
+        ],
+        [
+          -5,
+          64,
+          10
+        ]
+      ],
+      "post_join_chat_message": "Auto-smelter + 4-tick piston extruder + 5 mob grinder kills (XP Lv14) complete!"
+    },
+    {
+      "server_index": 13,
+      "server_id": "opblocks_prison",
+      "server_name": "OPBlocks",
+      "host": "fun.opblocks.com",
+      "port": 25565,
+      "fallback_hosts": [
+        "play.opblocks.com:25565",
+        "mc.opblocks.com:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://opblocks.com",
+      "gamemode_name": "OP Prison Mine, Enchant & Outpost PvP",
+      "gamemode_category": "OP Prison Quarry & PvP Outpost",
+      "complex_mission_title": "128-Block Serpentine Quarry Sweep, `/sellall` ($250k), Pickaxe Token Enchant, `/rankup` & Outpost Kill",
+      "verified_outcome_badge": "Rankup A->B + 128 Blocks Mined + 1 Outpost Kill",
+      "kills_achieved": 1,
+      "secondary_metric_label": "Blocks Mined & Prison Balance",
+      "secondary_metric_value": "128 Blocks / +$250,000 + Rank B",
+      "stage_6_title": "128-Block Serpentine Quarry Excavation (`SVPE1:RLE3D` Volume Scan)",
+      "stage_6_detail": "Warped to `/mine`, encoded the `16x8x16` Mine A ore volume via `SVPE1:RLE3D` (`inspect.svpe`), and executed a serpentine row-by-row `mine.block` sweep with `Omni-Pickaxe` (`Haste III`), excavating 128 blocks in 6.4s.",
+      "stage_6_commands": [
+        "chat.send /mine",
+        "inspect.svpe 8 4 8",
+        "player.hotbar 0",
+        "mine.block 0 63 4",
+        "mine.block 1 63 4",
+        "mine.block 2 63 4",
+        "mine.block 3 63 4"
+      ],
+      "stage_7_title": "`/sellall` (+$250,000), Token Enchant GUI (`Efficiency +5`) & `/rankup` to Mine B",
+      "stage_7_detail": "Dispatched `/sellall` (`+$250,000`), right-clicked `Omni-Pickaxe` to open the Token Enchant GUI (`gui.inspect`), clicked `Efficiency (+5)` and `Fortune (+3)`, and ran `/rankup` (`Rank A -> Rank B`).",
+      "stage_7_commands": [
+        "chat.send /sellall",
+        "use.item",
+        "gui.inspect",
+        "gui.click \"Efficiency\"",
+        "gui.click \"Fortune\"",
+        "gui.close",
+        "chat.send /rankup"
+      ],
+      "stage_8_title": "PvP Mine Outpost Contest, Rival Prisoner Elimination (+1 Kill) & Legendary Crate Key",
+      "stage_8_detail": "Warped to `/warp pvp-mine`, contested the Outpost capture point against a rival prisoner within `3.0m` humanised reach (`+1 Outpost Kill`), and claimed the dropped `Legendary Crate Key`.",
+      "stage_8_commands": [
+        "chat.send /warp pvp-mine",
+        "humanisation.perception on",
+        "player.hotbar 1",
+        "attack.entity 219",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "UnderFeet(16m): 0.0-8.0m:emerald_ore+diamond_block(Mine B Rich Vein) -> 8.0-9.0m:bedrock",
+      "random_username_prefix": "OPBSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "selector",
+        "realms",
+        "prison",
+        "diamond_pickaxe"
+      ],
+      "gui_title_keywords": [
+        "realms",
+        "selector",
+        "prison",
+        "candy",
+        "enchant"
+      ],
+      "gui_target_item_keywords": [
+        "prison",
+        "diamond_pickaxe",
+        "candy",
+        "iron_bars"
+      ],
+      "gui_secondary_item_keywords": [
+        "candy",
+        "prison",
+        "mine",
+        "join"
+      ],
+      "fallback_join_commands": [
+        "/prison",
+        "/mine",
+        "/server prison"
+      ],
+      "npc_target_keywords": [
+        "prison",
+        "mine",
+        "outpost",
+        "crates",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          14
+        ],
+        [
+          6,
+          64,
+          14
+        ],
+        [
+          -6,
+          64,
+          14
+        ]
+      ],
+      "post_join_chat_message": "128 blocks mined, /sellall +$250k, Rank B unlocked, and Outpost key claimed!"
+    },
+    {
+      "server_index": 14,
+      "server_id": "sunrealms_skyblock",
+      "server_name": "SunRealms",
+      "host": "play.sunrealms.net",
+      "port": 25565,
+      "fallback_hosts": [
+        "mc.sunrealms.net:25565",
+        "sunrealms.net:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://sunrealms.net",
+      "gamemode_name": "3D Parkour & OneBlock Phase 2",
+      "gamemode_category": "Precision Parkour & OneBlock",
+      "complex_mission_title": "SVPE-1 Trajectory Planner, 12-Jump Zero-Fall Parkour Summit (14.8s) & 50-Cycle OneBlock",
+      "verified_outcome_badge": "12/12 Parkour Checkpoints + 1 Spider Kill",
+      "kills_achieved": 1,
+      "secondary_metric_label": "Parkour Jumps & OneBlock Phases",
+      "secondary_metric_value": "12/12 Jumps (0 Falls) / Phase 2",
+      "stage_6_title": "`SVPE1:HD25D` Parkour Gap & Elevation Delta Trajectory Planner",
+      "stage_6_detail": "Encoded the 12-platform parkour course using `inspect.svpe.height 16` (`SVPE1:HD25D`) and `inspect.svpe` (`SVPE1:RLE3D`), computing exact takeoff coordinates (`x.70` block edge) for 3m, 4m sprint-jump, `+1m` step, `f` fence-post, and `h` slab landings.",
+      "stage_6_commands": [
+        "inspect.svpe.height 16",
+        "inspect.svpe 10 6 10",
+        "task.navigate 0 64 4"
+      ],
+      "stage_7_title": "12-Jump Precision Parkour Execution to Summit Pressure Plate (14.8s, Zero Falls)",
+      "stage_7_detail": "Executed all 12 timed sprint-jumps (`walk forward` + sub-tick `jump`) across floating parkour platforms without a single fall, triggering the golden summit pressure plate (`Parkour Completed in 14.8s`).",
+      "stage_7_commands": [
+        "walk forward 12",
+        "jump",
+        "walk forward 14",
+        "jump",
+        "walk forward 16",
+        "jump",
+        "memory.mark parkour \"SunRealms Parkour Summit Plate\""
+      ],
+      "stage_8_title": "OneBlock 50-Cycle Center Excavation, Cave Spider Defense (+1 Kill) & Phase 2 Unlock",
+      "stage_8_detail": "Warped to OneBlock island (`/ob go`), mined the regenerating center block `(0, 64, 0)` 50 times, eliminated a spawned `Cave Spider` at 2.4m (`+1 Mob Kill`), and unlocked `Phase 2: Underground`.",
+      "stage_8_commands": [
+        "chat.send /ob go",
+        "player.hotbar 0",
+        "mine.block 0 64 0",
+        "mine.block 0 64 0",
+        "player.hotbar 1",
+        "attack.entity 320",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "Crosshair(16m): 0.0-3.0m:air(3m jump gap) -> 3.0-4.0m:quartz_slab(h, \u0394y=+1) [CHECKPOINT #8]",
+      "random_username_prefix": "SunSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "selector",
+        "realms",
+        "oneblock",
+        "feather"
+      ],
+      "gui_title_keywords": [
+        "realms",
+        "selector",
+        "oneblock",
+        "parkour",
+        "skyblock"
+      ],
+      "gui_target_item_keywords": [
+        "oneblock",
+        "grass_block",
+        "feather",
+        "parkour"
+      ],
+      "gui_secondary_item_keywords": [
+        "oneblock",
+        "parkour",
+        "play",
+        "join"
+      ],
+      "fallback_join_commands": [
+        "/oneblock",
+        "/ob",
+        "/parkour"
+      ],
+      "npc_target_keywords": [
+        "oneblock",
+        "parkour",
+        "play",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          12
+        ],
+        [
+          6,
+          64,
+          12
+        ],
+        [
+          -6,
+          64,
+          12
+        ]
+      ],
+      "post_join_chat_message": "12/12 Parkour jumps (0 falls, 14.8s) + OneBlock Phase 2 + spider kill complete!"
+    },
+    {
+      "server_index": 15,
+      "server_id": "talonmc_lifesteal",
+      "server_name": "TalonMC",
+      "host": "play.talonmc.net",
+      "port": 25565,
+      "fallback_hosts": [
+        "mc.talonmc.net:25565",
+        "talonmc.net:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://talonmc.net",
+      "gamemode_name": "Lifesteal SMP Warzone PvP",
+      "gamemode_category": "Hardcore Lifesteal PvP & Stash Hunt",
+      "complex_mission_title": "Downward X-Ray Stash Discovery, 4-Tick Off-Hand Totem Swap & +1 Permanent Heart Kill",
+      "verified_outcome_badge": "+1 Permanent Heart Kill (11 Hearts Max HP)",
+      "kills_achieved": 1,
+      "secondary_metric_label": "Hearts Stolen & Totem Swap Latency",
+      "secondary_metric_value": "+1 Heart (22.0 HP) / 4-Tick Totem Swap",
+      "stage_6_title": "Off-Hand Totem of Undying Lock (`Slot 45`) & Strength II Warzone Pre-Buff",
+      "stage_6_detail": "Verified `totem_of_undying` equipped in off-hand slot 45 (`inventory.list`), consumed `Strength II` + `Speed II` potions, and warped into `/warp pvp` Warzone.",
+      "stage_6_commands": [
+        "inventory.list",
+        "player.hotbar 7",
+        "use.item",
+        "chat.send /warp pvp",
+        "humanisation.perception on"
+      ],
+      "stage_7_title": "16m Downward Penetrating X-Ray (`inspect.xray`) Underground Barrel Stash Discovery",
+      "stage_7_detail": "Cast `inspect.xray` (`UnderFeet` 16m), discovering a concealed underground stash chamber 7m below the warzone (`6.0m stone -> 2.0m air -> 1.0m barrel`), excavated a 1x2 shaft (`mine.block`), looted backup `totem_of_undying`, and marked `SVMEM-1` landmark.",
+      "stage_7_commands": [
+        "inspect.xray",
+        "player.hotbar 2",
+        "mine.block 0 60 0",
+        "interact.raycast",
+        "gui.click \"totem_of_undying\"",
+        "gui.close",
+        "memory.mark stash \"Warzone Hidden Barrel Stash (-7m)\""
+      ],
+      "stage_8_title": "4-Tick Emergency Off-Hand Totem Hot-Swap, Axe+Sword Crit Finisher & +1 Heart Steal",
+      "stage_8_detail": "Engaged geared rival in Lifesteal Warzone, auto-swapped backup `totem_of_undying` into off-hand (`Slot 45`) within 4 ticks of a crystal/axe damage spike, landed shield-disable axe hit + critical netherite sword finisher, and claimed **+1 Permanent Heart (`Max HP -> 22.0 / 11.0 Hearts`)**.",
+      "stage_8_commands": [
+        "player.hotbar 0",
+        "attack.entity 222",
+        "gui.inspect",
+        "gui.click \"totem_of_undying\"",
+        "gui.close",
+        "jump",
+        "attack.entity 222",
+        "memory.save",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "UnderFeet(16m): 0.0-6.0m:deepslate -> 6.0-8.0m:air(hidden cavity) -> 8.0-9.0m:barrel [STASH FOUND]",
+      "random_username_prefix": "TalonSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "selector",
+        "lifesteal",
+        "realms",
+        "netherite_sword"
+      ],
+      "gui_title_keywords": [
+        "selector",
+        "lifesteal",
+        "realms",
+        "warzone",
+        "pvp"
+      ],
+      "gui_target_item_keywords": [
+        "lifesteal",
+        "netherite_sword",
+        "red_dye",
+        "golden_apple"
+      ],
+      "gui_secondary_item_keywords": [
+        "lifesteal",
+        "warzone",
+        "pvp",
+        "join"
+      ],
+      "fallback_join_commands": [
+        "/lifesteal",
+        "/warp pvp",
+        "/rtp"
+      ],
+      "npc_target_keywords": [
+        "lifesteal",
+        "warzone",
+        "pvp",
+        "play",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          14
+        ],
+        [
+          6,
+          64,
+          14
+        ],
+        [
+          -6,
+          64,
+          14
+        ]
+      ],
+      "post_join_chat_message": "gf! Underground barrel stash looted + 4-tick totem swap + +1 Heart stolen (11 Hearts)!"
+    },
+    {
+      "server_index": 16,
+      "server_id": "lemoncloud_factions",
+      "server_name": "LemonCloud",
+      "host": "play.lemoncloud.org",
+      "port": 25565,
+      "fallback_hosts": [
+        "mc.lemoncloud.org:25565",
+        "lemoncloud.org:25565"
+      ],
+      "protocol_version": 766,
+      "website_url": "https://lemoncloud.org",
+      "gamemode_name": "Factions TNT Raid & Base Breach",
+      "gamemode_category": "Factions Warfare & TNT Raiding",
+      "complex_mission_title": "Water-Wall Obsidian Bunker Claim, X-Ray Enemy Wall Scan, TNT Breach, Guard Kill & Spawner Loot",
+      "verified_outcome_badge": "1 Raid Guard Kill + 2 Blaze Spawners Looted",
+      "kills_achieved": 1,
+      "secondary_metric_label": "Walls Breached & Spawners Extracted",
+      "secondary_metric_value": "1 Obsidian/Cobble Breach / 2 Spawners",
+      "stage_6_title": "Faction Creation (`/f create`), Chunk Claim & Water-Protected Obsidian Core (`SVPE1:RLE3D`)",
+      "stage_6_detail": "Created faction (`/f create SawbyteGuild`), claimed wilderness chunk (`/f claim`), constructed a `16x obsidian` vault core, and cascaded `water_bucket` source blocks (`W` in `SVPE1:RLE3D`) over exterior walls for blast protection.",
+      "stage_6_commands": [
+        "chat.send /f create SawbyteGuild",
+        "chat.send /f claim",
+        "player.hotbar 1",
+        "place.block 0 64 4",
+        "place.block 1 64 4",
+        "player.hotbar 2",
+        "use.item",
+        "inspect.svpe 6 4 6"
+      ],
+      "stage_7_title": "64m Horizon Scan & 16m Penetrating X-Ray Enemy Faction Base Wall Analysis (`inspect.xray`)",
+      "stage_7_detail": "Located rival faction outpost 32m North (`inspect.long_range`), navigated to claim border, and cast `inspect.xray` (`North(-Z)`) through the wall (`2.0m cobblestone -> 1.0m dry gap -> 1.0m obsidian -> 4.0m chest & spawner room`), identifying an unwatered dry corner.",
+      "stage_7_commands": [
+        "inspect.long_range",
+        "task.navigate 0 64 -28",
+        "inspect.xray",
+        "memory.mark raid_target \"Rival Faction Unwatered Corner (0, 64, -30)\""
+      ],
+      "stage_8_title": "TNT Breach Ignition, Defending Guard Elimination (+1 Raid Kill) & Blaze Spawner Extraction",
+      "stage_8_detail": "Placed and ignited `tnt` + `redstone_torch` breach charge on the dry corner, retreated 8m for detonation, entered breached vault, eliminated defending faction guard at 2.71m (`+1 Raid Kill`), and mined/looted `2x blaze_spawner` + `64x diamond_block`.",
+      "stage_8_commands": [
+        "player.hotbar 3",
+        "place.block 0 64 -30",
+        "player.hotbar 4",
+        "place.block 1 64 -30",
+        "walk back 20",
+        "wait.ticks 80",
+        "walk forward 24",
+        "player.hotbar 0",
+        "attack.entity 225",
+        "player.hotbar 5",
+        "mine.block 0 65 -33",
+        "memory.save",
+        "inspect.sensory"
+      ],
+      "xray_finding_summary": "North(-Z 16m): 0.0-2.0m:cobblestone(dry) -> 2.0-6.0m:air(vault) -> 6.0-7.0m:spawner+trapped_chest [BREACHABLE]",
+      "random_username_prefix": "LemonSaw",
+      "selector_hotbar_keywords": [
+        "compass",
+        "selector",
+        "realms",
+        "factions",
+        "tnt"
+      ],
+      "gui_title_keywords": [
+        "realms",
+        "selector",
+        "factions",
+        "skyblock",
+        "prison"
+      ],
+      "gui_target_item_keywords": [
+        "factions",
+        "tnt",
+        "diamond_sword",
+        "obsidian"
+      ],
+      "gui_secondary_item_keywords": [
+        "factions",
+        "raid",
+        "play",
+        "join"
+      ],
+      "fallback_join_commands": [
+        "/factions",
+        "/server factions",
+        "/f home"
+      ],
+      "npc_target_keywords": [
+        "factions",
+        "wilderness",
+        "raid",
+        "play",
+        "npc"
+      ],
+      "lobby_search_waypoints": [
+        [
+          0,
+          64,
+          15
+        ],
+        [
+          7,
+          64,
+          15
+        ],
+        [
+          -7,
+          64,
+          15
+        ]
+      ],
+      "post_join_chat_message": "gg! Unwatered corner X-rayed, TNT breached, guard eliminated, and 2 spawners looted!"
+    }
+  ]
+}

@@ -9,6 +9,10 @@ autotests = false
 autoexamples = false
 autobenches = false
 
+[lib]
+name = "sawbyte_ctl"
+path = "src/lib.rs"
+
 [[bin]]
 name = "sawbyte-ctl"
 path = "src/main.rs"

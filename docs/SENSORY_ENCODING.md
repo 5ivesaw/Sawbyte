@@ -1,6 +1,6 @@
 # Sawbyte Sensory Vision v2 & `SVPE-1` Encoding Specification
 
-Sawbyte v0.5.0 bridges the gap between human graphical vision and headless AI perception through **"Seeing the Game with Words v2"** (`inspect.sensory` / `see`) and the **Sawbyte Voxel Perception Encoding (`SVPE-1`)** standard.
+Sawbyte v0.5.1 bridges the gap between human graphical vision and headless AI perception through **"Seeing the Game with Words v2"** (`inspect.sensory` / `see`) and the **Sawbyte Voxel Perception Encoding (`SVPE-1`)** standard.
 
 ---
 

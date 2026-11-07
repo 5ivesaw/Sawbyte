@@ -36,6 +36,12 @@ impl TcpLiveSessionTransport {
             timeout: Duration::from_secs(30),
         }
     }
+
+    /// Inherent convenience method forwarding to `LiveSessionTransport::send_live_command`
+    /// so callers do not even need `LiveSessionTransport` in scope.
+    pub fn send_live_command(&mut self, command: &str) -> Result<String, String> {
+        <Self as LiveSessionTransport>::send_live_command(self, command)
+    }
 }
 
 impl LiveSessionTransport for TcpLiveSessionTransport {
@@ -416,7 +422,7 @@ impl SawbyteControlBridge {
 
         match method {
             "initialize" => format!(
-                "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{{\"name\":\"sawbyte-mcp\",\"version\":\"0.5.0\"}},\"capabilities\":{{\"tools\":{{\"listChanged\":false}},\"resources\":{{\"listChanged\":false}},\"prompts\":{{\"listChanged\":false}}}}}}}}"
+                "{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{{\"name\":\"sawbyte-mcp\",\"version\":\"0.5.1\"}},\"capabilities\":{{\"tools\":{{\"listChanged\":false}},\"resources\":{{\"listChanged\":false}},\"prompts\":{{\"listChanged\":false}}}}}}}}"
             ),
             "notifications/initialized" => String::new(),
             "ping" => format!("{{\"jsonrpc\":\"2.0\",\"id\":{id},\"result\":{{}}}}"),

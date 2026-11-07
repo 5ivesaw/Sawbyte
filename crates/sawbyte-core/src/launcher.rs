@@ -1051,10 +1051,9 @@ impl PersistentLauncher {
         account_name: &str,
         extra_args: &[String],
     ) -> Result<(Child, PathBuf), String> {
-        let _inst = self
-            .instances
-            .get(instance_name)
-            .ok_or_else(|| format!("instance '{instance_name}' not found"))?;
+        if !self.instances.contains_key(instance_name) {
+            return Err(format!("instance '{instance_name}' not found"));
+        }
         if !self.accounts.contains_key(account_name) {
             return Err(format!("account '{account_name}' not found"));
         }

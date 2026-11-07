@@ -29,7 +29,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Duration;
 
-const HELP: &str = "Sawbyte 0.5.0 — standalone headless Rust client, desktop launcher & MCP control bridge
+const HELP: &str = "Sawbyte 0.5.1 — standalone headless Rust client, desktop launcher & MCP control bridge
 
 Usage:
   sawbyte --help

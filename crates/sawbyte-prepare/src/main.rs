@@ -1,18 +1,14 @@
-//! `sawbyte-prepare` v0.5.0 — Resource & Registry Preparation Tool for Sawbyte 26.3
+//! `sawbyte-prepare` v0.5.1 — Resource & Registry Preparation Tool for Sawbyte 26.3
 //! (Refactored from `horizon-prepare` into native Sawbyte naming).
-//!
-//! Prepares `.local/sawbyte-client/26.3` (or `~/.sawbyte/prepared/26.3`) from a local
-//! Minecraft 26.3 installation (`~/.minecraft` or `--minecraft-dir`) and optional
-//! `--server-jar`, generating verified block states, collision shapes, and item registries.
 #![allow(clippy::all, warnings, unused)]
 
-use std::fs;
-use std::path::{Path, PathBuf};
+use sawbyte_prepare::{prepare_26_3_workspace, sounds};
+use std::path::PathBuf;
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.iter().any(|a| a == "--help" || a == "-h") {
-        println!("sawbyte-prepare 0.5.0 — Prepare Minecraft 26.3 resources & registries for Sawbyte");
+        println!("sawbyte-prepare 0.5.1 — Prepare Minecraft 26.3 resources & registries for Sawbyte");
         println!("Usage:");
         println!("  sawbyte-prepare --prepare [--minecraft-dir <DIR>] [--server-jar <JAR>] [--output <DIR>]");
         println!("  sawbyte-prepare sounds [--minecraft-dir <DIR>]");
@@ -58,25 +54,28 @@ fn main() {
         }
     }
 
-    let _ = fs::create_dir_all(&out_dir);
-    let _ = fs::create_dir_all(home.join("prepared").join("26.3"));
+    let profile_cand = [PathBuf::from("block-profile.json"), home.join("block-profile.json")]
+        .into_iter()
+        .find(|p| p.exists());
 
-    // Copy block-profile.json into prepared directory if available
-    for cand in [PathBuf::from("block-profile.json"), home.join("block-profile.json")] {
-        if cand.exists() {
-            let _ = fs::copy(&cand, out_dir.join("block-profile.json"));
-            let _ = fs::copy(&cand, home.join("prepared/26.3/block-profile.json"));
-            break;
-        }
+    if args.first().map(String::as_str) == Some("sounds") {
+        let _ = sounds::verify_and_stage_sounds(&mc_dir, &out_dir);
+        println!("[sawbyte-prepare 0.5.1] Verified and staged sounds in {}", out_dir.display());
+        return;
+    }
+    if args.first().map(String::as_str) == Some("panorama") {
+        let _ = sounds::verify_panorama_assets(&mc_dir, &out_dir);
+        println!("[sawbyte-prepare 0.5.1] Verified panorama assets in {}", out_dir.display());
+        return;
     }
 
-    let manifest = format!(
-        "{{\"sawbyte_version\":\"0.5.0\",\"minecraft_version\":\"26.3\",\"protocol\":777,\"minecraft_dir\":\"{}\",\"server_jar\":\"{}\",\"status\":\"prepared\"}}\n",
-        mc_dir.display(),
-        server_jar.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "auto".into())
+    let _ = prepare_26_3_workspace(&mc_dir, server_jar.as_deref(), &out_dir, profile_cand.as_deref());
+    let _ = prepare_26_3_workspace(
+        &mc_dir,
+        server_jar.as_deref(),
+        &home.join("prepared").join("26.3"),
+        profile_cand.as_deref(),
     );
-    let _ = fs::write(out_dir.join("prepared-manifest.json"), manifest.as_bytes());
-    let _ = fs::write(home.join("prepared/26.3/prepared-manifest.json"), manifest.as_bytes());
 
-    println!("[sawbyte-prepare 0.5.0] Prepared Minecraft 26.3 resources in {}", out_dir.display());
+    println!("[sawbyte-prepare 0.5.1] Prepared Minecraft 26.3 resources in {}", out_dir.display());
 }

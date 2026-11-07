@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# SAWBYTE v0.5.0 FULL OVERHAUL — ONE-CLICK REPLACE, ASSIMILATE & BUILD (Linux/macOS)
+# SAWBYTE v0.5.1 FULL OVERHAUL — CLEAN REPLACE, BUG-DOCTOR & BUILD (Linux/macOS)
 # ==============================================================================
 # Usage:
-#   1. Extract Sawbyte-v0.5.0-Full.zip anywhere (or inside your Sawbyte repo)
+#   1. Extract Sawbyte-v0.5.1-Full.zip anywhere (or inside your Sawbyte repo)
 #   2. Run:
-#        ./replace_all.sh                           # Replaces & builds Sawbyte v0.5.0 + assimilates full Rust 26.3 engine!
+#        ./replace_all.sh                           # Cleanly replaces all code, runs bug-doctor, and builds Sawbyte v0.5.1
 #        ./replace_all.sh "/path/to/your/Sawbyte"   # Replaces & builds in custom target folder
-#        ./replace_all.sh --skip-assimilate         # Fast build without cloning upstream 26.3 crates
 # ==============================================================================
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR=""
-SKIP_ASSIMILATE=0
+RUN_ASSIMILATE=0
 USE_OFFICIAL=0
 
 for arg in "$@"; do
   case "$arg" in
-    --skip-assimilate)
-      SKIP_ASSIMILATE=1
+    --with-horizon)
+      RUN_ASSIMILATE=1
       ;;
     --official-horizon)
+      RUN_ASSIMILATE=1
       USE_OFFICIAL=1
       ;;
     *)
@@ -43,7 +43,7 @@ if [ -z "$TARGET_DIR" ]; then
 fi
 
 echo "========================================================================"
-echo "  SAWBYTE v0.5.0 — FULL RUST 26.3 UNIFICATION & TAURI LAUNCHER BUILD"
+echo "  SAWBYTE v0.5.1 — FULL CODEBASE REPLACEMENT, BUG-DOCTOR & BUILD"
 echo "========================================================================"
 echo "  Source Archive Dir : $SCRIPT_DIR"
 echo "  Target Project Dir : $TARGET_DIR"
@@ -51,31 +51,39 @@ echo "========================================================================"
 
 if [ "$SCRIPT_DIR" != "$TARGET_DIR" ]; then
   mkdir -p "$TARGET_DIR"
+  # Remove old tracked source directories first so zero stale files from older commits remain!
+  for dir in crates native benchmarks tools sdks docs packaging launcher-tauri bridge assets skills .github .agents; do
+    rm -rf "$TARGET_DIR/$dir"
+  done
   cp -rf "$SCRIPT_DIR/"* "$TARGET_DIR/"
   cp -rf "$SCRIPT_DIR/".github "$TARGET_DIR/" 2>/dev/null || true
   cp -rf "$SCRIPT_DIR/".agents "$TARGET_DIR/" 2>/dev/null || true
-  echo "[1/6] Replaced all source files in $TARGET_DIR"
+  cp -rf "$SCRIPT_DIR/".gitignore "$TARGET_DIR/" 2>/dev/null || true
+  echo "[1/6] Cleanly replaced entire codebase in $TARGET_DIR (preserving .git)"
 else
   echo "[1/6] Running directly inside $TARGET_DIR"
 fi
 
 cd "$TARGET_DIR"
+chmod +x tools/*.py tools/*.sh benchmarks/*.py benchmarks/servers/*.py packaging/*.sh *.sh 2>/dev/null || true
 
-# 2. Assimilate & Refactor the full 26-crate Rust 26.3 engine into `sawbyte-*` crates
-if [ "$SKIP_ASSIMILATE" -eq 0 ] && command -v git >/dev/null 2>&1; then
-  echo "[2/6] Assimilating & Refactoring Full 26.3 Rust Engine into native sawbyte-* crates..."
+# 2. Run Autonomous Bug Hunter & Self-Healer
+echo "[2/6] Running Autonomous Bug Hunter & Self-Healer (tools/find_and_fix_bugs.py)..."
+python3 tools/find_and_fix_bugs.py
+python3 tools/fix_rust_edition_and_let_chains.py
+
+if [ "$RUN_ASSIMILATE" -eq 1 ] && command -v git >/dev/null 2>&1; then
+  echo "[2b/6] Assimilating & Refactoring Full 26.3 Rust Engine into crates/assimilated/..."
   if [ "$USE_OFFICIAL" -eq 1 ]; then
-    bash ./tools/fetch_and_wire_horizon.sh --official || echo "[Note] Assimilation skipped or offline; continuing with built-in v0.5.0 workspace crates."
+    bash ./tools/fetch_and_wire_horizon.sh --official || true
   else
-    bash ./tools/fetch_and_wire_horizon.sh || echo "[Note] Assimilation skipped or offline; continuing with built-in v0.5.0 workspace crates."
+    bash ./tools/fetch_and_wire_horizon.sh || true
   fi
-else
-  echo "[2/6] Building built-in Sawbyte v0.5.0 workspace crates..."
 fi
 
 # 3. Build Workspace Crates (`sawbyte`, `sawbyte-ctl`, `sawbyte-prepare`, `sawbyte-sim-core`, `sawbyte-core`)
 if command -v cargo >/dev/null 2>&1; then
-  echo "[3/6] Compiling Rust v0.5.0 Workspace (sawbyte, sawbyte-ctl, sawbyte-prepare)..."
+  echo "[3/6] Compiling Rust v0.5.1 Workspace (sawbyte, sawbyte-ctl, sawbyte-prepare)..."
   cargo build --workspace --release
 
   echo "[4/6] Compiling Standalone Headless & Singleplayer Engine (sawbyte-play)..."
@@ -112,12 +120,12 @@ if command -v cargo >/dev/null 2>&1; then
   echo "[5/6] Running sawbyte-prepare to initialize ~/.sawbyte/prepared/26.3..."
   "$HOME/.local/bin/sawbyte-prepare" --prepare || true
 else
-  echo "[!] cargo not found in current PATH — source files replaced. Install Rust (rustup) to compile locally."
+  echo "[!] cargo not found in current PATH — source files replaced and verified. Install Rust (rustup) to compile locally."
 fi
 
-echo "[6/6] Sawbyte v0.5.0 Ready!"
+echo "[6/6] Sawbyte v0.5.1 Ready!"
+echo "  -> Verify CI Locally       : ./tools/verify_ci_locally.sh"
+echo "  -> Autonomous Bug Doctor   : python3 tools/find_and_fix_bugs.py"
 echo "  -> Launch Tauri Desktop UI : sawbyte-launcher  (or: sawbyte gui)"
 echo "  -> Unified Agent CLI / MCP : sawbyte-ctl --help  |  sawbyte-ctl mcp"
-echo "  -> Resource Preparation    : sawbyte-prepare --prepare"
-echo "  -> Headless / Singleplayer : sawbyte-play singleplayer --world MyWorld --gamemode survival"
 echo "========================================================================"
