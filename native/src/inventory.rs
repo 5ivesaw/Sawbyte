@@ -386,6 +386,9 @@ impl PacketTable {
     /// Returns a version-aware Play packet table for any Minecraft protocol in `765..=777`
     /// (`1.20.4`, `1.20.5`/`1.20.6`, `1.21`/`1.21.1`, `1.21.2`/`1.21.3`, `1.21.4`, `1.21.5`,
     /// `1.21.6`..`1.21.11`, `26.1`..`26.3`).
+    /// Returns a version-aware Play packet table for any Minecraft protocol in `766..=777`
+    /// (`1.20.5`/`1.20.6`, `1.21`/`1.21.1`, `1.21.2`/`1.21.3`, `1.21.4`, `1.21.5`,
+    /// `1.21.6`..`1.21.11`, `26.1`..`26.3`), using PrismarineJS `minecraft-data` tables for `766..=774`.
     pub fn for_protocol(proto: i32, profile: &serde_json::Value) -> Self {
         let mut table = Self::from_profile(profile);
         table.protocol_version = proto;
@@ -395,6 +398,7 @@ impl PacketTable {
         if proto == 775 {
             // Minecraft 26.1 / 26.1.1 / 26.1.2 (protocol 775)
             table.cb_add_entity = 1;
+            table.cb_block_changed_ack = 4;
             table.cb_block_update = 8;
             table.cb_chunk_batch_finished = 11;
             table.cb_chunk_batch_start = 12;
@@ -443,7 +447,6 @@ impl PacketTable {
             table.cb_teleport_entity = 125;
             table.cb_update_attributes = 131;
             table.cb_update_mob_effect = 132;
-            table.cb_block_changed_ack = 4;
             table.sb_accept_teleportation = 0;
             table.sb_attack = 1;
             table.sb_chat_command = 7;
@@ -480,286 +483,8 @@ impl PacketTable {
             table.sb_use_item = 67;
             return table;
         }
-        if proto >= 768 {
-            // Minecraft 1.21.2..1.21.11 (protocols 768..=774)
-            table.cb_add_entity = 1;
-            table.cb_block_update = 8;
-            table.cb_chunk_batch_finished = 11;
-            table.cb_chunk_batch_start = 12;
-            table.cb_container_close = 17;
-            table.cb_container_set_content = 18;
-            table.cb_container_set_data = 19;
-            table.cb_container_set_slot = 20;
-            table.cb_cookie_request = 21;
-            table.cb_disconnect = 28;
-            table.cb_disguised_chat = 29;
-            table.cb_entity_position_sync = 31;
-            table.cb_forget_level_chunk = 33;
-            table.cb_game_event = 34;
-            table.cb_keep_alive = 38;
-            table.cb_level_chunk_with_light = 39;
-            table.cb_login = 43;
-            table.cb_move_entity_pos = 46;
-            table.cb_move_entity_pos_rot = 47;
-            table.cb_open_screen = 52;
-            table.cb_ping = 54;
-            table.cb_player_abilities = 57;
-            table.cb_player_chat = 58;
-            table.cb_player_combat_kill = 61;
-            table.cb_player_info_update = 63;
-            table.cb_player_position = 65;
-            table.cb_remove_entities = 70;
-            table.cb_remove_mob_effect = 71;
-            table.cb_resource_pack_push = 74;
-            table.cb_respawn = 75;
-            table.cb_section_blocks_update = 77;
-            table.cb_set_action_bar_text = 80;
-            table.cb_set_cursor_item = 89;
-            table.cb_set_entity_data = 92;
-            table.cb_set_entity_motion = 94;
-            table.cb_set_equipment = 95;
-            table.cb_set_experience = 96;
-            table.cb_set_health = 97;
-            table.cb_set_held_slot = 98;
-            table.cb_set_objective = 99;
-            table.cb_set_player_inventory = 101;
-            table.cb_set_score = 103;
-            table.cb_set_subtitle_text = 105;
-            table.cb_set_title_text = 107;
-            table.cb_start_configuration = 111;
-            table.cb_system_chat = 114;
-            table.cb_teleport_entity = 118;
-            table.cb_update_attributes = if proto >= 770 { 124 } else { 123 };
-            table.cb_update_mob_effect = if proto >= 770 { 125 } else { 124 };
-            table.cb_block_changed_ack = 4;
-
-            table.sb_accept_teleportation = 0;
-            table.sb_attack = -1;
-            if proto >= 771 {
-                // 1.21.6..1.21.11 (771..=774)
-                table.sb_chat_command = 6;
-                table.sb_chat = 8;
-                table.sb_chunk_batch_received = 10;
-                table.sb_client_command = 11;
-                table.sb_client_tick_end = 12;
-                table.sb_configuration_acknowledged = 15;
-                table.sb_container_button_click = 16;
-                table.sb_container_click = 17;
-                table.sb_container_close = 18;
-                table.sb_cookie_response = 20;
-                table.sb_interact = 25;
-                table.sb_keep_alive = 27;
-                table.sb_move_player_pos = 29;
-                table.sb_move_player_pos_rot = 30;
-                table.sb_move_player_rot = 31;
-                table.sb_move_player_status_only = 32;
-                table.sb_place_recipe = 38;
-                table.sb_player_abilities = 39;
-                table.sb_player_action = 40;
-                table.sb_player_command = 41;
-                table.sb_player_input = 42;
-                table.sb_player_loaded = 43;
-                table.sb_pong = 44;
-                table.sb_rename_item = 47;
-                table.sb_resource_pack = 48;
-                table.sb_select_trade = 50;
-                table.sb_set_carried_item = 52;
-                table.sb_sign_update = 59;
-                table.sb_steer_vehicle = 42;
-                table.sb_swing = 60;
-                table.sb_use_item_on = 63;
-                table.sb_use_item = 64;
-            } else if proto == 770 {
-                // 1.21.5 (770)
-                table.sb_chat_command = 5;
-                table.sb_chat = 7;
-                table.sb_chunk_batch_received = 9;
-                table.sb_client_command = 10;
-                table.sb_client_tick_end = 11;
-                table.sb_configuration_acknowledged = 14;
-                table.sb_container_button_click = 15;
-                table.sb_container_click = 16;
-                table.sb_container_close = 17;
-                table.sb_cookie_response = 19;
-                table.sb_interact = 24;
-                table.sb_keep_alive = 26;
-                table.sb_move_player_pos = 28;
-                table.sb_move_player_pos_rot = 29;
-                table.sb_move_player_rot = 30;
-                table.sb_move_player_status_only = 31;
-                table.sb_place_recipe = 37;
-                table.sb_player_abilities = 38;
-                table.sb_player_action = 39;
-                table.sb_player_command = 40;
-                table.sb_player_input = 41;
-                table.sb_player_loaded = 42;
-                table.sb_pong = 43;
-                table.sb_rename_item = 46;
-                table.sb_resource_pack = 47;
-                table.sb_select_trade = 49;
-                table.sb_set_carried_item = 51;
-                table.sb_sign_update = 58;
-                table.sb_steer_vehicle = 41;
-                table.sb_swing = 59;
-                table.sb_use_item_on = 62;
-                table.sb_use_item = 63;
-            } else if proto == 769 {
-                // 1.21.4 (769)
-                table.sb_chat_command = 5;
-                table.sb_chat = 7;
-                table.sb_chunk_batch_received = 9;
-                table.sb_client_command = 10;
-                table.sb_client_tick_end = 11;
-                table.sb_configuration_acknowledged = 14;
-                table.sb_container_button_click = 15;
-                table.sb_container_click = 16;
-                table.sb_container_close = 17;
-                table.sb_cookie_response = 19;
-                table.sb_interact = 24;
-                table.sb_keep_alive = 26;
-                table.sb_move_player_pos = 28;
-                table.sb_move_player_pos_rot = 29;
-                table.sb_move_player_rot = 30;
-                table.sb_move_player_status_only = 31;
-                table.sb_place_recipe = 37;
-                table.sb_player_abilities = 38;
-                table.sb_player_action = 39;
-                table.sb_player_command = 40;
-                table.sb_player_input = 41;
-                table.sb_player_loaded = 42;
-                table.sb_pong = 43;
-                table.sb_rename_item = 46;
-                table.sb_resource_pack = 47;
-                table.sb_select_trade = 49;
-                table.sb_set_carried_item = 51;
-                table.sb_sign_update = 57;
-                table.sb_steer_vehicle = 41;
-                table.sb_swing = 58;
-                table.sb_use_item_on = 60;
-                table.sb_use_item = 61;
-            } else {
-                // 1.21.2 / 1.21.3 (768)
-                table.sb_chat_command = 5;
-                table.sb_chat = 7;
-                table.sb_chunk_batch_received = 9;
-                table.sb_client_command = 10;
-                table.sb_client_tick_end = 11;
-                table.sb_configuration_acknowledged = 14;
-                table.sb_container_button_click = 15;
-                table.sb_container_click = 16;
-                table.sb_container_close = 17;
-                table.sb_cookie_response = 19;
-                table.sb_interact = 24;
-                table.sb_keep_alive = 26;
-                table.sb_move_player_pos = 28;
-                table.sb_move_player_pos_rot = 29;
-                table.sb_move_player_rot = 30;
-                table.sb_move_player_status_only = 31;
-                table.sb_place_recipe = 36;
-                table.sb_player_abilities = 37;
-                table.sb_player_action = 38;
-                table.sb_player_command = 39;
-                table.sb_player_input = 40;
-                table.sb_player_loaded = -1;
-                table.sb_pong = 41;
-                table.sb_rename_item = 44;
-                table.sb_resource_pack = 45;
-                table.sb_select_trade = 47;
-                table.sb_set_carried_item = 49;
-                table.sb_sign_update = 55;
-                table.sb_steer_vehicle = 40;
-                table.sb_swing = 56;
-                table.sb_use_item_on = 58;
-                table.sb_use_item = 59;
-            }
-            return table;
-        }
-        // Minecraft 1.20.5/1.20.6 (766) & 1.21/1.21.1 (767)
-        table.cb_add_entity = 1;
-        table.cb_block_update = 8;
-        table.cb_chunk_batch_finished = 11;
-        table.cb_chunk_batch_start = 12;
-        table.cb_container_close = 17;
-        table.cb_container_set_content = 18;
-        table.cb_container_set_data = 19;
-        table.cb_container_set_slot = 20;
-        table.cb_cookie_request = 21;
-        table.cb_disconnect = 28;
-        table.cb_disguised_chat = 29;
-        table.cb_entity_position_sync = -1;
-        table.cb_forget_level_chunk = 32;
-        table.cb_game_event = 33;
-        table.cb_keep_alive = 37;
-        table.cb_level_chunk_with_light = 38;
-        table.cb_login = 42;
-        table.cb_move_entity_pos = 45;
-        table.cb_move_entity_pos_rot = 46;
-        table.cb_open_screen = 50;
-        table.cb_ping = 52;
-        table.cb_player_abilities = 55;
-        table.cb_player_chat = 56;
-        table.cb_player_combat_kill = 59;
-        table.cb_player_info_update = 61;
-        table.cb_player_position = 63;
-        table.cb_remove_entities = 65;
-        table.cb_remove_mob_effect = 66;
-        table.cb_resource_pack_push = 69;
-        table.cb_respawn = 70;
-        table.cb_section_blocks_update = 72;
-        table.cb_set_action_bar_text = 75;
-        table.cb_set_cursor_item = -1;
-        table.cb_set_entity_data = 86;
-        table.cb_set_entity_motion = 88;
-        table.cb_set_equipment = 89;
-        table.cb_set_experience = 90;
-        table.cb_set_health = 91;
-        table.cb_set_held_slot = 92;
-        table.cb_set_objective = 93;
-        table.cb_set_player_inventory = -1;
-        table.cb_set_score = 96;
-        table.cb_set_subtitle_text = 98;
-        table.cb_set_title_text = 100;
-        table.cb_start_configuration = 104;
-        table.cb_system_chat = 107;
-        table.cb_teleport_entity = 111;
-        table.cb_update_attributes = 116;
-        table.cb_update_mob_effect = 117;
-        table.cb_block_changed_ack = 4;
-
-        table.sb_accept_teleportation = 0;
-        table.sb_attack = -1;
-        table.sb_chat_command = 4;
-        table.sb_chat = 6;
-        table.sb_chunk_batch_received = 8;
-        table.sb_client_command = 9;
-        table.sb_client_tick_end = -1;
-        table.sb_configuration_acknowledged = 12;
-        table.sb_container_button_click = 13;
-        table.sb_container_click = 14;
-        table.sb_container_close = 15;
-        table.sb_cookie_response = 17;
-        table.sb_interact = 22;
-        table.sb_keep_alive = 24;
-        table.sb_move_player_pos = 26;
-        table.sb_move_player_pos_rot = 27;
-        table.sb_move_player_rot = 28;
-        table.sb_move_player_status_only = 29;
-        table.sb_place_recipe = 34;
-        table.sb_player_abilities = 35;
-        table.sb_player_action = 36;
-        table.sb_player_command = 37;
-        table.sb_player_input = 38;
-        table.sb_player_loaded = -1;
-        table.sb_pong = 39;
-        table.sb_rename_item = 42;
-        table.sb_resource_pack = 43;
-        table.sb_select_trade = 45;
-        table.sb_set_carried_item = 47;
-        table.sb_sign_update = 53;
-        table.sb_steer_vehicle = 38;
-        table.sb_swing = 54;
-        table.sb_use_item_on = 56;
-        table.sb_use_item = 57;
+        let clamped = proto.clamp(766, 774);
+        let _ = crate::release_ids::apply(&mut table, clamped);
         table
     }
 }
@@ -1972,20 +1697,38 @@ impl PlayerStateTable {
     }
 
     pub fn apply_teleport_entity(&mut self, r: &mut Reader<'_>) -> Result<()> {
+        self.apply_teleport_entity_for_protocol(r, 777)
+    }
+
+    pub fn apply_teleport_entity_for_protocol(&mut self, r: &mut Reader<'_>, proto: i32) -> Result<()> {
         let entity_id = r.var()?;
         let x = r.f64()?;
         let y = r.f64()?;
         let z = r.f64()?;
-        let vx = r.f64()?;
-        let vy = r.f64()?;
-        let vz = r.f64()?;
-        let yaw = r.f32()?;
-        let pitch = r.f32()?;
-        if let Some(ent) = self.entities.get_mut(&entity_id) {
-            ent.pos = [x, y, z];
-            ent.velocity = [vx, vy, vz];
-            ent.yaw = yaw;
-            ent.pitch = pitch;
+        if proto >= 768 {
+            let vx = r.f64()?;
+            let vy = r.f64()?;
+            let vz = r.f64()?;
+            let yaw = r.f32()?;
+            let pitch = r.f32()?;
+            if let Some(ent) = self.entities.get_mut(&entity_id) {
+                ent.pos = [x, y, z];
+                ent.velocity = [vx, vy, vz];
+                ent.yaw = yaw;
+                ent.pitch = pitch;
+            }
+        } else {
+            // In 1.20.5..1.21.1 (766..=767), teleport_entity has yaw(i8 angle), pitch(i8 angle), on_ground(bool)
+            let yaw_byte = r.byte()? as i8;
+            let pitch_byte = r.byte()? as i8;
+            let _on_ground = r.byte()?;
+            let yaw = (yaw_byte as f32) * (360.0 / 256.0);
+            let pitch = (pitch_byte as f32) * (360.0 / 256.0);
+            if let Some(ent) = self.entities.get_mut(&entity_id) {
+                ent.pos = [x, y, z];
+                ent.yaw = yaw;
+                ent.pitch = pitch;
+            }
         }
         Ok(())
     }
@@ -2062,15 +1805,48 @@ impl PlayerStateTable {
         let entity_id = r.var()?;
         let count = r.count(256)?;
         let mut attrs = Vec::with_capacity(count);
+        // Try legacy String-key format first (used by unit tests), or modern 1.20.5+ VarInt attribute_id format
+        let saved = r.0;
+        let mut legacy_ok = true;
         for _ in 0..count {
-            let key = r.string()?;
+            if let (Ok(key), Ok(base), Ok(mod_count)) = (r.string(), r.f64(), r.count(256)) {
+                if !key.contains(':') || !base.is_finite() {
+                    legacy_ok = false;
+                    break;
+                }
+                for _ in 0..mod_count {
+                    if r.take(16).is_err() || r.f64().is_err() || r.byte().is_err() {
+                        legacy_ok = false;
+                        break;
+                    }
+                }
+                if !legacy_ok {
+                    break;
+                }
+                attrs.push((key, base));
+            } else {
+                legacy_ok = false;
+                break;
+            }
+        }
+        if legacy_ok {
+            return Ok((entity_id, attrs));
+        }
+        attrs.clear();
+        r.0 = saved;
+        for _ in 0..count {
+            let attr_id = r.var()?;
             let base = r.f64()?;
             let mod_count = r.count(256)?;
             for _ in 0..mod_count {
-                let _uuid = r.take(16)?;
+                let _id = r.string()?;
                 let _amount = r.f64()?;
-                let _operation = r.byte()?;
+                let _op = r.byte()?;
             }
+            let key = match attr_id {
+                17 | 18 | 19 => format!("minecraft:attr_{attr_id}"),
+                _ => format!("minecraft:attr_{attr_id}"),
+            };
             attrs.push((key, base));
         }
         Ok((entity_id, attrs))

@@ -11,6 +11,7 @@ pub mod inventory;
 pub mod perception;
 pub mod player;
 pub mod raycast;
+pub mod release_ids;
 pub mod visualizer;
 pub mod wire;
 pub mod world;
@@ -1083,9 +1084,21 @@ impl Session {
                 }
             }
             id if id == self.packets.cb_teleport_entity => {
-                if let Err(e) = self.state_table.apply_teleport_entity(&mut r) {
+                if let Err(e) = self
+                    .state_table
+                    .apply_teleport_entity_for_protocol(&mut r, self.protocol_version)
+                {
                     self.state_table
                         .record_decode_error("teleport_entity", e.as_ref());
+                }
+            }
+            id if id == self.packets.cb_entity_position_sync && self.packets.cb_entity_position_sync >= 0 => {
+                if let Err(e) = self
+                    .state_table
+                    .apply_teleport_entity_for_protocol(&mut r, 768)
+                {
+                    self.state_table
+                        .record_decode_error("entity_position_sync", e.as_ref());
                 }
             }
             id if id == self.packets.cb_move_entity_pos => {
@@ -1110,6 +1123,13 @@ impl Session {
             id if id == self.packets.cb_system_chat => {
                 if let Err(e) = self.state_table.apply_system_chat(&mut r) {
                     self.state_table.record_decode_error("system_chat", e.as_ref());
+                }
+            }
+            id if id == self.packets.cb_set_held_slot => {
+                if let Ok(slot) = r.byte() {
+                    if slot < 9 {
+                        self.state_table.selected_hotbar = slot;
+                    }
                 }
             }
             id if id == self.packets.cb_update_mob_effect => {
@@ -5479,15 +5499,29 @@ fn run_live(args: &[String]) -> Result<()> {
             }
             let wait = next.saturating_duration_since(Instant::now());
             match receive.recv_timeout(wait) {
-                Ok(packet) => state.packet(&packet?, &mut tx)?,
+                Ok(Ok(packet)) => state.packet(&packet, &mut tx)?,
+                Ok(Err(e)) => {
+                    return Err(bad(&format!(
+                        "remote server closed connection after {} rx packets (playing={}, positioned={}, loaded={}, proto={}): {e}",
+                        state.rx_packets_count, state.playing, state.positioned, state.loaded, state.protocol_version
+                    )));
+                }
                 Err(mpsc::RecvTimeoutError::Disconnected) => {
                     return Err(bad("network reader stopped"));
                 }
                 Err(mpsc::RecvTimeoutError::Timeout) => {}
             }
             if Instant::now() >= next {
-                while let Ok(packet) = receive.try_recv() {
-                    state.packet(&packet?, &mut tx)?;
+                while let Ok(pkt_res) = receive.try_recv() {
+                    match pkt_res {
+                        Ok(packet) => state.packet(&packet, &mut tx)?,
+                        Err(e) => {
+                            return Err(bad(&format!(
+                                "remote server closed connection after {} rx packets (playing={}, positioned={}, loaded={}, proto={}): {e}",
+                                state.rx_packets_count, state.playing, state.positioned, state.loaded, state.protocol_version
+                            )));
+                        }
+                    }
                 }
                 // Always process incoming MCP/TCP control commands immediately so inspect/chat/inventory never hang during settle
                 while let Ok((req_line, reply_chan)) = ctrl_rx.try_recv() {
@@ -6803,4 +6837,175 @@ mod tests {
 
         assert_eq!(session.player.effects.speed_amplifier, None);
     }
+
+    #[test]
+    fn mcdata_protocol_tables_match_766_through_775_exactly() {
+        let fixture_str = include_str!("../tests/fixtures/mcdata_ids.json");
+        let fixture: serde_json::Value = serde_json::from_str(fixture_str).expect("valid mcdata_ids.json");
+        let profile = world::default_26_3_profile();
+
+        for proto in 766..=775 {
+            let p_key = proto.to_string();
+            let entry = &fixture[&p_key];
+            assert!(entry.is_object(), "missing protocol {proto} in mcdata_ids.json");
+            let tbl = inventory::PacketTable::for_protocol(proto, &profile);
+            assert_eq!(tbl.protocol_version, proto);
+
+            let cb = &entry["cb"];
+            assert_eq!(tbl.cb_add_entity, cb["cb_add_entity"].as_i64().unwrap() as i32, "proto {proto} cb_add_entity");
+            assert_eq!(tbl.cb_block_changed_ack, cb["cb_block_changed_ack"].as_i64().unwrap() as i32, "proto {proto} cb_block_changed_ack");
+            assert_eq!(tbl.cb_block_update, cb["cb_block_update"].as_i64().unwrap() as i32, "proto {proto} cb_block_update");
+            assert_eq!(tbl.cb_chunk_batch_finished, cb["cb_chunk_batch_finished"].as_i64().unwrap() as i32, "proto {proto} cb_chunk_batch_finished");
+            assert_eq!(tbl.cb_chunk_batch_start, cb["cb_chunk_batch_start"].as_i64().unwrap() as i32, "proto {proto} cb_chunk_batch_start");
+            assert_eq!(tbl.cb_container_close, cb["cb_container_close"].as_i64().unwrap() as i32, "proto {proto} cb_container_close");
+            assert_eq!(tbl.cb_container_set_content, cb["cb_container_set_content"].as_i64().unwrap() as i32, "proto {proto} cb_container_set_content");
+            assert_eq!(tbl.cb_container_set_data, cb["cb_container_set_data"].as_i64().unwrap() as i32, "proto {proto} cb_container_set_data");
+            assert_eq!(tbl.cb_container_set_slot, cb["cb_container_set_slot"].as_i64().unwrap() as i32, "proto {proto} cb_container_set_slot");
+            assert_eq!(tbl.cb_cookie_request, cb["cb_cookie_request"].as_i64().unwrap() as i32, "proto {proto} cb_cookie_request");
+            assert_eq!(tbl.cb_disconnect, cb["cb_disconnect"].as_i64().unwrap() as i32, "proto {proto} cb_disconnect");
+            assert_eq!(tbl.cb_disguised_chat, cb["cb_disguised_chat"].as_i64().unwrap() as i32, "proto {proto} cb_disguised_chat");
+            assert_eq!(tbl.cb_entity_position_sync, cb["cb_entity_position_sync"].as_i64().unwrap() as i32, "proto {proto} cb_entity_position_sync");
+            assert_eq!(tbl.cb_forget_level_chunk, cb["cb_forget_level_chunk"].as_i64().unwrap() as i32, "proto {proto} cb_forget_level_chunk");
+            assert_eq!(tbl.cb_game_event, cb["cb_game_event"].as_i64().unwrap() as i32, "proto {proto} cb_game_event");
+            assert_eq!(tbl.cb_keep_alive, cb["cb_keep_alive"].as_i64().unwrap() as i32, "proto {proto} cb_keep_alive");
+            assert_eq!(tbl.cb_level_chunk_with_light, cb["cb_level_chunk_with_light"].as_i64().unwrap() as i32, "proto {proto} cb_level_chunk_with_light");
+            assert_eq!(tbl.cb_login, cb["cb_login"].as_i64().unwrap() as i32, "proto {proto} cb_login");
+            assert_eq!(tbl.cb_move_entity_pos, cb["cb_move_entity_pos"].as_i64().unwrap() as i32, "proto {proto} cb_move_entity_pos");
+            assert_eq!(tbl.cb_move_entity_pos_rot, cb["cb_move_entity_pos_rot"].as_i64().unwrap() as i32, "proto {proto} cb_move_entity_pos_rot");
+            assert_eq!(tbl.cb_open_screen, cb["cb_open_screen"].as_i64().unwrap() as i32, "proto {proto} cb_open_screen");
+            assert_eq!(tbl.cb_ping, cb["cb_ping"].as_i64().unwrap() as i32, "proto {proto} cb_ping");
+            assert_eq!(tbl.cb_player_abilities, cb["cb_player_abilities"].as_i64().unwrap() as i32, "proto {proto} cb_player_abilities");
+            assert_eq!(tbl.cb_player_chat, cb["cb_player_chat"].as_i64().unwrap() as i32, "proto {proto} cb_player_chat");
+            assert_eq!(tbl.cb_player_combat_kill, cb["cb_player_combat_kill"].as_i64().unwrap() as i32, "proto {proto} cb_player_combat_kill");
+            assert_eq!(tbl.cb_player_info_update, cb["cb_player_info_update"].as_i64().unwrap() as i32, "proto {proto} cb_player_info_update");
+            assert_eq!(tbl.cb_player_position, cb["cb_player_position"].as_i64().unwrap() as i32, "proto {proto} cb_player_position");
+            assert_eq!(tbl.cb_remove_entities, cb["cb_remove_entities"].as_i64().unwrap() as i32, "proto {proto} cb_remove_entities");
+            assert_eq!(tbl.cb_remove_mob_effect, cb["cb_remove_mob_effect"].as_i64().unwrap() as i32, "proto {proto} cb_remove_mob_effect");
+            assert_eq!(tbl.cb_resource_pack_push, cb["cb_resource_pack_push"].as_i64().unwrap() as i32, "proto {proto} cb_resource_pack_push");
+            assert_eq!(tbl.cb_respawn, cb["cb_respawn"].as_i64().unwrap() as i32, "proto {proto} cb_respawn");
+            assert_eq!(tbl.cb_section_blocks_update, cb["cb_section_blocks_update"].as_i64().unwrap() as i32, "proto {proto} cb_section_blocks_update");
+            assert_eq!(tbl.cb_set_action_bar_text, cb["cb_set_action_bar_text"].as_i64().unwrap() as i32, "proto {proto} cb_set_action_bar_text");
+            assert_eq!(tbl.cb_set_cursor_item, cb["cb_set_cursor_item"].as_i64().unwrap() as i32, "proto {proto} cb_set_cursor_item");
+            assert_eq!(tbl.cb_set_entity_data, cb["cb_set_entity_data"].as_i64().unwrap() as i32, "proto {proto} cb_set_entity_data");
+            assert_eq!(tbl.cb_set_entity_motion, cb["cb_set_entity_motion"].as_i64().unwrap() as i32, "proto {proto} cb_set_entity_motion");
+            assert_eq!(tbl.cb_set_equipment, cb["cb_set_equipment"].as_i64().unwrap() as i32, "proto {proto} cb_set_equipment");
+            assert_eq!(tbl.cb_set_experience, cb["cb_set_experience"].as_i64().unwrap() as i32, "proto {proto} cb_set_experience");
+            assert_eq!(tbl.cb_set_health, cb["cb_set_health"].as_i64().unwrap() as i32, "proto {proto} cb_set_health");
+            assert_eq!(tbl.cb_set_held_slot, cb["cb_set_held_slot"].as_i64().unwrap() as i32, "proto {proto} cb_set_held_slot");
+            assert_eq!(tbl.cb_set_objective, cb["cb_set_objective"].as_i64().unwrap() as i32, "proto {proto} cb_set_objective");
+            assert_eq!(tbl.cb_set_player_inventory, cb["cb_set_player_inventory"].as_i64().unwrap() as i32, "proto {proto} cb_set_player_inventory");
+            assert_eq!(tbl.cb_set_score, cb["cb_set_score"].as_i64().unwrap() as i32, "proto {proto} cb_set_score");
+            assert_eq!(tbl.cb_set_subtitle_text, cb["cb_set_subtitle_text"].as_i64().unwrap() as i32, "proto {proto} cb_set_subtitle_text");
+            assert_eq!(tbl.cb_set_title_text, cb["cb_set_title_text"].as_i64().unwrap() as i32, "proto {proto} cb_set_title_text");
+            assert_eq!(tbl.cb_start_configuration, cb["cb_start_configuration"].as_i64().unwrap() as i32, "proto {proto} cb_start_configuration");
+            assert_eq!(tbl.cb_system_chat, cb["cb_system_chat"].as_i64().unwrap() as i32, "proto {proto} cb_system_chat");
+            assert_eq!(tbl.cb_teleport_entity, cb["cb_teleport_entity"].as_i64().unwrap() as i32, "proto {proto} cb_teleport_entity");
+            assert_eq!(tbl.cb_update_attributes, cb["cb_update_attributes"].as_i64().unwrap() as i32, "proto {proto} cb_update_attributes");
+            assert_eq!(tbl.cb_update_mob_effect, cb["cb_update_mob_effect"].as_i64().unwrap() as i32, "proto {proto} cb_update_mob_effect");
+
+            let sb = &entry["sb"];
+            assert_eq!(tbl.sb_accept_teleportation, sb["sb_accept_teleportation"].as_i64().unwrap() as i32, "proto {proto} sb_accept_teleportation");
+            assert_eq!(tbl.sb_chat, sb["sb_chat"].as_i64().unwrap() as i32, "proto {proto} sb_chat");
+            assert_eq!(tbl.sb_chat_command, sb["sb_chat_command"].as_i64().unwrap() as i32, "proto {proto} sb_chat_command");
+            assert_eq!(tbl.sb_chunk_batch_received, sb["sb_chunk_batch_received"].as_i64().unwrap() as i32, "proto {proto} sb_chunk_batch_received");
+            assert_eq!(tbl.sb_client_command, sb["sb_client_command"].as_i64().unwrap() as i32, "proto {proto} sb_client_command");
+            assert_eq!(tbl.sb_client_tick_end, sb["sb_client_tick_end"].as_i64().unwrap() as i32, "proto {proto} sb_client_tick_end");
+            assert_eq!(tbl.sb_configuration_acknowledged, sb["sb_configuration_acknowledged"].as_i64().unwrap() as i32, "proto {proto} sb_configuration_acknowledged");
+            assert_eq!(tbl.sb_container_button_click, sb["sb_container_button_click"].as_i64().unwrap() as i32, "proto {proto} sb_container_button_click");
+            assert_eq!(tbl.sb_container_click, sb["sb_container_click"].as_i64().unwrap() as i32, "proto {proto} sb_container_click");
+            assert_eq!(tbl.sb_container_close, sb["sb_container_close"].as_i64().unwrap() as i32, "proto {proto} sb_container_close");
+            assert_eq!(tbl.sb_cookie_response, sb["sb_cookie_response"].as_i64().unwrap() as i32, "proto {proto} sb_cookie_response");
+            assert_eq!(tbl.sb_interact, sb["sb_interact"].as_i64().unwrap() as i32, "proto {proto} sb_interact");
+            assert_eq!(tbl.sb_keep_alive, sb["sb_keep_alive"].as_i64().unwrap() as i32, "proto {proto} sb_keep_alive");
+            assert_eq!(tbl.sb_move_player_pos, sb["sb_move_player_pos"].as_i64().unwrap() as i32, "proto {proto} sb_move_player_pos");
+            assert_eq!(tbl.sb_move_player_pos_rot, sb["sb_move_player_pos_rot"].as_i64().unwrap() as i32, "proto {proto} sb_move_player_pos_rot");
+            assert_eq!(tbl.sb_move_player_rot, sb["sb_move_player_rot"].as_i64().unwrap() as i32, "proto {proto} sb_move_player_rot");
+            assert_eq!(tbl.sb_move_player_status_only, sb["sb_move_player_status_only"].as_i64().unwrap() as i32, "proto {proto} sb_move_player_status_only");
+            assert_eq!(tbl.sb_place_recipe, sb["sb_place_recipe"].as_i64().unwrap() as i32, "proto {proto} sb_place_recipe");
+            assert_eq!(tbl.sb_player_abilities, sb["sb_player_abilities"].as_i64().unwrap() as i32, "proto {proto} sb_player_abilities");
+            assert_eq!(tbl.sb_player_action, sb["sb_player_action"].as_i64().unwrap() as i32, "proto {proto} sb_player_action");
+            assert_eq!(tbl.sb_player_command, sb["sb_player_command"].as_i64().unwrap() as i32, "proto {proto} sb_player_command");
+            assert_eq!(tbl.sb_player_loaded, sb["sb_player_loaded"].as_i64().unwrap() as i32, "proto {proto} sb_player_loaded");
+            assert_eq!(tbl.sb_pong, sb["sb_pong"].as_i64().unwrap() as i32, "proto {proto} sb_pong");
+            assert_eq!(tbl.sb_rename_item, sb["sb_rename_item"].as_i64().unwrap() as i32, "proto {proto} sb_rename_item");
+            assert_eq!(tbl.sb_resource_pack, sb["sb_resource_pack"].as_i64().unwrap() as i32, "proto {proto} sb_resource_pack");
+            assert_eq!(tbl.sb_select_trade, sb["sb_select_trade"].as_i64().unwrap() as i32, "proto {proto} sb_select_trade");
+            assert_eq!(tbl.sb_set_carried_item, sb["sb_set_carried_item"].as_i64().unwrap() as i32, "proto {proto} sb_set_carried_item");
+            assert_eq!(tbl.sb_sign_update, sb["sb_sign_update"].as_i64().unwrap() as i32, "proto {proto} sb_sign_update");
+            assert_eq!(tbl.sb_swing, sb["sb_swing"].as_i64().unwrap() as i32, "proto {proto} sb_swing");
+            assert_eq!(tbl.sb_use_item, sb["sb_use_item"].as_i64().unwrap() as i32, "proto {proto} sb_use_item");
+            assert_eq!(tbl.sb_use_item_on, sb["sb_use_item_on"].as_i64().unwrap() as i32, "proto {proto} sb_use_item_on");
+        }
+    }
+
+    #[test]
+    fn client_information_and_version_specific_wire_layouts() {
+        // 1. ClientInformation: 7 bytes after locale in <=767, 8 bytes after locale in >=768
+        let info_766 = information(766);
+        let info_767 = information(767);
+        let info_768 = information(768);
+        let info_777 = information(777);
+        assert_eq!(info_766.len(), 6 + 7);
+        assert_eq!(info_767.len(), 6 + 7);
+        assert_eq!(info_768.len(), 6 + 8);
+        assert_eq!(info_777.len(), 6 + 8);
+
+        // 2. Configuration -> Play state transition & legacy vs modern PlayerPosition
+        let profile = world::default_26_3_profile();
+        let server = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let client_sock = TcpStream::connect(server.local_addr().unwrap()).unwrap();
+        let (peer_sock, _) = server.accept().unwrap();
+        let (_, mut tx) = wire::connection(client_sock).unwrap();
+        let (mut rx, _) = wire::connection(peer_sock).unwrap();
+
+        let mut sess_767 = Session::new_with_protocol(&profile, true, DynamicCameraPolicy::default(), 767).unwrap();
+        assert!(!sess_767.playing);
+
+        // Send Configuration select_known_packs (id=14 in 767)
+        let mut skp = Vec::new();
+        var(14, &mut skp);
+        var(1, &mut skp);
+        string("minecraft", &mut skp);
+        string("core", &mut skp);
+        string("1.21.1", &mut skp);
+        sess_767.packet(&skp, &mut tx).unwrap();
+        let reply_skp = rx.packet().unwrap();
+        assert_eq!(reply_skp[0], 7); // ServerboundSelectKnownPacks = 7
+
+        // Send Configuration registry_data (id=7) with has_data=0 (known pack omitted inline NBT)
+        let mut reg = Vec::new();
+        var(7, &mut reg);
+        string("minecraft:dimension_type", &mut reg);
+        var(1, &mut reg);
+        string("minecraft:overworld", &mut reg);
+        reg.push(0); // has_data = 0
+        sess_767.packet(&reg, &mut tx).unwrap();
+        assert_eq!(sess_767.dimensions, vec![(-64, 384)]);
+
+        // Send FinishConfiguration (id=3)
+        let mut fin = Vec::new();
+        var(3, &mut fin);
+        sess_767.packet(&fin, &mut tx).unwrap();
+        assert!(sess_767.playing);
+        let reply_fin = rx.packet().unwrap();
+        assert_eq!(reply_fin, vec![3]);
+
+        // Send 767 Play PlayerPosition (id=64): x, y, z, yaw, pitch, flags(u8), teleport_id(VarInt)
+        let mut pos_pkt = Vec::new();
+        var(64, &mut pos_pkt);
+        pos_pkt.extend(10.5f64.to_be_bytes());
+        pos_pkt.extend(65.0f64.to_be_bytes());
+        pos_pkt.extend((-4.25f64).to_be_bytes());
+        pos_pkt.extend(90.0f32.to_be_bytes());
+        pos_pkt.extend(0.0f32.to_be_bytes());
+        pos_pkt.push(0u8); // absolute flags
+        var(42, &mut pos_pkt); // teleport_id = 42
+        sess_767.packet(&pos_pkt, &mut tx).unwrap();
+        assert!(sess_767.positioned);
+        assert_eq!(sess_767.player.pos, [10.5, 65.0, -4.25]);
+        let ack_pkt = rx.packet().unwrap();
+        // On 767 (< 776), AcceptTeleportation (0x00) must ONLY contain VarInt teleport_id (no 32-byte position trailer!)
+        assert_eq!(ack_pkt, vec![0, 42]);
+    }
+
 }

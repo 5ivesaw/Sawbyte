@@ -3,7 +3,7 @@ use aes::cipher::{BlockDecryptMut, BlockEncryptMut, KeyIvInit, generic_array::Ge
 use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
 use std::io::{self, Read, Write};
 use std::net::TcpStream;
-pub const LIMIT: usize = 2 * 1024 * 1024;
+pub const LIMIT: usize = 8 * 1024 * 1024;
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub fn bad(text: &str) -> Box<dyn std::error::Error + Send + Sync> {
     text.to_owned().into()
@@ -216,19 +216,13 @@ impl Rx {
         }
         let mut bytes = vec![0; length];
         self.exact(&mut bytes)?;
-        if let Some(threshold) = self.threshold {
+        if let Some(_threshold) = self.threshold {
             let mut r = Reader(&bytes);
             let raw = r.count(LIMIT)?;
             if raw == 0 {
-                if r.0.len() >= threshold {
-                    return Err(bad("uncompressed packet exceeds threshold"));
-                }
                 return Ok(r.0.to_vec());
             }
-            if raw < threshold {
-                return Err(bad("compressed packet below threshold"));
-            }
-            let mut decoded = Vec::with_capacity(raw);
+            let mut decoded = Vec::with_capacity(raw.min(65536));
             ZlibDecoder::new(r.0)
                 .take(raw as u64 + 1)
                 .read_to_end(&mut decoded)?;

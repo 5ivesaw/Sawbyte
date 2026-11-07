@@ -196,5 +196,49 @@ class TestSawbytePythonSdk(unittest.TestCase):
                 assert dep in healed_toml, f"Missing auto-injected {dep} in {healed_toml}"
 
 
+
+    def test_protocol_tables_match_minecraft_data_766_to_775(self) -> None:
+        import json, re
+        root = Path(__file__).resolve().parents[3]
+        fixture = json.loads((root / "native" / "tests" / "fixtures" / "mcdata_ids.json").read_text(encoding="utf-8"))
+        release_rs = (root / "native" / "src" / "release_ids.rs").read_text(encoding="utf-8")
+        inv_rs = (root / "native" / "src" / "inventory.rs").read_text(encoding="utf-8")
+
+        # Parse release_ids.rs match arms for 766..=774
+        arm_pattern = re.compile(r"([0-9\s\|]+)=>\s*\{([^}]+)\}", re.MULTILINE)
+        parsed_tables = {}
+        for m in arm_pattern.finditer(release_rs):
+            protos = [p.strip() for p in m.group(1).split("|") if p.strip().isdigit()]
+            body = m.group(2)
+            tbl = {}
+            for line in body.splitlines():
+                fm = re.search(r"table\.([a-z0-9_]+)\s*=\s*(-?\d+);", line)
+                if fm:
+                    tbl[fm.group(1)] = int(fm.group(2))
+            for p in protos:
+                parsed_tables[p] = tbl
+
+        # Parse 775 from inventory.rs
+        m775 = re.search(r"if proto == 775 \{([^}]+)\}", inv_rs, re.MULTILINE)
+        self.assertIsNotNone(m775, "Missing 775 branch in inventory.rs")
+        tbl_775 = {}
+        for line in m775.group(1).splitlines():
+            fm = re.search(r"table\.([a-z0-9_]+)\s*=\s*(-?\d+);", line)
+            if fm:
+                tbl_775[fm.group(1)] = int(fm.group(2))
+        parsed_tables["775"] = tbl_775
+
+        for proto_num in range(766, 776):
+            p = str(proto_num)
+            self.assertIn(p, parsed_tables, f"Protocol {p} missing from Rust tables")
+            rust_tbl = parsed_tables[p]
+            expected_cb = fixture[p]["cb"]
+            expected_sb = fixture[p]["sb"]
+            for k, exp_v in expected_cb.items():
+                self.assertEqual(rust_tbl.get(k), exp_v, f"Protocol {p} {k}: rust={rust_tbl.get(k)} != mcdata={exp_v}")
+            for k, exp_v in expected_sb.items():
+                self.assertEqual(rust_tbl.get(k), exp_v, f"Protocol {p} {k}: rust={rust_tbl.get(k)} != mcdata={exp_v}")
+
+
 if __name__ == "__main__":
     unittest.main()
