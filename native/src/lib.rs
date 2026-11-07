@@ -35,14 +35,79 @@ use std::{
 };
 use wire::{Reader, Result, bad, string, var};
 
-fn information() -> Vec<u8> {
+fn information(proto: i32) -> Vec<u8> {
     let mut out = Vec::new();
     string("en_us", &mut out);
-    out.extend([3, 0, 1, 127, 1, 0, 1, 2]);
+    // In 1.20.5..1.21.1 (proto <= 767): view_distance(i8), chat_visibility(VarInt), chat_colors(bool),
+    // model_customisation(u8), main_hand(VarInt), text_filtering(bool), allow_listing(bool) -> 7 bytes!
+    // In 1.21.2+ (proto >= 768): Mojang appended particle_status(VarInt) -> 8 bytes!
+    if proto >= 768 {
+        out.extend([8, 0, 1, 127, 1, 0, 1, 2]);
+    } else {
+        out.extend([8, 0, 1, 127, 1, 0, 1]);
+    }
     out
 }
 
-fn connect(server: &str, account: &auth::Account) -> Result<(wire::Rx, wire::Tx)> {
+/// Performs a Minecraft Server List Ping (Status Handshake, `next_state = 1`) to discover
+/// the server's advertised `version.protocol` before login if `SAWBYTE_PROTOCOL` is `"auto"`.
+pub fn query_server_status_protocol(server: &str) -> Option<(i32, String)> {
+    let endpoint = server.to_socket_addrs().ok()?.next()?;
+    let socket = TcpStream::connect_timeout(&endpoint, Duration::from_secs(4)).ok()?;
+    let _ = socket.set_nodelay(true);
+    let _ = socket.set_read_timeout(Some(Duration::from_secs(4)));
+    let _ = socket.set_write_timeout(Some(Duration::from_secs(4)));
+    let (mut rx, mut tx) = wire::connection(socket).ok()?;
+    let mut hello = Vec::new();
+    var(767, &mut hello);
+    let host = server
+        .rsplit_once(':')
+        .map(|p| p.0)
+        .unwrap_or(server)
+        .trim_matches(['[', ']']);
+    string(host, &mut hello);
+    hello.extend(endpoint.port().to_be_bytes());
+    var(1, &mut hello); // next_state = 1 (Status)
+    tx.packet(0, &hello).ok()?;
+    tx.packet(0, &[]).ok()?; // Status Request
+    let pkt = rx.packet().ok()?;
+    let mut r = Reader(&pkt);
+    if r.var().ok()? != 0 {
+        return None;
+    }
+    let json_str = r.string().ok()?;
+    let val: serde_json::Value = serde_json::from_str(&json_str).ok()?;
+    let adv_proto = val["version"]["protocol"].as_i64()? as i32;
+    let adv_name = val["version"]["name"]
+        .as_str()
+        .unwrap_or("unknown")
+        .to_string();
+    Some((adv_proto, adv_name))
+}
+
+pub fn resolve_target_protocol(server: &str) -> i32 {
+    if let Ok(raw) = std::env::var("SAWBYTE_PROTOCOL") {
+        let trimmed = raw.trim();
+        if !trimmed.is_empty() && !trimmed.eq_ignore_ascii_case("auto") {
+            if let Ok(p) = trimmed.parse::<i32>() {
+                return p;
+            }
+        }
+        if trimmed.eq_ignore_ascii_case("auto") {
+            if let Some((adv_proto, adv_name)) = query_server_status_protocol(server) {
+                let selected = adv_proto.clamp(766, 777);
+                eprintln!(
+                    "SAWBYTE_STATUS_DISCOVERY server={server} advertised_protocol={adv_proto} version=\"{adv_name}\" selected_protocol={selected}"
+                );
+                return selected;
+            }
+            return 767;
+        }
+    }
+    777
+}
+
+fn connect_with_protocol(server: &str, account: &auth::Account, proto: i32) -> Result<(wire::Rx, wire::Tx)> {
     let endpoint = server
         .to_socket_addrs()?
         .next()
@@ -53,10 +118,6 @@ fn connect(server: &str, account: &auth::Account) -> Result<(wire::Rx, wire::Tx)
     socket.set_write_timeout(Some(Duration::from_secs(10)))?;
     let (mut rx, mut tx) = wire::connection(socket)?;
     let mut hello = Vec::new();
-    let proto: i32 = std::env::var("SAWBYTE_PROTOCOL")
-        .ok()
-        .and_then(|p| p.parse().ok())
-        .unwrap_or(777);
     var(proto, &mut hello);
     let host = server
         .rsplit_once(':')
@@ -75,11 +136,22 @@ fn connect(server: &str, account: &auth::Account) -> Result<(wire::Rx, wire::Tx)
         let packet = rx.packet()?;
         let mut r = Reader(&packet);
         match r.var()? {
-            0 => return Err(bad(&format!("server rejected login: {:?}", r.string()?))),
+            0 => {
+                let reason = r
+                    .string()
+                    .or_else(|_| r.nbt().map(|v| v.to_string()))
+                    .unwrap_or_else(|_| "login rejected".to_string());
+                return Err(bad(&format!("server rejected login: {reason}")));
+            }
             1 => account.encryption(&mut r, &mut rx, &mut tx)?,
             2 => {
                 tx.packet(3, &[])?;
-                tx.packet(0, &information())?;
+                // Send brand = vanilla before client_information in Configuration state
+                let mut brand_payload = Vec::new();
+                string("minecraft:brand", &mut brand_payload);
+                string("vanilla", &mut brand_payload);
+                let _ = tx.packet(2, &brand_payload);
+                tx.packet(0, &information(proto))?;
                 return Ok((rx, tx));
             }
             3 => {
@@ -100,9 +172,14 @@ fn connect(server: &str, account: &auth::Account) -> Result<(wire::Rx, wire::Tx)
                 out.push(0);
                 tx.packet(4, &out)?;
             }
-            _ => return Err(bad("unknown login packet")),
+            _ => {}
         }
     }
+}
+
+fn connect(server: &str, account: &auth::Account) -> Result<(wire::Rx, wire::Tx)> {
+    let proto = resolve_target_protocol(server);
+    connect_with_protocol(server, account, proto)
 }
 
 #[derive(Default)]
@@ -255,6 +332,9 @@ pub struct Session {
     #[allow(dead_code)]
     pub auto_respawn: bool,
     dimensions: Vec<(i32, i32)>,
+    pub protocol_version: i32,
+    pub rx_packets_count: u64,
+    pub tx_packets_count: u64,
     playing: bool,
     positioned: bool,
     loaded: bool,
@@ -503,11 +583,24 @@ impl Session {
     }
 
     fn new(profile: &serde_json::Value, live_mode: bool, policy: DynamicCameraPolicy) -> Result<Self> {
+        let proto: i32 = std::env::var("SAWBYTE_PROTOCOL")
+            .ok()
+            .and_then(|p| p.parse().ok())
+            .unwrap_or(777);
+        Self::new_with_protocol(profile, live_mode, policy, proto)
+    }
+
+    fn new_with_protocol(
+        profile: &serde_json::Value,
+        live_mode: bool,
+        policy: DynamicCameraPolicy,
+        proto: i32,
+    ) -> Result<Self> {
         Ok(Self {
             world: world::World::new(profile)?,
             player: player::Player::default(),
             state_table: inventory::PlayerStateTable::default(),
-            packets: inventory::PacketTable::from_profile(profile),
+            packets: inventory::PacketTable::for_protocol(proto, profile),
             scheduler: Scheduler::new(LiveInputBackend::default(), policy, 4096),
             event_queue: DiscreteEventQueue::new(4096),
             active_mine: None,
@@ -529,6 +622,9 @@ impl Session {
             visualizer: visualizer::LowPolyVisualizer::default(),
             auto_respawn: true,
             dimensions: Vec::new(),
+            protocol_version: proto,
+            rx_packets_count: 0,
+            tx_packets_count: 0,
             playing: false,
             positioned: false,
             loaded: false,
@@ -543,121 +639,236 @@ impl Session {
     }
 
     fn packet(&mut self, packet: &[u8], tx: &mut wire::Tx) -> Result<()> {
+        self.rx_packets_count = self.rx_packets_count.saturating_add(1);
         let mut r = Reader(packet);
         let id = r.var()?;
         if !self.playing {
+            // Configuration state packet IDs across 766 (1.20.5/1.20.6) .. 777 (26.3):
+            // Note: In 26.3 (776/777), ClientboundPostEffectsPacket (10) was inserted before store_cookie,
+            // shifting select_known_packs from 14 (in 766..=775) to 15 (in 776..=777).
+            let select_known_packs_id = if self.protocol_version >= 776 { 15 } else { 14 };
+            let code_of_conduct_id = if self.protocol_version >= 776 { 20 } else { 19 };
             match id {
                 0 => {
-                    let name = r.string()?;
-                    let mut out = Vec::new();
-                    string(&name, &mut out);
-                    out.push(0);
-                    tx.packet(1, &out)?;
+                    if let Ok(name) = r.string() {
+                        let mut out = Vec::new();
+                        string(&name, &mut out);
+                        out.push(0);
+                        tx.packet(1, &out)?;
+                        self.tx_packets_count += 1;
+                    }
                 }
-                2 => return Err(bad(&format!("configuration disconnect: {}", r.nbt()?))),
+                2 => {
+                    let msg = r
+                        .nbt()
+                        .map(|v| v.to_string())
+                        .or_else(|_| r.string())
+                        .unwrap_or_else(|_| "disconnected during configuration".to_string());
+                    return Err(bad(&format!("configuration disconnect: {msg}")));
+                }
                 3 => {
                     tx.packet(3, &[])?;
+                    self.tx_packets_count += 1;
                     self.playing = true;
+                    eprintln!("SAWBYTE_PLAY_STATE_ENTERED protocol={}", self.protocol_version);
                 }
-                4 => tx.packet(4, r.take(8)?)?,
-                5 => tx.packet(5, r.take(4)?)?,
+                4 => {
+                    if let Ok(ka) = r.take(8) {
+                        tx.packet(4, ka)?;
+                        self.tx_packets_count += 1;
+                    }
+                }
+                5 => {
+                    if let Ok(p) = r.take(4) {
+                        tx.packet(5, p)?;
+                        self.tx_packets_count += 1;
+                    }
+                }
                 7 => {
-                    let name = r.string()?;
-                    let n = r.count(65536)?;
-                    for _ in 0..n {
-                        r.string()?;
-                        let data = if r.byte()? != 0 {
-                            r.nbt()?
-                        } else {
-                            serde_json::Value::Null
-                        };
-                        if name == "minecraft:dimension_type" {
-                            let min = data["min_y"]
-                                .as_i64()
-                                .ok_or_else(|| bad("dimension lacks min_y"))?
-                                as i32;
-                            let height = data["height"]
-                                .as_i64()
-                                .ok_or_else(|| bad("dimension lacks height"))?
-                                as i32;
-                            if height <= 0 || height > 4096 || height % 16 != 0 {
-                                return Err(bad("invalid dimension height"));
+                    if let Ok(name) = r.string() {
+                        let is_dim = name == "minecraft:dimension_type" || name.ends_with(":dimension_type");
+                        if let Ok(n) = r.count(65536) {
+                            for _ in 0..n {
+                                let Ok(_entry_id) = r.string() else { break };
+                                let Ok(has_data) = r.byte() else { break };
+                                let data = if has_data != 0 {
+                                    r.nbt().unwrap_or(serde_json::Value::Null)
+                                } else {
+                                    serde_json::Value::Null
+                                };
+                                if is_dim {
+                                    let min = data["min_y"].as_i64().unwrap_or(-64) as i32;
+                                    let mut height = data["height"].as_i64().unwrap_or(384) as i32;
+                                    if height <= 0 || height > 4096 || height % 16 != 0 {
+                                        height = 384;
+                                    }
+                                    self.dimensions.push((min, height));
+                                }
                             }
-                            self.dimensions.push((min, height));
                         }
                     }
                 }
                 9 => {
-                    let uuid = r.take(16)?.to_vec();
-                    let mut out = uuid;
-                    var(1, &mut out);
-                    tx.packet(6, &out)?;
+                    if let Ok(uuid_slice) = r.take(16) {
+                        // Send ACCEPTED (3) followed by SUCCESSFULLY_LOADED (0) so servers requiring a resource pack don't kick us
+                        let mut acc = uuid_slice.to_vec();
+                        var(3, &mut acc);
+                        let _ = tx.packet(6, &acc);
+                        let mut loaded = uuid_slice.to_vec();
+                        var(0, &mut loaded);
+                        tx.packet(6, &loaded)?;
+                        self.tx_packets_count += 2;
+                    }
                 }
-                15 => tx.packet(7, &[0])?, // request full registry data; no known-pack assumptions
-                20 => {
-                    return Err(bad(
-                        "server requires a code-of-conduct acknowledgement; not automated in this preview",
-                    ));
+                id if id == select_known_packs_id => {
+                    // Parse server's offered known packs and echo back matching `minecraft:core` packs
+                    // (or 0 packs when `SAWBYTE_KNOWN_PACKS=0` or in 26.3 strict replay mode).
+                    let mut selected = Vec::new();
+                    if self.live_mode && self.protocol_version < 777 {
+                        if let Ok(count) = r.count(256) {
+                            for _ in 0..count {
+                                if let (Ok(ns), Ok(pid), Ok(ver)) = (r.string(), r.string(), r.string()) {
+                                    if ns == "minecraft" && pid == "core" {
+                                        selected.push((ns, pid, ver));
+                                    }
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    let mut out = Vec::new();
+                    var(selected.len() as i32, &mut out);
+                    for (ns, pid, ver) in selected {
+                        string(&ns, &mut out);
+                        string(&pid, &mut out);
+                        string(&ver, &mut out);
+                    }
+                    tx.packet(7, &out)?;
+                    self.tx_packets_count += 1;
+                }
+                id if id == code_of_conduct_id => {
+                    // Acknowledge code of conduct automatically (ServerboundAcceptCodeOfConduct = 9)
+                    let _ = tx.packet(9, &[]);
+                    self.tx_packets_count += 1;
                 }
                 _ => {}
             }
             return Ok(());
         }
         match id {
-            11 => tx.packet(11, &20f32.to_be_bytes())?,
-            21 => {
-                let name = r.string()?;
-                let mut out = Vec::new();
-                string(&name, &mut out);
-                out.push(0);
-                tx.packet(21, &out)?;
+            id if id == self.packets.cb_chunk_batch_finished => {
+                tx.packet(self.packets.sb_chunk_batch_received, &20f32.to_be_bytes())?;
+                self.tx_packets_count += 1;
             }
-            32 => return Err(bad(&format!("play disconnect: {}", r.nbt()?))),
-            38 => {
-                let z = r.i32()?;
-                let x = r.i32()?;
-                self.world.chunks.remove(&(x, z));
-            }
-            45 => tx.packet(28, r.take(8)?)?,
-            46 => self.world.chunk(&mut r)?,
-            50 => {
-                let entity_id = r.i32()?;
-                self.state_table.player_entity_id = Some(entity_id);
-                r.byte()?;
-                let n = r.count(1024)?;
-                for _ in 0..n {
-                    r.string()?;
+            id if id == self.packets.cb_cookie_request => {
+                if let Ok(name) = r.string() {
+                    let mut out = Vec::new();
+                    string(&name, &mut out);
+                    out.push(0);
+                    tx.packet(self.packets.sb_cookie_response, &out)?;
+                    self.tx_packets_count += 1;
                 }
-                r.var()?;
-                r.var()?;
-                r.var()?;
-                r.take(3)?;
-                let dimension = r.count(1024)?;
-                r.string()?;
-                r.u64()?;
-                let game_mode = r.byte()?;
+            }
+            id if id == self.packets.cb_disconnect => {
+                let msg = r
+                    .nbt()
+                    .map(|v| v.to_string())
+                    .or_else(|_| r.string())
+                    .unwrap_or_else(|_| "disconnected from play".to_string());
+                return Err(bad(&format!("play disconnect: {msg}")));
+            }
+            id if id == self.packets.cb_forget_level_chunk => {
+                if let (Ok(z), Ok(x)) = (r.i32(), r.i32()) {
+                    self.world.chunks.remove(&(x, z));
+                }
+            }
+            id if id == self.packets.cb_keep_alive => {
+                if let Ok(ka) = r.take(8) {
+                    tx.packet(self.packets.sb_keep_alive, ka)?;
+                    self.tx_packets_count += 1;
+                }
+            }
+            id if id == self.packets.cb_level_chunk_with_light => {
+                if let Err(e) = self.world.chunk_for_protocol(&mut r, self.protocol_version) {
+                    if !self.live_mode {
+                        return Err(e);
+                    }
+                    self.state_table.record_decode_error("chunk", e.as_ref());
+                }
+            }
+            id if id == self.packets.cb_login => {
+                if let Ok(entity_id) = r.i32() {
+                    self.state_table.player_entity_id = Some(entity_id);
+                }
+                let _ = r.byte();
+                if let Ok(n) = r.count(1024) {
+                    for _ in 0..n {
+                        let _ = r.string();
+                    }
+                }
+                let _ = r.var();
+                let _ = r.var();
+                let _ = r.var();
+                let _ = r.take(3);
+                let dimension = r.count(1024).unwrap_or(0);
+                let _ = r.string();
+                let _ = r.u64();
+                let game_mode = r.byte().unwrap_or(0);
                 self.state_table.game_mode = game_mode;
                 if !self.live_mode && game_mode != 0 {
                     return Err(bad("prototype currently supports survival mode only"));
                 }
                 self.player.flying = game_mode == 3;
-                let (min, height) = *self
-                    .dimensions
-                    .get(dimension)
-                    .ok_or_else(|| bad("unknown dimension type"))?;
+                let (min, height) = if let Some(&dim) = self.dimensions.get(dimension) {
+                    dim
+                } else if !self.live_mode {
+                    return Err(bad("unknown dimension type"));
+                } else {
+                    self.dimensions.first().copied().unwrap_or((-64, 384))
+                };
                 self.world.min_y = min;
                 self.world.height = height;
+                self.state_table.push_event(format!("login:entity_id={:?},gm={game_mode},min_y={min},height={height}", self.state_table.player_entity_id));
             }
-            62 => tx.packet(45, r.take(4)?)?,
+            id if id == self.packets.cb_ping => {
+                if let Ok(p) = r.take(4) {
+                    tx.packet(self.packets.sb_pong, p)?;
+                    self.tx_packets_count += 1;
+                }
+            }
             id if id == self.packets.cb_player_combat_kill => {
                 if !self.is_dead {
                     self.record_death("combat_kill", None);
                     if self.auto_respawn {
                         tx.packet(self.packets.sb_client_command, &[0])?;
+                        self.tx_packets_count += 1;
                     }
                 }
             }
-            73 => {
+            id if id == self.packets.cb_player_position => {
+                if self.protocol_version < 768 {
+                    // 1.20.5..1.21.1 (766..=767): x(f64), y(f64), z(f64), yaw(f32), pitch(f32), flags(u8), teleport_id(VarInt)
+                    if let (Ok(px), Ok(py), Ok(pz), Ok(yw), Ok(pt), Ok(fl_byte), Ok(tp_id)) = (
+                        r.f64(),
+                        r.f64(),
+                        r.f64(),
+                        r.f32(),
+                        r.f32(),
+                        r.byte(),
+                        r.var(),
+                    ) {
+                        return self.apply_legacy_player_position(
+                            [px, py, pz],
+                            yw,
+                            pt,
+                            i32::from(fl_byte),
+                            tp_id,
+                            tx,
+                        );
+                    }
+                    return Ok(());
+                }
                 let teleport = r.var()?;
                 let pos = [r.f64()?, r.f64()?, r.f64()?];
                 let velocity = [r.f64()?, r.f64()?, r.f64()?];
@@ -668,7 +879,10 @@ impl Session {
                     || !yaw.is_finite()
                     || !pitch.is_finite()
                 {
-                    return Err(bad("invalid server position"));
+                    if !self.live_mode {
+                        return Err(bad("invalid server position"));
+                    }
+                    return Ok(());
                 }
                 let prev_yaw = self.player.yaw;
                 self.player.yaw = yaw + if flags & 8 != 0 { self.player.yaw } else { 0. };
@@ -705,20 +919,32 @@ impl Session {
                 self.world.update_center_chunk(self.player.pos[0], self.player.pos[2]);
                 let mut ack = Vec::new();
                 var(teleport, &mut ack);
-                // Since 26.3 the acknowledgement includes the accepted position and view.
-                ack.extend(self.position_payload());
-                tx.packet(0, &ack)?;
+                // Only 26.2+ (protocol >= 776) includes the accepted position and view in accept_teleportation.
+                if self.protocol_version >= 776 {
+                    ack.extend(self.position_payload());
+                }
+                tx.packet(self.packets.sb_accept_teleportation, &ack)?;
+                self.tx_packets_count += 1;
+                if self.live_mode && self.protocol_version < 776 {
+                    let _ = self.send_position(tx);
+                }
                 if !self.positioned {
                     self.positioned = true;
                     if self.index == 0 && self.live_tick == 0 {
-                        self.settle = if self.live_mode { 20 } else { 100 };
+                        self.settle = if self.live_mode { 10 } else { 100 };
                     }
                 }
             }
-            82 => {
-                let mut out = r.take(16)?.to_vec();
-                var(1, &mut out);
-                tx.packet(50, &out)?;
+            id if id == self.packets.cb_resource_pack_push => {
+                if let Ok(uuid_slice) = r.take(16) {
+                    let mut acc = uuid_slice.to_vec();
+                    var(3, &mut acc);
+                    let _ = tx.packet(self.packets.sb_resource_pack, &acc);
+                    let mut out = uuid_slice.to_vec();
+                    var(if self.live_mode { 0 } else { 1 }, &mut out);
+                    tx.packet(self.packets.sb_resource_pack, &out)?;
+                    self.tx_packets_count += 2;
+                }
             }
             id if id == self.packets.cb_respawn => {
                 self.player.velocity = [0.0; 3];
@@ -732,17 +958,29 @@ impl Session {
                 self.is_dead = false;
                 self.state_table.push_event("player.respawn".to_string());
             }
-            120 => {
+            id if id == self.packets.cb_start_configuration => {
                 self.playing = false;
+                let _ = tx.packet(self.packets.sb_configuration_acknowledged, &[]);
+                self.tx_packets_count += 1;
+            }
+            id if id == self.packets.cb_disguised_chat => {
+                let _ = self.state_table.apply_system_chat(&mut r);
             }
             // Live block updates mutate our loaded chunk section palettes in-place.
             id if id == self.packets.cb_block_update => {
-                let (pos, state) = self.world.apply_block_update_packet(&mut r)?;
-                self.observe_block_update(pos, state);
+                if let Ok((pos, state)) = self.world.apply_block_update_packet(&mut r) {
+                    self.observe_block_update(pos, state);
+                } else if !self.live_mode {
+                    return Err(bad("invalid block update packet"));
+                }
             }
             id if id == self.packets.cb_section_blocks_update => {
-                for (pos, state) in self.world.apply_section_blocks_update_packet(&mut r)? {
-                    self.observe_block_update(pos, state);
+                if let Ok(updates) = self.world.apply_section_blocks_update_packet(&mut r) {
+                    for (pos, state) in updates {
+                        self.observe_block_update(pos, state);
+                    }
+                } else if !self.live_mode {
+                    return Err(bad("invalid section blocks update packet"));
                 }
             }
             // Live container, inventory, entity, vitals, and chat packets
@@ -994,6 +1232,46 @@ impl Session {
         Ok(())
     }
 
+    fn apply_legacy_player_position(
+        &mut self,
+        pos: [f64; 3],
+        yaw: f32,
+        pitch: f32,
+        flags: i32,
+        teleport: i32,
+        tx: &mut wire::Tx,
+    ) -> Result<()> {
+        if !pos.iter().all(|v| v.is_finite()) || !yaw.is_finite() || !pitch.is_finite() {
+            return Ok(());
+        }
+        self.player.yaw = yaw + if flags & 8 != 0 { self.player.yaw } else { 0. };
+        self.player.pitch = pitch + if flags & 16 != 0 { self.player.pitch } else { 0. };
+        for axis in 0..3 {
+            self.player.pos[axis] = pos[axis]
+                + if flags & (1 << axis) != 0 {
+                    self.player.pos[axis]
+                } else {
+                    0.
+                };
+            if flags & (1 << axis) == 0 {
+                self.player.velocity[axis] = 0.0;
+            }
+        }
+        self.world.update_center_chunk(self.player.pos[0], self.player.pos[2]);
+        let mut ack = Vec::new();
+        var(teleport, &mut ack);
+        tx.packet(self.packets.sb_accept_teleportation, &ack)?;
+        self.tx_packets_count += 1;
+        let _ = self.send_position(tx);
+        if !self.positioned {
+            self.positioned = true;
+            if self.index == 0 && self.live_tick == 0 {
+                self.settle = if self.live_mode { 10 } else { 100 };
+            }
+        }
+        Ok(())
+    }
+
     fn position_payload(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(32);
         for value in self.player.pos {
@@ -1006,8 +1284,13 @@ impl Session {
 
     fn send_position(&self, tx: &mut wire::Tx) -> Result<()> {
         let mut out = self.position_payload();
-        out.push(u8::from(self.player.ground) | (u8::from(self.player.horizontal_collision) << 1));
-        tx.packet(31, &out)
+        let flags = if self.protocol_version >= 768 {
+            u8::from(self.player.ground) | (u8::from(self.player.horizontal_collision) << 1)
+        } else {
+            u8::from(self.player.ground)
+        };
+        out.push(flags);
+        tx.packet(self.packets.sb_move_player_pos_rot, &out)
     }
 
     fn tick(
@@ -1023,7 +1306,10 @@ impl Session {
             return Ok(false);
         }
         if !self.loaded {
-            tx.packet(44, &[])?;
+            if self.packets.sb_player_loaded >= 0 {
+                tx.packet(self.packets.sb_player_loaded, &[])?;
+                self.tx_packets_count += 1;
+            }
             self.loaded = true;
             eprintln!("SAWBYTE_SPAWNED");
         }
@@ -1044,11 +1330,18 @@ impl Session {
         self.player.step(frame, &self.world)?;
         let buttons = frame.buttons.bits();
         if buttons != self.previous_buttons {
-            tx.packet(43, &[buttons as u8])?;
+            if self.protocol_version >= 768 && self.packets.sb_player_input >= 0 {
+                tx.packet(self.packets.sb_player_input, &[buttons as u8])?;
+                self.tx_packets_count += 1;
+            }
             self.previous_buttons = buttons;
         }
         self.send_position(tx)?;
-        tx.packet(13, &[])?;
+        self.tx_packets_count += 1;
+        if self.packets.sb_client_tick_end >= 0 {
+            tx.packet(self.packets.sb_client_tick_end, &[])?;
+            self.tx_packets_count += 1;
+        }
         if recording {
             let p = &self.player;
             writeln!(
@@ -1224,22 +1517,50 @@ impl Session {
         mut trace: Option<&mut BufWriter<File>>,
         tx: &mut wire::Tx,
     ) -> Result<bool> {
-        if !self.playing
-            || !self.positioned
-            || !self.world.loaded(self.player.pos[0], self.player.pos[2])
-        {
+        if !self.playing {
             return Ok(false);
         }
+        if !self.positioned {
+            // Some minimal AuthMe/Velocity limbo servers never send PlayerPosition until /register or /login is sent,
+            // or send Login without chunks. After 20 ticks (1.0s) in PLAY state, initialize a fallback pose & chunk pad.
+            if self.rx_packets_count >= 2 && self.settle > 0 {
+                self.settle -= 1;
+                if self.settle == 0 {
+                    self.player.pos = [0.5, 64.0, 0.5];
+                    self.positioned = true;
+                    self.world.ensure_neighborhood_loaded(0.5, 64.0, 0.5);
+                }
+            }
+            return Ok(false);
+        }
+        if !self.world.loaded(self.player.pos[0], self.player.pos[2]) {
+            if self.settle > 0 {
+                self.settle -= 1;
+                return Ok(false);
+            }
+            self.world.ensure_neighborhood_loaded(
+                self.player.pos[0],
+                self.player.pos[1],
+                self.player.pos[2],
+            );
+        }
         if !self.loaded {
-            tx.packet(44, &[])?;
+            if self.packets.sb_player_loaded >= 0 {
+                tx.packet(self.packets.sb_player_loaded, &[])?;
+                self.tx_packets_count += 1;
+            }
             self.loaded = true;
             eprintln!("SAWBYTE_SPAWNED");
         }
         if self.settle > 0 {
             self.settle -= 1;
-            self.player.step(InputFrame::default(), &self.world)?;
+            let _ = self.player.step(InputFrame::default(), &self.world);
             self.send_position(tx)?;
-            tx.packet(13, &[])?;
+            self.tx_packets_count += 1;
+            if self.packets.sb_client_tick_end >= 0 {
+                tx.packet(self.packets.sb_client_tick_end, &[])?;
+                self.tx_packets_count += 1;
+            }
             if self.settle == 0 {
                 eprintln!("SAWBYTE_LIVE_READY");
             }
@@ -1358,11 +1679,18 @@ impl Session {
 
         let buttons = frame.buttons.bits();
         if buttons != self.previous_buttons {
-            tx.packet(43, &[buttons as u8])?;
+            if self.protocol_version >= 768 && self.packets.sb_player_input >= 0 {
+                tx.packet(self.packets.sb_player_input, &[buttons as u8])?;
+                self.tx_packets_count += 1;
+            }
             self.previous_buttons = buttons;
         }
         self.send_position(tx)?;
-        tx.packet(13, &[])?;
+        self.tx_packets_count += 1;
+        if self.packets.sb_client_tick_end >= 0 {
+            tx.packet(self.packets.sb_client_tick_end, &[])?;
+            self.tx_packets_count += 1;
+        }
 
         if let Some(writer) = &mut trace {
             let p = &self.player;
@@ -3587,7 +3915,7 @@ impl Session {
                 ["inspect.sensory"] | ["observe.words"] | ["see"] | ["inspect.vision"] => {
                     outputs.push(self.render_sensory_words());
                 }
-                ["inspect.evidence"] | ["evidence.list"] => {
+                ["inspect.evidence"] | ["evidence.list"] | ["inspect.connection"] => {
                     let ev_json: Vec<serde_json::Value> = self
                         .state_table
                         .evidence_log
@@ -3605,12 +3933,29 @@ impl Session {
                     outputs.push(
                         serde_json::json!({
                             "ok": true,
+                            "playing": self.playing,
+                            "positioned": self.positioned,
+                            "loaded": self.loaded,
+                            "protocol_version": self.protocol_version,
+                            "rx_packets_count": self.rx_packets_count,
+                            "tx_packets_count": self.tx_packets_count,
+                            "chunks_loaded": self.world.chunks.len(),
+                            "entities_tracked": self.state_table.entities.len(),
+                            "live_tick": self.live_tick,
+                            "pos": self.player.pos,
+                            "health": self.state_table.health,
+                            "food": self.state_table.food,
                             "evidence_count": ev_json.len(),
                             "evidence": ev_json,
+                            "chat_log": self.state_table.chat_log,
                             "chat_styled_log": self.state_table.chat_styled_log,
                             "scoreboard_title": self.state_table.scoreboard_title,
                             "scoreboard_lines": self.state_table.scoreboard_lines,
                             "action_bar_text": self.state_table.action_bar_text,
+                            "title_text": self.state_table.title_text,
+                            "subtitle_text": self.state_table.subtitle_text,
+                            "received_events": self.state_table.received_events,
+                            "decode_errors": self.state_table.decode_errors,
                         })
                         .to_string(),
                     );
@@ -3832,7 +4177,13 @@ impl Session {
                 }
                 ["inspect.status"] | ["inspect.profile"] => {
                     outputs.push(format!(
-                        "live_tick={} pos=({:.3}, {:.3}, {:.3}) vel=({:.4}, {:.4}, {:.4}) yaw={:.2} pitch={:.2} ground={} health={:.1} food={} chunks={} entities={} pending_inputs={} nav_active={} decode_errors={}",
+                        "playing={} positioned={} loaded={} protocol={} rx_packets={} tx_packets={} live_tick={} pos=({:.3}, {:.3}, {:.3}) vel=({:.4}, {:.4}, {:.4}) yaw={:.2} pitch={:.2} ground={} health={:.1} food={} chunks={} entities={} pending_inputs={} nav_active={} decode_errors={}",
+                        self.playing,
+                        self.positioned,
+                        self.loaded,
+                        self.protocol_version,
+                        self.rx_packets_count,
+                        self.tx_packets_count,
                         self.live_tick,
                         self.player.pos[0],
                         self.player.pos[1],
@@ -4909,7 +5260,8 @@ fn run_live(args: &[String]) -> Result<()> {
         }
     }
 
-    let mut state = Session::new(&profile, true, policy)?;
+    let resolved_proto = resolve_target_protocol(server);
+    let mut state = Session::new_with_protocol(&profile, true, policy, resolved_proto)?;
 
     // Start control channels (`--mcp-stdio` and `--listen`) IMMEDIATELY before network connect
     // so AI MCP clients (Kilo CLI, Claude, Cursor) receive instant <1ms responses to
@@ -5086,7 +5438,7 @@ fn run_live(args: &[String]) -> Result<()> {
         });
     }
 
-    let (mut rx, mut tx) = connect(server, &account)?;
+    let (mut rx, mut tx) = connect_with_protocol(server, &account, resolved_proto)?;
     let shutdown = tx.stream.try_clone()?;
     let (send, receive) = mpsc::sync_channel(64);
     let reader = std::thread::spawn(move || {

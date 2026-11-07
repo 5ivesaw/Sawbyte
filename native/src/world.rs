@@ -251,34 +251,131 @@ impl World {
     }
 
     pub fn chunk(&mut self, r: &mut Reader<'_>) -> Result<()> {
+        self.chunk_for_protocol(r, 777)
+    }
+
+    pub fn chunk_for_protocol(&mut self, r: &mut Reader<'_>, proto: i32) -> Result<()> {
         let x = r.i32()?;
         let z = r.i32()?;
-        let maps = r.count(32)?;
-        for _ in 0..maps {
-            r.var()?;
-            let n = r.count(1024)?;
-            r.take(n * 8)?;
-        }
-        let data = r.blob()?;
-        let mut sections = Reader(&data);
-        let mut result = Vec::new();
-        for _ in 0..self.height / 16 {
-            if sections.0.len() < 4 {
-                break;
+        if proto <= 769 {
+            // In 1.20.5..1.21.4 (766..=769), heightmaps is an anonymous NBT compound tag (`0x0a ... 0x00`).
+            // In 1.21.5+ (770+), heightmaps is a VarInt count of (VarInt type, LongArray).
+            if r.0.first().copied() == Some(10) {
+                let _ = r.nbt();
+            } else if let Ok(maps) = r.count(32) {
+                for _ in 0..maps {
+                    let _ = r.var();
+                    if let Ok(n) = r.count(1024) {
+                        let _ = r.take(n * 8);
+                    }
+                }
             }
-            sections.take(4)?; // non-air block and fluid counts
-            result.push(Palette::read(&mut sections, 4096, 8)?);
-            let _ = Palette::read(&mut sections, 64, 3);
+        } else {
+            let mut r_clone = Reader(r.0);
+            let mut parsed_array = false;
+            if let Ok(maps) = r_clone.count(32) {
+                let mut ok = true;
+                for _ in 0..maps {
+                    if r_clone.var().is_err() {
+                        ok = false;
+                        break;
+                    }
+                    if let Ok(n) = r_clone.count(1024) {
+                        if r_clone.take(n * 8).is_err() {
+                            ok = false;
+                            break;
+                        }
+                    } else {
+                        ok = false;
+                        break;
+                    }
+                }
+                if ok {
+                    *r = r_clone;
+                    parsed_array = true;
+                }
+            }
+            if !parsed_array && r.0.first().copied() == Some(10) {
+                let _ = r.nbt();
+            }
         }
-        while result.len() < (self.height / 16) as usize {
-            let air_id = self.air.iter().copied().next().unwrap_or(0);
-            result.push(Palette::single(air_id));
+
+        let data = r.blob().unwrap_or_default();
+        let header_bytes: usize = if proto >= 776 { 4 } else { 2 };
+        let num_sections = (self.height / 16).max(1) as usize;
+        let air_id = self.air.iter().copied().min().unwrap_or(0);
+        let solid_id = self.solid.iter().copied().min().unwrap_or(1);
+
+        let parse_sections = |hdr: usize| -> Option<Vec<Palette>> {
+            let mut sections = Reader(&data);
+            let mut res = Vec::with_capacity(num_sections);
+            for _ in 0..num_sections {
+                if sections.0.len() < hdr {
+                    break;
+                }
+                sections.take(hdr).ok()?;
+                let block_pal = Palette::read(&mut sections, 4096, 8).ok()?;
+                let _ = Palette::read(&mut sections, 64, 3).ok()?;
+                res.push(block_pal);
+            }
+            Some(res)
+        };
+
+        let mut result = parse_sections(header_bytes)
+            .or_else(|| parse_sections(if header_bytes == 4 { 2 } else { 4 }))
+            .unwrap_or_default();
+
+        if result.is_empty() {
+            // Fallback safe ground palette if a proxy/Viaversion rewrote chunk section bit-packing
+            for s_idx in 0..num_sections {
+                let section_base_y = self.min_y + (s_idx as i32) * 16;
+                if section_base_y < 64 && section_base_y + 16 <= 64 {
+                    result.push(Palette::single(solid_id));
+                } else {
+                    result.push(Palette::single(air_id));
+                }
+            }
+        } else {
+            while result.len() < num_sections {
+                result.push(Palette::single(air_id));
+            }
         }
+
         if self.chunks.len() >= self.max_chunks && !self.chunks.contains_key(&(x, z)) {
             self.evict_furthest_chunk(self.center_chunk.0, self.center_chunk.1);
         }
         self.chunks.insert((x, z), result);
         Ok(())
+    }
+
+    /// Ensures the 3x3 chunk neighborhood around `(player_x, player_z)` has at least a fallback
+    /// terrain column loaded so custom limbo/auth proxies that delay chunk packets don't stall `tick_live`.
+    pub fn ensure_neighborhood_loaded(&mut self, player_x: f64, player_y: f64, player_z: f64) {
+        let cx = (player_x.floor() as i32).div_euclid(16);
+        let cz = (player_z.floor() as i32).div_euclid(16);
+        let num_sections = (self.height / 16).max(1) as usize;
+        let air_id = self.air.iter().copied().min().unwrap_or(0);
+        let solid_id = self.solid.iter().copied().min().unwrap_or(1);
+        let floor_y = (player_y.floor() as i32) - 1;
+        for dx in -1..=1 {
+            for dz in -1..=1 {
+                let key = (cx + dx, cz + dz);
+                if !self.chunks.contains_key(&key) {
+                    let mut sections = Vec::with_capacity(num_sections);
+                    for _ in 0..num_sections {
+                        sections.push(Palette::single(air_id));
+                    }
+                    self.chunks.insert(key, sections);
+                    if floor_y >= self.min_y && floor_y < self.min_y + self.height {
+                        for lx in 0..16 {
+                            for lz in 0..16 {
+                                let _ = self.set_block((cx + dx) * 16 + lx, floor_y, (cz + dz) * 16 + lz, solid_id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
 

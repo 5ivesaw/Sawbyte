@@ -430,8 +430,10 @@ def build_not_selected_result(cfg: Any, username: str) -> Dict[str, Any]:
     }
 
 
-def git_commit_and_push_results(skip_push: bool = False) -> Tuple[bool, str]:
+def git_commit_and_push_results(skip_push: bool = False, skip_commit: bool = False) -> Tuple[bool, str]:
     """Commits updated benchmark docs/reports and pushes to GitHub, reporting any errors clearly."""
+    if skip_push or skip_commit:
+        return True, "Skipped `git commit` and `git push` (`--no-push` / `--no-commit` diagnostic mode; git working tree left uncommitted)."
     if not (ROOT / ".git").exists():
         return False, "No `.git` directory found in repository root; skipped automatic git commit & push."
 
@@ -459,9 +461,6 @@ def git_commit_and_push_results(skip_push: bool = False) -> Tuple[bool, str]:
         if c_proc.returncode != 0:
             return False, f"`git commit` failed:\n{(c_proc.stderr or c_proc.stdout).strip()}"
 
-        if skip_push:
-            return True, f"Committed changes locally (`{commit_msg}`). Push skipped via `--no-push`."
-
         p_proc = subprocess.run(
             ["git", "push"],
             cwd=str(ROOT),
@@ -487,8 +486,12 @@ def main() -> int:
     parser.add_argument("--all", action="store_true", help="Run all 16 server benchmarks without prompting Y/N")
     parser.add_argument("--servers", type=str, default=None, help="Comma/range list of servers to run (e.g. 1,3,5-8)")
     parser.add_argument("--username", type=str, default=None, help="Custom bot username or 'random'")
-    parser.add_argument("--no-push", action="store_true", help="Do not run git push after updating docs")
+    parser.add_argument("--no-push", action="store_true", help="Do not run git commit or git push after updating docs")
+    parser.add_argument("--no-commit", action="store_true", help="Do not create a git commit after updating docs")
+    parser.add_argument("--protocol", type=str, default=None, help="Force a specific protocol version (e.g. 766, 767, 769, 777) or 'auto'")
     args = parser.parse_args()
+    if args.protocol and args.protocol.lower() != "auto":
+        os.environ["SAWBYTE_PROTOCOL_OVERRIDE"] = args.protocol
 
     print("================================================================================")
     print("  SAWBYTE v0.5.2 — INTERACTIVE LOCAL LIVE MINECRAFT BENCHMARK RUNNER")
@@ -541,11 +544,17 @@ def main() -> int:
             sensory_samples.append(res["sensory_vision_sample"])
 
         ev_cnt = len(res.get("captured_evidence", {}).get("events", []))
+        rx_cnt = res.get("rx_packets_count", 0)
+        adv_p = res.get("advertised_protocol")
+        used_p = res.get("protocol_version")
         print(
             f"       Result: [{res['status']}] | Stages: {res['stages_passed']}/{res['stages_total']} | "
-            f"Packets Captured: {ev_cnt} | Duration: {res['duration_ms']}ms"
+            f"RX Packets: {rx_cnt} (Events: {ev_cnt}) | Protocol: {used_p} (adv: {adv_p}) | Duration: {res['duration_ms']}ms"
         )
         print(f"       Reason: {res.get('verification_note', '')}")
+        if res.get("native_stderr"):
+            last_err = res["native_stderr"][-1]
+            print(f"       Native Log: {last_err}")
 
     # Step 8: Display accurate PASS, FAIL, and NOT RUN summary table with explanations
     passed_servers = sum(1 for r in results if r["status"] == "PASS")
@@ -608,7 +617,13 @@ def main() -> int:
     print("\n================================================================================")
     print("  STEP 10: COMMITTING & PUSHING BENCHMARK UPDATES TO GITHUB")
     print("================================================================================")
-    ok_git, git_msg = git_commit_and_push_results(skip_push=args.no_push)
+    is_interactive = args.native_bin is None and not args.all and args.servers is None
+    skip_commit_or_push = args.no_push or args.no_commit
+    if not skip_commit_or_push and is_interactive and passed_servers == 0:
+        ans_pub = input("  0 servers passed in this run. Commit and push these results to GitHub anyway? (Y/N) [N]: ").strip().lower()
+        if ans_pub not in ("y", "yes"):
+            skip_commit_or_push = True
+    ok_git, git_msg = git_commit_and_push_results(skip_push=skip_commit_or_push, skip_commit=skip_commit_or_push)
     print(f"  [{'OK' if ok_git else 'PUBLISH WARNING'}] {git_msg}")
     print("================================================================================\n")
     return 0

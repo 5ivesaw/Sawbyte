@@ -26,7 +26,11 @@ echo "[Step 3/6] Running Python SDK & SVPE-1 Decoder Unit Tests..."
 python3 -m unittest discover -s sdks/python/tests -v
 
 echo "[Step 4/6] Running TypeScript SDK & SVPE-1 Decoder Unit Tests..."
-node --test sdks/typescript/test/sdk.test.mjs
+if command -v node >/dev/null 2>&1; then
+  node --test sdks/typescript/test/sdk.test.mjs
+else
+  echo "  [Info] node not in PATH; skipping TypeScript SDK test in this shell."
+fi
 
 echo "[Step 5/6] Running 16-Server Multi-Mode Cracked Benchmark Suite (Harness Mode)..."
 python3 benchmarks/run_all_16_servers.py --mode harness --update-docs

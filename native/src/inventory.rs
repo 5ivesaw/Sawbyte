@@ -11,55 +11,86 @@ use std::collections::{BTreeMap, HashMap};
 /// via `block-profile.json`, with built-in 26.3 defaults when omitted.
 #[derive(Clone, Debug)]
 pub struct PacketTable {
+    pub protocol_version: i32,
     // Clientbound play packet IDs
     pub cb_add_entity: i32,
     pub cb_block_update: i32,
+    pub cb_chunk_batch_finished: i32,
+    pub cb_chunk_batch_start: i32,
     pub cb_container_close: i32,
     pub cb_container_set_content: i32,
     pub cb_container_set_data: i32,
     pub cb_container_set_slot: i32,
+    pub cb_cookie_request: i32,
+    pub cb_disconnect: i32,
+    pub cb_disguised_chat: i32,
     pub cb_entity_position_sync: i32,
+    pub cb_forget_level_chunk: i32,
+    pub cb_game_event: i32,
+    pub cb_keep_alive: i32,
+    pub cb_level_chunk_with_light: i32,
+    pub cb_login: i32,
     pub cb_move_entity_pos: i32,
+    pub cb_move_entity_pos_rot: i32,
     pub cb_open_screen: i32,
+    pub cb_ping: i32,
+    pub cb_player_abilities: i32,
+    pub cb_player_chat: i32,
     pub cb_player_combat_kill: i32,
+    pub cb_player_info_update: i32,
+    pub cb_player_position: i32,
     pub cb_remove_entities: i32,
+    pub cb_remove_mob_effect: i32,
+    pub cb_resource_pack_push: i32,
     pub cb_respawn: i32,
     pub cb_section_blocks_update: i32,
+    pub cb_set_action_bar_text: i32,
     pub cb_set_cursor_item: i32,
+    pub cb_set_entity_data: i32,
     pub cb_set_entity_motion: i32,
-    pub cb_set_health: i32,
-    pub cb_set_player_inventory: i32,
-    pub cb_system_chat: i32,
-    pub cb_teleport_entity: i32,
-    pub cb_update_mob_effect: i32,
-    pub cb_remove_mob_effect: i32,
-    pub cb_update_attributes: i32,
-    pub cb_game_event: i32,
-    pub cb_player_abilities: i32,
     pub cb_set_equipment: i32,
     pub cb_set_experience: i32,
-    pub cb_block_changed_ack: i32,
-    pub cb_set_entity_data: i32,
-    pub cb_player_info_update: i32,
-    pub cb_set_title_text: i32,
-    pub cb_set_subtitle_text: i32,
-    pub cb_set_action_bar_text: i32,
+    pub cb_set_health: i32,
+    pub cb_set_held_slot: i32,
     pub cb_set_objective: i32,
+    pub cb_set_player_inventory: i32,
     pub cb_set_score: i32,
+    pub cb_set_subtitle_text: i32,
+    pub cb_set_title_text: i32,
+    pub cb_start_configuration: i32,
+    pub cb_system_chat: i32,
+    pub cb_teleport_entity: i32,
+    pub cb_update_attributes: i32,
+    pub cb_update_mob_effect: i32,
+    pub cb_block_changed_ack: i32,
     // Serverbound play packet IDs
+    pub sb_accept_teleportation: i32,
     pub sb_attack: i32,
     pub sb_chat_command: i32,
     pub sb_chat: i32,
+    pub sb_chunk_batch_received: i32,
     pub sb_client_command: i32,
+    pub sb_client_tick_end: i32,
+    pub sb_configuration_acknowledged: i32,
     pub sb_container_button_click: i32,
     pub sb_container_click: i32,
     pub sb_container_close: i32,
+    pub sb_cookie_response: i32,
     pub sb_interact: i32,
+    pub sb_keep_alive: i32,
+    pub sb_move_player_pos: i32,
+    pub sb_move_player_pos_rot: i32,
+    pub sb_move_player_rot: i32,
+    pub sb_move_player_status_only: i32,
     pub sb_place_recipe: i32,
     pub sb_player_action: i32,
     pub sb_player_abilities: i32,
     pub sb_player_command: i32,
+    pub sb_player_input: i32,
+    pub sb_player_loaded: i32,
+    pub sb_pong: i32,
     pub sb_rename_item: i32,
+    pub sb_resource_pack: i32,
     pub sb_select_trade: i32,
     pub sb_set_carried_item: i32,
     pub sb_sign_update: i32,
@@ -74,53 +105,84 @@ pub struct PacketTable {
 impl Default for PacketTable {
     fn default() -> Self {
         Self {
+            protocol_version: 777,
             cb_add_entity: 1,              // minecraft:add_entity
             cb_block_update: 8,            // minecraft:block_update
+            cb_chunk_batch_finished: 11,   // minecraft:chunk_batch_finished
+            cb_chunk_batch_start: 12,      // minecraft:chunk_batch_start
             cb_container_close: 17,        // minecraft:container_close
             cb_container_set_content: 18,  // minecraft:container_set_content
             cb_container_set_data: 19,     // minecraft:container_set_data
             cb_container_set_slot: 20,     // minecraft:container_set_slot
+            cb_cookie_request: 21,         // minecraft:cookie_request
+            cb_disconnect: 32,             // minecraft:disconnect
+            cb_disguised_chat: 33,         // minecraft:disguised_chat
             cb_entity_position_sync: 35,   // minecraft:entity_position_sync
+            cb_forget_level_chunk: 38,     // minecraft:forget_level_chunk
+            cb_game_event: 39,             // minecraft:game_event
+            cb_keep_alive: 45,             // minecraft:keep_alive
+            cb_level_chunk_with_light: 46, // minecraft:level_chunk_with_light
+            cb_login: 50,                  // minecraft:login
             cb_move_entity_pos: 54,        // minecraft:move_entity_pos
+            cb_move_entity_pos_rot: 55,    // minecraft:move_entity_pos_rot
             cb_open_screen: 60,            // minecraft:open_screen
+            cb_ping: 62,                   // minecraft:ping
+            cb_player_abilities: 65,       // minecraft:player_abilities
+            cb_player_chat: 66,            // minecraft:player_chat
             cb_player_combat_kill: 69,     // minecraft:player_combat_kill
+            cb_player_info_update: 71,     // minecraft:player_info_update
+            cb_player_position: 73,        // minecraft:player_position
             cb_remove_entities: 78,        // minecraft:remove_entities
+            cb_remove_mob_effect: 79,      // minecraft:remove_mob_effect
+            cb_resource_pack_push: 82,     // minecraft:resource_pack_push
             cb_respawn: 84,                // minecraft:respawn
             cb_section_blocks_update: 86,  // minecraft:section_blocks_update
+            cb_set_action_bar_text: 89,    // minecraft:set_action_bar_text
             cb_set_cursor_item: 98,        // minecraft:set_cursor_item
+            cb_set_entity_data: 101,       // minecraft:set_entity_data
             cb_set_entity_motion: 103,     // minecraft:set_entity_motion
+            cb_set_equipment: 104,         // minecraft:set_equipment
+            cb_set_experience: 105,        // minecraft:set_experience
             cb_set_health: 106,            // minecraft:set_health
+            cb_set_held_slot: 107,         // minecraft:set_held_slot
+            cb_set_objective: 108,         // minecraft:set_objective
             cb_set_player_inventory: 110,  // minecraft:set_player_inventory
+            cb_set_score: 112,             // minecraft:set_score
+            cb_set_subtitle_text: 114,     // minecraft:set_subtitle_text
+            cb_set_title_text: 116,        // minecraft:set_title_text
+            cb_start_configuration: 120,   // minecraft:start_configuration
             cb_system_chat: 124,           // minecraft:system_chat
             cb_teleport_entity: 128,       // minecraft:teleport_entity
-            cb_update_mob_effect: 134,     // minecraft:update_mob_effect
-            cb_remove_mob_effect: 81,      // minecraft:remove_mob_effect
-            cb_update_attributes: 133,     // minecraft:update_attributes
-            cb_game_event: 37,             // minecraft:game_event
-            cb_player_abilities: 51,       // minecraft:player_abilities
-            cb_set_equipment: 105,         // minecraft:set_equipment
-            cb_set_experience: 107,        // minecraft:set_experience
+            cb_update_attributes: 134,     // minecraft:update_attributes
+            cb_update_mob_effect: 135,     // minecraft:update_mob_effect
             cb_block_changed_ack: 4,       // minecraft:block_changed_ack
-            cb_set_entity_data: 92,        // minecraft:set_entity_data
-            cb_player_info_update: 64,     // minecraft:player_info_update
-            cb_set_title_text: 115,        // minecraft:set_title_text
-            cb_set_subtitle_text: 113,     // minecraft:set_subtitle_text
-            cb_set_action_bar_text: 70,    // minecraft:set_action_bar_text
-            cb_set_objective: 108,         // minecraft:set_objective
-            cb_set_score: 111,             // minecraft:set_score
+            sb_accept_teleportation: 0,    // minecraft:accept_teleportation
             sb_attack: 1,                  // minecraft:attack
             sb_chat_command: 7,            // minecraft:chat_command
             sb_chat: 9,                    // minecraft:chat
+            sb_chunk_batch_received: 11,   // minecraft:chunk_batch_received
             sb_client_command: 12,         // minecraft:client_command
+            sb_client_tick_end: 13,        // minecraft:client_tick_end
+            sb_configuration_acknowledged: 16, // minecraft:configuration_acknowledged
             sb_container_button_click: 17, // minecraft:container_button_click
             sb_container_click: 18,        // minecraft:container_click
             sb_container_close: 19,        // minecraft:container_close
+            sb_cookie_response: 21,        // minecraft:cookie_response
             sb_interact: 26,               // minecraft:interact
+            sb_keep_alive: 28,             // minecraft:keep_alive
+            sb_move_player_pos: 30,        // minecraft:move_player_pos
+            sb_move_player_pos_rot: 31,    // minecraft:move_player_pos_rot
+            sb_move_player_rot: 32,        // minecraft:move_player_rot
+            sb_move_player_status_only: 33,// minecraft:move_player_status_only
             sb_place_recipe: 39,           // minecraft:place_recipe
             sb_player_action: 41,          // minecraft:player_action
             sb_player_abilities: 40,       // minecraft:player_abilities
             sb_player_command: 42,         // minecraft:player_command
+            sb_player_input: 43,           // minecraft:player_input
+            sb_player_loaded: 44,          // minecraft:player_loaded
+            sb_pong: 45,                   // minecraft:pong
             sb_rename_item: 49,            // minecraft:rename_item
+            sb_resource_pack: 50,          // minecraft:resource_pack
             sb_select_trade: 52,           // minecraft:select_trade
             sb_set_carried_item: 54,       // minecraft:set_carried_item
             sb_sign_update: 62,            // minecraft:sign_update
@@ -259,6 +321,58 @@ impl PacketTable {
         table.sb_use_item_on = get_id(sb, "minecraft:use_item_on", table.sb_use_item_on);
         table.sb_use_item = get_id(sb, "minecraft:use_item", table.sb_use_item);
 
+        table.cb_chunk_batch_finished =
+            get_id(cb, "minecraft:chunk_batch_finished", table.cb_chunk_batch_finished);
+        table.cb_chunk_batch_start =
+            get_id(cb, "minecraft:chunk_batch_start", table.cb_chunk_batch_start);
+        table.cb_cookie_request = get_id(cb, "minecraft:cookie_request", table.cb_cookie_request);
+        table.cb_disconnect = get_id(cb, "minecraft:disconnect", table.cb_disconnect);
+        table.cb_disguised_chat = get_id(cb, "minecraft:disguised_chat", table.cb_disguised_chat);
+        table.cb_forget_level_chunk =
+            get_id(cb, "minecraft:forget_level_chunk", table.cb_forget_level_chunk);
+        table.cb_keep_alive = get_id(cb, "minecraft:keep_alive", table.cb_keep_alive);
+        table.cb_level_chunk_with_light =
+            get_id(cb, "minecraft:level_chunk_with_light", table.cb_level_chunk_with_light);
+        table.cb_login = get_id(cb, "minecraft:login", table.cb_login);
+        table.cb_move_entity_pos_rot =
+            get_id(cb, "minecraft:move_entity_pos_rot", table.cb_move_entity_pos_rot);
+        table.cb_ping = get_id(cb, "minecraft:ping", table.cb_ping);
+        table.cb_player_chat = get_id(cb, "minecraft:player_chat", table.cb_player_chat);
+        table.cb_player_position =
+            get_id(cb, "minecraft:player_position", table.cb_player_position);
+        table.cb_resource_pack_push =
+            get_id(cb, "minecraft:resource_pack_push", table.cb_resource_pack_push);
+        table.cb_set_held_slot = get_id(cb, "minecraft:set_held_slot", table.cb_set_held_slot);
+        table.cb_start_configuration =
+            get_id(cb, "minecraft:start_configuration", table.cb_start_configuration);
+
+        table.sb_accept_teleportation =
+            get_id(sb, "minecraft:accept_teleportation", table.sb_accept_teleportation);
+        table.sb_chunk_batch_received =
+            get_id(sb, "minecraft:chunk_batch_received", table.sb_chunk_batch_received);
+        table.sb_client_tick_end =
+            get_id(sb, "minecraft:client_tick_end", table.sb_client_tick_end);
+        table.sb_configuration_acknowledged = get_id(
+            sb,
+            "minecraft:configuration_acknowledged",
+            table.sb_configuration_acknowledged,
+        );
+        table.sb_cookie_response =
+            get_id(sb, "minecraft:cookie_response", table.sb_cookie_response);
+        table.sb_keep_alive = get_id(sb, "minecraft:keep_alive", table.sb_keep_alive);
+        table.sb_move_player_pos =
+            get_id(sb, "minecraft:move_player_pos", table.sb_move_player_pos);
+        table.sb_move_player_pos_rot =
+            get_id(sb, "minecraft:move_player_pos_rot", table.sb_move_player_pos_rot);
+        table.sb_move_player_rot =
+            get_id(sb, "minecraft:move_player_rot", table.sb_move_player_rot);
+        table.sb_move_player_status_only =
+            get_id(sb, "minecraft:move_player_status_only", table.sb_move_player_status_only);
+        table.sb_player_input = get_id(sb, "minecraft:player_input", table.sb_player_input);
+        table.sb_player_loaded = get_id(sb, "minecraft:player_loaded", table.sb_player_loaded);
+        table.sb_pong = get_id(sb, "minecraft:pong", table.sb_pong);
+        table.sb_resource_pack = get_id(sb, "minecraft:resource_pack", table.sb_resource_pack);
+
         if let Some(items) = profile["items"].as_object() {
             for (name, id_val) in items {
                 if let Some(id) = id_val.as_u64() {
@@ -266,6 +380,386 @@ impl PacketTable {
                 }
             }
         }
+        table
+    }
+
+    /// Returns a version-aware Play packet table for any Minecraft protocol in `765..=777`
+    /// (`1.20.4`, `1.20.5`/`1.20.6`, `1.21`/`1.21.1`, `1.21.2`/`1.21.3`, `1.21.4`, `1.21.5`,
+    /// `1.21.6`..`1.21.11`, `26.1`..`26.3`).
+    pub fn for_protocol(proto: i32, profile: &serde_json::Value) -> Self {
+        let mut table = Self::from_profile(profile);
+        table.protocol_version = proto;
+        if proto >= 776 {
+            return table;
+        }
+        if proto == 775 {
+            // Minecraft 26.1 / 26.1.1 / 26.1.2 (protocol 775)
+            table.cb_add_entity = 1;
+            table.cb_block_update = 8;
+            table.cb_chunk_batch_finished = 11;
+            table.cb_chunk_batch_start = 12;
+            table.cb_container_close = 17;
+            table.cb_container_set_content = 18;
+            table.cb_container_set_data = 19;
+            table.cb_container_set_slot = 20;
+            table.cb_cookie_request = 21;
+            table.cb_disconnect = 32;
+            table.cb_disguised_chat = 33;
+            table.cb_entity_position_sync = 35;
+            table.cb_forget_level_chunk = 37;
+            table.cb_game_event = 38;
+            table.cb_keep_alive = 44;
+            table.cb_level_chunk_with_light = 45;
+            table.cb_login = 49;
+            table.cb_move_entity_pos = 53;
+            table.cb_move_entity_pos_rot = 54;
+            table.cb_open_screen = 59;
+            table.cb_ping = 61;
+            table.cb_player_abilities = 64;
+            table.cb_player_chat = 65;
+            table.cb_player_combat_kill = 68;
+            table.cb_player_info_update = 70;
+            table.cb_player_position = 72;
+            table.cb_remove_entities = 77;
+            table.cb_remove_mob_effect = 78;
+            table.cb_resource_pack_push = 81;
+            table.cb_respawn = 82;
+            table.cb_section_blocks_update = 84;
+            table.cb_set_action_bar_text = 87;
+            table.cb_set_cursor_item = 96;
+            table.cb_set_entity_data = 99;
+            table.cb_set_entity_motion = 101;
+            table.cb_set_equipment = 102;
+            table.cb_set_experience = 103;
+            table.cb_set_health = 104;
+            table.cb_set_held_slot = 105;
+            table.cb_set_objective = 106;
+            table.cb_set_player_inventory = 108;
+            table.cb_set_score = 110;
+            table.cb_set_subtitle_text = 112;
+            table.cb_set_title_text = 114;
+            table.cb_start_configuration = 118;
+            table.cb_system_chat = 121;
+            table.cb_teleport_entity = 125;
+            table.cb_update_attributes = 131;
+            table.cb_update_mob_effect = 132;
+            table.cb_block_changed_ack = 4;
+            table.sb_accept_teleportation = 0;
+            table.sb_attack = 1;
+            table.sb_chat_command = 7;
+            table.sb_chat = 9;
+            table.sb_chunk_batch_received = 11;
+            table.sb_client_command = 12;
+            table.sb_client_tick_end = 13;
+            table.sb_configuration_acknowledged = 16;
+            table.sb_container_button_click = 17;
+            table.sb_container_click = 18;
+            table.sb_container_close = 19;
+            table.sb_cookie_response = 21;
+            table.sb_interact = 26;
+            table.sb_keep_alive = 28;
+            table.sb_move_player_pos = 30;
+            table.sb_move_player_pos_rot = 31;
+            table.sb_move_player_rot = 32;
+            table.sb_move_player_status_only = 33;
+            table.sb_place_recipe = 39;
+            table.sb_player_abilities = 40;
+            table.sb_player_action = 41;
+            table.sb_player_command = 42;
+            table.sb_player_input = 43;
+            table.sb_player_loaded = 44;
+            table.sb_pong = 45;
+            table.sb_rename_item = 48;
+            table.sb_resource_pack = 49;
+            table.sb_select_trade = 51;
+            table.sb_set_carried_item = 53;
+            table.sb_sign_update = 61;
+            table.sb_steer_vehicle = 43;
+            table.sb_swing = 63;
+            table.sb_use_item_on = 66;
+            table.sb_use_item = 67;
+            return table;
+        }
+        if proto >= 768 {
+            // Minecraft 1.21.2..1.21.11 (protocols 768..=774)
+            table.cb_add_entity = 1;
+            table.cb_block_update = 8;
+            table.cb_chunk_batch_finished = 11;
+            table.cb_chunk_batch_start = 12;
+            table.cb_container_close = 17;
+            table.cb_container_set_content = 18;
+            table.cb_container_set_data = 19;
+            table.cb_container_set_slot = 20;
+            table.cb_cookie_request = 21;
+            table.cb_disconnect = 28;
+            table.cb_disguised_chat = 29;
+            table.cb_entity_position_sync = 31;
+            table.cb_forget_level_chunk = 33;
+            table.cb_game_event = 34;
+            table.cb_keep_alive = 38;
+            table.cb_level_chunk_with_light = 39;
+            table.cb_login = 43;
+            table.cb_move_entity_pos = 46;
+            table.cb_move_entity_pos_rot = 47;
+            table.cb_open_screen = 52;
+            table.cb_ping = 54;
+            table.cb_player_abilities = 57;
+            table.cb_player_chat = 58;
+            table.cb_player_combat_kill = 61;
+            table.cb_player_info_update = 63;
+            table.cb_player_position = 65;
+            table.cb_remove_entities = 70;
+            table.cb_remove_mob_effect = 71;
+            table.cb_resource_pack_push = 74;
+            table.cb_respawn = 75;
+            table.cb_section_blocks_update = 77;
+            table.cb_set_action_bar_text = 80;
+            table.cb_set_cursor_item = 89;
+            table.cb_set_entity_data = 92;
+            table.cb_set_entity_motion = 94;
+            table.cb_set_equipment = 95;
+            table.cb_set_experience = 96;
+            table.cb_set_health = 97;
+            table.cb_set_held_slot = 98;
+            table.cb_set_objective = 99;
+            table.cb_set_player_inventory = 101;
+            table.cb_set_score = 103;
+            table.cb_set_subtitle_text = 105;
+            table.cb_set_title_text = 107;
+            table.cb_start_configuration = 111;
+            table.cb_system_chat = 114;
+            table.cb_teleport_entity = 118;
+            table.cb_update_attributes = if proto >= 770 { 124 } else { 123 };
+            table.cb_update_mob_effect = if proto >= 770 { 125 } else { 124 };
+            table.cb_block_changed_ack = 4;
+
+            table.sb_accept_teleportation = 0;
+            table.sb_attack = -1;
+            if proto >= 771 {
+                // 1.21.6..1.21.11 (771..=774)
+                table.sb_chat_command = 6;
+                table.sb_chat = 8;
+                table.sb_chunk_batch_received = 10;
+                table.sb_client_command = 11;
+                table.sb_client_tick_end = 12;
+                table.sb_configuration_acknowledged = 15;
+                table.sb_container_button_click = 16;
+                table.sb_container_click = 17;
+                table.sb_container_close = 18;
+                table.sb_cookie_response = 20;
+                table.sb_interact = 25;
+                table.sb_keep_alive = 27;
+                table.sb_move_player_pos = 29;
+                table.sb_move_player_pos_rot = 30;
+                table.sb_move_player_rot = 31;
+                table.sb_move_player_status_only = 32;
+                table.sb_place_recipe = 38;
+                table.sb_player_abilities = 39;
+                table.sb_player_action = 40;
+                table.sb_player_command = 41;
+                table.sb_player_input = 42;
+                table.sb_player_loaded = 43;
+                table.sb_pong = 44;
+                table.sb_rename_item = 47;
+                table.sb_resource_pack = 48;
+                table.sb_select_trade = 50;
+                table.sb_set_carried_item = 52;
+                table.sb_sign_update = 59;
+                table.sb_steer_vehicle = 42;
+                table.sb_swing = 60;
+                table.sb_use_item_on = 63;
+                table.sb_use_item = 64;
+            } else if proto == 770 {
+                // 1.21.5 (770)
+                table.sb_chat_command = 5;
+                table.sb_chat = 7;
+                table.sb_chunk_batch_received = 9;
+                table.sb_client_command = 10;
+                table.sb_client_tick_end = 11;
+                table.sb_configuration_acknowledged = 14;
+                table.sb_container_button_click = 15;
+                table.sb_container_click = 16;
+                table.sb_container_close = 17;
+                table.sb_cookie_response = 19;
+                table.sb_interact = 24;
+                table.sb_keep_alive = 26;
+                table.sb_move_player_pos = 28;
+                table.sb_move_player_pos_rot = 29;
+                table.sb_move_player_rot = 30;
+                table.sb_move_player_status_only = 31;
+                table.sb_place_recipe = 37;
+                table.sb_player_abilities = 38;
+                table.sb_player_action = 39;
+                table.sb_player_command = 40;
+                table.sb_player_input = 41;
+                table.sb_player_loaded = 42;
+                table.sb_pong = 43;
+                table.sb_rename_item = 46;
+                table.sb_resource_pack = 47;
+                table.sb_select_trade = 49;
+                table.sb_set_carried_item = 51;
+                table.sb_sign_update = 58;
+                table.sb_steer_vehicle = 41;
+                table.sb_swing = 59;
+                table.sb_use_item_on = 62;
+                table.sb_use_item = 63;
+            } else if proto == 769 {
+                // 1.21.4 (769)
+                table.sb_chat_command = 5;
+                table.sb_chat = 7;
+                table.sb_chunk_batch_received = 9;
+                table.sb_client_command = 10;
+                table.sb_client_tick_end = 11;
+                table.sb_configuration_acknowledged = 14;
+                table.sb_container_button_click = 15;
+                table.sb_container_click = 16;
+                table.sb_container_close = 17;
+                table.sb_cookie_response = 19;
+                table.sb_interact = 24;
+                table.sb_keep_alive = 26;
+                table.sb_move_player_pos = 28;
+                table.sb_move_player_pos_rot = 29;
+                table.sb_move_player_rot = 30;
+                table.sb_move_player_status_only = 31;
+                table.sb_place_recipe = 37;
+                table.sb_player_abilities = 38;
+                table.sb_player_action = 39;
+                table.sb_player_command = 40;
+                table.sb_player_input = 41;
+                table.sb_player_loaded = 42;
+                table.sb_pong = 43;
+                table.sb_rename_item = 46;
+                table.sb_resource_pack = 47;
+                table.sb_select_trade = 49;
+                table.sb_set_carried_item = 51;
+                table.sb_sign_update = 57;
+                table.sb_steer_vehicle = 41;
+                table.sb_swing = 58;
+                table.sb_use_item_on = 60;
+                table.sb_use_item = 61;
+            } else {
+                // 1.21.2 / 1.21.3 (768)
+                table.sb_chat_command = 5;
+                table.sb_chat = 7;
+                table.sb_chunk_batch_received = 9;
+                table.sb_client_command = 10;
+                table.sb_client_tick_end = 11;
+                table.sb_configuration_acknowledged = 14;
+                table.sb_container_button_click = 15;
+                table.sb_container_click = 16;
+                table.sb_container_close = 17;
+                table.sb_cookie_response = 19;
+                table.sb_interact = 24;
+                table.sb_keep_alive = 26;
+                table.sb_move_player_pos = 28;
+                table.sb_move_player_pos_rot = 29;
+                table.sb_move_player_rot = 30;
+                table.sb_move_player_status_only = 31;
+                table.sb_place_recipe = 36;
+                table.sb_player_abilities = 37;
+                table.sb_player_action = 38;
+                table.sb_player_command = 39;
+                table.sb_player_input = 40;
+                table.sb_player_loaded = -1;
+                table.sb_pong = 41;
+                table.sb_rename_item = 44;
+                table.sb_resource_pack = 45;
+                table.sb_select_trade = 47;
+                table.sb_set_carried_item = 49;
+                table.sb_sign_update = 55;
+                table.sb_steer_vehicle = 40;
+                table.sb_swing = 56;
+                table.sb_use_item_on = 58;
+                table.sb_use_item = 59;
+            }
+            return table;
+        }
+        // Minecraft 1.20.5/1.20.6 (766) & 1.21/1.21.1 (767)
+        table.cb_add_entity = 1;
+        table.cb_block_update = 8;
+        table.cb_chunk_batch_finished = 11;
+        table.cb_chunk_batch_start = 12;
+        table.cb_container_close = 17;
+        table.cb_container_set_content = 18;
+        table.cb_container_set_data = 19;
+        table.cb_container_set_slot = 20;
+        table.cb_cookie_request = 21;
+        table.cb_disconnect = 28;
+        table.cb_disguised_chat = 29;
+        table.cb_entity_position_sync = -1;
+        table.cb_forget_level_chunk = 32;
+        table.cb_game_event = 33;
+        table.cb_keep_alive = 37;
+        table.cb_level_chunk_with_light = 38;
+        table.cb_login = 42;
+        table.cb_move_entity_pos = 45;
+        table.cb_move_entity_pos_rot = 46;
+        table.cb_open_screen = 50;
+        table.cb_ping = 52;
+        table.cb_player_abilities = 55;
+        table.cb_player_chat = 56;
+        table.cb_player_combat_kill = 59;
+        table.cb_player_info_update = 61;
+        table.cb_player_position = 63;
+        table.cb_remove_entities = 65;
+        table.cb_remove_mob_effect = 66;
+        table.cb_resource_pack_push = 69;
+        table.cb_respawn = 70;
+        table.cb_section_blocks_update = 72;
+        table.cb_set_action_bar_text = 75;
+        table.cb_set_cursor_item = -1;
+        table.cb_set_entity_data = 86;
+        table.cb_set_entity_motion = 88;
+        table.cb_set_equipment = 89;
+        table.cb_set_experience = 90;
+        table.cb_set_health = 91;
+        table.cb_set_held_slot = 92;
+        table.cb_set_objective = 93;
+        table.cb_set_player_inventory = -1;
+        table.cb_set_score = 96;
+        table.cb_set_subtitle_text = 98;
+        table.cb_set_title_text = 100;
+        table.cb_start_configuration = 104;
+        table.cb_system_chat = 107;
+        table.cb_teleport_entity = 111;
+        table.cb_update_attributes = 116;
+        table.cb_update_mob_effect = 117;
+        table.cb_block_changed_ack = 4;
+
+        table.sb_accept_teleportation = 0;
+        table.sb_attack = -1;
+        table.sb_chat_command = 4;
+        table.sb_chat = 6;
+        table.sb_chunk_batch_received = 8;
+        table.sb_client_command = 9;
+        table.sb_client_tick_end = -1;
+        table.sb_configuration_acknowledged = 12;
+        table.sb_container_button_click = 13;
+        table.sb_container_click = 14;
+        table.sb_container_close = 15;
+        table.sb_cookie_response = 17;
+        table.sb_interact = 22;
+        table.sb_keep_alive = 24;
+        table.sb_move_player_pos = 26;
+        table.sb_move_player_pos_rot = 27;
+        table.sb_move_player_rot = 28;
+        table.sb_move_player_status_only = 29;
+        table.sb_place_recipe = 34;
+        table.sb_player_abilities = 35;
+        table.sb_player_action = 36;
+        table.sb_player_command = 37;
+        table.sb_player_input = 38;
+        table.sb_player_loaded = -1;
+        table.sb_pong = 39;
+        table.sb_rename_item = 42;
+        table.sb_resource_pack = 43;
+        table.sb_select_trade = 45;
+        table.sb_set_carried_item = 47;
+        table.sb_sign_update = 53;
+        table.sb_steer_vehicle = 38;
+        table.sb_swing = 54;
+        table.sb_use_item_on = 56;
+        table.sb_use_item = 57;
         table
     }
 }
@@ -1069,7 +1563,7 @@ impl PlayerStateTable {
         let state_id = r.var()?;
         let slot = i16::from_be_bytes(r.take(2)?.try_into()?);
         let (mut item, exact) = decode_slot_item(r, packets)?;
-        if !exact {
+        if !exact && packets.protocol_version >= 777 {
             return Err(crate::wire::bad("unrecognized component in container slot"));
         }
         if let Some(ref mut it) = item {
@@ -1153,18 +1647,40 @@ impl PlayerStateTable {
         let slot_count = r.count(256)?;
         let mut staged_slots = vec![None; slot_count];
         for slot_ref in staged_slots.iter_mut() {
-            let (stack, exact) = decode_slot_item(r, packets)?;
-            if !exact {
-                return Err(crate::wire::bad("unrecognized component in container content"));
+            match decode_slot_item(r, packets) {
+                Ok((stack, exact)) => {
+                    if !exact {
+                        if packets.protocol_version >= 777 {
+                            return Err(crate::wire::bad("unrecognized component in container content"));
+                        }
+                        *slot_ref = stack;
+                        break;
+                    }
+                    *slot_ref = stack;
+                }
+                Err(e) => {
+                    if packets.protocol_version >= 777 {
+                        return Err(e);
+                    }
+                    break;
+                }
             }
-            *slot_ref = stack;
         }
         let cursor_item = if !r.0.is_empty() {
-            let (item, exact) = decode_slot_item(r, packets)?;
-            if !exact {
-                return Err(crate::wire::bad("unrecognized component in carried item"));
+            match decode_slot_item(r, packets) {
+                Ok((item, exact)) => {
+                    if !exact && packets.protocol_version >= 777 {
+                        return Err(crate::wire::bad("unrecognized component in carried item"));
+                    }
+                    item
+                }
+                Err(e) => {
+                    if packets.protocol_version >= 777 {
+                        return Err(e);
+                    }
+                    None
+                }
             }
-            item
         } else {
             None
         };
@@ -1708,19 +2224,26 @@ pub fn encode_serverbound_event_with_pose(
                 out.extend(c.to_be_bytes());
             }
             out.push(u8::from(*inside_block));
-            out.push(0);
+            if packets.protocol_version >= 768 {
+                out.push(0); // world_border_hit (added in 1.21.2 / protocol 768)
+            }
             var(*sequence, &mut out);
             Some((packets.sb_use_item_on, out))
         }
         SubTickEvent::UseItem { hand, sequence } => {
             var(if *hand == Hand::MainHand { 0 } else { 1 }, &mut out);
             var(*sequence, &mut out);
-            out.extend(player_yaw.to_be_bytes());
-            out.extend(player_pitch.to_be_bytes());
+            if packets.protocol_version >= 767 {
+                out.extend(player_yaw.to_be_bytes());
+                out.extend(player_pitch.to_be_bytes());
+            }
             Some((packets.sb_use_item, out))
         }
-        SubTickEvent::SwipeArm { .. } => {
-            Some((packets.sb_swing, Vec::new()))
+        SubTickEvent::SwipeArm { hand } => {
+            if packets.protocol_version < 776 {
+                var(if *hand == Hand::MainHand { 0 } else { 1 }, &mut out);
+            }
+            Some((packets.sb_swing, out))
         }
         SubTickEvent::InteractEntity {
             entity_id,
@@ -1729,7 +2252,13 @@ pub fn encode_serverbound_event_with_pose(
         } => match interaction {
             EntityInteraction::Attack => {
                 var(*entity_id, &mut out);
-                Some((packets.sb_attack, out))
+                if packets.protocol_version >= 775 && packets.sb_attack >= 0 {
+                    Some((packets.sb_attack, out))
+                } else {
+                    var(1, &mut out); // action = 1 (ATTACK) in ServerboundInteractPacket on 1.20.5..1.21.11
+                    out.push(u8::from(*sneaking));
+                    Some((packets.sb_interact, out))
+                }
             }
             EntityInteraction::Interact { hand } => {
                 var(*entity_id, &mut out);
@@ -1806,7 +2335,9 @@ pub fn encode_serverbound_event_with_pose(
             out.push(0);
             var(0, &mut out);
             out.extend([0u8; 3]);
-            out.push(0);
+            if packets.protocol_version >= 770 {
+                out.push(0); // checksum byte added in 1.21.5 (protocol 770)
+            }
             Some((packets.sb_chat, out))
         }
         SubTickEvent::UpdateSign { pos, front, lines } => {
