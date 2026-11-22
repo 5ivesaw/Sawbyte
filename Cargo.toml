@@ -21,7 +21,7 @@ exclude = [
 version = "0.5.2"
 edition = "2024"
 rust-version = "1.85"
-license = "MIT"
+license = "GPL-3.0-or-later"
 repository = "https://github.com/5ivesaw/Sawbyte"
 
 [workspace.lints.rust]
